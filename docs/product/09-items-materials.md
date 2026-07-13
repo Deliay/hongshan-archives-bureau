@@ -33,7 +33,7 @@ type: Permanent
 ```mermaid
 flowchart TD
     A[道具材料] --> B[按类型分类]
-    A --> C[检索]
+
     B --> D[物品卷宗]
     D --> E[物品描述]
     D --> F[获取途径]
