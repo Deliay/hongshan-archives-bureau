@@ -66,7 +66,9 @@ graph TD
     end
     subgraph 外部
         F[游戏数据 API] -- fetch --> D
+        G[版本接口] -- fetch --> A
     end
+    A --> G
 ```
 
 ### 2.2 技术栈
@@ -194,7 +196,36 @@ sequenceDiagram
     H-->>P: 返回 { data, loading, error }
 ```
 
-### 4.2 缓存策略
+### 4.2 版本锚定
+
+每次打开档案馆时，先请求版本接口获取当前数据版本，以此作为缓存的锚定标识。
+
+**版本接口**：`GET https://endfield-assets.fffdan.com/version`
+
+**响应示例**：`initial_8190425-29_main_8190425-29`
+
+**机制**：
+
+```mermaid
+flowchart TD
+    A[应用启动] --> B[请求 /version]
+    B --> C{本地有 version 记录?}
+    C -->|无| D[存入 IndexedDB version 表]
+    C -->|有| E{version 一致?}
+    E -->|一致| F[使用现有缓存]
+    E -->|不一致| G[清空所有数据缓存]
+    G --> D
+    D --> H[后续请求带上 version 前缀]
+    F --> H
+```
+
+**缓存键格式**：`${version}:${tableName}:${key}`
+
+例如 `initial_8190425-29_main_8190425-29:CharacterTable:chr_0005_chen`。
+
+版本变更时，所有旧键自然失效（按前缀批量清除或整体清库）。
+
+### 4.3 缓存策略
 
 | 层级 | 实现 | 容量 | 过期 |
 |------|------|------|------|
@@ -202,7 +233,7 @@ sequenceDiagram
 | 持久化（跨会话） | `IndexedDB` | 不限 | 7 天 |
 | 预取 | `<link rel="prefetch">` | — | 构建时配置 |
 
-### 4.3 Hook 设计
+### 4.4 Hook 设计
 
 ```typescript
 // 核心数据 hook
@@ -217,7 +248,7 @@ function useEnemies(): UseDataResult<Enemy[]>
 // ... 以此类推
 ```
 
-### 4.4 类型定义示意
+### 4.5 类型定义示意
 
 ```typescript
 // 数据适配后的前端类型
@@ -354,6 +385,25 @@ interface CacheEntry<T> {
   ttl: number
 }
 
+let currentVersion: string | null = null
+
+// 应用启动时调用
+async function initCache(): Promise<string> {
+  const res = await fetch('https://endfield-assets.fffdan.com/version')
+  const version = await res.text()
+  const old = await persistentCache.get<string>('_version')
+  if (old && old !== version) {
+    await persistentCache.clearAll()   // 版本变了，清空整个缓存库
+  }
+  await persistentCache.set('_version', version)
+  currentVersion = version
+  return version
+}
+
+function cacheKey(table: string, key?: string): string {
+  return `${currentVersion}:${table}${key ? ':' + key : ''}`
+}
+
 // 内存缓存：运行时快速读写
 class MemoryCache {
   private store: Map<string, CacheEntry<unknown>>
@@ -364,7 +414,7 @@ class MemoryCache {
   invalidate(pattern?: string): void
 }
 
-// 持久化缓存：跨会话保留，适合大量数据
+// 持久化缓存：IndexedDB，跨会话保留
 class PersistentCache {
   private dbName = 'HongshanArchives'
   private storeName = 'cache'
@@ -373,7 +423,7 @@ class PersistentCache {
   async open(): Promise<void>
   async get<T>(key: string): Promise<T | null>
   async set<T>(key: string, data: T, ttl?: number): Promise<void>
-  async invalidate(pattern?: string): Promise<void>
+  async clearAll(): Promise<void>
 }
 ```
 
