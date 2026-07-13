@@ -25,6 +25,30 @@
       "sourceType": "github",
       "skillPath": "skills/react-best-practices/SKILL.md",
       "computedHash": "ca7b0c0c6e5f2750043f7f0cd72d16ac4e2abc48f9b5500d047a4b77a2506212"
+    },
+    "z-coding": {
+      "source": "deliay/zero-ash-cookbook",
+      "sourceType": "github",
+      "skillPath": "z-coding/SKILL.md",
+      "computedHash": "6648880e9b9dcc11b3833a03a6045a95f52ae1a82839669daf1f5429245cf505"
+    },
+    "z-document": {
+      "source": "deliay/zero-ash-cookbook",
+      "sourceType": "github",
+      "skillPath": "z-document/SKILL.md",
+      "computedHash": "10ddcdc01f5fd3a22da19b5030db68ac7d0211772321269a2db9ec6e54a40249"
+    },
+    "z-product": {
+      "source": "deliay/zero-ash-cookbook",
+      "sourceType": "github",
+      "skillPath": "z-product/SKILL.md",
+      "computedHash": "8cfd7f5be16cbaf87fdb0cdb4209b1d23601e0487eaee6099a9d2de9f6c5e710"
+    },
+    "z-test": {
+      "source": "deliay/zero-ash-cookbook",
+      "sourceType": "github",
+      "skillPath": "z-test/SKILL.md",
+      "computedHash": "ad13d78917890f406f013072ff704d829cd8fb8b0bb7e59b43dbeccfdb787e15"
     }
   }
 }
