@@ -54,6 +54,6 @@ flowchart TD
 
 ## 相关文档
 
-- [[12-encyclopedia-index|百科索引]]
+- [[00-site-concept|站点概念设计]]
 - [[05-factions|势力阵营]]
 - [[06-geography|地区地理]]

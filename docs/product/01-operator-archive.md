@@ -47,7 +47,7 @@ flowchart TD
 
 ## 已知角色清单
 
-参见 [[12-encyclopedia-index|百科索引]] 中关联的数据源说明。
+参见 [[00-site-concept#数据源说明|站点概念设计]] 中关联的数据源说明。
 
 如需扩展数据，通过 `CharacterTable` 接口增量获取即可。
 
