@@ -65,12 +65,33 @@ function useTableEntry<T>(table: string, key: string, adapt: (raw: any) => T): U
 
 // ---------- Domain hooks ----------
 
+let i18nMapPromise: Promise<Record<string, string>> | null = null
+
+function getI18nMap(): Promise<Record<string, string>> {
+  if (!i18nMapPromise) {
+    i18nMapPromise = getCachedData<Record<string, string>>('I18nTextTable_CN', () => fetchTableAll('I18nTextTable_CN'))
+  }
+  return i18nMapPromise
+}
+
 export function useOperators(): UseDataResult<Operator[]> {
-  return useTableData('CharacterTable', adaptOperator)
+  return useData(async () => {
+    const [rawData, i18nMap] = await Promise.all([
+      getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
+      getI18nMap(),
+    ])
+    return Object.entries(rawData).map(([, v]) => adaptOperator(v, i18nMap))
+  })
 }
 
 export function useOperator(id: string): UseDataResult<Operator> {
-  return useTableEntry('CharacterTable', id, adaptOperator)
+  return useData(async () => {
+    const [raw, i18nMap] = await Promise.all([
+      getCachedData<any>('CharacterTable', () => fetchTableEntry('CharacterTable', id), id),
+      getI18nMap(),
+    ])
+    return adaptOperator(raw, i18nMap)
+  })
 }
 
 export function useWeapons(): UseDataResult<Weapon[]> {

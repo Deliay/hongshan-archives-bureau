@@ -42,4 +42,25 @@ test.describe('干员档案 (Operator Archive)', () => {
     )
     expect(fontFamily).toMatch(/Noto Sans SC|PingFang SC|Microsoft YaHei|sans-serif/)
   })
+
+  test('干员名称与星级显示正常，包含 5 星干员「陈千语」', async ({ page }) => {
+    await page.waitForSelector('h2', { timeout: 30000 })
+    const cards = page.locator('a[href^="/archive/operators/"]')
+    const count = await cards.count()
+    expect(count).toBeGreaterThan(0)
+
+    for (let i = 0; i < count; i++) {
+      const card = cards.nth(i)
+      const name = await card.locator('h3').textContent()
+      expect(name).toBeTruthy()
+      expect(name!.trim().length).toBeGreaterThan(0)
+      const stars = await card.locator('span').last().textContent()
+      expect(stars).toMatch(/^★+$/)
+    }
+
+    const chenQianYu = page.locator('a[href^="/archive/operators/"]', { has: page.locator('h3', { hasText: '陈千语' }) })
+    await expect(chenQianYu).toBeVisible({ timeout: 5000 })
+    const stars = await chenQianYu.locator('span').last().textContent()
+    expect(stars?.trim()).toBe('★★★★★')
+  })
 })

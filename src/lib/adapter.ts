@@ -1,20 +1,23 @@
 import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from './types'
 import { PROFESSION_MAP, ELEMENT_MAP, RARITY_STARS, inferWeaponType } from '../data/constants'
 
-export function adaptOperator(raw: any): Operator {
+export function adaptOperator(raw: any, i18nMap?: Record<string, string>): Operator {
   const profId: number = raw.profession ?? raw.professionId ?? 0
   const charType: string = raw.charType ?? raw.attributeType ?? ''
-  const rarityId: number = raw.rarity ?? raw.rarityId ?? 0
+  const rawRarity: number = raw.rarity ?? raw.rarityId ?? 0
+
+  const nameId = String(raw.name?.id ?? '')
+  const nameText = (i18nMap?.[nameId] || raw.name?.text || '')
 
   return {
-    id: raw.characterId ?? raw.$key ?? raw.$id ?? '',
-    name: raw.name?.text ?? raw.name ?? '',
+    id: raw.charId ?? raw.characterId ?? raw.$key ?? raw.$id ?? '',
+    name: nameText,
     profession: PROFESSION_MAP[profId] ?? '未知',
     element: ELEMENT_MAP[charType]?.name ?? '物理',
     elementColor: ELEMENT_MAP[charType]?.color ?? '#888888',
     faction: extractTag(raw.factionTag ?? raw.faction, 'tag_power_'),
     race: extractTag(raw.raceTag ?? raw.race, 'tag_race_'),
-    rarity: RARITY_STARS[rarityId] ?? 3,
+    rarity: rawRarity,
     profileRecords: extractTextArray(raw.profileRecord, 'recordDesc'),
     voiceLines: (raw.profileVoice ?? []).map((v: any) => ({
       title: v.voiceTitle?.text ?? v.voiceTitle ?? '',

@@ -1,21 +1,30 @@
 const API_BASE = 'https://endfield-assets.fffdan.com'
 
+// i18n IDs in game data are 64-bit integers exceeding Number.MAX_SAFE_INTEGER.
+// JSON.parse natively cannot preserve these, so we pre-process the raw text
+// to quote any number >= 10^16 (17+ digits) before parsing.
+function safeParse(json: string): any {
+  const prepared = json.replace(/(?<=: ?)(\d{17,})(?=[,\s\]\}])/g, '"$1"')
+  return JSON.parse(prepared)
+}
+
+async function fetchJson(url: string): Promise<any> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Failed to fetch ${url}`)
+  const text = await res.text()
+  return safeParse(text)
+}
+
 export async function fetchTableKeys(table: string): Promise<string[]> {
-  const res = await fetch(`${API_BASE}/table/${table}`)
-  if (!res.ok) throw new Error(`Failed to fetch keys for ${table}`)
-  return res.json()
+  return fetchJson(`${API_BASE}/table/${table}`)
 }
 
 export async function fetchTableAll(table: string): Promise<Record<string, any>> {
-  const res = await fetch(`${API_BASE}/table/${table}/all`)
-  if (!res.ok) throw new Error(`Failed to fetch ${table}`)
-  return res.json()
+  return fetchJson(`${API_BASE}/table/${table}/all`)
 }
 
 export async function fetchTableEntry(table: string, key: string): Promise<any> {
-  const res = await fetch(`${API_BASE}/table/${table}/${key}`)
-  if (!res.ok) throw new Error(`Failed to fetch ${table}/${key}`)
-  return res.json()
+  return fetchJson(`${API_BASE}/table/${table}/${key}`)
 }
 
 export async function fetchVersion(): Promise<string> {
