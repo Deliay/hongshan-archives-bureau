@@ -27,7 +27,7 @@ type: Permanent
 
 ### 1.1 背景
 
-宏山档案馆是一个《明日方舟：终末地》粉丝向资料站，以静态 SPA 形式呈现。所有数据来自公开的游戏数据 API（`https://endfield-assets.fffdan.com/`），无需自建后端。
+宏山档案馆是一个《明日方舟：终末地》粉丝向资料站，以静态 SPA 形式呈现。所有数据来自公开的游戏数据 API（`https://endfield-assets.fffdan.com/`，完整接口定义见 `openapi/v1.json`），无需自建后端。
 
 ### 1.2 目标
 
@@ -200,7 +200,7 @@ sequenceDiagram
 
 每次打开档案馆时，先请求版本接口获取当前数据版本，以此作为缓存的锚定标识。
 
-**版本接口**：`GET https://endfield-assets.fffdan.com/version`
+**版本接口**：`GET /version`（返回纯文本，如 `initial_8190425-29_main_8190425-29`）
 
 **响应示例**：`initial_8190425-29_main_8190425-29`
 
