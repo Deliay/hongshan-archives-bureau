@@ -42,7 +42,7 @@ type: Permanent
 - 入口页 → 档案馆首页 → 各模块列表页 → 卷宗详情页 的完整路由
 - 基于 `react-router` 的客户端路由
 - 数据适配层（Adapter）：将原始 API 响应映射为前端消费类型
-- 本地缓存策略（`localStorage` + 内存 LRU）
+- 本地缓存策略（IndexedDB + 内存 LRU）
 - 筛选与分类浏览
 - 标签系统跨模块关联
 
@@ -78,7 +78,7 @@ graph TD
 | 路由 | react-router v7 | 客户端路由 |
 | 样式 | Tailwind CSS v4 | 工具类优先 |
 | 数据获取 | fetch + 自定义 hooks | 无外部请求库 |
-| 缓存 | localStorage + Map（内存 LRU） | 持久化+运行时 |
+| 缓存 | IndexedDB + Map（内存 LRU） | 持久化+运行时 |
 | 状态管理 | React hooks（useState/useReducer/useContext） | 无外部状态库 |
 
 ### 2.3 模块划分
@@ -118,7 +118,7 @@ graph TD
 |------|------|-----------|
 | 核心模块 | 路由定义、布局骨架、全局状态 | react-router loaders |
 | 数据适配层 | 将 API 原始 JSON 映射为前端类型 | TypeScript 类型守卫 |
-| 缓存管理 | 请求去重、过期控制、持久化 | LRU Map + localStorage |
+| 缓存管理 | 请求去重、过期控制、持久化 | LRU Map + IndexedDB |
 | UI 组件库 | 卡片、列表、筛选栏、标签页、面包屑 | Tailwind 原子化 |
 | 领域模块 | 各分类的列表/筛选/详情页面 | 按 product doc 设计 |
 
@@ -199,7 +199,7 @@ sequenceDiagram
 | 层级 | 实现 | 容量 | 过期 |
 |------|------|------|------|
 | 内存（运行时） | `Map<string, CacheEntry>` | 100 条 LRU | 30 分钟 |
-| 持久化（跨会话） | `localStorage` | 5MB | 7 天 |
+| 持久化（跨会话） | `IndexedDB` | 不限 | 7 天 |
 | 预取 | `<link rel="prefetch">` | — | 构建时配置 |
 
 ### 4.3 Hook 设计
@@ -307,7 +307,7 @@ src/
 │   ├── useWeapons.ts
 │   └── useEnemies.ts
 ├── lib/
-│   ├── cache.ts                # RUL Map + localStorage
+│   ├── cache.ts                # LRU Map + IndexedDB
 │   ├── adapter.ts              # 数据适配函数
 │   ├── api.ts                  # fetch 封装
 │   └── types.ts                # 前端类型定义
@@ -354,6 +354,7 @@ interface CacheEntry<T> {
   ttl: number
 }
 
+// 内存缓存：运行时快速读写
 class MemoryCache {
   private store: Map<string, CacheEntry<unknown>>
   private maxSize: number
@@ -362,9 +363,21 @@ class MemoryCache {
   set<T>(key: string, data: T, ttl?: number): void
   invalidate(pattern?: string): void
 }
+
+// 持久化缓存：跨会话保留，适合大量数据
+class PersistentCache {
+  private dbName = 'HongshanArchives'
+  private storeName = 'cache'
+  private db: IDBDatabase | null = null
+
+  async open(): Promise<void>
+  async get<T>(key: string): Promise<T | null>
+  async set<T>(key: string, data: T, ttl?: number): Promise<void>
+  async invalidate(pattern?: string): Promise<void>
+}
 ```
 
-持久化策略：在 `MemoryCache.set` 的同时写入 `localStorage`；应用启动时从 `localStorage` 回填。
+读写策略：优先查内存缓存（LRU Map），未命中则查 IndexedDB，命中后回填内存；写入时同时写入两者。应用启动时只从 IndexedDB 按需加载，不预填全部数据到内存。
 
 ### 6.3 入口页淡出过渡
 
@@ -375,7 +388,7 @@ const [entered, setEntered] = useState(false)
 // 过渡结束后通过 react-router navigate 跳转
 ```
 
-首次访问标记：`localStorage.setItem('hasVisited', 'true')`，已访问直接跳过入口页。
+首次访问标记：`localStorage.setItem('hasVisited', 'true')`；但游戏数据缓存走 IndexedDB。
 
 ### 6.4 筛选栏设计
 
@@ -457,7 +470,7 @@ dist/
 - [x] 技术方案评审通过
 - [ ] 路由配置完成，11 个模块均可导航
 - [ ] 数据适配层覆盖 11 个模块的核心字段
-- [ ] 缓存层实现 LRU + localStorage 双级缓存
+- [ ] 缓存层实现 LRU（内存）+ IndexedDB 双级缓存
 - [ ] 入口页过渡效果正常
 - [ ] 筛选栏在各列表页正常工作
 - [ ] 响应式布局，移动端底部导航可用
