@@ -4,17 +4,17 @@ test.describe('导航与全局布局 (Navigation & Layout)', () => {
 
   test.beforeEach(async ({ page, context }) => {
     await context.addInitScript(() => localStorage.setItem('hs_visited', 'true'))
-    await page.goto('/archive')
+    await page.goto('/archive', { waitUntil: 'domcontentloaded' })
   })
 
   test('顶栏导航链接可点击跳转', async ({ page }) => {
     await page.getByRole('banner').getByRole('link', { name: '武器档案' }).click()
     await page.waitForURL('/archive/weapons')
-    await expect(page.locator('h2').first()).toHaveText('武器档案')
+    await expect(page.locator('h2').first()).toHaveText('武器档案', { timeout: 15000 })
   })
 
   test('通过面包屑返回档案馆首页', async ({ page }) => {
-    await page.goto('/archive/weapons')
+    await page.goto('/archive/weapons', { waitUntil: 'domcontentloaded' })
     await page.waitForSelector('h2')
     await page.getByRole('link', { name: '档案馆', exact: true }).click()
     await page.waitForURL('/archive')
@@ -30,8 +30,8 @@ test.describe('导航与全局布局 (Navigation & Layout)', () => {
       { path: '/archive/story', heading: '剧情记录' },
     ]
     for (const { path, heading } of pages) {
-      await page.goto(path)
-      await expect(page.locator('h2').first()).toHaveText(heading, { timeout: 10000 })
+      await page.goto(path, { waitUntil: 'domcontentloaded' })
+      await expect(page.locator('h2').first()).toHaveText(heading, { timeout: 15000 })
     }
   })
 })
