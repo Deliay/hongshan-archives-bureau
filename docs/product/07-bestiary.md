@@ -5,7 +5,7 @@ type: Permanent
 
 # 敌人图鉴
 
-我在塔卫二上遭遇过的敌对生物与武装分子。
+塔卫二上出现的各类敌对生物与武装分子。
 
 ## 数据来源
 
@@ -47,7 +47,7 @@ flowchart TD
 - 掉落数据存于 `WikiEnemyDropTable` / `DropGemTable`
 - 敌人标签信息存于 `EnemyTagTable`
 
-## 相关文档
+## 相关卷宗
 
 - [[06-geography|地区地理]] — 敌人出现区域
 - [[09-items-materials|道具材料]] — 掉落物

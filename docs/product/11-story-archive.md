@@ -1,11 +1,11 @@
 ---
-description: 剧情档案模块 — 塔卫二的叙事记录
+description: 剧情记录模块 — 塔卫二的叙事记录
 type: Permanent
 ---
 
 # 剧情记录
 
-我在塔卫二上经历与收集到的所有叙事记录。
+塔卫二上的叙事资料归档。
 
 ## 内容分类
 
@@ -52,7 +52,7 @@ flowchart TD
 - 文献全文展示（富文本解析，含 `RichContentTable` 的格式化内容）
 - 角色间的 SNS 对话可按角色聚合
 
-## 相关文档
+## 相关卷宗
 
 - [[00-site-concept|站点概念设计]]
 - [[05-factions|势力阵营]]

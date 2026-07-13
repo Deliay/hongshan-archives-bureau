@@ -5,7 +5,7 @@ type: Permanent
 
 # 势力阵营
 
-我在塔卫二上听闻的各方势力、组织与阵营。
+塔卫二上的各方势力、组织与阵营记录。
 
 ## 数据来源
 
@@ -15,7 +15,7 @@ type: Permanent
 
 | tagId | 名称 | 说明 |
 |-------|------|------|
-| tag_power_endfield | 终末地工业 | 玩家所属开拓组织 |
+| tag_power_endfield | 终末地工业 | 开拓组织 |
 | tag_power_rhodes | 罗德岛 | 自泰拉延续的制药公司，现隐匿 |
 | tag_power_hongshan | 宏山 | 环形山聚居地，大炎天师势力 |
 | tag_power_hongacademy | 宏山科学院 | 满足文明环带食品需求的核心科研机构 |
@@ -49,8 +49,8 @@ flowchart TD
 - 总览页：势力关系图 + 卡片列表
 - 卷宗：势力简介、所属干员、关联地点、相关剧情记录
 
-## 相关文档
+## 相关卷宗
 
 - [[06-geography|地区地理]]
-- [[01-operator-archive|我的干员]]
+- [[01-operator-archive|干员档案]]
 - [[11-story-archive|剧情记录]]
