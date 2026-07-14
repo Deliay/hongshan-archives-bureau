@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchTableAll, fetchTableEntry, fetchTableDictAll, fetchI18nLocales } from '../lib/api'
+import { fetchTableAll, fetchTableDictAll, fetchI18nLocales } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from '../lib/types'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 
 interface UseDataResult<T> {
@@ -52,13 +52,6 @@ function useTableData<T>(table: string, adapt: (raw: any) => T): UseDataResult<T
   return useData(async () => {
     const raw = await getCachedData<Record<string, any>>(table, () => fetchTableAll(table))
     return Object.entries(raw).map(([, v]) => adapt(v))
-  })
-}
-
-function useTableEntry<T>(table: string, key: string, adapt: (raw: any) => T): UseDataResult<T> {
-  return useData(async () => {
-    const raw = await getCachedData<any>(table, () => fetchTableEntry(table, key), key)
-    return adapt(raw)
   })
 }
 
@@ -201,6 +194,80 @@ export function useOperator(id: string): UseDataResult<Operator> {
       getAttributeMap(locale),
     ])
     return adaptOperator(rawData[id], i18nMap, profMap, elemMap, tagMap, attrMap)
+  }, [locale, id])
+}
+
+export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap] = await Promise.all([
+      Promise.all([
+        getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
+        getTableI18nDict('CharacterTable', locale),
+      ]),
+      getProfessionMap(locale),
+      getElementMap(locale),
+      getBattleTagMap(locale),
+      getAttributeMap(locale),
+    ])
+    const raw = rawData[id]
+    if (!raw) throw new Error(`Operator ${id} not found`)
+
+    const [growthRaw, growthI18n, wpnRaw] = await Promise.all([
+      getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')).then(r => r[id]),
+      getTableI18nDict('CharGrowthTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('CharWpnRecommendTable', () => fetchTableAll('CharWpnRecommendTable')).then(r => r[id]).catch(() => null),
+    ])
+
+    const op = adaptOperator(raw, i18nMap, profMap, elemMap, tagMap, attrMap)
+
+    const attributes: CharacterAttributeSet[] = (raw.attributes ?? []).map((a: any) => ({
+      breakStage: a.breakStage ?? a.BreakStage ?? 0,
+      attrs: (a.Attribute?.attrs ?? a.attrs ?? []).map((at: any) => ({
+        attrType: at.attrType,
+        attrValue: at.attrValue,
+      })),
+    }))
+
+    const breakCostMap: Record<string, BreakCostNode> = {}
+    if (growthRaw?.charBreakCostMap) {
+      for (const [k, v] of Object.entries<any>(growthRaw.charBreakCostMap)) {
+        breakCostMap[k] = {
+          breakStage: v.breakStage,
+          nodeId: v.nodeId,
+          nodeType: v.nodeType,
+          name: resolveI18n(v.name, growthI18n) || v.nodeId,
+          description: resolveI18n(v.description, growthI18n) || '',
+          equipTierLimit: v.equipTierLimit,
+          requiredItem: (v.requiredItem ?? []).map((r: any) => ({ id: r.id, count: r.count })),
+        }
+      }
+    }
+
+    const talentNodeMap: Record<string, TalentNode> = {}
+    if (growthRaw?.talentNodeMap) {
+      for (const [k, v] of Object.entries<any>(growthRaw.talentNodeMap)) {
+        const psi = v.passiveSkillNodeInfo ?? {}
+        talentNodeMap[k] = {
+          nodeId: v.nodeId,
+          nodeType: v.nodeType,
+          name: resolveI18n(psi.name, growthI18n) || v.nodeId,
+          description: resolveI18n(psi.name, growthI18n) || '',
+          iconId: psi.iconId || '',
+          level: psi.level || 0,
+          breakStage: psi.breakStage || v.attributeNodeInfo?.breakStage || 0,
+          requiredItem: (v.requiredItem ?? []).map((r: any) => ({ id: r.id, count: r.count })),
+        }
+      }
+    }
+
+    const wpnRecommend: WeaponRecommendation | null = wpnRaw ? {
+      weaponIds1: wpnRaw.weaponIds1 ?? [],
+      weaponIds2: wpnRaw.weaponIds2 ?? [],
+      weaponIds3: wpnRaw.weaponIds3 ?? [],
+    } : null
+
+    return { op, attributes, breakCostMap, talentNodeMap, wpnRecommend }
   }, [locale, id])
 }
 

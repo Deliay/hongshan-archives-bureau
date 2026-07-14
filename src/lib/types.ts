@@ -1,3 +1,48 @@
+export interface BreakCostItem {
+  id: string
+  count: number
+}
+
+export interface BreakCostNode {
+  breakStage: number
+  nodeId: string
+  nodeType: number
+  name: string
+  description: string
+  equipTierLimit: number
+  requiredItem: BreakCostItem[]
+}
+
+export interface TalentNode {
+  nodeId: string
+  nodeType: number
+  name: string
+  description: string
+  iconId: string
+  level: number
+  breakStage: number
+  requiredItem: BreakCostItem[]
+}
+
+export interface CharacterAttributeSet {
+  breakStage: number
+  attrs: { attrType: number; attrValue: number }[]
+}
+
+export interface WeaponRecommendation {
+  weaponIds1: string[]
+  weaponIds2: string[]
+  weaponIds3: string[]
+}
+
+export interface OperatorDetailData {
+  op: Operator
+  attributes: CharacterAttributeSet[]
+  breakCostMap: Record<string, BreakCostNode>
+  talentNodeMap: Record<string, TalentNode>
+  wpnRecommend: WeaponRecommendation | null
+}
+
 export interface Operator {
   id: string
   name: string
