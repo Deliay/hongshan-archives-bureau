@@ -1,63 +1,85 @@
 import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from './types'
-import { PROFESSION_MAP, ELEMENT_MAP, RARITY_STARS, inferWeaponType } from '../data/constants'
+import { inferWeaponType } from '../data/constants'
 
-export function adaptOperator(raw: any, i18nMap?: Record<string, string>): Operator {
+export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
+
+export function resolveI18n(field: { id?: number | string; text?: string } | null | undefined, i18nMap?: Record<string, string>): string {
+  if (!field) return ''
+  const id = String(field.id ?? '')
+  return i18nMap?.[id] || field.text || ''
+}
+
+export function adaptOperator(
+  raw: any,
+  i18nMap?: Record<string, string>,
+  professionMap?: Record<number, { name: string; icon: string }>,
+  elementMap?: Record<string, { name: string; color: string; icon: string }>,
+  battleTagMap?: Record<string, string>,
+  attrMap?: Record<number, { id: number; name: string; icon: string }>,
+): Operator {
   const profId: number = raw.profession ?? raw.professionId ?? 0
-  const charType: string = raw.charType ?? raw.attributeType ?? ''
+  const charType: string = raw.charTypeId ?? raw.charType ?? raw.attributeType ?? ''
   const rawRarity: number = raw.rarity ?? raw.rarityId ?? 0
+  const prof = professionMap?.[profId]
+  const elem = elementMap?.[charType]
 
-  const nameId = String(raw.name?.id ?? '')
-  const nameText = (i18nMap?.[nameId] || raw.name?.text || '')
-
+  const mainAttrId: number = raw.mainAttrType ?? 0
+  const subAttrId: number = raw.subAttrType ?? 0
+  const mainAttrDef = attrMap?.[mainAttrId]
+  const subAttrDef = attrMap?.[subAttrId]
+  const charId = raw.charId ?? raw.characterId ?? raw.$key ?? raw.$id ?? ''
   return {
-    id: raw.charId ?? raw.characterId ?? raw.$key ?? raw.$id ?? '',
-    name: nameText,
-    profession: PROFESSION_MAP[profId] ?? '未知',
-    element: ELEMENT_MAP[charType]?.name ?? '物理',
-    elementColor: ELEMENT_MAP[charType]?.color ?? '#888888',
-    faction: extractTag(raw.factionTag ?? raw.faction, 'tag_power_'),
-    race: extractTag(raw.raceTag ?? raw.race, 'tag_race_'),
+    id: charId,
+    name: resolveI18n(raw.name, i18nMap),
+    portrait: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${charId}.png`,
+    profession: prof?.name ?? '未知',
+    professionIcon: prof?.icon ?? '',
+    element: elem?.name ?? '未知',
+    elementColor: elem?.color ?? '#888888',
+    elementIcon: elem?.icon ?? '',
     rarity: rawRarity,
-    profileRecords: extractTextArray(raw.profileRecord, 'recordDesc'),
+    mainAttr: mainAttrDef ?? { id: mainAttrId, name: '未知', icon: '' },
+    subAttr: subAttrDef ?? { id: subAttrId, name: '未知', icon: '' },
+    profileRecords: (raw.profileRecord ?? []).map((r: any) => resolveI18n(r.recordDesc, i18nMap)),
     voiceLines: (raw.profileVoice ?? []).map((v: any) => ({
-      title: v.voiceTitle?.text ?? v.voiceTitle ?? '',
-      text: v.voiceDesc?.text ?? v.voiceDesc ?? '',
+      title: resolveI18n(v.voiceTitle, i18nMap),
+      text: resolveI18n(v.voiceDesc, i18nMap),
     })),
-    tags: extractTagTexts(raw.tagDesc),
+    tags: (raw.charBattleTagIds ?? []).map((id: string) => battleTagMap?.[id] ?? id),
   }
 }
 
-export function adaptWeapon(raw: any): Weapon {
+export function adaptWeapon(raw: any, i18nMap?: Record<string, string>): Weapon {
   const id: string = raw.weaponId ?? raw.$key ?? ''
   return {
     id,
-    name: raw.engName?.text ?? raw.name?.text ?? id,
+    name: resolveI18n(raw.engName ?? raw.name, i18nMap) || (raw.engName?.text ?? raw.name?.text) || id,
     type: inferWeaponType(id),
     rarity: raw.rarity ?? 0,
-    description: raw.weaponDesc?.text ?? '',
-    lore: raw.decoDesc?.text ?? '',
+    description: resolveI18n(raw.weaponDesc, i18nMap),
+    lore: resolveI18n(raw.decoDesc, i18nMap),
     skills: raw.weaponSkillList ?? [],
     maxLevel: raw.maxLv ?? 90,
   }
 }
 
-export function adaptEnemy(raw: any): Enemy {
+export function adaptEnemy(raw: any, i18nMap?: Record<string, string>): Enemy {
   return {
     id: raw.enemyId ?? raw.$key ?? '',
-    name: raw.name?.text ?? raw.enemyName?.text ?? '',
+    name: resolveI18n(raw.name ?? raw.enemyName, i18nMap) || raw.enemyId || '',
     tags: (raw.tags ?? []).map((t: any) => t.tagId ?? t),
-    description: raw.description?.text ?? '',
+    description: resolveI18n(raw.description, i18nMap),
   }
 }
 
-export function adaptItem(raw: any): Item {
+export function adaptItem(raw: any, i18nMap?: Record<string, string>): Item {
   return {
     id: raw.itemId ?? raw.$key ?? '',
-    name: raw.name?.text ?? raw.itemName?.text ?? '',
+    name: resolveI18n(raw.name, i18nMap) || raw.id || '',
     type: raw.itemType ?? '',
     rarity: raw.rarity ?? 0,
-    description: raw.desc?.text ?? '',
-    decoDesc: raw.decoDesc?.text ?? '',
+    description: resolveI18n(raw.desc, i18nMap),
+    decoDesc: resolveI18n(raw.decoDesc, i18nMap),
   }
 }
 
@@ -72,28 +94,29 @@ export function adaptEquip(raw: any): Equip {
   }
 }
 
-export function adaptSuit(raw: any): Suit {
+export function adaptSuit(raw: any, i18nMap?: Record<string, string>): Suit {
+  const first = raw.list?.[0]
   return {
     id: raw.suitId ?? raw.$key ?? '',
-    name: raw.suitName?.text ?? '',
-    twoPieceEffect: raw.twoPieceEffect?.text ?? '',
-    fourPieceEffect: raw.fourPieceEffect?.text ?? '',
+    name: resolveI18n(first?.suitName, i18nMap) || raw.suitId || '',
+    twoPieceEffect: resolveI18n(raw.twoPieceEffect, i18nMap),
+    fourPieceEffect: resolveI18n(raw.fourPieceEffect, i18nMap),
   }
 }
 
-export function adaptGem(raw: any): Gem {
+export function adaptGem(raw: any, i18nMap?: Record<string, string>): Gem {
   return {
-    id: raw.gemId ?? raw.$key ?? '',
-    name: raw.name?.text ?? raw.gemName?.text ?? '',
+    id: raw.gemTermId ?? raw.$key ?? '',
+    name: resolveI18n(raw.tagName, i18nMap) || raw.tagId || '',
     slot: raw.slot ?? '',
     tags: raw.subTags ?? raw.tags ?? [],
   }
 }
 
-export function adaptDocument(raw: any): StoryDocument {
+export function adaptDocument(raw: any, i18nMap?: Record<string, string>): StoryDocument {
   return {
     id: raw.$key ?? raw.documentId ?? '',
-    title: raw.name?.text ?? '',
+    title: resolveI18n(raw.name, i18nMap) || raw.id || '',
     category: raw.category ?? '',
   }
 }
@@ -109,18 +132,4 @@ export function adaptArea(raw: any): Area {
 
 // ---------- helpers ----------
 
-function extractTag(tag: any, prefix: string): string {
-  if (!tag) return ''
-  const id = typeof tag === 'string' ? tag : tag.tagId ?? ''
-  return id.replace(prefix, '')
-}
 
-function extractTextArray(arr: any[] | undefined, field: string): string[] {
-  if (!arr) return []
-  return arr.map((item: any) => item[field]?.text ?? item[field] ?? '').filter(Boolean)
-}
-
-function extractTagTexts(tagDesc: any): string[] {
-  if (!tagDesc) return []
-  return Object.values(tagDesc).map((t: any) => t.desc?.text ?? '').filter(Boolean)
-}

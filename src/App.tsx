@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { LocaleProvider } from './lib/locale'
 import ArchiveLayout from './components/Layout/ArchiveLayout'
 import LandingPage from './routes/Landing'
 import ArchiveHome from './routes/ArchiveHome'
@@ -17,6 +18,7 @@ import StoryOverview from './pages/story/StoryOverview'
 
 export default function App() {
   return (
+    <LocaleProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -37,5 +39,6 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </LocaleProvider>
   )
 }

@@ -1,12 +1,15 @@
 export interface Operator {
   id: string
   name: string
+  portrait: string
   profession: string
+  professionIcon: string
   element: string
   elementColor: string
-  faction: string
-  race: string
+  elementIcon: string
   rarity: number
+  mainAttr: { id: number; name: string; icon: string }
+  subAttr: { id: number; name: string; icon: string }
   profileRecords: string[]
   voiceLines: VoiceLine[]
   tags: string[]

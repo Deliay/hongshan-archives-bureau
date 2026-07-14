@@ -1,4 +1,7 @@
+import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useLocale } from '../../lib/locale'
+import { useI18nLocales } from '../../hooks/useData'
 
 const NAV_ITEMS = [
   { label: '干员档案', path: '/archive/operators' },
@@ -13,8 +16,31 @@ const NAV_ITEMS = [
   { label: '剧情记录', path: '/archive/story' },
 ]
 
+const LOCALE_LABELS: Record<string, string> = {
+  CN: '简中',
+  TC: '繁中',
+  EN: 'English',
+  JP: '日本語',
+  KR: '한국어',
+  RU: 'Русский',
+}
+
 export default function TopNav() {
   const location = useLocation()
+  const { locale, setLocale } = useLocale()
+  const { data: locales } = useI18nLocales()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#0F0F12]/80 backdrop-blur-md border-b border-[#2A2A32]">
@@ -40,7 +66,34 @@ export default function TopNav() {
             )
           })}
         </nav>
-        <button className="md:hidden ml-auto text-[#8B8982] text-sm">菜单</button>
+        <div className="ml-auto flex items-center gap-2">
+          <div className="relative" ref={ref}>
+            <button
+              onClick={() => setOpen(!open)}
+              className="px-2.5 py-1.5 rounded text-sm text-[#8B8982] hover:text-[#E8E6E3] border border-[#2A2A32] hover:border-[#5A5A62] transition-colors"
+            >
+              {LOCALE_LABELS[locale] || locale}
+            </button>
+            {open && locales && (
+              <div className="absolute right-0 top-full mt-1 w-28 py-1 rounded border border-[#2A2A32] bg-[#1A1B23] shadow-lg">
+                {locales.map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => { setLocale(l); setOpen(false) }}
+                    className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
+                      l === locale
+                        ? 'text-[#C9A96E] bg-[#C9A96E]/10'
+                        : 'text-[#8B8982] hover:text-[#E8E6E3] hover:bg-[#2A2A32]'
+                    }`}
+                  >
+                    {LOCALE_LABELS[l] || l}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button className="md:hidden text-[#8B8982] text-sm">菜单</button>
+        </div>
       </div>
     </header>
   )

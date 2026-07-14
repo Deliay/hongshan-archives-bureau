@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
-import { fetchTableAll, fetchTableEntry } from '../lib/api'
+import { useState, useEffect, useCallback } from 'react'
+import { fetchTableAll, fetchTableEntry, fetchTableDictAll, fetchI18nLocales } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
+import { useLocale } from '../lib/locale'
 import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea } from '../lib/adapter'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 
 interface UseDataResult<T> {
   data: T | null
@@ -13,23 +14,21 @@ interface UseDataResult<T> {
 
 // ---------- Generic hooks ----------
 
-function useData<T>(fetcher: () => Promise<T>): UseDataResult<T> {
+function useData<T>(fetcher: () => Promise<T>, deps: unknown[] = []): UseDataResult<T> {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const fetcherRef = useRef(fetcher)
-  fetcherRef.current = fetcher
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true)
     setError(null)
-    fetcherRef.current()
+    fetcher()
       .then(setData)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }
+  }, deps)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [load])
 
   return { data, loading, error, refetch: load }
 }
@@ -65,45 +64,183 @@ function useTableEntry<T>(table: string, key: string, adapt: (raw: any) => T): U
 
 // ---------- Domain hooks ----------
 
-let i18nMapPromise: Promise<Record<string, string>> | null = null
+const i18nDictCaches = new Map<string, Promise<Record<string, string>>>()
 
-function getI18nMap(): Promise<Record<string, string>> {
-  if (!i18nMapPromise) {
-    i18nMapPromise = getCachedData<Record<string, string>>('I18nTextTable_CN', () => fetchTableAll('I18nTextTable_CN'))
+function getTableI18nDict(table: string, locale: string): Promise<Record<string, string>> {
+  const key = `${locale}:${table}`
+  if (!i18nDictCaches.has(key)) {
+    i18nDictCaches.set(key, getCachedData<Record<string, string>>(`I18nDict_${locale}_${table}`, () => fetchTableDictAll(table, locale)))
   }
-  return i18nMapPromise
+  return i18nDictCaches.get(key)!
+}
+
+export function useI18nLocales(): UseDataResult<string[]> {
+  return useData(() => getCachedData<string[]>('I18nLocales', () => fetchI18nLocales()))
+}
+
+let profMapCaches = new Map<string, Promise<Record<number, { name: string; icon: string }>>>()
+
+function getProfessionMap(locale: string): Promise<Record<number, { name: string; icon: string }>> {
+  if (!profMapCaches.has(locale)) {
+    profMapCaches.set(locale, (async () => {
+      const [raw, i18nMap] = await Promise.all([
+        getCachedData<Record<string, any>>('CharProfessionTable', () => fetchTableAll('CharProfessionTable')),
+        getTableI18nDict('CharProfessionTable', locale),
+      ])
+      const map: Record<number, { name: string; icon: string }> = {}
+      for (const [k, v] of Object.entries(raw)) {
+        const id = Number(k)
+        map[id] = {
+          name: resolveI18n(v.name, i18nMap) || `职业${k}`,
+          icon: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charprofessionicon/${v.iconId}.png`,
+        }
+      }
+      return map
+    })())
+  }
+  return profMapCaches.get(locale)!
+}
+
+let elemMapCaches = new Map<string, Promise<Record<string, { name: string; color: string; icon: string }>>>()
+
+function getElementMap(locale: string): Promise<Record<string, { name: string; color: string; icon: string }>> {
+  if (!elemMapCaches.has(locale)) {
+    elemMapCaches.set(locale, (async () => {
+      const [raw, i18nMap] = await Promise.all([
+        getCachedData<Record<string, any>>('CharTypeTable', () => fetchTableAll('CharTypeTable')),
+        getTableI18nDict('CharTypeTable', locale),
+      ])
+      const map: Record<string, { name: string; color: string; icon: string }> = {}
+      for (const [k, v] of Object.entries(raw)) {
+        map[k] = {
+          name: resolveI18n(v.name, i18nMap) || k,
+          color: v.color ? `#${v.color.replace('#', '')}` : '#888888',
+          icon: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/elementicon/${v.icon}.png`,
+        }
+      }
+      return map
+    })())
+  }
+  return elemMapCaches.get(locale)!
+}
+
+let battleTagCaches = new Map<string, Promise<Record<string, string>>>()
+
+function getBattleTagMap(locale: string): Promise<Record<string, string>> {
+  if (!battleTagCaches.has(locale)) {
+    battleTagCaches.set(locale, (async () => {
+      const [raw, i18nMap] = await Promise.all([
+        getCachedData<Record<string, any>>('CharBattleTagTable', () => fetchTableAll('CharBattleTagTable')),
+        getTableI18nDict('CharBattleTagTable', locale),
+      ])
+      const map: Record<string, string> = {}
+      for (const [tagId, entry] of Object.entries(raw)) {
+        map[tagId] = resolveI18n(entry, i18nMap) || tagId
+      }
+      return map
+    })())
+  }
+  return battleTagCaches.get(locale)!
+}
+
+let attrMapCaches = new Map<string, Promise<Record<number, { id: number; name: string; icon: string }>>>()
+
+function getAttributeMap(locale: string): Promise<Record<number, { id: number; name: string; icon: string }>> {
+  if (!attrMapCaches.has(locale)) {
+    attrMapCaches.set(locale, (async () => {
+      const [metaRaw, showRaw, i18nMap] = await Promise.all([
+        getCachedData<Record<string, any>>('AttributeMetaTable', () => fetchTableAll('AttributeMetaTable')),
+        getCachedData<Record<string, any>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')),
+        getTableI18nDict('AttributeShowConfigTable', locale),
+      ])
+      const map: Record<number, { id: number; name: string; icon: string }> = {}
+      for (const [k, v] of Object.entries(metaRaw)) {
+        const attrType = Number(k)
+        const configItem = showRaw[k]?.list?.[0]
+        const nameId = String(configItem?.name?.id ?? '')
+        map[attrType] = {
+          id: attrType,
+          name: (nameId && i18nMap[nameId]) || v.iconName?.replace('icon_attribute_', '') || `属性${k}`,
+          icon: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/attributeicon/${v.iconName}.png`,
+        }
+      }
+      return map
+    })())
+  }
+  return attrMapCaches.get(locale)!
 }
 
 export function useOperators(): UseDataResult<Operator[]> {
+  const { locale } = useLocale()
   return useData(async () => {
-    const [rawData, i18nMap] = await Promise.all([
-      getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
-      getI18nMap(),
+    const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap] = await Promise.all([
+      Promise.all([
+        getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
+        getTableI18nDict('CharacterTable', locale),
+      ]),
+      getProfessionMap(locale),
+      getElementMap(locale),
+      getBattleTagMap(locale),
+      getAttributeMap(locale),
     ])
-    return Object.entries(rawData).map(([, v]) => adaptOperator(v, i18nMap))
-  })
+    return Object.entries(rawData).map(([, v]) => adaptOperator(v, i18nMap, profMap, elemMap, tagMap, attrMap))
+  }, [locale])
 }
 
 export function useOperator(id: string): UseDataResult<Operator> {
+  const { locale } = useLocale()
   return useData(async () => {
-    const [raw, i18nMap] = await Promise.all([
-      getCachedData<any>('CharacterTable', () => fetchTableEntry('CharacterTable', id), id),
-      getI18nMap(),
+    const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap] = await Promise.all([
+      Promise.all([
+        getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
+        getTableI18nDict('CharacterTable', locale),
+      ]),
+      getProfessionMap(locale),
+      getElementMap(locale),
+      getBattleTagMap(locale),
+      getAttributeMap(locale),
     ])
-    return adaptOperator(raw, i18nMap)
-  })
+    return adaptOperator(rawData[id], i18nMap, profMap, elemMap, tagMap, attrMap)
+  }, [locale, id])
 }
 
 export function useWeapons(): UseDataResult<Weapon[]> {
-  return useTableData('WeaponBasicTable', adaptWeapon)
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [rawData, i18nMap] = await Promise.all([
+      getCachedData<Record<string, any>>('WeaponBasicTable', () => fetchTableAll('WeaponBasicTable')),
+      getTableI18nDict('WeaponBasicTable', locale),
+    ])
+    return Object.entries(rawData).map(([, v]) => adaptWeapon(v, i18nMap))
+  }, [locale])
 }
 
 export function useEnemies(): UseDataResult<Enemy[]> {
-  return useTableData('EnemyTable', adaptEnemy)
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [[rawData, displayData], i18nMap] = await Promise.all([
+      Promise.all([
+        getCachedData<Record<string, any>>('EnemyTable', () => fetchTableAll('EnemyTable')),
+        getCachedData<Record<string, any>>('EnemyDisplayInfoTable', () => fetchTableAll('EnemyDisplayInfoTable')),
+      ]),
+      getTableI18nDict('EnemyDisplayInfoTable', locale),
+    ])
+    return Object.entries(rawData).map(([k, v]) => {
+      const display = displayData[k] ?? {}
+      return adaptEnemy({ ...v, ...display, tags: v.tags ?? display.tags }, i18nMap)
+    })
+  }, [locale])
 }
 
 export function useItems(): UseDataResult<Item[]> {
-  return useTableData('ItemTable', adaptItem)
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [rawData, i18nMap] = await Promise.all([
+      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+      getTableI18nDict('ItemTable', locale),
+    ])
+    return Object.entries(rawData).map(([, v]) => adaptItem(v, i18nMap))
+  }, [locale])
 }
 
 export function useEquips(): UseDataResult<Equip[]> {
@@ -111,15 +248,36 @@ export function useEquips(): UseDataResult<Equip[]> {
 }
 
 export function useSuits(): UseDataResult<Suit[]> {
-  return useTableData('EquipSuitTable', adaptSuit)
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [rawData, i18nMap] = await Promise.all([
+      getCachedData<Record<string, any>>('EquipSuitTable', () => fetchTableAll('EquipSuitTable')),
+      getTableI18nDict('EquipSuitTable', locale),
+    ])
+    return Object.entries(rawData).map(([, v]) => adaptSuit(v, i18nMap))
+  }, [locale])
 }
 
 export function useGems(): UseDataResult<Gem[]> {
-  return useTableData('GemTable', adaptGem)
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [rawData, i18nMap] = await Promise.all([
+      getCachedData<Record<string, any>>('GemTable', () => fetchTableAll('GemTable')),
+      getTableI18nDict('GemTable', locale),
+    ])
+    return Object.entries(rawData).map(([, v]) => adaptGem(v, i18nMap))
+  }, [locale])
 }
 
 export function useDocuments(): UseDataResult<StoryDocument[]> {
-  return useTableData('PrtsDocument', adaptDocument)
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [rawData, i18nMap] = await Promise.all([
+      getCachedData<Record<string, any>>('PrtsDocument', () => fetchTableAll('PrtsDocument')),
+      getTableI18nDict('PrtsDocument', locale),
+    ])
+    return Object.entries(rawData).map(([, v]) => adaptDocument(v, i18nMap))
+  }, [locale])
 }
 
 export function useAreas(): UseDataResult<Area[]> {

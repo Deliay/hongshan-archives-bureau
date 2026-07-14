@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useOperator } from '../../hooks/useData'
+import Rarity from '../../components/Rarity'
 
 export default function OperatorDetail() {
   const { id } = useParams<{ id: string }>()
@@ -12,19 +13,23 @@ export default function OperatorDetail() {
   return (
     <div className="max-w-3xl">
       <div className="flex items-start gap-4 mb-6">
-        <div className="w-20 h-20 rounded border border-[#2A2A32] bg-[#1A1B23] flex items-center justify-center shrink-0">
-          <span className="text-2xl text-[#5A5A62]">?</span>
+        <div className="w-20 h-20 rounded border border-[#2A2A32] bg-[#1A1B23] overflow-hidden shrink-0">
+          {op.portrait ? (
+            <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-2xl text-[#5A5A62]">?</span>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="text-xl font-bold text-[#E8E6E3]">{op.name}</h2>
           <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-[#8B8982]">
-            <span>{op.race}</span>
-            <span>·</span>
+            <img src={op.professionIcon} alt="" className="w-4 h-4" />
             <span>{op.profession}</span>
             <span>·</span>
+            <img src={op.elementIcon} alt="" className="w-4 h-4" />
             <span style={{ color: op.elementColor }}>{op.element}</span>
             <span>·</span>
-            <span>{'★'.repeat(op.rarity)}</span>
+            <Rarity level={op.rarity} />
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
             {op.tags.map((tag, i) => (
