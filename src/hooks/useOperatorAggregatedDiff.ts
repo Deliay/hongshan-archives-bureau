@@ -91,9 +91,9 @@ export function useOperatorAggregatedDiff(versionName: string) {
       { name: 'CharacterTable', diff: charDiff.data },
       { name: 'CharGrowthTable', diff: growthDiff.data },
       { name: 'SkillPatchTable', diff: skillPatchDiff.data },
-      { name: 'PotentialTalentEffectTable', diff: potentialDiff.data },
       { name: 'SpaceshipSkillTable', diff: spaceshipSkillDiff.data },
       { name: 'SpaceshipCharSkillTable', diff: spaceshipCharSkillDiff.data },
+      { name: 'PotentialTalentEffectTable', diff: potentialDiff.data },
     ]
     if (allDiffs.some(d => !d.diff)) return null
 

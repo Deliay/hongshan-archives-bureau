@@ -69,9 +69,9 @@ function SummaryContent({
     'CharacterTable',
     'CharGrowthTable',
     'SkillPatchTable',
-    'PotentialTalentEffectTable',
     'SpaceshipSkillTable',
     'SpaceshipCharSkillTable',
+    'PotentialTalentEffectTable',
   ]
 
   const tables = useMemo(() => {
@@ -85,7 +85,7 @@ function SummaryContent({
     }
     pinned.sort((a, b) => PINNED_TABLES.indexOf(a[0].replace('.json', '')) - PINNED_TABLES.indexOf(b[0].replace('.json', '')))
     rest.sort((a, b) => (b[1].added + b[1].removed + b[1].changed) - (a[1].added + a[1].removed + a[1].changed))
-    return [...pinned, ...rest].slice(0, maxTables)
+    return [...rest, ...pinned].slice(0, maxTables)
   }, [tableStats, maxTables])
 
   return (
