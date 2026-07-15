@@ -320,6 +320,13 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
   )
 }
 
+function renderUnlockInfo(unlockType: number, unlockValue: number): string {
+  if (unlockType === 0) return ''
+  if (unlockType === 2) return `精英阶段 ${unlockValue}`
+  if (unlockType === 4) return `信赖值 ${unlockValue}`
+  return `解锁类型${unlockType}·值${unlockValue}`
+}
+
 function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; name?: string; rarity?: number }) {
   return (
     <div className="space-y-3">
@@ -334,7 +341,12 @@ function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; na
           <div className="mt-1 space-y-1 max-h-48 overflow-y-auto">
             {entry.profileRecord.map((r: any) => (
               <div key={r.id} className="px-2 py-1 rounded bg-[#0F0F12]">
-                <div className="text-[10px] text-[#8B8982]">{localeText(r.recordTitle, 'CN')}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-[10px] text-[#8B8982]">{localeText(r.recordTitle, 'CN')}</div>
+                  {renderUnlockInfo(r.unlockType, r.unlockValue) && (
+                    <span className="text-[9px] text-[#5A5A62]">{renderUnlockInfo(r.unlockType, r.unlockValue)}</span>
+                  )}
+                </div>
                 <div className="text-xs text-[#E8E6E3] mt-0.5 whitespace-pre-wrap line-clamp-3">
                   {localeText(r.recordDesc, 'CN')}
                 </div>
@@ -354,7 +366,12 @@ function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; na
               <div key={v.id} className="flex items-start gap-2 px-2 py-1 rounded bg-[#0F0F12]">
                 <span className="text-[10px] text-[#5A5A62] font-mono shrink-0 mt-0.5">#{v.voiceIndex}</span>
                 <div>
-                  <div className="text-[10px] text-[#8B8982]">{localeText(v.voiceTitle, 'CN')}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-[10px] text-[#8B8982]">{localeText(v.voiceTitle, 'CN')}</div>
+                    {renderUnlockInfo(v.unlockType, v.unlockValue) && (
+                      <span className="text-[9px] text-[#5A5A62]">{renderUnlockInfo(v.unlockType, v.unlockValue)}</span>
+                    )}
+                  </div>
                   <div className="text-xs text-[#E8E6E3]">{localeText(v.voiceDesc, 'CN')}</div>
                 </div>
               </div>
