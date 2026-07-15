@@ -1,25 +1,188 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useItems } from '../../hooks/useData'
+import { getCachedData } from '../../lib/cache'
+import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
+import { useLocale } from '../../lib/locale'
+import { resolveI18n, ASSET_BASE } from '../../lib/adapter'
 import ItemPanel from '../../components/Items/ItemPanel'
 
+const PAGE_SIZES = [24, 48, 96, 0] as const
+const RARITIES = [1, 2, 3, 4, 5, 6]
+
+type SortField = '' | 'showingType' | 'rarity' | 'type'
+type GroupField = '' | 'showingType' | 'type' | 'valuableTabType'
+
+interface NamedFilter {
+  key: string
+  name: string
+  icon?: string
+}
+
+function getGroupLabel(groupField: GroupField, key: string, showingTypeMap: Record<string, NamedFilter>, typeNameMap: Record<string, string>, valuableTabMap: Record<string, NamedFilter>): string {
+  if (groupField === 'showingType') return showingTypeMap[key]?.name || key
+  if (groupField === 'type') return typeNameMap[key] || key
+  if (groupField === 'valuableTabType') return valuableTabMap[key]?.name || key
+  return key
+}
+
+function getGroupIcon(groupField: GroupField, key: string, showingTypeMap: Record<string, NamedFilter>, valuableTabMap: Record<string, NamedFilter>): string | undefined {
+  if (groupField === 'showingType') return showingTypeMap[key]?.icon
+  if (groupField === 'valuableTabType') return valuableTabMap[key]?.icon
+  return undefined
+}
+
 export default function ItemList() {
+  const { locale } = useLocale()
   const { data: items, loading, error } = useItems()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [rarityFilter, setRarityFilter] = useState('')
+  const [showingTypeFilter, setShowingTypeFilter] = useState('')
+  const [valuableTabFilter, setValuableTabFilter] = useState('')
+  const [pageSize, setPageSize] = useState(48)
+  const [page, setPage] = useState(0)
 
-  const types = useMemo(() => {
+  const [sortField, setSortField] = useState<SortField>('rarity')
+  const [sortDesc, setSortDesc] = useState(true)
+  const [groupField, setGroupField] = useState<GroupField>('')
+  const [groupPageMap, setGroupPageMap] = useState<Record<string, number>>({})
+
+  const [typeNameMap, setTypeNameMap] = useState<Record<string, string>>({})
+  const [showingTypeMap, setShowingTypeMap] = useState<Record<string, NamedFilter>>({})
+  const [valuableTabMap, setValuableTabMap] = useState<Record<string, NamedFilter>>({})
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const [typeRaw, typeI18n, showRaw, showI18n, valRaw, valI18n] = await Promise.all([
+        getCachedData<Record<string, any>>('ItemTypeTable', () => fetchTableAll('ItemTypeTable')),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_ItemTypeTable`, () => fetchTableDictAll('ItemTypeTable', locale)),
+        getCachedData<Record<string, any>>('ItemShowingTypeTable', () => fetchTableAll('ItemShowingTypeTable')),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_ItemShowingTypeTable`, () => fetchTableDictAll('ItemShowingTypeTable', locale)),
+        getCachedData<Record<string, any>>('ValuableDepot', () => fetchTableAll('ValuableDepot')),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_ValuableDepot`, () => fetchTableDictAll('ValuableDepot', locale)),
+      ])
+      if (cancelled) return
+
+      const tMap: Record<string, string> = {}
+      for (const [k, v] of Object.entries<any>(typeRaw)) {
+        tMap[k] = resolveI18n(v.name, typeI18n) || k
+      }
+      setTypeNameMap(tMap)
+
+      const sMap: Record<string, NamedFilter> = {}
+      for (const [k, v] of Object.entries<any>(showRaw)) {
+        sMap[k] = {
+          key: k,
+          name: resolveI18n(v.name, showI18n) || k,
+          icon: v.icon ? `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/inventory/${v.icon}.png` : undefined,
+        }
+      }
+      setShowingTypeMap(sMap)
+
+      const vMap: Record<string, NamedFilter> = {}
+      for (const [k, v] of Object.entries<any>(valRaw)) {
+        vMap[k] = {
+          key: k,
+          name: resolveI18n(v.name, valI18n) || k,
+          icon: v.icon ? `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/inventory/${v.icon}.png` : undefined,
+        }
+      }
+      setValuableTabMap(vMap)
+    }
+    load()
+    return () => { cancelled = true }
+  }, [locale])
+
+  const typeOptions = useMemo(() => {
     if (!items) return []
-    return [...new Set(items.map(i => i.type).filter(Boolean))]
-  }, [items])
+    const seen = new Set<string>()
+    const result: NamedFilter[] = []
+    for (const i of items) {
+      const key = String(i.type)
+      if (key && !seen.has(key)) {
+        seen.add(key)
+        result.push({ key, name: typeNameMap[key] || key })
+      }
+    }
+    return result.sort((a, b) => Number(a.key) - Number(b.key))
+  }, [items, typeNameMap])
+
+  const showingTypeOptions = useMemo(() => {
+    if (!items) return []
+    const seen = new Set<string>()
+    const result: NamedFilter[] = []
+    for (const i of items) {
+      const key = String(i.showingType)
+      if (key && key !== '0' && !seen.has(key)) {
+        seen.add(key)
+        result.push(showingTypeMap[key] || { key, name: key })
+      }
+    }
+    return result.sort((a, b) => Number(a.key) - Number(b.key))
+  }, [items, showingTypeMap])
+
+  const valuableTabOptions = useMemo(() => {
+    if (!items) return []
+    const seen = new Set<string>()
+    const result: NamedFilter[] = []
+    for (const i of items) {
+      const key = String(i.valuableTabType)
+      if (key && key !== '0' && !seen.has(key)) {
+        seen.add(key)
+        result.push(valuableTabMap[key] || { key, name: key })
+      }
+    }
+    return result.sort((a, b) => Number(a.key) - Number(b.key))
+  }, [items, valuableTabMap])
 
   const filtered = useMemo(() => {
     if (!items) return []
     return items.filter(i => {
       if (search && !i.name.toLowerCase().includes(search.toLowerCase()) && !i.id.toLowerCase().includes(search.toLowerCase())) return false
-      if (typeFilter && i.type !== typeFilter) return false
+      if (typeFilter && String(i.type) !== typeFilter) return false
+      if (rarityFilter && i.rarity !== Number(rarityFilter)) return false
+      if (showingTypeFilter && String(i.showingType) !== showingTypeFilter) return false
+      if (valuableTabFilter && String(i.valuableTabType) !== valuableTabFilter) return false
       return true
     })
-  }, [items, search, typeFilter])
+  }, [items, search, typeFilter, rarityFilter, showingTypeFilter, valuableTabFilter])
+
+  const sorted = useMemo(() => {
+    if (!sortField) return filtered
+    const dir = sortDesc ? -1 : 1
+    return [...filtered].sort((a, b) => {
+      let cmp = 0
+      if (sortField === 'rarity') cmp = a.rarity - b.rarity
+      else if (sortField === 'type') cmp = Number(a.type) - Number(b.type)
+      else if (sortField === 'showingType') cmp = a.showingType - b.showingType
+      return cmp * dir
+    })
+  }, [filtered, sortField, sortDesc])
+
+  const groups = useMemo(() => {
+    if (!groupField) return null
+    const map = new Map<string, typeof sorted>()
+    for (const item of sorted) {
+      let key: string
+      if (groupField === 'showingType') key = String(item.showingType)
+      else if (groupField === 'type') key = String(item.type)
+      else if (groupField === 'valuableTabType') key = String(item.valuableTabType)
+      else key = ''
+      if (!key) continue
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(item)
+    }
+    return [...map.entries()].sort(([a], [b]) => Number(a) - Number(b))
+  }, [sorted, groupField])
+
+  const totalPages = pageSize > 0 ? Math.ceil(sorted.length / pageSize) : 1
+  const paged = pageSize > 0 ? sorted.slice(page * pageSize, (page + 1) * pageSize) : sorted
+
+  useEffect(() => {
+    setPage(0)
+    setGroupPageMap({})
+  }, [search, typeFilter, rarityFilter, showingTypeFilter, valuableTabFilter, pageSize, sortField, sortDesc, groupField])
 
   if (loading) return <div className="text-[#8B8982] text-sm">加载中…</div>
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
@@ -29,34 +192,189 @@ export default function ItemList() {
     <div>
       <h2 className="text-xl font-bold text-[#E8E6E3] mb-4">道具材料</h2>
 
-      <div className="flex gap-2 mb-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜索道具名称或 ID…"
-          className="flex-1 px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] placeholder:text-[#5A5A62] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
-        />
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
-        >
-          <option value="">全部类型</option>
-          {types.map(t => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
+      <div className="flex flex-col gap-2 mb-4">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜索道具名称或 ID…"
+            className="flex-1 px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] placeholder:text-[#5A5A62] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+          />
+          <select
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+          >
+            {PAGE_SIZES.map(ps => (
+              <option key={ps} value={ps}>{ps === 0 ? '全部' : `${ps} / 页`}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+          >
+            <option value="">全部类型</option>
+            {typeOptions.map(t => (
+              <option key={t.key} value={t.key}>{t.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={rarityFilter}
+            onChange={(e) => setRarityFilter(e.target.value)}
+            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+          >
+            <option value="">全部稀有度</option>
+            {RARITIES.map(r => (
+              <option key={r} value={r}>{'★'.repeat(r)}</option>
+            ))}
+          </select>
+
+          <select
+            value={showingTypeFilter}
+            onChange={(e) => setShowingTypeFilter(e.target.value)}
+            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+          >
+            <option value="">全部显示类型</option>
+            {showingTypeOptions.map(s => (
+              <option key={s.key} value={s.key}>{s.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={valuableTabFilter}
+            onChange={(e) => setValuableTabFilter(e.target.value)}
+            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+          >
+            <option value="">全部贵重标签</option>
+            {valuableTabOptions.map(v => (
+              <option key={v.key} value={v.key}>{v.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <select
+            value={sortField}
+            onChange={(e) => setSortField(e.target.value as SortField)}
+            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+          >
+            <option value="">默认排序</option>
+            <option value="showingType">显示类型</option>
+            <option value="rarity">稀有度</option>
+            <option value="type">物品类型</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={() => setSortDesc(v => !v)}
+            className={`px-2 py-1.5 text-sm rounded border transition-colors ${sortField ? 'border-[#C9A96E]/40 text-[#E8E6E3] hover:border-[#C9A96E]' : 'border-[#2A2A32] text-[#5A5A62] cursor-not-allowed'}`}
+            disabled={!sortField}
+          >
+            {sortDesc ? '↓ 倒序' : '↑ 正序'}
+          </button>
+
+          <div className="w-px bg-[#2A2A32]" />
+
+          <select
+            value={groupField}
+            onChange={(e) => setGroupField(e.target.value as GroupField)}
+            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+          >
+            <option value="">不分組</option>
+            <option value="showingType">按显示类型分组</option>
+            <option value="type">按物品类型分组</option>
+            <option value="valuableTabType">按贵重标签分组</option>
+          </select>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-        {filtered.map((item) => (
-          <ItemPanel key={item.id} itemId={item.id} />
-        ))}
-      </div>
+      {groups ? (
+        <div className="space-y-6">
+          {groups.map(([key, groupItems]) => {
+            const label = getGroupLabel(groupField, key, showingTypeMap, typeNameMap, valuableTabMap)
+            const icon = getGroupIcon(groupField, key, showingTypeMap, valuableTabMap)
+            const gp = groupPageMap[key] ?? 0
+            const groupTotalPages = pageSize > 0 ? Math.ceil(groupItems.length / pageSize) : 1
+            const groupPaged = pageSize > 0 ? groupItems.slice(gp * pageSize, (gp + 1) * pageSize) : groupItems
+            return (
+              <section key={key}>
+                <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#2A2A32]">
+                  {icon && <img src={icon} alt="" className="w-5 h-5 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
+                  <h3 className="text-sm font-medium text-[#C9A96E]">{label}</h3>
+                  <span className="text-[10px] text-[#5A5A62]">{groupItems.length} 件</span>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                  {groupPaged.map(item => (
+                    <ItemPanel key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
+                  ))}
+                </div>
+                {pageSize > 0 && groupTotalPages > 1 && (
+                  <div className="flex items-center justify-center gap-3 mt-3">
+                    <button
+                      type="button"
+                      disabled={gp === 0}
+                      onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.max(0, gp - 1) }))}
+                      className="px-2 py-1 text-xs rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors"
+                    >
+                      上一页
+                    </button>
+                    <span className="text-xs text-[#8B8982]">{gp + 1} / {groupTotalPages}</span>
+                    <button
+                      type="button"
+                      disabled={gp >= groupTotalPages - 1}
+                      onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.min(groupTotalPages - 1, gp + 1) }))}
+                      className="px-2 py-1 text-xs rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors"
+                    >
+                      下一页
+                    </button>
+                  </div>
+                )}
+              </section>
+            )
+          })}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+            {paged.map((item) => (
+              <ItemPanel key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
+            ))}
+          </div>
 
-      {filtered.length === 0 && (
-        <p className="text-sm text-[#5A5A62] mt-4">未找到匹配道具</p>
+          {filtered.length === 0 && (
+            <p className="text-sm text-[#5A5A62] mt-4">未找到匹配道具</p>
+          )}
+
+          {pageSize > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <button
+                type="button"
+                disabled={page === 0}
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                className="px-3 py-1 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors"
+              >
+                上一页
+              </button>
+              <span className="text-sm text-[#8B8982]">
+                {page + 1} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                className="px-3 py-1 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors"
+              >
+                下一页
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

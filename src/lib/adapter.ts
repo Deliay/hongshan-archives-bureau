@@ -84,6 +84,8 @@ export function adaptItem(raw: any, i18nMap?: Record<string, string>): Item {
     iconCompositeId: raw.iconCompositeId ?? undefined,
     obtainWayIds: raw.obtainWayIds ?? [],
     noObtainWayHint: raw.noObtainWayHint ?? undefined,
+    showingType: raw.showingType ?? 0,
+    valuableTabType: raw.valuableTabType ?? 0,
   }
 }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCachedData } from '../../lib/cache'
-import { fetchTableAll } from '../../lib/api'
+import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
 import ItemIcon from './ItemIcon'
 import ItemTooltipOverlay from './ItemTooltip'
@@ -28,6 +28,8 @@ interface ItemPanelProps {
   showName?: boolean
   className?: string
   iconClassName?: string
+  name?: string
+  rarity?: number
 }
 
 export default function ItemPanel({
@@ -38,24 +40,29 @@ export default function ItemPanel({
   showName = true,
   className,
   iconClassName,
+  name: resolvedName,
+  rarity: resolvedRarity,
 }: ItemPanelProps) {
   const { locale } = useLocale()
   const [itemData, setItemData] = useState<any>(null)
+  const [i18nMap, setI18nMap] = useState<Record<string, string> | null>(null)
   const [showTooltip, setShowTooltip] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')).then((raw) => {
+    Promise.all([
+      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+      getCachedData<Record<string, string>>(`I18nDict_${locale}_ItemTable`, () => fetchTableDictAll('ItemTable', locale)),
+    ]).then(([raw, dict]) => {
       if (cancelled) return
       setItemData(raw[itemId] ?? null)
+      setI18nMap(dict)
     }).catch(() => {})
     return () => { cancelled = true }
-  }, [itemId])
+  }, [itemId, locale])
 
-  const name = itemData?.name
-    ? (itemData.name[locale] || itemData.name.CN || itemData.text || '')
-    : itemId
-  const rarity: number = itemData?.rarity ?? 1
+  const name = resolvedName ?? (itemData?.name ? (i18nMap?.[String(itemData.name.id)] || itemData.name.text || itemId) : itemId)
+  const rarity: number = resolvedRarity ?? itemData?.rarity ?? 1
 
   return (
     <>

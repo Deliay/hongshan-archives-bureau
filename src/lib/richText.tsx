@@ -287,13 +287,32 @@ function HyperlinkTooltip({ tag, anchorId, onClose }: { tag: string; anchorId: s
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [anchorId, onClose])
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+
+  useEffect(() => {
+    if (!data || !tooltipRef.current) return
+    const el = document.getElementById(anchorId)
+    if (!el) return
+    const anchorRect = el.getBoundingClientRect()
+    const tooltipRect = tooltipRef.current.getBoundingClientRect()
+    const gap = 8
+    let top = anchorRect.bottom + gap
+    let left = anchorRect.left
+    if (top + tooltipRect.height > window.innerHeight) {
+      top = anchorRect.top - tooltipRect.height - gap
+    }
+    if (left + tooltipRect.width > window.innerWidth) {
+      left = window.innerWidth - tooltipRect.width - gap
+    }
+    if (left < 0) left = gap
+    if (top < 0) top = gap
+    setPos({ top, left })
+  }, [data, anchorId])
+
   if (!data) return null
   return (
     <div ref={tooltipRef} className="fixed z-50 p-3 rounded border border-[#2A2A32] bg-[#1A1B23] shadow-lg max-w-xs"
-      style={{
-        top: (() => { const el = document.getElementById(anchorId); return el ? el.getBoundingClientRect().bottom + 8 : 0 })(),
-        left: (() => { const el = document.getElementById(anchorId); if (!el) return 0; return Math.min(el.getBoundingClientRect().left, window.innerWidth - 280) })(),
-      }}>
+      style={{ top: pos.top, left: pos.left, visibility: pos.top === 0 && pos.left === 0 ? 'hidden' : 'visible' }}>
       {data.iconPath && <img src={getUISprite(data.iconPath)} alt="" className="w-6 h-6 mb-1" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
       {data.name && <div className="text-xs text-[#C9A96E] font-medium mb-1"><RichText text={data.name} /></div>}
       {data.desc && <div className="text-xs text-[#E8E6E3] leading-relaxed"><RichText text={data.desc} /></div>}

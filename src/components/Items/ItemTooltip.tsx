@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { getCachedData } from '../../lib/cache'
-import { fetchTableAll } from '../../lib/api'
+import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
 import ItemIcon from './ItemIcon'
+import { resolveI18n, ASSET_BASE } from '../../lib/adapter'
 
 const RARITY_COLORS: Record<number, string> = {
   1: '#a0a0a0',
@@ -22,24 +23,30 @@ interface ItemTooltipOverlayProps {
 export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverlayProps) {
   const { locale } = useLocale()
   const [itemData, setItemData] = useState<any>(null)
+  const [i18nMap, setI18nMap] = useState<Record<string, string> | null>(null)
   const [fullBottle, setFullBottle] = useState<{ liquidId: string; liquidCapacity: number } | null>(null)
   const [itemChest, setItemChest] = useState<{ rewardIdList?: string[] } | null>(null)
   const [obtainWayMap, setObtainWayMap] = useState<Record<string, any>>({})
+  const [jumpI18nMap, setJumpI18nMap] = useState<Record<string, string> | null>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
-      const [itemRaw, bottleRaw, chestRaw, jumpRaw] = await Promise.all([
+      const [itemRaw, i18nRaw, bottleRaw, chestRaw, jumpRaw, jumpI18nRaw] = await Promise.all([
         getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_ItemTable`, () => fetchTableDictAll('ItemTable', locale)),
         getCachedData<Record<string, any>>('FullBottleTable', () => fetchTableAll('FullBottleTable').catch(() => ({}))),
         getCachedData<Record<string, any>>('UsableItemChestTable', () => fetchTableAll('UsableItemChestTable').catch(() => ({}))),
         getCachedData<Record<string, any>>('SystemJumpTable', () => fetchTableAll('SystemJumpTable').catch(() => ({}))),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_SystemJumpTable`, () => fetchTableDictAll('SystemJumpTable', locale)).catch(() => ({})),
       ])
       if (cancelled) return
 
       setItemData(itemRaw[itemId] ?? null)
+      setI18nMap(i18nRaw)
+      setJumpI18nMap(jumpI18nRaw)
 
       const bottle = bottleRaw[itemId]
       if (bottle?.liquidId) {
@@ -64,7 +71,7 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
 
     load()
     return () => { cancelled = true }
-  }, [itemId])
+  }, [itemId, locale])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -76,21 +83,13 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
     return () => document.removeEventListener('mousedown', handler)
   }, [onClose])
 
-  if (!itemData) return null
+  if (!itemData || !i18nMap) return null
 
-  function localeText(ref: any): string {
-    if (!ref) return ''
-    if (ref[locale]) return ref[locale]
-    if (ref.CN) return ref.CN
-    if (ref.text) return ref.text
-    return ''
-  }
-
-  const name = localeText(itemData.name) || itemId
+  const name = resolveI18n(itemData.name, i18nMap) || itemId
   const rarity: number = itemData.rarity ?? 1
-  const desc = localeText(itemData.desc)
-  const decoDesc = localeText(itemData.decoDesc)
-  const noObtainHint = localeText(itemData.noObtainWayHint)
+  const desc = resolveI18n(itemData.desc, i18nMap)
+  const decoDesc = resolveI18n(itemData.decoDesc, i18nMap)
+  const noObtainHint = resolveI18n(itemData.noObtainWayHint, i18nMap)
   const obtainWayIds: string[] = itemData.obtainWayIds ?? []
 
   return (
@@ -168,12 +167,12 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
                 {obtainWayIds.map((wayId) => {
                   const way = obtainWayMap[wayId]
                   if (!way) return null
-                  const wayDesc = localeText(way.desc)
+                  const wayDesc = resolveI18n(way.desc, jumpI18nMap ?? undefined)
                   return (
                     <li key={wayId} className="flex items-center gap-2 text-xs text-[#E8E6E3]">
                       {way.iconId && (
                         <img
-                          src={`${'https://endfield-assets.fffdan.com/vfs/Bundle/file'}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemtips/${way.iconId}`}
+                          src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemtips/${way.iconId}.png`}
                           alt=""
                           className="w-4 h-4 object-contain"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

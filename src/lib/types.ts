@@ -141,7 +141,8 @@ export interface Item {
   iconCompositeId?: string
   obtainWayIds?: string[]
   noObtainWayHint?: { id?: number; text?: string }
-  raw?: Record<string, any>
+  showingType: number
+  valuableTabType: number
 }
 
 export interface Race {
