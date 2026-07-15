@@ -56,6 +56,23 @@ function localeText(obj: unknown, locale: string): string {
   return dict[locale] || dict.CN || ''
 }
 
+let _globalI18n: Record<string, string> | null = null
+async function ensureGlobalI18n(): Promise<Record<string, string>> {
+  if (!_globalI18n) {
+    _globalI18n = await getCachedData<Record<string, string>>('I18nDict_CN_I18nTextTable', () => fetchTableDictAll('I18nTextTable', 'CN')).catch(() => ({}))
+  }
+  return _globalI18n
+}
+
+function resolveI18nValue(v: any): string {
+  if (v && typeof v === 'object' && 'id' in v) {
+    const id = String(v.id)
+    if (_globalI18n && _globalI18n[id]) return _globalI18n[id]
+    if (v.text) return v.text
+  }
+  return ''
+}
+
 function StarRating({ level }: { level: number }) {
   return (
     <span className="inline-flex gap-0.5 text-xs" style={{ color: RARITY_COLORS[level] || '#6b7280' }}>

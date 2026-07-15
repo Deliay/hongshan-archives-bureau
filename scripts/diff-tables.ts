@@ -168,7 +168,18 @@ function deepDiff(
   }
 
   if (isI18nField(oldVal) || isI18nField(newVal)) {
-    return { [path]: { type: 'value', oldValue: oldVal, newValue: newVal } }
+    const resolveVal = (v: unknown) => {
+      if (isI18nField(v)) {
+        const ids = Object.keys(allI18nNew).length > 0 ? allI18nNew : allI18nOld
+        for (const [, dict] of Object.entries(ids)) {
+          const id = String((v as any).id ?? '')
+          if (dict[id] !== undefined) return dict[id]
+        }
+        return (v as any).text || ''
+      }
+      return v
+    }
+    return { [path]: { type: 'value', oldValue: resolveVal(oldVal), newValue: resolveVal(newVal) } }
   }
 
   if (typeof oldVal !== 'object' || typeof newVal !== 'object' || oldVal === null || newVal === null) {
@@ -257,8 +268,8 @@ function diffTables(
       const changes = deepDiff(dataOld[key], dataNew[key], allI18nOld, allI18nNew)
       if (changes && Object.keys(changes).length > 0) {
         diff.entries.changed[key] = {
-          oldValue: dataOld[key],
-          newValue: dataNew[key],
+          oldValue: expandI18nFields(dataOld[key], allI18nOld) as Record<string, any>,
+          newValue: expandI18nFields(dataNew[key], allI18nNew) as Record<string, any>,
           changed: changes,
         }
         diff.stats.changed++
