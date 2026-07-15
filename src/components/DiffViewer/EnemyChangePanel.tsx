@@ -17,13 +17,15 @@ const ENEMY_TYPE_LABELS: Record<number, string> = {
 const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
 
 const TABLE_LABELS: Record<string, string> = {
-  EnemyTemplateDisplayInfoTable: '信息',
+  EnemyTemplateDisplayInfoTable: '展示信息',
+  EnemyDisplayInfoTable: '显示信息',
   EnemyTable: '原始',
   EnemyAttributeTemplateTable: '属性',
 }
 
 const TABLE_COLORS: Record<string, string> = {
   EnemyTemplateDisplayInfoTable: '#26bbfd',
+  EnemyDisplayInfoTable: '#ffbb03',
   EnemyTable: '#9452fa',
   EnemyAttributeTemplateTable: '#22c55e',
 }
@@ -132,14 +134,18 @@ function renderTableEntry(change: { tableName: string; op: string; key: string; 
 
 function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   const [expanded, setExpanded] = useState(false)
-  const isAdded = ep.changes.some(c => c.op === 'added' && c.tableName === 'EnemyTemplateDisplayInfoTable')
+  const isAdded = ep.changes.some(c => c.op === 'added' && (c.tableName === 'EnemyTemplateDisplayInfoTable' || c.tableName === 'EnemyDisplayInfoTable'))
   const [tagI18n, setTagI18n] = useState<Record<string, string>>({})
   const [fallbackDisplayData, setFallbackDisplayData] = useState<Record<string, any> | null>(null)
+  const [fallbackDisplayData2, setFallbackDisplayData2] = useState<Record<string, any> | null>(null)
   const [displayI18n, setDisplayI18n] = useState<Record<string, string>>({})
+  const [displayI18n2, setDisplayI18n2] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    getCachedData<Record<string, string>>(`I18nDict_${locale}_EnemyTemplateDisplayInfoTable`, () => fetchTableDictAll('EnemyTemplateDisplayInfoTable', locale))
-      .then(d => setDisplayI18n(d)).catch(() => {})
+    Promise.all([
+      getCachedData<Record<string, string>>(`I18nDict_${locale}_EnemyTemplateDisplayInfoTable`, () => fetchTableDictAll('EnemyTemplateDisplayInfoTable', locale)).catch(() => ({})),
+      getCachedData<Record<string, string>>(`I18nDict_${locale}_EnemyDisplayInfoTable`, () => fetchTableDictAll('EnemyDisplayInfoTable', locale)).catch(() => ({})),
+    ]).then(([d1, d2]) => { setDisplayI18n(d1 as Record<string, string>); setDisplayI18n2(d2 as Record<string, string>) })
   }, [locale])
 
   useEffect(() => {
@@ -148,32 +154,42 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   }, [locale])
 
   useEffect(() => {
-    const hasDisplayEntry = ep.changes.some(c => c.tableName === 'EnemyTemplateDisplayInfoTable')
-    if (hasDisplayEntry) return
-    getCachedData<Record<string, any>>('EnemyTemplateDisplayInfoTable', () => fetchTableAll('EnemyTemplateDisplayInfoTable'))
-      .then(raw => {
-        const key = Object.keys(raw).find(k => k === ep.templateId)
-        if (key) setFallbackDisplayData(raw[key])
-      })
-      .catch(() => {})
-  }, [ep.templateId, ep.changes])
+    const hasAnyDisplay = ep.changes.some(c => c.tableName === 'EnemyTemplateDisplayInfoTable' || c.tableName === 'EnemyDisplayInfoTable')
+    if (hasAnyDisplay) return
+    Promise.all([
+      getCachedData<Record<string, any>>('EnemyTemplateDisplayInfoTable', () => fetchTableAll('EnemyTemplateDisplayInfoTable')).catch(() => ({})),
+      getCachedData<Record<string, any>>('EnemyDisplayInfoTable', () => fetchTableAll('EnemyDisplayInfoTable')).catch(() => ({})),
+    ]).then(([raw, raw2]) => {
+      const keys1 = Object.keys(raw as Record<string, any>)
+      const keys2 = Object.keys(raw2 as Record<string, any>)
+      const key = keys1.find(k => k === ep.enemyId)
+      const key2 = keys2.find(k => k === ep.enemyId)
+      if (key) setFallbackDisplayData((raw as Record<string, any>)[key])
+      if (key2) setFallbackDisplayData2((raw2 as Record<string, any>)[key2])
+    }).catch(() => {})
+  }, [ep.enemyId, ep.changes])
 
   const displayEntry = (() => {
-    const c = ep.changes.find(c => c.tableName === 'EnemyTemplateDisplayInfoTable')
-    if (!c) return null
-    return c.op === 'changed' ? (c.entry as ChangedEntry).newValue : c.entry
+    for (const tn of ['EnemyTemplateDisplayInfoTable', 'EnemyDisplayInfoTable']) {
+      const c = ep.changes.find(c => c.tableName === tn)
+      if (c) return c.op === 'changed' ? (c.entry as ChangedEntry).newValue : c.entry
+    }
+    return null
   })()
+
+  const fallbackData = fallbackDisplayData || fallbackDisplayData2
+  const fallbackI18n = fallbackDisplayData ? displayI18n : displayI18n2
 
   const name = localeText(ep.name, locale)
     || localeText(displayEntry?.name, locale)
-    || (fallbackDisplayData?.name ? resolveI18n(fallbackDisplayData.name, displayI18n) : null)
-    || ep.templateId
+    || (fallbackData?.name ? resolveI18n(fallbackData.name, fallbackI18n) : null)
+    || ep.enemyId
 
   const nickname = localeText(ep.nickname, locale) || localeText(displayEntry?.nickname, locale) || ''
-  const displayType = ep.displayType ?? displayEntry?.displayType ?? fallbackDisplayData?.displayType ?? 0
+  const displayType = ep.displayType ?? displayEntry?.displayType ?? fallbackData?.displayType ?? 0
   const stars = ENEMY_STARS[displayType] ?? 1
   const typeLabel = ENEMY_TYPE_LABELS[displayType] || `类型${displayType}`
-  const tags: string[] = ep.tags ?? displayEntry?.tags ?? fallbackDisplayData?.tags ?? []
+  const tags: string[] = ep.tags ?? displayEntry?.tags ?? fallbackData?.tags ?? []
 
   const tableCounts: Record<string, { op: string; count: number }> = {}
   for (const c of ep.changes) {
@@ -200,7 +216,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
       >
         <div className="w-12 h-12 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0 flex items-center justify-center">
           <img
-            src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/monstericon/${ep.templateId}.png`}
+            src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/monstericon/${displayEntry?.templateId || ep.enemyId}.png`}
             alt={name} className="w-full h-full object-contain"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
         </div>
@@ -209,7 +225,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
             <div className="truncate flex items-center gap-1.5">
               {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#26bbfd] text-white font-bold shrink-0">新增</span>}
               <span className="text-sm font-medium text-[#E8E6E3]">{name}</span>
-              <span className="text-[10px] text-[#5A5A62] font-mono">{ep.templateId}</span>
+              <span className="text-[10px] text-[#5A5A62] font-mono">{ep.enemyId}</span>
             </div>
             <span className="inline-flex gap-0.5 text-xs" style={{ color: RARITY_COLORS[stars] || '#6b7280' }}>
               {'✦'.repeat(Math.min(stars, 6))}
@@ -240,7 +256,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
       {expanded && (
         <div className="border-t border-[#2A2A32] p-3 space-y-3">
           {isAdded && displayEntry ? (
-            <AddedEnemyDetail templateId={ep.templateId} displayEntry={displayEntry} locale={locale} />
+            <AddedEnemyDetail templateId={displayEntry?.templateId || ep.enemyId} displayEntry={displayEntry} locale={locale} />
           ) : (
             ep.changes.map((c) => {
               const label = TABLE_LABELS[c.tableName] || c.tableName
@@ -478,7 +494,7 @@ export default function EnemyChangePanel({ versionName }: Props) {
 
       <div className="space-y-2">
         {enemies.map(ep => (
-          <EnemyCard key={ep.templateId} ep={ep} locale={locale} />
+          <EnemyCard key={ep.enemyId} ep={ep} locale={locale} />
         ))}
       </div>
     </div>

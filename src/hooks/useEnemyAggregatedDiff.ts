@@ -3,7 +3,7 @@ import { useTableDiff } from './useUpdateDiff'
 import type { ChangedEntry } from '../lib/types-diff'
 
 export interface EnemyChange {
-  templateId: string
+  enemyId: string
   name: Record<string, string> | null
   nickname: Record<string, string> | null
   displayType: number | null
@@ -16,24 +16,13 @@ export interface EnemyChange {
   }[]
 }
 
-const ENEMY_ID_TABLES = ['EnemyTemplateDisplayInfoTable', 'EnemyAttributeTemplateTable'] as const
+const ENEMY_ID_TABLES = ['EnemyTemplateDisplayInfoTable', 'EnemyDisplayInfoTable', 'EnemyTable', 'EnemyAttributeTemplateTable'] as const
 
-function getTemplateId(entry: any, tableName: string): string | null {
-  if ((ENEMY_ID_TABLES as readonly string[]).includes(tableName)) return null
-  if (tableName === 'EnemyTable') {
-    if (!entry || typeof entry !== 'object') return null
-    if ('templateId' in entry && typeof entry.templateId === 'string') return entry.templateId
-    if ('newValue' in entry && entry.newValue?.templateId) return entry.newValue.templateId
-    if ('oldValue' in entry && entry.oldValue?.templateId) return entry.oldValue.templateId
-  }
-  return null
-}
-
-function extractEnemyId(key: string, tableName: string, entry: any): string | null {
+function extractEnemyId(key: string, tableName: string): string | null {
   if ((ENEMY_ID_TABLES as readonly string[]).includes(tableName)) {
     return key
   }
-  return getTemplateId(entry, tableName)
+  return null
 }
 
 function collectEntries(
@@ -44,17 +33,17 @@ function collectEntries(
   changes: Map<string, EnemyChange>,
 ) {
   for (const [key, entry] of Object.entries(dict)) {
-    const templateId = extractEnemyId(key, tableName, entry)
-    if (!templateId || !enemyIdSet.has(templateId)) continue
+    const enemyId = extractEnemyId(key, tableName)
+    if (!enemyId || !enemyIdSet.has(enemyId)) continue
 
-    let change = changes.get(templateId)
+    let change = changes.get(enemyId)
     if (!change) {
-      change = { templateId, name: null, nickname: null, displayType: null, tags: null, changes: [] }
-      changes.set(templateId, change)
+      change = { enemyId, name: null, nickname: null, displayType: null, tags: null, changes: [] }
+      changes.set(enemyId, change)
     }
     change.changes.push({ tableName, op, key, entry })
 
-    if (tableName === 'EnemyTemplateDisplayInfoTable') {
+    if (tableName === 'EnemyTemplateDisplayInfoTable' || tableName === 'EnemyDisplayInfoTable') {
       const e = op === 'changed' ? (entry as ChangedEntry).newValue : entry
       if (!change.name) change.name = e.name ?? null
       if (!change.nickname) change.nickname = e.nickname ?? null
@@ -65,16 +54,18 @@ function collectEntries(
 }
 
 export function useEnemyAggregatedDiff(versionName: string) {
-  const displayDiff = useTableDiff(versionName, 'EnemyTemplateDisplayInfoTable.json')
+  const templateDisplayDiff = useTableDiff(versionName, 'EnemyTemplateDisplayInfoTable.json')
+  const displayDiff = useTableDiff(versionName, 'EnemyDisplayInfoTable.json')
   const enemyDiff = useTableDiff(versionName, 'EnemyTable.json')
   const attrDiff = useTableDiff(versionName, 'EnemyAttributeTemplateTable.json')
 
-  const loading = displayDiff.loading || enemyDiff.loading || attrDiff.loading
-  const error = displayDiff.error ?? enemyDiff.error ?? attrDiff.error
+  const loading = templateDisplayDiff.loading || displayDiff.loading || enemyDiff.loading || attrDiff.loading
+  const error = templateDisplayDiff.error ?? displayDiff.error ?? enemyDiff.error ?? attrDiff.error
 
   const data = useMemo(() => {
     const allDiffs = [
-      { name: 'EnemyTemplateDisplayInfoTable', diff: displayDiff.data },
+      { name: 'EnemyTemplateDisplayInfoTable', diff: templateDisplayDiff.data },
+      { name: 'EnemyDisplayInfoTable', diff: displayDiff.data },
       { name: 'EnemyTable', diff: enemyDiff.data },
       { name: 'EnemyAttributeTemplateTable', diff: attrDiff.data },
     ]
@@ -84,8 +75,8 @@ export function useEnemyAggregatedDiff(versionName: string) {
     for (const { name, diff } of allDiffs) {
       if (!diff) continue
       for (const entries of [diff.entries.added, diff.entries.removed, diff.entries.changed]) {
-        for (const [key, entry] of Object.entries(entries)) {
-          const eid = extractEnemyId(key, name, entry)
+        for (const key of Object.keys(entries)) {
+          const eid = extractEnemyId(key, name)
           if (eid) enemyIdSet.add(eid)
         }
       }
@@ -100,7 +91,7 @@ export function useEnemyAggregatedDiff(versionName: string) {
     }
 
     return Array.from(changes.values())
-  }, [displayDiff.data, enemyDiff.data, attrDiff.data])
+  }, [templateDisplayDiff.data, displayDiff.data, enemyDiff.data, attrDiff.data])
 
   return { data, loading, error }
 }
