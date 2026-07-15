@@ -79,6 +79,33 @@ function resolveEntry(
   return value
 }
 
+// ── i18n expand for add/remove ──
+
+function expandI18nFields(
+  value: unknown,
+  i18nDicts: Record<string, Record<string, string>>,
+): unknown {
+  if (isI18nField(value)) {
+    const id = String((value as any).id ?? '')
+    const result: Record<string, string> = {}
+    for (const [locale, dict] of Object.entries(i18nDicts)) {
+      result[locale] = dict[id] || ''
+    }
+    return result
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => expandI18nFields(v, i18nDicts))
+  }
+  if (value && typeof value === 'object') {
+    const result: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      result[k] = expandI18nFields(v, i18nDicts)
+    }
+    return result
+  }
+  return value
+}
+
 // ── diff logic ──
 
 type FieldChange =
@@ -221,10 +248,10 @@ function diffTables(
 
   for (const key of allKeys) {
     if (!(key in dataOld)) {
-      diff.entries.added[key] = dataNew[key]
+      diff.entries.added[key] = expandI18nFields(dataNew[key], allI18nNew)
       diff.stats.added++
     } else if (!(key in dataNew)) {
-      diff.entries.removed[key] = dataOld[key]
+      diff.entries.removed[key] = expandI18nFields(dataOld[key], allI18nOld)
       diff.stats.removed++
     } else {
       const changes = deepDiff(dataOld[key], dataNew[key], allI18nOld, allI18nNew)
@@ -331,6 +358,8 @@ async function main() {
 
   console.log(`Tables to diff: ${commonFiles.length}`)
 
+  const tableStats: Record<string, { added: number; removed: number; changed: number }> = {}
+
   let completed = 0
   for (const file of commonFiles) {
     const tableName = basename(file, '.json')
@@ -355,6 +384,7 @@ async function main() {
     if (totalChanges > 0) {
       await writeFile(join(outDir, file), JSON.stringify(result, null, 2))
     }
+    tableStats[file] = result.stats
 
     completed++
     if (totalChanges > 0) {
@@ -367,16 +397,19 @@ async function main() {
   process.stdout.write(`\r${completed}/${commonFiles.length}\n`)
 
   // Write manifest
-  const writtenFiles = (await readdir(outDir)).filter((f) => f.endsWith('.json'))
+  const writtenFiles = (await readdir(outDir)).filter((f) => f.endsWith('.json') && !f.startsWith('I18nTextTable_'))
   const manifestPath = join(baseDir, 'manifest.json')
   let manifest: { generatedAt: string; folders: { name: string; description?: string; fileCount: number; files: string[] }[] } = { generatedAt: new Date().toISOString().slice(0, 10), folders: [] }
   try {
     manifest = JSON.parse(await readFile(manifestPath, 'utf-8'))
   } catch { /* new manifest */ }
 
+  const filteredTableStats = Object.fromEntries(
+    Object.entries(tableStats).filter(([k]) => !k.startsWith('I18nTextTable_')),
+  )
   const folderName = `${v1}__${v2}`
   const existing = manifest.folders.findIndex((f) => f.name === folderName)
-  const entry = { name: folderName, description: existing >= 0 ? manifest.folders[existing].description : undefined, fileCount: writtenFiles.length, files: writtenFiles.sort() }
+  const entry = { name: folderName, description: existing >= 0 ? manifest.folders[existing].description : undefined, fileCount: writtenFiles.length, files: writtenFiles.sort(), tableStats: filteredTableStats }
   if (existing >= 0) {
     manifest.folders[existing] = entry
   } else {

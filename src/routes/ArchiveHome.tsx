@@ -12,6 +12,7 @@ const MODULES = [
   { label: '道具材料', path: '/archive/items', desc: '物资与收集品' },
   { label: '工厂系统', path: '/archive/factory', desc: '自动化生产线' },
   { label: '剧情记录', path: '/archive/story', desc: '叙事资料归档' },
+  { label: '更新日志', path: '/archive/updates', desc: '版本间数据变更' },
 ]
 
 export default function ArchiveHome() {

@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { label: '道具材料', path: '/archive/items' },
   { label: '工厂系统', path: '/archive/factory' },
   { label: '剧情记录', path: '/archive/story' },
+  { label: '更新日志', path: '/archive/updates' },
 ]
 
 const LOCALE_LABELS: Record<string, string> = {
@@ -69,6 +70,7 @@ export default function TopNav() {
         <div className="ml-auto flex items-center gap-2">
           <div className="relative" ref={ref}>
             <button
+              type="button"
               onClick={() => setOpen(!open)}
               className="px-2.5 py-1.5 rounded text-sm text-[#8B8982] hover:text-[#E8E6E3] border border-[#2A2A32] hover:border-[#5A5A62] transition-colors"
             >
@@ -78,6 +80,7 @@ export default function TopNav() {
               <div className="absolute right-0 top-full mt-1 w-28 py-1 rounded border border-[#2A2A32] bg-[#1A1B23] shadow-lg">
                 {locales.map((l) => (
                   <button
+                    type="button"
                     key={l}
                     onClick={() => { setLocale(l); setOpen(false) }}
                     className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
@@ -92,7 +95,7 @@ export default function TopNav() {
               </div>
             )}
           </div>
-          <button className="md:hidden text-[#8B8982] text-sm">菜单</button>
+          <button type="button" className="md:hidden text-[#8B8982] text-sm">菜单</button>
         </div>
       </div>
     </header>
