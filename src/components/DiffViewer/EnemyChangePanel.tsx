@@ -165,6 +165,11 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
 
   return (
     <div className="space-y-1">
+      {op !== 'changed' && (
+        <div className="text-[#8B8982] text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+          {renderObjFiltered(data, ['distributionIds'], '')}
+        </div>
+      )}
       {otherChanges.length > 0 && (
         <div className="space-y-1">
           {otherChanges.map(path => {
@@ -228,6 +233,29 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
       )}
     </div>
   )
+}
+
+function renderObjFiltered(obj: any, excludeKeys: string[], indent: string): string {
+  if (obj === null || obj === undefined) return indent + '（空）'
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return indent + '[]'
+    return obj.map((_v, i) => `${indent}[${i}]: ${renderObjFiltered(_v, excludeKeys, indent + '  ')}`).join('\n')
+  }
+  if (typeof obj === 'object') {
+    const text = 'text' in obj ? (obj.text || '') : ''
+    const id = 'id' in obj ? String(obj.id) : ''
+    if (id || text) return `${indent}${text ? `"${text}"` : ''}${id && text ? ' ' : ''}${id ? `(${id})` : ''}`.trim()
+    const keys = Object.keys(obj).filter(k => !excludeKeys.includes(k))
+    if (keys.length === 0) return indent + '{}'
+    return keys.map(k => {
+      const v = obj[k]
+      if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0) {
+        return `${indent}${k}:\n${renderObjFiltered(v, excludeKeys, indent + '  ')}`
+      }
+      return `${indent}${k}: ${renderObjFiltered(v, excludeKeys, '')}`.trim()
+    }).join('\n')
+  }
+  return String(obj)
 }
 
 function EnemyTableEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
