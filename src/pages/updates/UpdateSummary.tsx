@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useFolderManifest } from '../../hooks/useUpdateDiff'
 import OperatorChangePanel from '../../components/DiffViewer/OperatorChangePanel'
+import WeaponChangePanel from '../../components/DiffViewer/WeaponChangePanel'
 
 function sumTableStats(
   fn: (s: { added: number; removed: number; changed: number }) => number,
@@ -72,6 +73,8 @@ function SummaryContent({
     'SpaceshipSkillTable',
     'SpaceshipCharSkillTable',
     'PotentialTalentEffectTable',
+    'WeaponBasicTable',
+    'ItemTable',
   ]
 
   const tables = useMemo(() => {
@@ -109,6 +112,8 @@ function SummaryContent({
       </div>
 
       <OperatorChangePanel versionName={versionName} />
+
+      <WeaponChangePanel versionName={versionName} />
 
       <h3 className="text-sm font-medium text-[#E8E6E3] mb-3">
         变更表一览（{folder.fileCount} 个表）

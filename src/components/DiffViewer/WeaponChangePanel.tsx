@@ -1,0 +1,516 @@
+import { useState, useEffect } from 'react'
+import { useLocale } from '../../lib/locale'
+import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
+import { getCachedData } from '../../lib/cache'
+import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
+import { useWeaponAggregatedDiff } from '../../hooks/useWeaponAggregatedDiff'
+import type { WeaponChange } from '../../hooks/useWeaponAggregatedDiff'
+import type { ChangedEntry } from '../../lib/types-diff'
+import { RichText } from '../../lib/richText'
+import { formatBlackboard } from '../../lib/formatText'
+import { RichTextDiff } from './RichTextDiff'
+
+const RARITY_COLORS: Record<number, string> = {
+  3: '#26BBFD',
+  4: '#9452FA',
+  5: '#FFBB03',
+  6: '#fe5a00',
+}
+
+const TABLE_LABELS: Record<string, string> = {
+  WeaponBasicTable: '基础',
+  ItemTable: '物品',
+  SkillPatchTable: '技能',
+}
+
+const TABLE_COLORS: Record<string, string> = {
+  WeaponBasicTable: '#26bbfd',
+  ItemTable: '#9452fa',
+  SkillPatchTable: '#ffbb03',
+}
+
+
+function localeText(obj: unknown, locale: string): string {
+  if (!obj || typeof obj !== 'object') return ''
+  const dict = obj as Record<string, string>
+  return dict[locale] || dict.CN || ''
+}
+
+function getItemIconUrl(iconId: string): string {
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${iconId}.png`
+}
+
+function ChangeBadge({ label, color, count }: { label: string; color: string; count: number }) {
+  if (count === 0) return null
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-mono"
+      style={{ backgroundColor: `${color}18`, color }}>
+      {label}
+      <span className="opacity-60">×{count}</span>
+    </span>
+  )
+}
+
+function renderObj(obj: any, indent = ''): string {
+  if (obj === null || obj === undefined) return indent + '（空）'
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return indent + '[]'
+    return obj.map((_v, i) => `${indent}[${i}]: ${renderObj(_v, indent + '  ')}`).join('\n')
+  }
+  if (typeof obj === 'object') {
+    const text = 'text' in obj ? (obj.text || '') : ''
+    const id = 'id' in obj ? String(obj.id) : ''
+    if (id || text) return `${indent}${text ? `"${text}"` : ''}${id && text ? ' ' : ''}${id ? `(${id})` : ''}`.trim()
+    const keys = Object.keys(obj)
+    if (keys.length === 0) return indent + '{}'
+    return keys.map(k => {
+      const v = obj[k]
+      if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0) {
+        return `${indent}${k}:\n${renderObj(v, indent + '  ')}`
+      }
+      return `${indent}${k}: ${renderObj(v, '')}`.trim()
+    }).join('\n')
+  }
+  return String(obj)
+}
+
+function formatDiffValue(v: unknown, locale: string): string {
+  if (v === undefined || v === null) return '（空）'
+  if (typeof v === 'object' && !Array.isArray(v)) {
+    const text = localeText(v, locale)
+    if (text) return `"${text}"`
+    if ('text' in (v as any) && (v as any).text) return `"${(v as any).text}"`
+    return JSON.stringify(v)
+  }
+  if (typeof v === 'string') return `"${v}"`
+  return String(v)
+}
+
+function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (text: string) => string) {
+  if (op === 'changed') {
+    const e = entry as { oldValue?: Record<string, any>; newValue?: Record<string, any>; changed?: Record<string, any> }
+    const changed = e.changed ?? {}
+    const keys = Object.keys(changed)
+    if (keys.length > 0) {
+      return (
+        <div className="space-y-1">
+          {keys.map((path) => {
+            const change = changed[path]
+            if (change.type === 'value') {
+              return (
+                <div key={path} className="text-[10px]">
+                  <span className="text-[#5A5A62] font-mono">{path}</span>
+                  <div className="flex gap-3 mt-0.5">
+                    <span className="text-[#ef4444]">旧 {formatDiffValue(change.oldValue, locale)}</span>
+                    <span className="text-[#26bbfd]">新 {formatDiffValue(change.newValue, locale)}</span>
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <div key={path} className="text-[10px]">
+                <span className="text-[#5A5A62] font-mono">{path}</span>
+                <div className="mt-0.5 space-y-0.5">
+                  {Object.entries(change.changedLocales).map(([loc, val]) => {
+                    const v = val as { oldText: string; newText: string }
+                    return (
+                      <div key={loc}>
+                        <span className="text-[#C9A96E]">{loc}</span>
+                        <RichTextDiff oldText={v.oldText || ''} newText={v.newText || ''} formatter={formatter} />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+    return <div className="text-[#8B8982] text-[10px]">无详细变更信息</div>
+  }
+  return <div className="text-[#8B8982] text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry)}</div>
+}
+
+function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const isAdded = wp.changes.some(c => c.op === 'added' && c.tableName === 'WeaponBasicTable')
+  const [weaponTypeMap, setWeaponTypeMap] = useState<Record<number, string>>({})
+  const [fallbackItemData, setFallbackItemData] = useState<Record<string, any> | null>(null)
+  const [fallbackBasicData, setFallbackBasicData] = useState<Record<string, any> | null>(null)
+  const [itemI18n, setItemI18n] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    getCachedData<Record<string, string>>(`I18nDict_${locale}_ItemTable`, () => fetchTableDictAll('ItemTable', locale))
+      .then(d => setItemI18n(d)).catch(() => {})
+  }, [locale])
+
+  useEffect(() => {
+    getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable'))
+      .then(raw => {
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_TextTable`, () => fetchTableDictAll('TextTable', locale))
+          .then(i18n => {
+            const map: Record<number, string> = {}
+            for (let i = 1; i <= 6; i++) {
+              if (i === 4) continue
+              const key = `LUA_WEAPON_TYPE_${i}`
+              const entry = raw[key]
+              if (entry) {
+                map[i] = resolveI18n(entry, i18n) || entry.text || `类型${i}`
+              }
+            }
+            setWeaponTypeMap(map)
+          }).catch(() => {})
+      }).catch(() => {})
+  }, [locale])
+
+  useEffect(() => {
+    const hasItemEntry = wp.changes.some(c => c.tableName === 'ItemTable')
+    if (hasItemEntry) return
+    getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable'))
+      .then(raw => {
+        const key = Object.keys(raw).find(k => k === wp.weaponId)
+        if (key) setFallbackItemData(raw[key])
+      })
+      .catch(() => {})
+  }, [wp.weaponId, wp.changes])
+
+  useEffect(() => {
+    const hasBasicEntry = wp.changes.some(c => c.tableName === 'WeaponBasicTable')
+    if (hasBasicEntry) return
+    getCachedData<Record<string, any>>('WeaponBasicTable', () => fetchTableAll('WeaponBasicTable'))
+      .then(raw => {
+        const key = Object.keys(raw).find(k => k === wp.weaponId)
+        if (key) setFallbackBasicData(raw[key])
+      })
+      .catch(() => {})
+  }, [wp.weaponId, wp.changes])
+
+  const basicEntry = (() => {
+    const c = wp.changes.find(c => c.tableName === 'WeaponBasicTable')
+    if (!c) return null
+    return c.op === 'changed' ? (c.entry as ChangedEntry).newValue : c.entry
+  })()
+
+  const itemEntry = (() => {
+    const c = wp.changes.find(c => c.tableName === 'ItemTable')
+    if (!c) return null
+    return c.op === 'changed' ? (c.entry as ChangedEntry).newValue : c.entry
+  })()
+
+  const name = localeText(wp.name, locale)
+    || localeText(itemEntry?.name, locale)
+    || (fallbackItemData?.name ? resolveI18n(fallbackItemData.name, itemI18n) : null)
+    || wp.weaponId
+
+  const iconId = wp.iconId ?? itemEntry?.iconId ?? fallbackItemData?.iconId ?? ''
+  const rarity = wp.rarity ?? basicEntry?.rarity ?? itemEntry?.rarity ?? fallbackBasicData?.rarity ?? fallbackItemData?.rarity ?? 0
+  const weaponTypeNum = wp.weaponType ?? basicEntry?.weaponType ?? fallbackBasicData?.weaponType ?? 0
+  const typeName = weaponTypeMap[weaponTypeNum] || ''
+
+  const tableCounts: Record<string, { op: string; count: number }> = {}
+  for (const c of wp.changes) {
+    if (!tableCounts[c.tableName]) {
+      tableCounts[c.tableName] = { op: c.op, count: 0 }
+    }
+    tableCounts[c.tableName].count++
+  }
+
+  const changeCategories = {
+    added: wp.changes.filter(c => c.op === 'added').length,
+    removed: wp.changes.filter(c => c.op === 'removed').length,
+    changed: wp.changes.filter(c => c.op === 'changed').length,
+  }
+
+  return (
+    <div className={`rounded overflow-hidden transition-colors ${
+      isAdded ? 'border border-[#26bbfd]/40 bg-[#1A1B23]' : 'border border-[#2A2A32] bg-[#1A1B23]'
+    }`}>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-start gap-3 p-3 text-left hover:bg-[#22222C] transition-colors"
+      >
+        <div className="w-12 h-12 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
+          {iconId && (
+            <img src={getItemIconUrl(iconId)} alt={name} className="w-full h-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="truncate flex items-center gap-1.5">
+              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#26bbfd] text-white font-bold shrink-0">新增</span>}
+              <span className="text-sm font-medium text-[#E8E6E3]">{name}</span>
+              <span className="text-[10px] text-[#5A5A62] font-mono">{wp.weaponId}</span>
+            </div>
+            <span className="inline-flex gap-0.5 text-xs" style={{ color: RARITY_COLORS[rarity] || '#6b7280' }}>
+              {'✦'.repeat(Math.min(rarity, 6))}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            {typeName && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">{typeName}</span>
+            )}
+            <span className="text-[10px] text-[#5A5A62]">
+              {changeCategories.added > 0 && <span className="text-[#26bbfd] mr-1">+{changeCategories.added}</span>}
+              {changeCategories.removed > 0 && <span className="text-[#ef4444] mr-1">-{changeCategories.removed}</span>}
+              {changeCategories.changed > 0 && <span className="text-[#ffbb03]">~{changeCategories.changed}</span>}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {Object.entries(tableCounts).map(([table, info]) => (
+              <ChangeBadge key={table} label={TABLE_LABELS[table] || table}
+                color={TABLE_COLORS[table] || '#8B8982'} count={info.count} />
+            ))}
+          </div>
+        </div>
+        <span className={`text-[#5A5A62] text-xs mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}>▼</span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-[#2A2A32] p-3 space-y-3">
+          {isAdded && basicEntry ? (
+            <AddedWeaponDetail weaponId={wp.weaponId} basicEntry={basicEntry} itemEntry={itemEntry} locale={locale} />
+          ) : (
+            wp.changes.map((c) => {
+              const label = TABLE_LABELS[c.tableName] || c.tableName
+              const color = TABLE_COLORS[c.tableName] || '#8B8982'
+              const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
+              const opColor = c.op === 'added' ? '#26bbfd' : c.op === 'removed' ? '#ef4444' : '#ffbb03'
+              return (
+                <div key={c.tableName + c.key} className="text-xs border-b border-[#2A2A32]/50 pb-1.5 last:border-0 last:pb-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono text-[10px] text-[#5A5A62]">{c.key}</span>
+                    <span className="font-mono text-[10px] px-1 rounded" style={{ backgroundColor: `${color}18`, color }}>{label}</span>
+                    <span className="text-[10px] font-mono" style={{ color: opColor }}>{opLabel}</span>
+                  </div>
+                  {renderTableEntry(c, locale)}
+                </div>
+              )
+            })
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function renderTableEntry(change: { tableName: string; op: string; key: string; entry: any }, locale: string) {
+  const { tableName, op, entry } = change
+  if (tableName === 'SkillPatchTable') return <WeaponSkillEntry entry={entry} op={op} locale={locale} />
+  return renderChangeEntry(entry, op, locale)
+}
+
+let _skillI18nCache: Map<string, Record<string, string>> | null = null
+async function getSkillI18n(locale: string): Promise<Record<string, string>> {
+  if (!_skillI18nCache) _skillI18nCache = new Map()
+  let cached = _skillI18nCache.get(locale)
+  if (!cached) {
+    cached = await getCachedData<Record<string, string>>(`I18nDict_${locale}_SkillPatchTable`, () => fetchTableDictAll('SkillPatchTable', locale)).catch(() => ({}))
+    _skillI18nCache.set(locale, cached)
+  }
+  return cached
+}
+
+function WeaponSkillEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
+  const [i18n, setI18n] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(true)
+  useEffect(() => { getSkillI18n(locale).then(d => { setI18n(d); setLoading(false) }) }, [locale])
+  if (loading) return <div className="text-[10px] text-[#5A5A62]">加载技能…</div>
+
+  if (op === 'changed') {
+    const e = entry as { changed?: Record<string, any>; newValue?: Record<string, any> }
+    if (e.changed) {
+      const bundle = e.newValue?.SkillPatchDataBundle
+      let formatter: ((text: string) => string) | undefined
+      if (bundle?.length) {
+        const bb: Record<string, number> = {}
+        for (const b of (bundle[0].blackboard ?? [])) bb[b.key] = b.value
+        if (Object.keys(bb).length > 0) formatter = (text: string) => formatBlackboard(text, bb)
+      }
+      return renderChangeEntry(entry, op, locale, formatter)
+    }
+    return <div className="text-[10px] text-[#5A5A62]">无技能变更</div>
+  }
+
+  const bundle = entry?.SkillPatchDataBundle
+  if (!bundle?.length) return <div className="text-[10px] text-[#5A5A62]">无技能数据</div>
+  const first = bundle[0]
+  const name = localeText(first.skillName, locale) || resolveI18n(first.skillName, i18n) || first.skillId || ''
+  const desc = localeText(first.description, locale) || resolveI18n(first.description, i18n) || ''
+  const bb: Record<string, number> = {}
+  for (const b of (first.blackboard ?? [])) bb[b.key] = b.value
+  const formattedDesc = Object.keys(bb).length > 0 ? formatBlackboard(desc, bb) : desc
+  return (
+    <div className="text-xs">
+      {name && <div className="text-[#E8E6E3] font-medium mb-1">{name}</div>}
+      {formattedDesc && <div className="text-[#B0ACA6] leading-relaxed"><RichText text={formattedDesc} /></div>}
+      <div className="text-[10px] text-[#5A5A62] mt-1">Lv.{first.level} · {bundle.length} 级</div>
+    </div>
+  )
+}
+
+function AddedWeaponDetail({ weaponId, basicEntry, itemEntry, locale: _locale }: { weaponId: string; basicEntry: any; itemEntry: any; locale: string }) {
+  return (
+    <div className="space-y-3">
+      <WeaponSkillPreview weaponId={weaponId} />
+      {itemEntry?.decoDesc && (
+        <details className="group">
+          <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">物品描述</summary>
+          <div className="mt-1 text-xs text-[#E8E6E3] leading-relaxed whitespace-pre-wrap">
+            <RichText text={localeText(itemEntry.decoDesc, _locale) || ''} />
+          </div>
+        </details>
+      )}
+      {itemEntry?.desc && (
+        <details className="group">
+          <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">道具说明</summary>
+          <div className="mt-1 text-xs text-[#E8E6E3] leading-relaxed whitespace-pre-wrap">
+            <RichText text={localeText(itemEntry.desc, _locale) || ''} />
+          </div>
+        </details>
+      )}
+      {basicEntry?.weaponDesc && (
+        <details className="group">
+          <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">武器说明</summary>
+          <div className="mt-1 text-xs text-[#E8E6E3] leading-relaxed whitespace-pre-wrap">
+            <RichText text={localeText(basicEntry.weaponDesc, _locale) || ''} />
+          </div>
+        </details>
+      )}
+      {basicEntry && (
+        <details className="group" open>
+          <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">基本信息</summary>
+          <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs px-2">
+            <dt className="text-[#5A5A62]">武器 ID</dt>
+            <dd className="text-[#E8E6E3] font-mono">{weaponId}</dd>
+            <dt className="text-[#5A5A62]">最大等级</dt>
+            <dd className="text-[#E8E6E3]">{basicEntry.maxLv ?? '-'}</dd>
+            {basicEntry.breakthroughTemplateId && <>
+              <dt className="text-[#5A5A62]">突破模板</dt>
+              <dd className="text-[#E8E6E3] font-mono text-[10px]">{basicEntry.breakthroughTemplateId}</dd>
+            </>}
+            {basicEntry.levelTemplateId && <>
+              <dt className="text-[#5A5A62]">升级模板</dt>
+              <dd className="text-[#E8E6E3] font-mono text-[10px]">{basicEntry.levelTemplateId}</dd>
+            </>}
+            {basicEntry.talentTemplateId && <>
+              <dt className="text-[#5A5A62]">天赋模板</dt>
+              <dd className="text-[#E8E6E3] font-mono text-[10px]">{basicEntry.talentTemplateId}</dd>
+            </>}
+            {basicEntry.weaponSkillList?.length > 0 && <>
+              <dt className="text-[#5A5A62]">技能 ID</dt>
+              <dd className="text-[#E8E6E3] font-mono text-[10px]">{basicEntry.weaponSkillList.join(', ')}</dd>
+            </>}
+          </dl>
+        </details>
+      )}
+    </div>
+  )
+}
+
+function WeaponSkillPreview({ weaponId }: { weaponId: string }) {
+  const { locale } = useLocale()
+  const [data, setData] = useState<{ skillId: string; name: string; desc: string }[]>([])
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const [basicRaw, patchRaw, patchI18n] = await Promise.all([
+        getCachedData<Record<string, any>>('WeaponBasicTable', () => fetchTableAll('WeaponBasicTable')).catch(() => ({})),
+        getCachedData<Record<string, any>>('SkillPatchTable', () => fetchTableAll('SkillPatchTable')).catch(() => ({})),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_SkillPatchTable`, () => fetchTableDictAll('SkillPatchTable', locale)).catch(() => ({}) as Record<string, string>),
+      ])
+      if (cancelled) return
+      const basic = (basicRaw as Record<string, any>)[weaponId]
+      const skillIds = basic?.weaponSkillList ?? []
+      const result: { skillId: string; name: string; desc: string }[] = []
+      for (const sid of skillIds) {
+        const entry = (patchRaw as Record<string, any>)[sid]
+        const bundle = entry?.SkillPatchDataBundle
+        if (bundle?.length) {
+          const first = bundle[0]
+          const name = resolveI18n(first.skillName, patchI18n as Record<string, string>) || sid
+          const desc = resolveI18n(first.description, patchI18n as Record<string, string>) || ''
+          const bb: Record<string, number> = {}
+          for (const b of (first.blackboard ?? [])) bb[b.key] = b.value
+          result.push({
+            skillId: sid,
+            name,
+            desc: Object.keys(bb).length > 0 ? formatBlackboard(desc, bb) : desc,
+          })
+        }
+      }
+      setData(result)
+    }
+    load()
+    return () => { cancelled = true }
+  }, [weaponId, locale])
+  if (data.length === 0) return null
+  return (
+    <details className="group" open>
+      <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">技能（{data.length}）</summary>
+      <div className="mt-1 space-y-2">
+        {data.map((s, i) => (
+          <div key={i} className="px-2 py-1.5 rounded bg-[#0F0F12]">
+            <div className="text-xs text-[#E8E6E3] font-medium">{s.name}</div>
+            {s.desc && <div className="text-[10px] text-[#B0ACA6] leading-relaxed mt-1"><RichText text={s.desc} /></div>}
+          </div>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+interface Props {
+  versionName: string
+}
+
+export default function WeaponChangePanel({ versionName }: Props) {
+  const { locale } = useLocale()
+  const { data: weapons, loading, error } = useWeaponAggregatedDiff(versionName)
+
+  if (loading) {
+    return (
+      <div className="mb-8">
+        <h3 className="text-sm font-medium text-[#E8E6E3] mb-3">武器变动概览</h3>
+        <div className="space-y-2">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-16 rounded border border-[#2A2A32] bg-[#1A1B23] animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !weapons || weapons.length === 0) return null
+
+  const totalChanges = weapons.reduce((s, o) => s + o.changes.length, 0)
+  const withAdded = weapons.filter(o => o.changes.some(c => c.op === 'added')).length
+  const withRemoved = weapons.filter(o => o.changes.some(c => c.op === 'removed')).length
+  const withChanged = weapons.filter(o => o.changes.some(c => c.op === 'changed')).length
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-baseline justify-between mb-3">
+        <h3 className="text-sm font-medium text-[#E8E6E3]">
+          武器变动概览
+          <span className="text-xs text-[#5A5A62] font-normal ml-2">
+            {weapons.length} 件武器 · {totalChanges} 处变动
+          </span>
+        </h3>
+        <div className="flex gap-2 text-[10px] text-[#5A5A62]">
+          {withAdded > 0 && <span className="text-[#26bbfd]">新增 {withAdded}</span>}
+          {withRemoved > 0 && <span className="text-[#ef4444]">移除 {withRemoved}</span>}
+          {withChanged > 0 && <span className="text-[#ffbb03]">变更 {withChanged}</span>}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {weapons.map(wp => (
+          <WeaponCard key={wp.weaponId} wp={wp} locale={locale} />
+        ))}
+      </div>
+    </div>
+  )
+}
