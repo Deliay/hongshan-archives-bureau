@@ -27,11 +27,15 @@ function wordDiff(oldText: string, newText: string) {
   return { oldOnly, newOnly }
 }
 
+function colorText(text: string, color: string, bg: string): string {
+  return `<color=${color}><mark=#${bg}>${text}</mark></color>`
+}
+
 function wrapDiff(text: string, additions: string[], removals: string[]): string {
   const words = text.split(/(\s+)/)
   return words.map(w => {
-    if (additions.includes(w)) return `<color=#4ade80>${w}</color>`
-    if (removals.includes(w)) return `<color=#ef4444>${w}</color>`
+    if (removals.includes(w)) return colorText(w, '#f87171', '451a1a')
+    if (additions.includes(w)) return colorText(w, '#4ade80', '14321e')
     return w
   }).join('')
 }
@@ -46,24 +50,24 @@ export function RichTextDiff({ oldText, newText, formatter }: Props) {
   const { oldOnly, newOnly } = wordDiff(oldText, newText)
   const hasChanges = oldOnly.length > 0 || newOnly.length > 0
 
+  const apply = (text: string) => formatter ? formatter(text) : text
+
   if (!hasChanges) {
     return (
-      <div className="text-[10px]">
-        <RichText text={formatter ? formatter(newText) : newText} />
-      </div>
+      <span className="text-[10px]">
+        <RichText text={apply(newText)} />
+      </span>
     )
   }
 
   return (
-    <div className="space-y-1">
-      <div className="text-[10px]">
-        <span className="text-[#8B8982]">旧 </span>
-        <RichText text={formatter ? formatter(wrapDiff(oldText, [], oldOnly)) : wrapDiff(oldText, [], oldOnly)} />
-      </div>
-      <div className="text-[10px]">
-        <span className="text-[#8B8982]">新 </span>
-        <RichText text={formatter ? formatter(wrapDiff(newText, newOnly, [])) : wrapDiff(newText, newOnly, [])} />
-      </div>
-    </div>
+    <span className="inline text-[10px] leading-relaxed">
+      <span className="line-through decoration-1" style={{ backgroundColor: '#451a1a' }}>
+        <RichText text={apply(wrapDiff(oldText, [], oldOnly))} />
+      </span>
+      <span className="mx-1" style={{ backgroundColor: '#14321e' }}>
+        <RichText text={apply(wrapDiff(newText, newOnly, []))} />
+      </span>
+    </span>
   )
 }

@@ -401,7 +401,7 @@ function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; na
                   )}
                 </div>
                 <div className="text-xs text-[#E8E6E3] mt-0.5 whitespace-pre-wrap line-clamp-3">
-                  {localeText(r.recordDesc, 'CN')}
+                  <RichText text={localeText(r.recordDesc, 'CN')} />
                 </div>
               </div>
             ))}
@@ -425,7 +425,7 @@ function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; na
                       <span className="text-[9px] text-[#5A5A62]">{renderUnlockInfo(v.unlockType, v.unlockValue)}</span>
                     )}
                   </div>
-                  <div className="text-xs text-[#E8E6E3]">{localeText(v.voiceDesc, 'CN')}</div>
+                  <div className="text-xs text-[#E8E6E3]"><RichText text={localeText(v.voiceDesc, 'CN')} /></div>
                 </div>
               </div>
             ))}
