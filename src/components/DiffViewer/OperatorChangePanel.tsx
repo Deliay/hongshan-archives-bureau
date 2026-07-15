@@ -253,8 +253,7 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
   })()
 
   const name = localeText(op.name, locale)
-    || (op.name ? '' : null)
-    || (charEntry ? localeText(charEntry.name, locale) : null)
+    || localeText(charEntry?.name, locale)
     || (fallbackCharData?.name ? resolveI18n(fallbackCharData.name, {}) : null)
     || op.charId
   const rarity = op.rarity ?? charEntry?.rarity ?? fallbackCharData?.rarity ?? 0
