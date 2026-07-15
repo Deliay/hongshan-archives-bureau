@@ -16,14 +16,15 @@ program
   .version('1.0.0')
   .argument('<version-old>', 'Older version directory name in endfield-data/')
   .argument('<version-new>', 'Newer version directory name in endfield-data/')
+  .option('-o, --out-dir <path>', 'Output directory (default: endfield-data/__diffs__/{v1}__{v2})')
   .addHelpText('after', `
 FLOW
-  1. Load I18nTextTable dicts for both versions
-  2. For each common table, resolve i18n fields and diff entry by entry
-  3. Output structured diff to endfield-data/__diffs__/{v1}__{v2}/
+   1. Load I18nTextTable dicts for both versions
+   2. For each common table, diff entry by entry, detecting i18n fields
+   3. Output structured diff (only files with changes)
 
 OUTPUT
-  endfield-data/__diffs__/{v1}__{v2}/
+  {outDir}/
     {TableName}.json           — structured diff per table
     I18nTextTable_{Locale}.json — i18n dict diff per locale
   `)
@@ -272,7 +273,7 @@ async function main() {
 
   const dir1 = join(DATA_DIR, v1)
   const dir2 = join(DATA_DIR, v2)
-  const outDir = join(DATA_DIR, '__diffs__', `${v1}__${v2}`)
+  const outDir = opts.opts().outDir || join(DATA_DIR, '__diffs__', `${v1}__${v2}`)
 
   console.log(`Old:  ${dir1}`)
   console.log(`New:  ${dir2}`)
@@ -310,7 +311,9 @@ async function main() {
   for (const locale of locales) {
     if (i18nOld[locale] && i18nNew[locale]) {
       const result = diffI18nDicts(locale, i18nOld[locale], i18nNew[locale])
-      await writeFile(join(outDir, `I18nTextTable_${locale}.json`), JSON.stringify(result, null, 2))
+      if (result.stats.added + result.stats.removed + result.stats.changed > 0) {
+        await writeFile(join(outDir, `I18nTextTable_${locale}.json`), JSON.stringify(result, null, 2))
+      }
     }
   }
   console.log(`I18n diffs: ${locales.length}`)
@@ -347,10 +350,13 @@ async function main() {
     } catch { /* table only exists in v1 */ }
 
     const result = diffTables(tableName, v1, v2, dataOld, dataNew, i18nOld, i18nNew)
-    await writeFile(join(outDir, file), JSON.stringify(result, null, 2))
+    const totalChanges = result.stats.added + result.stats.removed + result.stats.changed
+    if (totalChanges > 0) {
+      await writeFile(join(outDir, file), JSON.stringify(result, null, 2))
+    }
 
     completed++
-    if (result.stats.added + result.stats.removed + result.stats.changed > 0) {
+    if (totalChanges > 0) {
       process.stdout.write(`\r${completed}/${commonFiles.length}  ${tableName}  +${result.stats.added} -${result.stats.removed} ~${result.stats.changed}`)
     } else {
       process.stdout.write(`\r${completed}/${commonFiles.length}  ${tableName}  (no changes)`)
