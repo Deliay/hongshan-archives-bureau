@@ -51,7 +51,7 @@ function getFieldContext(path: string, newValue: any): string {
 }
 
 function localeText(obj: unknown, locale: string): string {
-  if (!obj || typeof obj !== 'object') return String(obj ?? '')
+  if (!obj || typeof obj !== 'object') return ''
   const dict = obj as Record<string, string>
   return dict[locale] || dict.CN || ''
 }
