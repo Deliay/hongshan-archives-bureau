@@ -381,7 +381,7 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
               <div className="flex flex-wrap gap-1">
                 {removed.map(wid => (
                   <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#ef4444] line-through">
-                    <RichText text={wayNames[wid] || wid} />
+                    {wayNames[wid] ? `${wayNames[wid]}（${wid}）` : wid}
                   </span>
                 ))}
               </div>
@@ -393,7 +393,7 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
               <div className="flex flex-wrap gap-1">
                 {added.map(wid => (
                   <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-[#14321e] text-[#26bbfd]">
-                    <RichText text={wayNames[wid] || wid} />
+                    {wayNames[wid] ? `${wayNames[wid]}（${wid}）` : wid}
                   </span>
                 ))}
               </div>
@@ -405,7 +405,7 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
               <div className="flex flex-wrap gap-1">
                 {unchanged.map(wid => (
                   <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6]">
-                    <RichText text={wayNames[wid] || wid} />
+                    {wayNames[wid] ? `${wayNames[wid]}（${wid}）` : wid}
                   </span>
                 ))}
               </div>
