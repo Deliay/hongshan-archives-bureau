@@ -8,6 +8,7 @@ import type { OperatorChange } from '../../hooks/useOperatorAggregatedDiff'
 import type { ChangedEntry } from '../../lib/types-diff'
 import { RichText } from '../../lib/richText'
 import { formatBlackboard } from '../../lib/formatText'
+import { RichTextDiff } from './RichTextDiff'
 
 const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
 
@@ -137,17 +138,17 @@ function renderChangeEntry(entry: any, op: string, locale: string) {
             return (
               <div key={path} className="text-[10px]">
                 <span className="text-[#5A5A62] font-mono">{path}</span>
-                {Object.entries(change.changedLocales).map(([loc, val]) => {
-                  const v = val as { oldText: string; newText: string }
-                  return (
-                    <div key={loc} className="flex gap-2 mt-0.5">
-                      <span className="text-[#C9A96E]">{loc}</span>
-                      <span className="text-[#ef4444]">"{v.oldText}"</span>
-                      <span className="text-[#5A5A62]">→</span>
-                      <span className="text-[#26bbfd]">"{v.newText}"</span>
-                    </div>
-                  )
-                })}
+                <div className="mt-0.5 space-y-0.5">
+                  {Object.entries(change.changedLocales).map(([loc, val]) => {
+                    const v = val as { oldText: string; newText: string }
+                    return (
+                      <div key={loc}>
+                        <span className="text-[#C9A96E]">{loc}</span>
+                        <RichTextDiff oldText={v.oldText || ''} newText={v.newText || ''} />
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )
           })}

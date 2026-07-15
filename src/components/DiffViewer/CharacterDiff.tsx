@@ -3,6 +3,7 @@ import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
 import type { TableDiffComponentProps } from './registry'
+import { RichTextDiff } from './RichTextDiff'
 import type { FieldChange, ChangedEntry } from '../../lib/types-diff'
 
 const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
@@ -336,14 +337,11 @@ function FieldDiff({ path, change, maps, entry }: { path: string; change: FieldC
           </div>
         </div>
       ) : (
-        <div>
+        <div className="space-y-1">
           {Object.entries(change.changedLocales).map(([loc, { oldText, newText }]) => (
-            <div key={loc} className="mb-0.5 last:mb-0">
-              <span className="text-[#C9A96E] font-mono">{LOCALE_LABELS[loc] || loc}</span>
-              <span className="mx-1 text-[#5A5A62]">旧</span>
-              <span className="text-[#ef4444]">{oldText || '（空）'}</span>
-              <span className="mx-1 text-[#5A5A62]">→</span>
-              <span className="text-[#26bbfd]">{newText || '（空）'}</span>
+            <div key={loc}>
+              <span className="text-[#C9A96E] font-mono text-[10px]">{LOCALE_LABELS[loc] || loc}</span>
+              <RichTextDiff oldText={oldText || ''} newText={newText || ''} />
             </div>
           ))}
         </div>
