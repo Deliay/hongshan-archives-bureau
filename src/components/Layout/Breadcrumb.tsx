@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useOperator } from '../../hooks/useData'
+import { useOperator, useWeapon } from '../../hooks/useData'
 
 const LIST_LABEL: Record<string, string> = {
   operators: '干员档案',
@@ -15,9 +15,13 @@ const LIST_LABEL: Record<string, string> = {
 }
 
 function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
+  const { data: op } = useOperator(id)
+  const { data: wpn } = useWeapon(id)
   if (listKey === 'operators') {
-    const { data: op } = useOperator(id)
     return <span className="text-[#E8E6E3]">{op?.name || id}</span>
+  }
+  if (listKey === 'weapons') {
+    return <span className="text-[#E8E6E3]">{wpn?.name || id}</span>
   }
   return <span className="text-[#E8E6E3]">{id}</span>
 }

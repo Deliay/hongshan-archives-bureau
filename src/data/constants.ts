@@ -21,11 +21,10 @@ export const RARITY_STARS: Record<number, number> = {
   2: 5,
 }
 
-export function inferWeaponType(id: string): string {
-  if (id.includes('sword')) return '剑'
-  if (id.includes('claym')) return '大剑'
-  if (id.includes('lance')) return '长枪'
-  if (id.includes('pistol')) return '手枪'
-  if (id.includes('funnel')) return '浮游单元'
-  return '未知'
+export const WEAPON_TYPE_KEYS: Record<number, string> = {
+  1: 'LUA_WEAPON_TYPE_1',
+  2: 'LUA_WEAPON_TYPE_2',
+  3: 'LUA_WEAPON_TYPE_3',
+  5: 'LUA_WEAPON_TYPE_5',
+  6: 'LUA_WEAPON_TYPE_6',
 }

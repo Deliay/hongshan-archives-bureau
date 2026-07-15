@@ -1,5 +1,4 @@
 import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from './types'
-import { inferWeaponType } from '../data/constants'
 
 export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
 
@@ -49,17 +48,26 @@ export function adaptOperator(
   }
 }
 
-export function adaptWeapon(raw: any, i18nMap?: Record<string, string>): Weapon {
+export function adaptWeapon(raw: any, itemRaw: any, i18nMap?: Record<string, string>, itemI18nMap?: Record<string, string>, weaponTypeNameMap?: Record<number, string>): Weapon {
   const id: string = raw.weaponId ?? raw.$key ?? ''
+  const item = itemRaw?.[id]
+  const itemName = item ? resolveI18n(item.name, itemI18nMap) : ''
   return {
     id,
-    name: resolveI18n(raw.engName ?? raw.name, i18nMap) || (raw.engName?.text ?? raw.name?.text) || id,
-    type: inferWeaponType(id),
+    name: itemName || resolveI18n(raw.engName ?? raw.name, i18nMap) || id,
+    type: weaponTypeNameMap?.[raw.weaponType] ?? '未知',
+    weaponType: raw.weaponType ?? 0,
     rarity: raw.rarity ?? 0,
     description: resolveI18n(raw.weaponDesc, i18nMap),
-    lore: resolveI18n(raw.decoDesc, i18nMap),
+    lore: item ? resolveI18n(item.decoDesc, itemI18nMap) : '',
+    itemDesc: item ? resolveI18n(item.desc, itemI18nMap) : '',
     skills: raw.weaponSkillList ?? [],
     maxLevel: raw.maxLv ?? 90,
+    iconId: item?.iconId ?? id,
+    breakthroughTemplateId: raw.breakthroughTemplateId ?? '',
+    levelTemplateId: raw.levelTemplateId ?? '',
+    talentTemplateId: raw.talentTemplateId ?? '',
+    weaponPotentialSkill: raw.weaponPotentialSkill ?? '',
   }
 }
 

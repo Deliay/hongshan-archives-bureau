@@ -6,6 +6,7 @@ import ArchiveHome from './routes/ArchiveHome'
 import OperatorList from './pages/operators/OperatorList'
 import OperatorDetail from './pages/operators/OperatorDetail'
 import WeaponList from './pages/weapons/WeaponList'
+import WeaponDetail from './pages/weapons/WeaponDetail'
 import ProfessionOverview from './pages/professions/ProfessionOverview'
 import RaceList from './pages/races/RaceList'
 import FactionOverview from './pages/factions/FactionOverview'
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="operators" element={<OperatorList />} />
           <Route path="operators/:id" element={<OperatorDetail />} />
           <Route path="weapons" element={<WeaponList />} />
+          <Route path="weapons/:id" element={<WeaponDetail />} />
           <Route path="professions" element={<ProfessionOverview />} />
           <Route path="races" element={<RaceList />} />
           <Route path="factions" element={<FactionOverview />} />

@@ -27,11 +27,14 @@ export function formatBlackboard(format: string, blackboards: Record<string, num
 
 function formatValue(val: string, fmt: string): string {
   const num = Number(val)
-  if (fmt.includes('.')) {
-    const decimals = parseInt(fmt.replace('.', '')) || 1
-    return num.toFixed(decimals)
+  const isPercent = fmt.endsWith('%')
+  const cleanFmt = fmt.replace('%', '')
+  let displayNum = isPercent ? num * 100 : num
+  if (cleanFmt.includes('.')) {
+    const decimals = parseInt(cleanFmt.replace('.', '')) || 1
+    return displayNum.toFixed(decimals) + (isPercent ? '%' : '')
   }
-  return val
+  return String(displayNum) + (isPercent ? '%' : '')
 }
 
 const exprCache = new Map<string, (vars: Record<string, number>) => number>()

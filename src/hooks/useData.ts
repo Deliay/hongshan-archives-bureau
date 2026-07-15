@@ -4,6 +4,7 @@ import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
 import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
+import { WEAPON_TYPE_KEYS } from '../data/constants'
 
 interface UseDataResult<T> {
   data: T | null
@@ -349,15 +350,49 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
   }, [locale, id])
 }
 
+async function getWeaponTypeNameMap(locale: string): Promise<Record<number, string>> {
+  const [textTable, textI18n] = await Promise.all([
+    getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable')),
+    getTableI18nDict('TextTable', locale),
+  ])
+  const map: Record<number, string> = {}
+  for (const [type, key] of Object.entries(WEAPON_TYPE_KEYS)) {
+    const entry = textTable[key]
+    if (entry) {
+      map[Number(type)] = resolveI18n(entry, textI18n) || key
+    }
+  }
+  return map
+}
+
 export function useWeapons(): UseDataResult<Weapon[]> {
   const { locale } = useLocale()
   return useData(async () => {
-    const [rawData, i18nMap] = await Promise.all([
+    const [rawData, i18nMap, itemRaw, itemI18nMap, typeNameMap] = await Promise.all([
       getCachedData<Record<string, any>>('WeaponBasicTable', () => fetchTableAll('WeaponBasicTable')),
       getTableI18nDict('WeaponBasicTable', locale),
+      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+      getTableI18nDict('ItemTable', locale),
+      getWeaponTypeNameMap(locale),
     ])
-    return Object.entries(rawData).map(([, v]) => adaptWeapon(v, i18nMap))
+    return Object.entries(rawData).map(([, v]) => adaptWeapon(v, itemRaw, i18nMap, itemI18nMap, typeNameMap))
   }, [locale])
+}
+
+export function useWeapon(id: string): UseDataResult<Weapon | null> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [rawData, i18nMap, itemRaw, itemI18nMap, typeNameMap] = await Promise.all([
+      getCachedData<Record<string, any>>('WeaponBasicTable', () => fetchTableAll('WeaponBasicTable')),
+      getTableI18nDict('WeaponBasicTable', locale),
+      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+      getTableI18nDict('ItemTable', locale),
+      getWeaponTypeNameMap(locale),
+    ])
+    const raw = rawData[id]
+    if (!raw) throw new Error(`Weapon ${id} not found`)
+    return adaptWeapon(raw, itemRaw, i18nMap, itemI18nMap, typeNameMap)
+  }, [locale, id])
 }
 
 export function useEnemies(): UseDataResult<Enemy[]> {

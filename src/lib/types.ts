@@ -116,11 +116,18 @@ export interface Weapon {
   id: string
   name: string
   type: string
+  weaponType: number
   rarity: number
   description: string
   lore: string
+  itemDesc: string
   skills: string[]
   maxLevel: number
+  iconId: string
+  breakthroughTemplateId: string
+  levelTemplateId: string
+  talentTemplateId: string
+  weaponPotentialSkill: string
 }
 
 export interface Enemy {
