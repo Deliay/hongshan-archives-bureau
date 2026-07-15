@@ -23,17 +23,17 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const [profRaw, profI18n, elemRaw, elemI18n, tagRaw, tagI18n, attrMeta, attrShow, attrI18n, i18nRaw] = await Promise.all([
-        getCachedData<Record<string, any>>('CharProfessionTable', () => fetchTableAll('CharProfessionTable')),
-        getCachedData<Record<string, string>>('I18nDict_CN_CharProfessionTable', () => fetchTableDictAll('CharProfessionTable', 'CN')),
-        getCachedData<Record<string, any>>('CharTypeTable', () => fetchTableAll('CharTypeTable')),
-        getCachedData<Record<string, string>>('I18nDict_CN_CharTypeTable', () => fetchTableDictAll('CharTypeTable', 'CN')),
-        getCachedData<Record<string, any>>('CharBattleTagTable', () => fetchTableAll('CharBattleTagTable')),
-        getCachedData<Record<string, string>>('I18nDict_CN_CharBattleTagTable', () => fetchTableDictAll('CharBattleTagTable', 'CN')),
-        getCachedData<Record<string, any>>('AttributeMetaTable', () => fetchTableAll('AttributeMetaTable')),
-        getCachedData<Record<string, any>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')),
-        getCachedData<Record<string, string>>('I18nDict_CN_AttributeShowConfigTable', () => fetchTableDictAll('AttributeShowConfigTable', 'CN')),
-        getTableI18nDict('I18nTextTable', locale),
+      const [profRaw, profI18n, elemRaw, elemI18n, tagRaw, tagI18n, attrMetaVal, attrShowVal, attrI18n, i18nRaw] = await Promise.all([
+        getCachedData<Record<string, any>>('CharProfessionTable', () => fetchTableAll('CharProfessionTable')).catch(() => ({} as Record<string, any>)),
+        getCachedData<Record<string, string>>('I18nDict_CN_CharProfessionTable', () => fetchTableDictAll('CharProfessionTable', 'CN')).catch(() => ({} as Record<string, string>)),
+        getCachedData<Record<string, any>>('CharTypeTable', () => fetchTableAll('CharTypeTable')).catch(() => ({} as Record<string, any>)),
+        getCachedData<Record<string, string>>('I18nDict_CN_CharTypeTable', () => fetchTableDictAll('CharTypeTable', 'CN')).catch(() => ({} as Record<string, string>)),
+        getCachedData<Record<string, any>>('CharBattleTagTable', () => fetchTableAll('CharBattleTagTable')).catch(() => ({} as Record<string, any>)),
+        getCachedData<Record<string, string>>('I18nDict_CN_CharBattleTagTable', () => fetchTableDictAll('CharBattleTagTable', 'CN')).catch(() => ({} as Record<string, string>)),
+        getCachedData<Record<string, any>>('AttributeMetaTable', () => fetchTableAll('AttributeMetaTable')).catch(() => ({} as Record<string, any>)),
+        getCachedData<Record<string, any>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')).catch(() => ({} as Record<string, any>)),
+        getCachedData<Record<string, string>>('I18nDict_CN_AttributeShowConfigTable', () => fetchTableDictAll('AttributeShowConfigTable', 'CN')).catch(() => ({} as Record<string, string>)),
+        getTableI18nDict('I18nTextTable', locale).catch(() => ({}) as Record<string, string>),
       ])
       if (cancelled) return
 
@@ -61,9 +61,9 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
       }
 
       const attributes: Record<number, { name: string; icon: string }> = {}
-      for (const [k, v] of Object.entries<any>(attrMeta)) {
+      for (const [k, v] of Object.entries<any>(attrMetaVal)) {
         const attrType = Number(k)
-        const configItem = attrShow[k]?.list?.[0]
+        const configItem = attrShowVal[k]?.list?.[0]
         const nameId = String(configItem?.name?.id ?? '')
         attributes[attrType] = {
           name: (nameId && attrI18n[nameId]) || v.iconName?.replace('icon_attribute_', '') || `属性${k}`,
