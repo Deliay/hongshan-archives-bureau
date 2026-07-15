@@ -124,7 +124,48 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
 function renderTableEntry(change: { tableName: string; op: string; key: string; entry: any }, locale: string) {
   const { tableName, op, entry } = change
   if (tableName === 'EnemyAttributeTemplateTable') return <EnemyAttrEntry entry={entry} op={op} locale={locale} />
+  if (tableName === 'EnemyTable') return <EnemyTableEntry entry={entry} op={op} locale={locale} />
   return renderChangeEntry(entry, op, locale)
+}
+
+function EnemyTableEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
+  const data = op === 'changed' ? (entry as any)?.newValue ?? entry : entry
+  const attrTemplateId = data?.attrTemplateId as string | undefined
+  const [attrData, setAttrData] = useState<any>(null)
+  useEffect(() => {
+    if (!attrTemplateId) return
+    let cancelled = false
+    getCachedData<Record<string, any>>('EnemyAttributeTemplateTable', () => fetchTableAll('EnemyAttributeTemplateTable'))
+      .then(raw => {
+        if (cancelled) return
+        const found = (raw as Record<string, any>)[attrTemplateId]
+        if (found) setAttrData(found)
+      }).catch(() => {})
+    return () => { cancelled = true }
+  }, [attrTemplateId])
+  const lda: { level?: number }[] = attrData?.levelDependentAttributes ?? []
+  const hasLevelField = lda.some(a => a != null && typeof a === 'object' && 'level' in a)
+  const levelCount = hasLevelField ? Math.max(1, ...lda.map(a => a.level ?? 1)) : lda.length
+  const [level, setLevel] = useState(1)
+  useEffect(() => { setLevel(levelCount) }, [levelCount])
+  return (
+    <div className="space-y-1">
+      {renderChangeEntry(entry, op, locale)}
+      {attrData && (
+        <div className="px-2 py-1.5 rounded bg-[#0F0F12] mt-1">
+          <div className="text-[10px] text-[#8B8982] mb-1">属性模板 ({attrTemplateId})</div>
+          <AttributeView attrData={attrData} level={level} />
+          {levelCount > 1 && (
+            <div className="mt-2">
+              <input type="range" min={1} max={levelCount} value={level}
+                onChange={(e) => setLevel(Number(e.target.value))}
+                className="w-full h-1 rounded-full appearance-none bg-[#2A2A32] accent-[#C9A96E] cursor-pointer" />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function EnemyAttrEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
