@@ -53,7 +53,10 @@ function ChangeBadge({ label, color, count }: { label: string; color: string; co
   )
 }
 
-function renderValue(v: unknown, locale: string): string {
+function formatDiffValue(path: string, v: unknown, locale: string): string {
+  if (path.endsWith('unlockType') && typeof v === 'number') {
+    return renderUnlockInfo(v, 0) || String(v)
+  }
   if (v === undefined || v === null) return '（空）'
   if (typeof v === 'object' && !Array.isArray(v)) {
     const text = localeText(v, locale)
@@ -88,8 +91,8 @@ function renderChangeEntry(entry: any, op: string, locale: string) {
                 <div key={path} className="text-[10px]">
                   <span className="text-[#5A5A62] font-mono">{path}</span>
                   <div className="flex gap-3 mt-0.5">
-                    <span className="text-[#ef4444]">旧 {renderValue(change.oldValue, locale)}</span>
-                    <span className="text-[#26bbfd]">新 {renderValue(change.newValue, locale)}</span>
+                    <span className="text-[#ef4444]">旧 {formatDiffValue(path, change.oldValue, locale)}</span>
+                    <span className="text-[#26bbfd]">新 {formatDiffValue(path, change.newValue, locale)}</span>
                   </div>
                 </div>
               )
