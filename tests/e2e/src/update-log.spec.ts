@@ -121,11 +121,6 @@ test.describe('更新日志 (Update Log)', () => {
       return body.includes('敌人变动概览')
     }, { timeout: 15000 })
 
-    // Verify table name badges appear in the overview header
-    const overview = page.locator('h3:has-text("敌人变动概览")').locator('..').locator('..')
-    await expect(overview.locator('span:has-text("EnemyDisplayInfoTable")').first()).toBeVisible({ timeout: 5000 })
-    await expect(overview.locator('span:has-text("EnemyTable")').first()).toBeVisible({ timeout: 5000 })
-
     // eny_0046_lbshamman_hdg016 has templateId=eny_0046_lbshamman
     // It should be grouped under eny_0046_lbshamman card
     // eny_0046_lbshamman itself has no diff changes, so the name

@@ -490,13 +490,6 @@ export default function WeaponChangePanel({ versionName }: Props) {
   const withRemoved = weapons.filter(o => o.changes.some(c => c.op === 'removed')).length
   const withChanged = weapons.filter(o => o.changes.some(c => c.op === 'changed')).length
 
-  const tableTotals: Record<string, number> = {}
-  for (const wp of weapons) {
-    for (const c of wp.changes) {
-      tableTotals[c.tableName] = (tableTotals[c.tableName] || 0) + 1
-    }
-  }
-
   return (
     <div className="mb-8">
       <div className="flex items-baseline justify-between mb-3">
@@ -511,16 +504,6 @@ export default function WeaponChangePanel({ versionName }: Props) {
           {withRemoved > 0 && <span className="text-[#ef4444]">移除 {withRemoved}</span>}
           {withChanged > 0 && <span className="text-[#ffbb03]">变更 {withChanged}</span>}
         </div>
-      </div>
-
-      <div className="flex flex-wrap gap-1 mb-3">
-        {Object.entries(tableTotals).map(([table, count]) => (
-          <span key={table} className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-mono"
-            style={{ backgroundColor: `${TABLE_COLORS[table] || '#8B8982'}18`, color: TABLE_COLORS[table] || '#8B8982' }}>
-            {table}
-            <span className="opacity-60">×{count}</span>
-          </span>
-        ))}
       </div>
 
       <div className="space-y-2">

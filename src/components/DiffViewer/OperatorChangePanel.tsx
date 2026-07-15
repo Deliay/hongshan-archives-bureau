@@ -655,13 +655,6 @@ export default function OperatorChangePanel({ versionName }: Props) {
   const withRemoved = operators.filter(o => o.changes.some(c => c.op === 'removed')).length
   const withChanged = operators.filter(o => o.changes.some(c => c.op === 'changed')).length
 
-  const tableTotals: Record<string, number> = {}
-  for (const op of operators) {
-    for (const c of op.changes) {
-      tableTotals[c.tableName] = (tableTotals[c.tableName] || 0) + 1
-    }
-  }
-
   return (
     <div className="mb-8">
       <div className="flex items-baseline justify-between mb-3">
@@ -676,16 +669,6 @@ export default function OperatorChangePanel({ versionName }: Props) {
           {withRemoved > 0 && <span className="text-[#ef4444]">移除 {withRemoved}</span>}
           {withChanged > 0 && <span className="text-[#ffbb03]">变更 {withChanged}</span>}
         </div>
-      </div>
-
-      <div className="flex flex-wrap gap-1 mb-3">
-        {Object.entries(tableTotals).map(([table, count]) => (
-          <span key={table} className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-mono"
-            style={{ backgroundColor: `${TABLE_COLORS[table] || '#8B8982'}18`, color: TABLE_COLORS[table] || '#8B8982' }}>
-            {table}
-            <span className="opacity-60">×{count}</span>
-          </span>
-        ))}
       </div>
 
       <div className="space-y-2">
