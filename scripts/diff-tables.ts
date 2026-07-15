@@ -16,7 +16,7 @@ program
   .version('1.0.0')
   .argument('<version-old>', 'Older version directory name in endfield-data/')
   .argument('<version-new>', 'Newer version directory name in endfield-data/')
-  .option('-o, --out-dir <path>', 'Output directory (default: endfield-data/__diffs__/{v1}__{v2})')
+  .option('-o, --out-dir <path>', 'Output base directory; creates {v1}__{v2} subfolder (default: endfield-data/__diffs__)')
   .addHelpText('after', `
 FLOW
    1. Load I18nTextTable dicts for both versions
@@ -273,7 +273,7 @@ async function main() {
 
   const dir1 = join(DATA_DIR, v1)
   const dir2 = join(DATA_DIR, v2)
-  const outDir = opts.opts().outDir || join(DATA_DIR, '__diffs__', `${v1}__${v2}`)
+  const outDir = join(opts.opts().outDir || join(DATA_DIR, '__diffs__'), `${v1}__${v2}`)
 
   console.log(`Old:  ${dir1}`)
   console.log(`New:  ${dir2}`)
