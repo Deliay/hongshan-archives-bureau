@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocale } from '../../lib/locale'
 import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
 import { getCachedData } from '../../lib/cache'
@@ -122,7 +122,31 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
 }
 
 function renderTableEntry(change: { tableName: string; op: string; key: string; entry: any }, locale: string) {
-  return renderChangeEntry(change.entry, change.op, locale)
+  const { tableName, op, entry } = change
+  if (tableName === 'EnemyAttributeTemplateTable') return <EnemyAttrEntry entry={entry} op={op} locale={locale} />
+  return renderChangeEntry(entry, op, locale)
+}
+
+function EnemyAttrEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
+  const data = op === 'changed' ? (entry as any)?.newValue ?? entry : entry
+  const lda: { level?: number }[] = data?.levelDependentAttributes ?? []
+  const hasLevelField = lda.some(a => a != null && typeof a === 'object' && 'level' in a)
+  const levelCount = hasLevelField ? Math.max(1, ...lda.map(a => a.level ?? 1)) : lda.length
+  const [level, setLevel] = useState(1)
+  useEffect(() => { setLevel(levelCount) }, [levelCount])
+  if (op === 'changed') return renderChangeEntry(entry, op, locale)
+  return (
+    <div className="px-2 py-1.5 rounded bg-[#0F0F12]">
+      <AttributeView attrData={data} level={level} />
+      {levelCount > 1 && (
+        <div className="mt-2">
+          <input type="range" min={1} max={levelCount} value={level}
+            onChange={(e) => setLevel(Number(e.target.value))}
+            className="w-full h-1 rounded-full appearance-none bg-[#2A2A32] accent-[#C9A96E] cursor-pointer" />
+        </div>
+      )}
+    </div>
+  )
 }
 
 function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
@@ -392,26 +416,28 @@ function AddedEnemyDetail({ templateId, displayEntry, locale }: { templateId: st
 }
 
 function AttributeView({ attrData, level }: { attrData: any; level: number }) {
-  const depAttrs = useMemo(() => {
-    const arr = (attrData?.levelDependentAttributes ?? []) as { level: number; attrType: number; attrValue: number }[]
-    const filtered = arr.filter(a => a.level === level)
-    const map: Record<number, number> = {}
-    for (const a of filtered) {
-      map[a.attrType] = a.attrValue
-    }
-    return map
-  }, [attrData, level])
-
-  const fixedAttrs = useMemo(() => {
-    const obj: Record<number, number> = {}
-    const data = attrData?.levelIndependentAttributes
-    if (data) {
-      for (const a of (data as { attrType: number; attrValue: number }[])) {
-        obj[a.attrType] = a.attrValue
+  const lda: { attrs: { attrType: number; attrValue: number }[] }[] = attrData?.levelDependentAttributes ?? []
+  const hasLevelField = lda.some(a => a != null && typeof a === 'object' && 'level' in a)
+  const depAttrs: Record<number, number> = {}
+  if (hasLevelField) {
+    for (const a of lda) {
+      if ((a as any).level === level && (a as any).attrs) {
+        for (const attr of (a as any).attrs) depAttrs[attr.attrType] = attr.attrValue
       }
     }
-    return obj
-  }, [attrData])
+  } else if (lda.length > 0) {
+    const idx = Math.min(Math.max(level - 1, 0), lda.length - 1)
+    const entry = lda[idx]
+    if (entry?.attrs) {
+      for (const attr of entry.attrs) depAttrs[attr.attrType] = attr.attrValue
+    }
+  }
+
+  const fixedAttrs: Record<number, number> = {}
+  const lia = attrData?.levelIndependentAttributes
+  if (lia?.attrs) {
+    for (const a of lia.attrs) fixedAttrs[a.attrType] = a.attrValue
+  }
 
   const allTypes = [...new Set([...Object.keys(depAttrs).map(Number), ...Object.keys(fixedAttrs).map(Number)])].sort((a, b) => a - b)
   if (allTypes.length === 0) return <div className="text-[10px] text-[#5A5A62]">无属性数据</div>

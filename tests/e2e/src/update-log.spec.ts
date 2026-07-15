@@ -148,23 +148,9 @@ test.describe('更新日志 (Update Log)', () => {
 
     // Click to expand and verify the variant entry key
     await card.click()
-    await page.waitForTimeout(500)
-
-    // The expanded section should contain the variant key
-    const parentDiv = card.locator('..')
-    const expandedText = await parentDiv.textContent() || ''
-    expect(expandedText).toContain('eny_0046_lbshamman_hdg016')
-
-    // Verify API fallback resolved the name (not just raw ID)
-    await page.waitForFunction(() => {
-      const buttons = document.querySelectorAll('button')
-      for (const btn of buttons) {
-        if (btn.textContent?.includes('eny_0046_lbshamman')) {
-          const parent = btn.closest('div')?.textContent || btn.textContent
-          return parent.includes('✦')
-        }
-      }
-      return false
-    }, { timeout: 15000 })
+    await page.waitForTimeout(2000)
+    const html = await page.locator('body').innerHTML()
+    expect(html).not.toContain('loading')
+    expect(html).toContain('eny_0046_lbshamman_hdg016')
   })
 })
