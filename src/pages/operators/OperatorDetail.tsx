@@ -9,10 +9,6 @@ import ItemPanel from '../../components/Items/ItemPanel'
 import { formatBlackboard } from '../../lib/formatText'
 import type { SkillGroup, SkillPatchData } from '../../lib/types'
 
-type TabName = '技能' | '精英化' | '装备适配' | '能力值提升' | '干员天赋' | '后勤技能' | '档案记录' | '语音记录'
-
-const TABS: TabName[] = ['技能', '精英化', '装备适配', '能力值提升', '干员天赋', '后勤技能', '档案记录', '语音记录']
-
 const SKILL_TYPE_LABELS: Record<number, string> = {
   0: '普通攻击',
   1: '主动技能',
@@ -23,7 +19,6 @@ const SKILL_TYPE_LABELS: Record<number, string> = {
 export default function OperatorDetail() {
   const { id } = useParams<{ id: string }>()
   const { data: detail, loading, error } = useOperatorDetail(id ?? '')
-  const [activeTab, setActiveTab] = useState<TabName>('技能')
 
   const breakCostMap = detail?.breakCostMap ?? {}
   const talentNodeMap = detail?.talentNodeMap ?? {}
@@ -52,9 +47,9 @@ export default function OperatorDetail() {
   const { op, wpnRecommend } = detail
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl space-y-6">
       {/* 基础信息 */}
-      <div className="flex items-start gap-4 mb-5">
+      <div className="flex items-start gap-4">
         <div className="w-20 h-20 rounded border border-[#2A2A32] bg-[#1A1B23] overflow-hidden shrink-0">
           {op.portrait ? (
             <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
@@ -78,7 +73,6 @@ export default function OperatorDetail() {
               <span key={i} className="text-xs px-2 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">{tag}</span>
             ))}
           </div>
-          {/* 主能力 & 副能力 */}
           <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
             {op.mainAttr.icon && (
               <div className="flex items-center gap-1.5 text-[#B0ACA6]">
@@ -98,263 +92,227 @@ export default function OperatorDetail() {
         </div>
       </div>
 
-      {/* Tab 导航 */}
-      <div className="mb-4">
-        <div className="flex border-b border-[#2A2A32]">
-          {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? 'text-[#C9A96E] border-b-2 border-[#C9A96E]'
-                  : 'text-[#8B8982] hover:text-[#B0ACA6]'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* 技能 */}
+      <section>
+        <h3 className="text-sm font-medium text-[#C9A96E] mb-3">技能</h3>
+        {detail.skillGroups.length === 0 ? (
+          <p className="text-sm text-[#5A5A62]">暂无技能数据</p>
+        ) : (
+          <div className="space-y-3">
+            {[...detail.skillGroups].sort((a, b) => {
+              const order = [0, 1, 3, 2]
+              return order.indexOf(a.skillGroupType) - order.indexOf(b.skillGroupType)
+            }).map((group) => (
+              <SkillGroupCard
+                key={group.skillGroupId}
+                group={group}
+                skillPatchMap={detail.skillPatchMap}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
-      {/* Tab 内容 */}
-      {activeTab === '技能' && (
+      {/* 干员天赋 */}
+      {talentNodes.length > 0 && (
         <section>
-          {detail.skillGroups.length === 0 ? (
-            <p className="text-sm text-[#5A5A62]">暂无技能数据</p>
-          ) : (
-            <div className="space-y-4">
-              {[...detail.skillGroups].sort((a, b) => {
-                const order = [0, 1, 3, 2]
-                return order.indexOf(a.skillGroupType) - order.indexOf(b.skillGroupType)
-              }).map((group) => (
-                <SkillGroupCard
-                  key={group.skillGroupId}
-                  group={group}
-                  skillPatchMap={detail.skillPatchMap}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === '精英化' && (
-        <section>
-          {breakNodes.length === 0 ? (
-            <p className="text-sm text-[#5A5A62]">暂无精英化数据</p>
-          ) : (
-            <div className="space-y-3">
-              {breakNodes.map((node) => (
-                <div key={node.nodeId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-[#E8E6E3]">{node.name}</span>
-                    <span className="text-xs text-[#5A5A62]">等级上限提升至 Lv.{node.equipTierLimit * 20}</span>
-                  </div>
-                  <p className="text-xs text-[#8B8982] mb-2"><RichText text={node.description} /></p>
-                  {node.requiredItem.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {node.requiredItem.map((item) => (
-                        <ItemPanel key={item.id} itemId={item.id} amount={item.count} showName={false} iconClassName="w-8 h-8" className="w-16" />
-                      ))}
-                    </div>
-                  )}
+          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">干员天赋</h3>
+          <div className="space-y-3">
+            {talentNodes.map((node) => (
+              <div key={node.nodeId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+                <div className="flex items-center gap-2 mb-1">
+                  {(() => {
+                    let iconUrl = ''
+                    if (node.nodeType === 4 && node.iconId) {
+                      iconUrl = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${node.iconId}.png`
+                    } else if (node.nodeType === 3 && node.attrType !== undefined) {
+                      iconUrl = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/talenttreeicon/icon_talenttree_${node.attrType}.png`
+                    } else if ((node.nodeType === 1 || node.nodeType === 2) && node.iconId) {
+                      iconUrl = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/talenticon/${node.iconId}.png`
+                    }
+                    if (!iconUrl) return null
+                    return (
+                      <img src={iconUrl} alt="" className="w-6 h-6"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    )
+                  })()}
+                  <span className="text-sm font-medium text-[#E8E6E3]">{node.name}</span>
+                  <span className="text-xs text-[#C9A96E]">Lv.{node.level}</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === '装备适配' && (
-        <section>
-          {!wpnRecommend ? (
-            <p className="text-sm text-[#5A5A62]">暂无装备适配数据</p>
-          ) : (
-            <div className="space-y-4">
-              {wpnRecommend.weaponIds1.length > 0 && (
-                <div>
-                  <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">推荐武器·第一组</h4>
+                <p className="text-xs text-[#8B8982] mb-2"><RichText text={node.description} /></p>
+                {node.requiredItem.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {wpnRecommend.weaponIds1.map((wid) => (
-                      <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
+                    {node.requiredItem.map((item) => (
+                      <ItemPanel key={item.id} itemId={item.id} amount={item.count} showName={false} iconClassName="w-8 h-8" className="w-16" />
                     ))}
                   </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 后勤技能 */}
+      {detail.factorySkills.length > 0 && (
+        <section>
+          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">后勤技能</h3>
+          <div className="space-y-3">
+            {detail.factorySkills.map((fs) => (
+              <div key={fs.skillId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0 flex items-center justify-center">
+                    {fs.icon ? (
+                      <img
+                        src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/${fs.icon}.png`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                    ) : (
+                      <span className="text-xs text-[#5A5A62]">?</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-[#E8E6E3]">{fs.name || fs.skillId}</div>
+                    <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-[#5A5A62]">
+                      {fs.roomType > 0 && <span>房间 {fs.roomType}</span>}
+                      <span>Lv.{fs.level}</span>
+                    </div>
+                    {fs.desc && (
+                      <div className="text-xs text-[#B0ACA6] leading-relaxed mt-1"><RichText text={fs.desc} /></div>
+                    )}
+                  </div>
                 </div>
-              )}
-              {wpnRecommend.weaponIds2.length > 0 && (
-                <div>
-                  <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">推荐武器·第二组</h4>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 精英化 */}
+      {breakNodes.length > 0 && (
+        <section>
+          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">精英化</h3>
+          <div className="space-y-3">
+            {breakNodes.map((node) => (
+              <div key={node.nodeId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-[#E8E6E3]">{node.name}</span>
+                </div>
+                <p className="text-xs text-[#8B8982] mb-2"><RichText text={node.description} /></p>
+                {node.requiredItem.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {wpnRecommend.weaponIds2.map((wid) => (
-                      <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
+                    {node.requiredItem.map((item) => (
+                      <ItemPanel key={item.id} itemId={item.id} amount={item.count} showName={false} iconClassName="w-8 h-8" className="w-16" />
                     ))}
                   </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 能力值提升 */}
+      {attrNodes.length > 0 && (
+        <section>
+          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">能力值提升</h3>
+          <div className="space-y-3">
+            {attrNodes.map((node) => (
+              <div key={node.nodeId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-[#E8E6E3]">{node.name || `突破节点`}</span>
                 </div>
-              )}
-              {wpnRecommend.weaponIds3.length > 0 && (
-                <div>
-                  <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">推荐武器·第三组</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {wpnRecommend.weaponIds3.map((wid) => (
-                      <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
+                {node.requiredItem.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {node.requiredItem.map((item) => (
+                      <ItemPanel key={item.id} itemId={item.id} amount={item.count} showName={false} iconClassName="w-8 h-8" className="w-16" />
                     ))}
                   </div>
-                </div>
-              )}
-              {equipBreakNodes.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">装备突破</h4>
-                  <div className="space-y-2">
-                    {equipBreakNodes.map((node) => (
-                      <div key={node.nodeId} className="p-2 rounded border border-[#2A2A32] bg-[#1A1B23]">
-                        <span className="text-xs text-[#E8E6E3]">{node.name}</span>
-                        <p className="text-xs text-[#8B8982]"><RichText text={node.description} /></p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
-      {activeTab === '能力值提升' && (
+      {/* 装备适配 */}
+      {wpnRecommend && (
         <section>
-          {attrNodes.length === 0 && breakNodes.length === 0 ? (
-            <p className="text-sm text-[#5A5A62]">暂无能力值提升数据</p>
-          ) : (
-            <div className="space-y-3">
-              {attrNodes.map((node) => (
-                <div key={node.nodeId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-[#E8E6E3]">{node.name || `突破节点`}</span>
-                    <span className="text-xs text-[#C9A96E]">好感度 +{node.breakStage * 100}</span>
-                  </div>
-                  {node.requiredItem.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {node.requiredItem.map((item) => (
-                        <ItemPanel key={item.id} itemId={item.id} amount={item.count} showName={false} iconClassName="w-8 h-8" className="w-16" />
-                      ))}
+          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">装备适配</h3>
+          <div className="space-y-4">
+            {wpnRecommend.weaponIds1.length > 0 && (
+              <div>
+                <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">推荐武器·第一组</h4>
+                <div className="flex flex-wrap gap-2">
+                  {wpnRecommend.weaponIds1.map((wid) => (
+                    <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
+                  ))}
+                </div>
+              </div>
+            )}
+            {wpnRecommend.weaponIds2.length > 0 && (
+              <div>
+                <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">推荐武器·第二组</h4>
+                <div className="flex flex-wrap gap-2">
+                  {wpnRecommend.weaponIds2.map((wid) => (
+                    <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
+                  ))}
+                </div>
+              </div>
+            )}
+            {wpnRecommend.weaponIds3.length > 0 && (
+              <div>
+                <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">推荐武器·第三组</h4>
+                <div className="flex flex-wrap gap-2">
+                  {wpnRecommend.weaponIds3.map((wid) => (
+                    <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
+                  ))}
+                </div>
+              </div>
+            )}
+            {equipBreakNodes.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">装备突破</h4>
+                <div className="space-y-2">
+                  {equipBreakNodes.map((node) => (
+                    <div key={node.nodeId} className="p-2 rounded border border-[#2A2A32] bg-[#1A1B23]">
+                      <span className="text-xs text-[#E8E6E3]">{node.name}</span>
+                      <p className="text-xs text-[#8B8982]"><RichText text={node.description} /></p>
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </section>
       )}
 
-      {activeTab === '干员天赋' && (
+      {/* 档案记录 */}
+      {op.profileRecords.length > 0 && (
         <section>
-          {talentNodes.length === 0 ? (
-            <p className="text-sm text-[#5A5A62]">暂无天赋数据</p>
-          ) : (
-            <div className="space-y-3">
-              {talentNodes.map((node) => (
-                <div key={node.nodeId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
-                  <div className="flex items-center gap-2 mb-1">
-                    {(() => {
-                      let iconUrl = ''
-                      if (node.nodeType === 4 && node.iconId) {
-                        iconUrl = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${node.iconId}.png`
-                      } else if (node.nodeType === 3 && node.attrType !== undefined) {
-                        iconUrl = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/talenttreeicon/icon_talenttree_${node.attrType}.png`
-                      } else if ((node.nodeType === 1 || node.nodeType === 2) && node.iconId) {
-                        iconUrl = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/talenticon/${node.iconId}.png`
-                      }
-                      if (!iconUrl) return null
-                      return (
-                        <img src={iconUrl} alt="" className="w-6 h-6"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                      )
-                    })()}
-                    <span className="text-sm font-medium text-[#E8E6E3]">{node.name}</span>
-                    <span className="text-xs text-[#C9A96E]">Lv.{node.level}</span>
-                  </div>
-                  <p className="text-xs text-[#8B8982] mb-2"><RichText text={node.description} /></p>
-                  {node.requiredItem.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {node.requiredItem.map((item) => (
-                        <ItemPanel key={item.id} itemId={item.id} amount={item.count} showName={false} iconClassName="w-8 h-8" className="w-16" />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">档案记录</h3>
+          <div className="space-y-3">
+            {op.profileRecords.map((record, i) => (
+              <p key={i} className="text-sm text-[#B0ACA6] leading-relaxed"><RichText text={record} /></p>
+            ))}
+          </div>
         </section>
       )}
 
-      {activeTab === '后勤技能' && (
+      {/* 语音记录 */}
+      {op.voiceLines.length > 0 && (
         <section>
-          {detail.factorySkills.length === 0 ? (
-            <p className="text-sm text-[#5A5A62]">暂无后勤技能数据</p>
-          ) : (
-            <div className="space-y-3">
-              {detail.factorySkills.map((fs) => (
-                <div key={fs.skillId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0 flex items-center justify-center">
-                      {fs.icon ? (
-                        <img
-                          src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/${fs.icon}.png`}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                        />
-                      ) : (
-                        <span className="text-xs text-[#5A5A62]">?</span>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-[#E8E6E3]">{fs.name || fs.skillId}</div>
-                      <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-[#5A5A62]">
-                        {fs.roomType > 0 && <span>房间 {fs.roomType}</span>}
-                        <span>Lv.{fs.level}</span>
-                      </div>
-                      {fs.desc && (
-                        <div className="text-xs text-[#B0ACA6] leading-relaxed mt-1"><RichText text={fs.desc} /></div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === '档案记录' && (
-        <section>
-          {op.profileRecords.length === 0 ? (
-            <p className="text-sm text-[#5A5A62]">暂无档案记录</p>
-          ) : (
-            <div className="space-y-3">
-              {op.profileRecords.map((record, i) => (
-                <p key={i} className="text-sm text-[#B0ACA6] leading-relaxed"><RichText text={record} /></p>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === '语音记录' && (
-        <section>
-          {op.voiceLines.length === 0 ? (
-            <p className="text-sm text-[#5A5A62]">暂无语音记录</p>
-          ) : (
-            <div className="space-y-2">
-              {op.voiceLines.slice(0, 10).map((vl, i) => (
-                <div key={i} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
-                  <p className="text-xs text-[#5A5A62] mb-1">{vl.title || `语音 ${i + 1}`}</p>
-                  <p className="text-sm text-[#B0ACA6]"><RichText text={vl.text} /></p>
-                </div>
-              ))}
-            </div>
-          )}
+          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">语音记录</h3>
+          <div className="space-y-2">
+            {op.voiceLines.slice(0, 10).map((vl, i) => (
+              <div key={i} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+                <p className="text-xs text-[#5A5A62] mb-1">{vl.title || `语音 ${i + 1}`}</p>
+                <p className="text-sm text-[#B0ACA6]"><RichText text={vl.text} /></p>
+              </div>
+            ))}
+          </div>
         </section>
       )}
     </div>
@@ -484,5 +442,3 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
     </div>
   )
 }
-
-

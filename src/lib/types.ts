@@ -135,6 +135,10 @@ export interface Enemy {
   name: string
   tags: string[]
   description: string
+  displayType: number
+  nickname: string
+  wikiGroup: string
+  templateId: string
 }
 
 export interface Item {

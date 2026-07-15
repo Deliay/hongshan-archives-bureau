@@ -398,17 +398,29 @@ export function useWeapon(id: string): UseDataResult<Weapon | null> {
 export function useEnemies(): UseDataResult<Enemy[]> {
   const { locale } = useLocale()
   return useData(async () => {
-    const [[rawData, displayData], i18nMap] = await Promise.all([
+    const [[rawDisplay, wikiRaw, wikiGroupRaw], i18nMap, groupI18n] = await Promise.all([
       Promise.all([
-        getCachedData<Record<string, any>>('EnemyTable', () => fetchTableAll('EnemyTable')),
-        getCachedData<Record<string, any>>('EnemyDisplayInfoTable', () => fetchTableAll('EnemyDisplayInfoTable')),
+        getCachedData<Record<string, any>>('EnemyTemplateDisplayInfoTable', () => fetchTableAll('EnemyTemplateDisplayInfoTable')),
+        getCachedData<Record<string, any>>('WikiEntryDataTable', () => fetchTableAll('WikiEntryDataTable')),
+        getCachedData<Record<string, any>>('WikiGroupTable', () => fetchTableAll('WikiGroupTable')),
       ]),
-      getTableI18nDict('EnemyDisplayInfoTable', locale),
+      getTableI18nDict('EnemyTemplateDisplayInfoTable', locale),
+      getTableI18nDict('WikiGroupTable', locale).catch(() => ({}) as Record<string, string>),
     ])
-    return Object.entries(rawData).map(([k, v]) => {
-      const display = displayData[k] ?? {}
-      return adaptEnemy({ ...v, ...display, tags: v.tags ?? display.tags }, i18nMap)
-    })
+    const groupRaw = wikiGroupRaw['wiki_type_monster'] as { list?: { groupId: string; groupName: { id: number; text: string } }[] } | undefined
+    const groupNameMap: Record<string, string> = {}
+    if (groupRaw?.list) {
+      for (const g of groupRaw.list) {
+        groupNameMap[g.groupId] = resolveI18n(g.groupName, groupI18n) || g.groupId
+      }
+    }
+    const enemyToGroup: Record<string, string> = {}
+    for (const [, entry] of Object.entries<any>(wikiRaw)) {
+      if (entry.refMonsterTemplateId && entry.groupId) {
+        enemyToGroup[entry.refMonsterTemplateId] = groupNameMap[entry.groupId] || entry.groupId
+      }
+    }
+    return Object.values(rawDisplay).map((v: any) => adaptEnemy(v, i18nMap, enemyToGroup))
   }, [locale])
 }
 
