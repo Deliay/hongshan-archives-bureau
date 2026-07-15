@@ -29,23 +29,22 @@ const TABLE_COLORS: Record<string, string> = {
   SpaceshipCharSkillTable: '#06b6d4',
 }
 
-function getFieldContext(path: string, oldValue: any, newValue: any): string {
+function getFieldContext(path: string, newValue: any): string {
   const match = path.match(/^(profileVoice|profileRecord)\[(\d+)]\./)
   if (!match) return ''
   const [, field, idxStr] = match
   const idx = Number(idxStr)
-  const oldEntry = oldValue?.[field]?.[idx]
   const newEntry = newValue?.[field]?.[idx]
   if (field === 'profileVoice') {
-    const oldTitle = oldEntry ? localeText(oldEntry.voiceTitle, 'CN') || oldEntry.voiceIndex || '' : ''
-    const newTitle = newEntry ? localeText(newEntry.voiceTitle, 'CN') || newEntry.voiceIndex || '' : ''
-    const title = newTitle || oldTitle
-    return title ? `#${idx} ${title}` : ''
+    const title = newEntry ? localeText(newEntry.voiceTitle, 'CN') || '' : ''
+    const desc = newEntry ? localeText(newEntry.voiceDesc, 'CN') || '' : ''
+    let result = `#${idx}`
+    if (title) result += ` ${title}`
+    if (desc) result += ` — ${desc}`
+    return result
   }
   if (field === 'profileRecord') {
-    const oldTitle = oldEntry ? localeText(oldEntry.recordTitle, 'CN') || '' : ''
-    const newTitle = newEntry ? localeText(newEntry.recordTitle, 'CN') || '' : ''
-    const title = newTitle || oldTitle
+    const title = newEntry ? localeText(newEntry.recordTitle, 'CN') || '' : ''
     return title ? `[${idx}] ${title}` : ''
   }
   return ''
@@ -109,7 +108,7 @@ function renderChangeEntry(entry: any, op: string, locale: string) {
         <div className="space-y-1">
           {keys.map((path) => {
             const change = changed[path]
-            const context = getFieldContext(path, e.oldValue, e.newValue)
+            const context = getFieldContext(path, e.newValue)
             if (change.type === 'value') {
               return (
                 <div key={path} className="text-[10px]">

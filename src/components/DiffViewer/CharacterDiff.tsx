@@ -137,6 +137,21 @@ function ChangedCards({ entries, maps, locale }: { entries: Record<string, Chang
     <div className="space-y-3">
       {keys.map((key) => {
         const e = entries[key]
+        const changedEntries = Object.entries(e.changed)
+
+        const voiceGroups: Map<string, { index: string; changes: [string, FieldChange][] }> = new Map()
+        const otherChanges: [string, FieldChange][] = []
+        for (const [path, change] of changedEntries) {
+          const m = path.match(/^(profileVoice)\[(\d+)]\.(.+)$/)
+          if (m) {
+            const idx = m[2]
+            if (!voiceGroups.has(idx)) voiceGroups.set(idx, { index: idx, changes: [] })
+            voiceGroups.get(idx)!.changes.push([path, change])
+          } else {
+            otherChanges.push([path, change])
+          }
+        }
+
         return (
           <details key={key} className="group border border-[#2A2A32] rounded bg-[#1A1B23]">
             <summary className="px-3 py-2 cursor-pointer hover:text-[#C9A96E] transition-colors">
@@ -156,7 +171,21 @@ function ChangedCards({ entries, maps, locale }: { entries: Record<string, Chang
               </div>
               <div className="mt-3 space-y-1">
                 <div className="text-xs text-[#8B8982] mb-1 font-medium">变更字段</div>
-                {Object.entries(e.changed).map(([path, change]) => (
+                {Array.from(voiceGroups.values()).map(({ index, changes }) => {
+                  const voice = e.newValue?.profileVoice?.[Number(index)]
+                  const title = resolveFieldText(voice?.voiceTitle, maps.locale, maps.i18n) || `语音${index}`
+                  const desc = resolveFieldText(voice?.voiceDesc, maps.locale, maps.i18n)
+                  return (
+                    <div key={index} className="mb-2">
+                      <div className="text-xs text-[#C9A96E] font-medium mb-1">#{index} {title}</div>
+                      {desc && <div className="text-[10px] text-[#8B8982] mb-1">{desc}</div>}
+                      {changes.map(([path, change]) => (
+                        <FieldDiff key={path} path={path} change={change} maps={maps} />
+                      ))}
+                    </div>
+                  )
+                })}
+                {otherChanges.map(([path, change]) => (
                   <FieldDiff key={path} path={path} change={change} maps={maps} />
                 ))}
               </div>
