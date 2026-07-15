@@ -125,6 +125,11 @@ test.describe('更新日志 (Update Log)', () => {
     // It should be grouped under eny_0046_lbshamman card
     // eny_0046_lbshamman itself has no diff changes, so the name
     // must resolve via API fallback from EnemyTemplateDisplayInfoTable
+
+    // Verify there is NO standalone card for the variant key
+    const variantCard = page.locator('button').filter({ hasText: 'eny_0046_lbshamman_hdg016' })
+    await expect(variantCard).toHaveCount(0)
+
     const card = page.locator('button').filter({ hasText: 'eny_0046_lbshamman' }).first()
     await expect(card).toBeVisible({ timeout: 10000 })
 
