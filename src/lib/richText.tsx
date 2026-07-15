@@ -1,0 +1,340 @@
+import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } from 'react'
+import { useLocale } from './locale'
+import { ASSET_BASE } from './adapter'
+import { getCachedData } from './cache'
+import { fetchTableAll, fetchTableDictAll } from './api'
+
+const TAG_REGEX = /(<(@|#)?(.*?)>)|(<\/.*?>)|(\n)/g
+const ATTR_REGEX = /(\w+)=(?:"([^"]*)"|(\S+))/g
+
+function parseAttrs(raw: string): Record<string, string> {
+  const attrs: Record<string, string> = {}
+  for (;;) {
+    const m = ATTR_REGEX.exec(raw)
+    if (!m) break
+    attrs[m[1]] = m[2] ?? m[3] ?? ''
+  }
+  return attrs
+}
+
+const ORPHAN_TAGS = new Set(['image', 'br'])
+
+function isSpecialImageTag(match: RegExpExecArray): boolean {
+  return match[0].startsWith('<image>')
+}
+
+function isImageTag(match: RegExpExecArray): boolean {
+  return match[0].startsWith('<image')
+}
+
+function isOrphanTag(match: RegExpExecArray): boolean {
+  if (match[5] !== undefined) return true
+  const raw = match[3] ?? ''
+  const attrs = parseAttrs(raw)
+  const firstKey = Object.keys(attrs)[0] ?? ''
+  if (isImageTag(match) && isSpecialImageTag(match)) return false
+  return ORPHAN_TAGS.has(firstKey)
+}
+
+function getUISprite(path: string): string {
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/${path.toLowerCase()}.png`
+}
+
+interface HyperlinkEntry {
+  name?: Record<string, string>
+  desc?: Record<string, string>
+  iconPath?: string
+}
+
+let hyperlinkCache: Record<string, HyperlinkEntry> | null = null
+let hyperlinkPromise: Promise<void> | null = null
+
+function resolveRef(ref: any, i18nMap: Record<string, string> | null, locale: string): string {
+  if (!ref) return ''
+  if (typeof ref === 'string') return ref
+  const dict = ref as Record<string, string>
+  const id = String((ref as any).id ?? '')
+  if (i18nMap && id && i18nMap[id]) return i18nMap[id]
+  if (dict[locale]) return dict[locale]
+  if (dict.CN) return dict.CN
+  return (ref as any).text ?? ''
+}
+
+async function ensureHyperlinks(locale: string): Promise<void> {
+  if (hyperlinkCache) return
+  if (hyperlinkPromise) return hyperlinkPromise
+  hyperlinkPromise = (async () => {
+    try {
+      const [raw, i18nMap] = await Promise.all([
+        getCachedData<Record<string, any>>('HyperlinkTextTable', () => fetchTableAll('HyperlinkTextTable')),
+        getCachedData<Record<string, string>>('HyperlinkTextTable_i18n_' + locale, () => fetchTableDictAll('HyperlinkTextTable', locale)).catch(() => null) as Promise<Record<string, string> | null>,
+      ])
+      hyperlinkCache = {}
+      for (const [key, entry] of Object.entries(raw)) {
+        hyperlinkCache[key] = {
+          name: resolveRef(entry.name, i18nMap, locale) ? { [locale]: resolveRef(entry.name, i18nMap, locale) } : undefined,
+          desc: resolveRef(entry.desc, i18nMap, locale) ? { [locale]: resolveRef(entry.desc, i18nMap, locale) } : undefined,
+          iconPath: entry.iconPath ?? undefined,
+        }
+      }
+    } catch {
+      hyperlinkCache = {}
+    }
+  })()
+  return hyperlinkPromise
+}
+
+const STYLE_COLORS: Record<string, string> = {
+  'ba.natur': '#b4d945',
+  'ba.naturalinflict': '#b4d945',
+  'ba.fire': '#ff623d',
+  'ba.fireinflict': '#ff623d',
+  'ba.poise': '#ffbb03',
+  'ba.poiseinflict': '#ffbb03',
+  'ba.heal': '#26bbfd',
+  'ba.shield': '#26bbfd',
+  'ba.ice': '#21C6D0',
+  'ba.thunder': '#ffc000',
+}
+
+interface TextSeg { type: 'text'; text: string }
+interface BrSeg { type: 'br' }
+interface ImageSeg { type: 'image'; path: string; scale?: number }
+interface TagOpenSeg { type: 'tag-open'; tagName: string; attrs: Record<string, string>; prefix: string }
+interface TagCloseSeg { type: 'tag-close' }
+interface OrphanSeg { type: 'orphan'; tagName: string; attrs: Record<string, string> }
+type RawSegment = TextSeg | BrSeg | ImageSeg | TagOpenSeg | TagCloseSeg | OrphanSeg
+
+function tokenize(text: string): RawSegment[] {
+  const segments: RawSegment[] = []
+  let lastIndex = 0
+  TAG_REGEX.lastIndex = 0
+  for (;;) {
+    const match = TAG_REGEX.exec(text)
+    if (!match) break
+    const prefix = text.slice(lastIndex, match.index)
+    if (prefix) segments.push({ type: 'text', text: prefix })
+    lastIndex = match.index + match[0].length
+    if (match[5] !== undefined) {
+      segments.push({ type: 'br' })
+    } else if (match[0].startsWith('</')) {
+      segments.push({ type: 'tag-close' })
+    } else {
+      const raw = match[3] ?? ''
+      const pfx = match[2] ?? ''
+      if (isOrphanTag(match)) {
+        const attrs = parseAttrs(raw)
+        const firstKey = Object.keys(attrs)[0] ?? ''
+        segments.push({ type: 'orphan', tagName: firstKey, attrs })
+      } else {
+        segments.push({ type: 'tag-open', tagName: raw, attrs: parseAttrs(raw), prefix: pfx })
+      }
+    }
+  }
+  const rest = text.slice(lastIndex)
+  if (rest) segments.push({ type: 'text', text: rest })
+  return segments
+}
+
+interface TreeNode {
+  type: 'root' | 'text' | 'br' | 'image' | 'tag' | 'hyperlink'
+  text?: string
+  path?: string
+  scale?: number
+  tagName?: string
+  attrs?: Record<string, string>
+  prefix?: string
+  children: TreeNode[]
+}
+
+function buildTree(segments: RawSegment[]): TreeNode {
+  const root: TreeNode = { type: 'root', children: [] }
+  const stack: TreeNode[] = [root]
+  for (const seg of segments) {
+    const parent = stack[stack.length - 1]
+    switch (seg.type) {
+      case 'text':
+        parent.children.push({ type: 'text', text: seg.text, children: [] })
+        break
+      case 'br':
+        parent.children.push({ type: 'br', children: [] })
+        break
+      case 'orphan':
+        if (seg.tagName === 'image') {
+          parent.children.push({ type: 'image', path: seg.attrs.image ?? '', scale: seg.attrs.scale ? Number(seg.attrs.scale) : undefined, children: [] })
+        } else if (seg.tagName === 'br') {
+          parent.children.push({ type: 'br', children: [] })
+        }
+        break
+      case 'tag-open':
+        if (seg.prefix === '#' || seg.prefix === '@') {
+          const node: TreeNode = { type: 'hyperlink', tagName: seg.tagName, prefix: seg.prefix, children: [] }
+          parent.children.push(node)
+          stack.push(node)
+        } else {
+          const tagName = Object.keys(seg.attrs)[0] ?? seg.tagName
+          const node: TreeNode = { type: 'tag', tagName, attrs: seg.attrs, children: [] }
+          parent.children.push(node)
+          stack.push(node)
+        }
+        break
+      case 'tag-close':
+        if (stack.length > 1) stack.pop()
+        break
+    }
+  }
+  for (let i = stack.length - 1; i > 0; i--) {
+    const node = stack[i]
+    if (node.type === 'tag' && node.tagName === 'image' && Object.keys(node.attrs ?? {}).length === 0 && node.children.length > 0 && node.children.every(c => c.type === 'text')) {
+      const path = node.children.map(c => (c as any).text ?? '').join('')
+      root.children = root.children.filter(c => c !== node)
+      const imgNode: TreeNode = { type: 'image', path, children: [] }
+      const parent = stack[i - 1]
+      parent.children = parent.children.map(c => c === node ? imgNode : c)
+    }
+  }
+  return root
+}
+
+function wrapTag(tagName: string, attrs: Record<string, string>, children: ReactNode): ReactNode {
+  switch (tagName) {
+    case 'color': return <span style={{ color: attrs.color }}>{children}</span>
+    case 'mark': return <span style={{ backgroundColor: attrs.mark }}>{children}</span>
+    case 'b': return <b>{children}</b>
+    case 'align': return <span>{children}</span>
+    default: return <span>{children}</span>
+  }
+}
+
+function renderNode(node: TreeNode, showTips?: boolean): ReactNode {
+  switch (node.type) {
+    case 'root':
+      return node.children.map((child, i) => <span key={i}>{renderNode(child, showTips)}</span>)
+    case 'text':
+      return node.text
+    case 'br':
+      return <br />
+    case 'image': {
+      const scale = node.scale ?? 1
+      return (
+        <img alt="" src={getUISprite(node.path!)}
+          style={{ width: '1rem', transform: scale !== 1 ? `scale(${scale})` : undefined }}
+          className="inline-block align-middle"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+      )
+    }
+    case 'tag': {
+      const children = node.children.map((child, i) => <span key={i}>{renderNode(child, showTips)}</span>)
+      if (node.tagName === 'image') return <span>{children}</span>
+      return wrapTag(node.tagName!, node.attrs ?? {}, children)
+    }
+    case 'hyperlink': {
+      const children = node.children.map((child, i) => <span key={i}>{renderNode(child, showTips)}</span>)
+      if (node.prefix === '#') {
+        return <HyperlinkTag tag={node.tagName!} showTips={showTips}><u>{children}</u></HyperlinkTag>
+      }
+      if (node.tagName && STYLE_COLORS[node.tagName]) {
+        return <span style={{ color: STYLE_COLORS[node.tagName] }}>{children}</span>
+      }
+      return <span>{children}</span>
+    }
+    default:
+      return null
+  }
+}
+
+function HyperlinkTag({ tag, children, showTips }: { tag: string; children: ReactNode; showTips?: boolean }) {
+  const [showTooltip, setShowTooltip] = useState(false)
+  const ref = useRef<HTMLButtonElement>(null)
+  const tooltipId = `hl-${tag.replace(/[^a-zA-Z0-9_]/g, '_')}`
+  const handleClick = useCallback(() => setShowTooltip(v => !v), [])
+  const handleClose = useCallback(() => setShowTooltip(false), [])
+  const realShow = showTips !== false && showTooltip
+  return (
+    <>
+      <button type="button" ref={ref} id={tooltipId}
+        className="inline text-[#C9A96E] underline cursor-pointer hover:text-[#d4b87a] transition-colors bg-transparent border-0 p-0 font-inherit"
+        onClick={handleClick}>{children}</button>
+      {realShow && <HyperlinkTooltip tag={tag} anchorId={tooltipId} onClose={handleClose} />}
+    </>
+  )
+}
+
+function HyperlinkTooltip({ tag, anchorId, onClose }: { tag: string; anchorId: string; onClose: () => void }) {
+  const [data, setData] = useState<{ name?: string; desc?: string; iconPath?: string } | null>(null)
+  const { locale } = useLocale()
+  const tooltipRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    ensureHyperlinks(locale).then(() => {
+      if (hyperlinkCache) {
+        const entry = hyperlinkCache[tag]
+        if (entry) {
+          const name = entry.name ? (entry.name[locale] || entry.name.CN || '') : undefined
+          const desc = entry.desc ? (entry.desc[locale] || entry.desc.CN || '') : undefined
+          setData({ name, desc, iconPath: entry.iconPath })
+        } else {
+          setData({ name: tag, desc: undefined })
+        }
+      }
+    })
+  }, [tag, locale])
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const anchor = document.getElementById(anchorId)
+      const tooltip = tooltipRef.current
+      if (anchor && tooltip && !anchor.contains(e.target as Node) && !tooltip.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [anchorId, onClose])
+  if (!data) return null
+  return (
+    <div ref={tooltipRef} className="fixed z-50 p-3 rounded border border-[#2A2A32] bg-[#1A1B23] shadow-lg max-w-xs"
+      style={{
+        top: (() => { const el = document.getElementById(anchorId); return el ? el.getBoundingClientRect().bottom + 8 : 0 })(),
+        left: (() => { const el = document.getElementById(anchorId); if (!el) return 0; return Math.min(el.getBoundingClientRect().left, window.innerWidth - 280) })(),
+      }}>
+      {data.iconPath && <img src={getUISprite(data.iconPath)} alt="" className="w-6 h-6 mb-1" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
+      {data.name && <div className="text-xs text-[#C9A96E] font-medium mb-1"><RichText text={data.name} /></div>}
+      {data.desc && <div className="text-xs text-[#E8E6E3] leading-relaxed"><RichText text={data.desc} /></div>}
+      <div className="text-[10px] text-[#5A5A62] mt-1 font-mono truncate">{tag}</div>
+    </div>
+  )
+}
+
+interface RichTextProps {
+  text: string
+  showTips?: boolean
+  formatter?: (text: string) => string
+}
+
+export function RichText({ text, formatter }: RichTextProps) {
+  const processed = formatter ? formatter(text) : text
+  const tree = useMemo(() => {
+    const segments = tokenize(processed)
+    return buildTree(segments)
+  }, [processed])
+  return renderNode(tree, true)
+}
+
+interface I18NTextProps {
+  ref: { id?: number | string; text?: string } | null | undefined
+  showTips?: boolean
+  formatter?: (text: string) => string
+  i18nMap?: Record<string, string>
+}
+
+export function I18NText({ ref, formatter, i18nMap }: I18NTextProps) {
+  const { locale } = useLocale()
+  const text = resolveI18nText(ref, i18nMap, locale)
+  if (!text) return null
+  return <RichText text={text} formatter={formatter} />
+}
+
+function resolveI18nText(ref: { id?: number | string; text?: string } | null | undefined, i18nMap?: Record<string, string>, locale?: string): string {
+  if (!ref) return ''
+  const id = String(ref.id ?? '')
+  if (i18nMap && id && i18nMap[id]) return i18nMap[id]
+  if (locale && (ref as any)[locale]) return (ref as any)[locale]
+  return ref.text ?? ''
+}

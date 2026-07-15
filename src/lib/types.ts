@@ -22,6 +22,7 @@ export interface TalentNode {
   level: number
   breakStage: number
   requiredItem: BreakCostItem[]
+  attrType?: number
 }
 
 export interface CharacterAttributeSet {
@@ -35,12 +36,58 @@ export interface WeaponRecommendation {
   weaponIds3: string[]
 }
 
+export interface SkillGroup {
+  skillGroupId: string
+  skillGroupType: number
+  name: { id?: number; text?: string }
+  icon: string
+  skillIdList: string[]
+  desc: { id?: number; text?: string }
+}
+
+export interface SkillPatchData {
+  blackboard: { key: string; value: number; valueStr: string }[]
+  coolDown: number
+  costType: number
+  costValue: number
+  description: { id?: number; text?: string }
+  iconId: string
+  level: number
+  skillId: string
+  skillName: { id?: number; text?: string }
+  subDescList: string[]
+  subDescNameList: { id?: number; text?: string }[]
+}
+
+export interface SkillLevelUpCost {
+  skillGroupId: string
+  level: number
+  goldCost: number
+  itemBundle: { id: string; count: number }[]
+}
+
+export interface FactorySkill {
+  nodeId: string
+  skillId: string
+  name: string
+  desc: string
+  icon: string
+  roomType: number
+  effectType: number
+  level: number
+  parameters: { key: string; value: number }[]
+}
+
 export interface OperatorDetailData {
   op: Operator
   attributes: CharacterAttributeSet[]
   breakCostMap: Record<string, BreakCostNode>
   talentNodeMap: Record<string, TalentNode>
   wpnRecommend: WeaponRecommendation | null
+  skillGroups: SkillGroup[]
+  skillLevelUp: SkillLevelUpCost[]
+  skillPatchMap: Record<string, SkillPatchData[]>
+  factorySkills: FactorySkill[]
 }
 
 export interface Operator {
@@ -90,6 +137,11 @@ export interface Item {
   rarity: number
   description: string
   decoDesc: string
+  iconId?: string
+  iconCompositeId?: string
+  obtainWayIds?: string[]
+  noObtainWayHint?: { id?: number; text?: string }
+  raw?: Record<string, any>
 }
 
 export interface Race {

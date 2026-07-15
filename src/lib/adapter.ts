@@ -74,12 +74,16 @@ export function adaptEnemy(raw: any, i18nMap?: Record<string, string>): Enemy {
 
 export function adaptItem(raw: any, i18nMap?: Record<string, string>): Item {
   return {
-    id: raw.itemId ?? raw.$key ?? '',
+    id: raw.itemId ?? raw.$key ?? raw.id ?? '',
     name: resolveI18n(raw.name, i18nMap) || raw.id || '',
-    type: raw.itemType ?? '',
+    type: raw.type ?? raw.itemType ?? '',
     rarity: raw.rarity ?? 0,
     description: resolveI18n(raw.desc, i18nMap),
     decoDesc: resolveI18n(raw.decoDesc, i18nMap),
+    iconId: raw.iconId ?? undefined,
+    iconCompositeId: raw.iconCompositeId ?? undefined,
+    obtainWayIds: raw.obtainWayIds ?? [],
+    noObtainWayHint: raw.noObtainWayHint ?? undefined,
   }
 }
 

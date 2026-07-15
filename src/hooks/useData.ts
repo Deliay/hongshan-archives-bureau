@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchTableAll, fetchTableDictAll, fetchI18nLocales } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from '../lib/types'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 
 interface UseDataResult<T> {
@@ -213,10 +213,15 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
     const raw = rawData[id]
     if (!raw) throw new Error(`Operator ${id} not found`)
 
-    const [growthRaw, growthI18n, wpnRaw] = await Promise.all([
+    const [growthRaw, growthI18n, wpnRaw, skillPatchRaw, skillPatchI18n, spaceshipCharRaw, spaceshipSkillRaw, spaceshipI18n] = await Promise.all([
       getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')).then(r => r[id]),
       getTableI18nDict('CharGrowthTable', locale).catch(() => ({}) as Record<string, string>),
       getCachedData<Record<string, any>>('CharWpnRecommendTable', () => fetchTableAll('CharWpnRecommendTable')).then(r => r[id]).catch(() => null),
+      getCachedData<Record<string, any>>('SkillPatchTable', () => fetchTableAll('SkillPatchTable')).catch(() => ({}) as Record<string, any>),
+      getTableI18nDict('SkillPatchTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('SpaceshipCharSkillTable', () => fetchTableAll('SpaceshipCharSkillTable')).catch(() => ({}) as Record<string, any>),
+      getCachedData<Record<string, any>>('SpaceshipSkillTable', () => fetchTableAll('SpaceshipSkillTable')).catch(() => ({}) as Record<string, any>),
+      getTableI18nDict('SpaceshipSkillTable', locale).catch(() => ({}) as Record<string, string>),
     ])
 
     const op = adaptOperator(raw, i18nMap, profMap, elemMap, tagMap, attrMap)
@@ -248,15 +253,18 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
     if (growthRaw?.talentNodeMap) {
       for (const [k, v] of Object.entries<any>(growthRaw.talentNodeMap)) {
         const psi = v.passiveSkillNodeInfo ?? {}
+        const ani = v.attributeNodeInfo ?? {}
+        const nameFromAni = resolveI18n(ani.title, growthI18n) || resolveI18n(ani.desc, growthI18n)
         talentNodeMap[k] = {
           nodeId: v.nodeId,
           nodeType: v.nodeType,
-          name: resolveI18n(psi.name, growthI18n) || v.nodeId,
-          description: resolveI18n(psi.name, growthI18n) || '',
+          name: resolveI18n(psi.name, growthI18n) || nameFromAni || v.nodeId,
+          description: resolveI18n(psi.name, growthI18n) || resolveI18n(ani.desc, growthI18n) || '',
           iconId: psi.iconId || '',
           level: psi.level || 0,
-          breakStage: psi.breakStage || v.attributeNodeInfo?.breakStage || 0,
+          breakStage: psi.breakStage || ani.breakStage || 0,
           requiredItem: (v.requiredItem ?? []).map((r: any) => ({ id: r.id, count: r.count })),
+          attrType: ani.attributeModifier?.attrType ?? undefined,
         }
       }
     }
@@ -267,7 +275,77 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
       weaponIds3: wpnRaw.weaponIds3 ?? [],
     } : null
 
-    return { op, attributes, breakCostMap, talentNodeMap, wpnRecommend }
+    const skillGroups: SkillGroup[] = growthRaw?.skillGroupMap
+      ? Object.values(growthRaw.skillGroupMap).map((g: any) => ({
+          skillGroupId: g.skillGroupId,
+          skillGroupType: g.skillGroupType ?? 0,
+          name: resolveI18n(g.name, growthI18n) ? { text: resolveI18n(g.name, growthI18n) } : (g.name ?? { text: '' }),
+          icon: g.icon ?? '',
+          skillIdList: g.skillIdList ?? [],
+          desc: resolveI18n(g.desc, growthI18n) ? { text: resolveI18n(g.desc, growthI18n) } : (g.desc ?? { text: '' }),
+        }))
+      : []
+
+    const skillLevelUp: SkillLevelUpCost[] = growthRaw?.skillLevelUp
+      ? (growthRaw.skillLevelUp as any[]).map((c: any) => ({
+          skillGroupId: c.skillGroupId,
+          level: c.level,
+          goldCost: c.goldCost ?? 0,
+          itemBundle: (c.itemBundle ?? []).map((i: any) => ({ id: i.id, count: i.count })),
+        }))
+      : []
+
+    const allSkillIds = new Set(skillGroups.flatMap(g => g.skillIdList))
+    const skillPatchMap: Record<string, SkillPatchData[]> = {}
+    for (const skillId of allSkillIds) {
+      const entry = skillPatchRaw[skillId]
+      if (entry?.SkillPatchDataBundle) {
+        skillPatchMap[skillId] = entry.SkillPatchDataBundle.map((p: any) => ({
+          blackboard: p.blackboard ?? [],
+          coolDown: p.coolDown ?? 0,
+          costType: p.costType ?? 0,
+          costValue: p.costValue ?? 0,
+          description: p.description ?? { text: '' },
+          iconId: p.iconId ?? '',
+          level: p.level,
+          skillId: p.skillId,
+          skillName: p.skillName ?? { text: '' },
+          subDescList: p.subDescList ?? [],
+          subDescNameList: (p.subDescNameList ?? []).map((s: any) =>
+            resolveI18n(s, skillPatchI18n)
+              ? { text: resolveI18n(s, skillPatchI18n) }
+              : s,
+          ),
+        }))
+      }
+    }
+
+    const charSpaceshipSkills = spaceshipCharRaw[id] as { maxSkillCount?: number; skillList?: { charId: string; skillId: string; skillIndex: number; unlockHint: any }[] } | undefined
+    const factorySkills: FactorySkill[] = []
+    if (growthRaw?.talentNodeMap && charSpaceshipSkills?.skillList) {
+      for (const [, v] of Object.entries<any>(growthRaw.talentNodeMap)) {
+        if (v.nodeType !== 5) continue
+        const fsi = v.factorySkillNodeInfo ?? {}
+        const idx = fsi.index ?? 0
+        const charSkill = charSpaceshipSkills.skillList[idx]
+        if (!charSkill) continue
+        const skillData = spaceshipSkillRaw[charSkill.skillId] as any
+        if (!skillData) continue
+        factorySkills.push({
+          nodeId: v.nodeId,
+          skillId: charSkill.skillId,
+          name: resolveI18n(skillData.name, spaceshipI18n) || skillData.id || '',
+          desc: resolveI18n(skillData.desc, spaceshipI18n) || resolveI18n(skillData.talentName, spaceshipI18n) || '',
+          icon: skillData.icon ?? '',
+          roomType: skillData.roomType ?? 0,
+          effectType: skillData.effectType ?? 0,
+          level: fsi.level ?? 0,
+          parameters: skillData.parameters ?? [],
+        })
+      }
+    }
+
+    return { op, attributes, breakCostMap, talentNodeMap, wpnRecommend, skillGroups, skillLevelUp, skillPatchMap, factorySkills }
   }, [locale, id])
 }
 
