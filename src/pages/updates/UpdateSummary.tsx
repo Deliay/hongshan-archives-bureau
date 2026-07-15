@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useFolderManifest } from '../../hooks/useUpdateDiff'
 import OperatorChangePanel from '../../components/DiffViewer/OperatorChangePanel'
 import WeaponChangePanel from '../../components/DiffViewer/WeaponChangePanel'
+import EnemyChangePanel from '../../components/DiffViewer/EnemyChangePanel'
 
 function sumTableStats(
   fn: (s: { added: number; removed: number; changed: number }) => number,
@@ -75,6 +76,9 @@ function SummaryContent({
     'PotentialTalentEffectTable',
     'WeaponBasicTable',
     'ItemTable',
+    'EnemyTemplateDisplayInfoTable',
+    'EnemyTable',
+    'EnemyAttributeTemplateTable',
   ]
 
   const tables = useMemo(() => {
@@ -114,6 +118,8 @@ function SummaryContent({
       <OperatorChangePanel versionName={versionName} />
 
       <WeaponChangePanel versionName={versionName} />
+
+      <EnemyChangePanel versionName={versionName} />
 
       <h3 className="text-sm font-medium text-[#E8E6E3] mb-3">
         变更表一览（{folder.fileCount} 个表）
