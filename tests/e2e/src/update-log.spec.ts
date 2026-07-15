@@ -146,14 +146,8 @@ test.describe('更新日志 (Update Log)', () => {
     const cardText = await card.textContent() || ''
     expect(cardText).toContain('变体')
 
-    // No raw distributionIds field should appear anywhere on the page
-    const pageText = await page.locator('body').textContent() || ''
-    expect(pageText).not.toContain('distributionIds')
-
     // Click to expand and verify the variant entry key
     await card.click()
-
-    // Wait for expanded section content
     await page.waitForFunction(() => {
       const body = document.body.textContent || ''
       return body.includes('eny_0046_lbshamman_hdg016')
@@ -164,5 +158,32 @@ test.describe('更新日志 (Update Log)', () => {
       const body = document.body.textContent || ''
       return body.includes('属性模板') && (body.includes('攻击力') || body.includes('HP'))
     }, { timeout: 15000 })
+  })
+
+  test('怪物分布不显示原始distributionIds字段名', async ({ page }) => {
+    await waitForDiffReady(page)
+
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('敌人变动概览')
+    }, { timeout: 15000 })
+
+    // Wait for the card to fully render with API fallback data
+    const card = page.locator('button').filter({ hasText: 'eny_0084_hshunt' }).first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+
+    // Click to expand the card and wait for async data fetches to complete
+    await card.click()
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('分布区域')
+    }, { timeout: 20000 })
+
+    // After expansion, must show 分布区域 with 新增/已存在 labels, no raw distributionIds
+    const bodyText = await page.locator('body').textContent() || ''
+    expect(bodyText).toContain('分布区域')
+    expect(bodyText).toContain('新增')
+    expect(bodyText).toContain('已存在')
+    expect(bodyText).not.toContain('distributionIds')
   })
 })

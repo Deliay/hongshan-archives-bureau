@@ -152,16 +152,16 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
   }, [distIds.join(','), locale])
 
   const changed = op === 'changed' ? (entry as any)?.changed ?? {} : {}
-  const distChanged = changed.distributionIds
-  const oldDistIds: string[] = distChanged?.type === 'value' ? (distChanged.oldValue ?? []) : []
-  const newDistIds: string[] = distChanged?.type === 'value' ? (distChanged.newValue ?? []) : []
+  const distChangeKeys = Object.keys(changed).filter(k => k.startsWith('distributionIds'))
+  const hasDistDiff = distChangeKeys.length > 0
 
-  const hasDistDiff = oldDistIds.length > 0 || newDistIds.length > 0
-  const added = hasDistDiff ? newDistIds.filter(id => !oldDistIds.includes(id)) : (op === 'added' ? distIds : [])
-  const removed = hasDistDiff ? oldDistIds.filter(id => !newDistIds.includes(id)) : (op === 'removed' ? distIds : [])
-  const unchanged = hasDistDiff ? newDistIds.filter(id => oldDistIds.includes(id)) : []
+  const oldDistIds: string[] = hasDistDiff ? ((entry as any)?.oldValue?.distributionIds ?? []) : (op === 'removed' ? distIds : [])
+  const newDistIds: string[] = hasDistDiff ? distIds : (op === 'added' ? distIds : [])
+  const added = newDistIds.filter(id => !oldDistIds.includes(id))
+  const removed = oldDistIds.filter(id => !newDistIds.includes(id))
+  const unchanged = newDistIds.filter(id => oldDistIds.includes(id))
 
-  const otherChanges = op === 'changed' ? Object.keys(changed).filter(k => k !== 'distributionIds') : []
+  const otherChanges = op === 'changed' ? Object.keys(changed).filter(k => !k.startsWith('distributionIds')) : []
 
   return (
     <div className="space-y-1">
@@ -207,27 +207,52 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
       {(op === 'added' || op === 'removed' || hasDistDiff) && Object.keys(areaNames).length > 0 && (
         <div className="px-2 py-1 rounded bg-[#0F0F12]">
           <div className="text-[10px] text-[#8B8982] mb-0.5">分布区域</div>
-          <div className="flex flex-wrap gap-1">
-            {removed.map(id => (
-              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#ef4444] line-through">
-                {areaNames[id] || id}
-              </span>
-            ))}
-            {added.map(id => (
-              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#14321e] text-[#26bbfd]">
-                {areaNames[id] || id}
-              </span>
-            ))}
-            {unchanged.map(id => (
-              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6]">
-                {areaNames[id] || id}
-              </span>
-            ))}
-            {!hasDistDiff && op === 'added' && distIds.map(id => (
-              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6]">
-                {areaNames[id] || id}
-              </span>
-            ))}
+          <div className="space-y-1">
+            {removed.length > 0 && (
+              <div>
+                <div className="text-[10px] text-[#ef4444] mb-0.5">移除</div>
+                <div className="flex flex-wrap gap-1">
+                  {removed.map(id => (
+                    <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#ef4444] line-through">
+                      {areaNames[id] || id}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {added.length > 0 && (
+              <div>
+                <div className="text-[10px] text-[#26bbfd] mb-0.5">新增</div>
+                <div className="flex flex-wrap gap-1">
+                  {added.map(id => (
+                    <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#14321e] text-[#26bbfd]">
+                      {areaNames[id] || id}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {unchanged.length > 0 && (
+              <div>
+                <div className="text-[10px] text-[#8B8982] mb-0.5">已存在</div>
+                <div className="flex flex-wrap gap-1">
+                  {unchanged.map(id => (
+                    <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6]">
+                      {areaNames[id] || id}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!hasDistDiff && op === 'added' && (
+              <div className="flex flex-wrap gap-1">
+                {distIds.map(id => (
+                  <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6]">
+                    {areaNames[id] || id}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
