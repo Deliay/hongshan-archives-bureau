@@ -23,41 +23,6 @@ function getEntryTemplateId(entry: any): string | undefined {
   return undefined
 }
 
-function resolveGroupKey(key: string, entry: any, tableName: string): string {
-  if (tableName === 'EnemyTemplateDisplayInfoTable' || tableName === 'EnemyAttributeTemplateTable') return key
-  const tpl = getEntryTemplateId(entry)
-  if (tpl && tpl !== key) return tpl
-  return key
-}
-
-function collectEntries(
-  dict: Record<string, any>,
-  op: 'added' | 'removed' | 'changed',
-  tableName: string,
-  enemyIdSet: Set<string>,
-  changes: Map<string, EnemyChange>,
-) {
-  for (const [key, entry] of Object.entries(dict)) {
-    const groupId = resolveGroupKey(key, entry, tableName)
-    if (!groupId || !enemyIdSet.has(groupId)) continue
-
-    let change = changes.get(groupId)
-    if (!change) {
-      change = { enemyId: groupId, name: null, nickname: null, displayType: null, tags: null, changes: [] }
-      changes.set(groupId, change)
-    }
-    change.changes.push({ tableName, op, key, entry })
-
-    if (tableName === 'EnemyTemplateDisplayInfoTable' || tableName === 'EnemyDisplayInfoTable') {
-      const e = op === 'changed' ? (entry as ChangedEntry).newValue : entry
-      if (!change.name) change.name = e.name ?? null
-      if (!change.nickname) change.nickname = e.nickname ?? null
-      if (change.displayType === null) change.displayType = e.displayType ?? null
-      if (!change.tags) change.tags = e.tags ?? null
-    }
-  }
-}
-
 export function useEnemyAggregatedDiff(versionName: string) {
   const templateDisplayDiff = useTableDiff(versionName, 'EnemyTemplateDisplayInfoTable.json')
   const displayDiff = useTableDiff(versionName, 'EnemyDisplayInfoTable.json')
@@ -76,17 +41,47 @@ export function useEnemyAggregatedDiff(versionName: string) {
     ]
     if (allDiffs.some(d => !d.diff)) return null
 
-    const enemyIdSet = new Set<string>()
-    for (const { name, diff } of allDiffs) {
+    // Build key → groupId mapping, preferring templateId when it differs from key
+    const keyToGroupId = new Map<string, string>()
+    for (const { diff } of allDiffs) {
       if (!diff) continue
       for (const entries of [diff.entries.added, diff.entries.removed, diff.entries.changed]) {
         for (const [key, entry] of Object.entries(entries)) {
-          const groupId = resolveGroupKey(key, entry, name)
-          if (groupId) {
-            enemyIdSet.add(groupId)
-            // Also add all unique key references so they stay in the set
-            enemyIdSet.add(key)
+          const tpl = getEntryTemplateId(entry)
+          if (tpl && tpl !== key) {
+            keyToGroupId.set(key, tpl)
+          } else if (!keyToGroupId.has(key)) {
+            keyToGroupId.set(key, key)
           }
+        }
+      }
+    }
+
+    const enemyIdSet = new Set(keyToGroupId.values())
+
+    function collectEntries(
+      dict: Record<string, any>,
+      op: 'added' | 'removed' | 'changed',
+      tableName: string,
+      changes: Map<string, EnemyChange>,
+    ) {
+      for (const [key, entry] of Object.entries(dict)) {
+        const groupId = keyToGroupId.get(key)
+        if (!groupId || !enemyIdSet.has(groupId)) continue
+
+        let change = changes.get(groupId)
+        if (!change) {
+          change = { enemyId: groupId, name: null, nickname: null, displayType: null, tags: null, changes: [] }
+          changes.set(groupId, change)
+        }
+        change.changes.push({ tableName, op, key, entry })
+
+        if (tableName === 'EnemyTemplateDisplayInfoTable' || tableName === 'EnemyDisplayInfoTable') {
+          const e = op === 'changed' ? (entry as ChangedEntry).newValue : entry
+          if (!change.name) change.name = e.name ?? null
+          if (!change.nickname) change.nickname = e.nickname ?? null
+          if (change.displayType === null) change.displayType = e.displayType ?? null
+          if (!change.tags) change.tags = e.tags ?? null
         }
       }
     }
@@ -94,9 +89,9 @@ export function useEnemyAggregatedDiff(versionName: string) {
     const changes = new Map<string, EnemyChange>()
     for (const { name, diff } of allDiffs) {
       if (!diff) continue
-      collectEntries(diff.entries.added, 'added', name, enemyIdSet, changes)
-      collectEntries(diff.entries.removed, 'removed', name, enemyIdSet, changes)
-      collectEntries(diff.entries.changed, 'changed', name, enemyIdSet, changes)
+      collectEntries(diff.entries.added, 'added', name, changes)
+      collectEntries(diff.entries.removed, 'removed', name, changes)
+      collectEntries(diff.entries.changed, 'changed', name, changes)
     }
 
     return Array.from(changes.values())
