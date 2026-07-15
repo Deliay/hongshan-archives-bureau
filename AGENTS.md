@@ -88,20 +88,6 @@ tests/
 | WikiEntryDataTable | string key | `refMonsterTemplateId`, `groupId` | Maps enemies to wiki groups |
 | WikiGroupTable | `groupId` | `list[]` with `groupName` (i18n), `iconId` | Wiki group definitions (天使, 裂地者, 宏山, 动物) |
 
-## Data Flow Pattern (example: operators)
-
-```
-OperatorList
-  └─ useOperators()
-       └─ useData(async () => {
-            CharacterTable + i18n  ─┐
-            CharProfessionTable + i18n  ├─ Promise.all ── adaptOperator(raw, i18nMap, profMap, elemMap, tagMap, attrMap)
-            CharTypeTable + i18n    ─┘
-            CharBattleTagTable + i18n
-            AttributeMetaTable + AttributeShowConfigTable + i18n
-          }) → Operator[]
-```
-
 ### Per-table I18n
 
 Each table's text is resolved at the hook level: the hook fetches the table data and the locale's i18n dict in parallel, then passes the dict into `adapt*`. Domain hooks (`getProfessionMap`, `getElementMap`, `getBattleTagMap`, `getAttributeMap`) are cached per locale in `Map<string, Promise<...>>`.
@@ -189,3 +175,115 @@ Enemy faction/group membership is through `WikiEntryDataTable` (maps `refMonster
 
 ### Enemy Attribute Template
 `EnemyAttributeTemplateTable` contains per-level attribute arrays (`levelDependentAttributes[]` each with `{attrType, attrValue}`), fixed attributes (`levelIndependentAttributes`), damage resist scalars, and resilience stats.
+
+## Diff System
+
+### Architecture Overview
+
+The diff system compares game data between two versions. It's a two-tier system:
+
+1. **Build-time**: `scripts/diff-tables.ts` reads JSON dumps of two version directories, computes per-field diffs, and writes structured diff files.
+2. **Runtime**: React components read diff JSON files via hooks and render them in `UpdateSummary.tsx`.
+
+### Diff Script (`scripts/diff-tables.ts`)
+
+- **Input**: Two directories under `endfield-data/` (version-old, version-new). Each contains `tables/` (game data JSON per table) and `i18n/` (i18n dicts per locale).
+- **Output**: A version-pair directory (`{v1}__{v2}`) under `endfield-data/__diffs__/` with `<TableName>.json` and `I18nTextTable_{Locale}.json`.
+- **I18n field detection**: `isI18nField()` checks `{ id, text }` shape (≤2 keys, only `id`/`text` keys). Matches exactly `{ id: number|string, text: string }` or `{ id }` or `{ text }`.
+- **Entry-level diff**: For each key in a table, compare old vs new entries field by field recursively.
+- **Field diff type**: Two types — `{ type: 'value', oldValue, newValue }` for primitive/structural changes; `{ type: 'i18n', changedLocales: { [locale]: { oldText, newText } } }` for i18n field changes (detected when a field's value is an `{ id, text }` i18n object, resolving text from each locale's dict).
+- **`expandI18nFields()`**: Preprocesses old/new entry values before output: replaces `{ id, text }` objects with locale-keyed objects (`{ CN: "...", EN: "...", ... }`). This lets the frontend display locale-resolved text without re-fetching i18n dicts.
+- **`deepDiff()`**: Recursively diffs objects/arrays. Changes are grouped: structural changes produce `{ type: 'value' }`, i18n field changes produce `{ type: 'i18n', changedLocales }` with the resolved locale texts.
+
+### Runtime Diff Types (`src/lib/types-diff.ts`)
+
+```typescript
+interface FieldChange =
+  | { type: 'value'; oldValue: any; newValue: any }
+  | { type: 'i18n'; changedLocales: Record<string, { oldText: string; newText: string }> }
+
+interface ChangedEntry { oldValue: Record<string, any>; newValue: Record<string, any>; changed: Record<string, FieldChange> }
+```
+
+- `TableDiff.entries.added/removed/changed`: each key maps to an entry (full entry for added/removed, `ChangedEntry` for changed).
+- After `expandI18nFields`, `oldValue`/`newValue` contain locale-keyed objects for i18n fields (e.g. `{ CN: "攻击力", EN: "ATK" }`), NOT raw `{ id, text }`.
+
+### Runtime Hooks (`src/hooks/useUpdateDiff.ts`)
+
+- `useTableDiff(versionName, tableFileName)` → fetches the diff JSON via `fetchTableDiff`, returns `{ data: TableDiff | null, loading, error }`.
+- Results cached via the 2-tier LRU + IndexedDB system (same as API data).
+- `useOperatorAggregatedDiff(versionName)` — aggregates across 6 operator-related tables, linking entries to charIds for an operator-centric view.
+
+### Diff Viewer Components (`src/components/DiffViewer/`)
+
+#### Registry pattern
+- `registry.tsx` maintains a `Map<string, ComponentType>` mapping table names to specialized diff viewers.
+- `registerTableDiffComponent(tableName, component)` is called at module level in each specialized viewer.
+- `getTableDiffComponent(tableName)` returns the registered component or falls back to `DiffViewer`.
+- Registered viewers: `CharacterDiff` (干员), `CharGrowthDiff` (成长), `SkillPatchDiff` (技能), `PotentialTalentDiff` (潜能天赋), `SpaceshipSkillDiff` (基建技能), `SpaceshipCharSkillDiff` (基建关联), `WeaponDiff` (武器), `OperatorDiff` (复合).
+- Each viewer receives `{ diff: TableDiff }` with locale from `diff.locale`.
+
+#### Generic `DiffViewer`
+- Three tabs: added / removed / changed.
+- Added/removed: shows raw JSON with `formatJSON()` that handles locale-keyed objects nicely (shows locale labels instead of raw keys).
+- Changed: iterates `entry.changed` paths. For `{ type: 'value' }` shows old/new side by side; for `{ type: 'i18n' }` shows per-locale old→new inline.
+
+#### Specialized `CharacterDiff`
+- Fetches lookup tables (professions, elements, attributes, battle tags) + i18n dicts to build operator cards with name/rarity/portrait.
+- Uses `globalLocale` (via `useLocale()`) for lookup table API fetches — **not** `diff.locale`.
+- Uses `diff.locale` only for `I18nTextTable` dict (to resolve i18n text in diff entries since `expandI18nFields` embeds locale data from that locale).
+- Groups voice changes (`profileVoice[N].*`) by index, showing voice title+desc header from `newValue` before individual field diffs.
+- `resolveFieldText()` handles both `{ id, text }` objects (via `resolveI18n`) and locale-keyed objects (from `expandI18nFields`).
+
+#### `OperatorChangePanel`
+- Aggregates 6 operator tables per charId, showing a single card per operator with all table changes.
+- Table badges at top of card: shows which tables have changes, with count.
+- Badge order follows `allDiffs` processing order in `useOperatorAggregatedDiff.ts`.
+- Specialized rendering per table: `SkillPatchTable`→skill name+blackboard+RichText, `SpaceshipSkillTable`→name+desc+RichText, `PotentialTalentEffectTable`→generic change entries.
+- Unlock info: `unlockType: 0`→初始解锁, `2`→精英阶段, `4`→信赖值.
+- `unlockValue` display depends on related `unlockType` (looks up sibling field in the same entry).
+- **Sort order**: Non-operator tables by change count descending, then the 6 operator tables (CharacterTable → CharGrowthTable → SkillPatchTable → SpaceshipSkillTable → SpaceshipCharSkillTable → PotentialTalentEffectTable) at the bottom.
+
+#### `RichTextDiff`
+- Renders inline i18n diffs within rich text content.
+- Uses character-level longest common prefix/suffix to isolate the changed portion.
+- **Only the differing middle part** is highlighted: old portion gets `line-through`+red background, new portion gets green background.
+- Common prefix and suffix render normally through `<RichText>` (preserving all hyperlinks, colors, etc.).
+- Accepts optional `formatter` for `formatBlackboard` substitution (used by SkillPatchTable diffs).
+
+### Common Pitfalls
+
+#### Separate Locale Domains
+Two locale concepts coexist in diff components:
+- **`diff.locale`**: The locale used when generating the diff (determines which i18n dict resolved locale-keyed objects in `expandI18nFields`). Used only for `I18nTextTable` lookups — these are the locale labels embedded in `changedLocales` keys.
+- **`globalLocale`** (`useLocale()`): The user's current UI locale. Used for ALL API-fetched lookup tables (professions, elements, attributes, battle tags, etc.) in diff viewers.
+
+Never use `diff.locale` for API fetches of lookup tables; never use `globalLocale` to interpret `changedLocales` keys.
+
+#### Character Table Name Resolution
+When an operator has changes in other tables but NOT in CharacterTable, the card name must be fetched from `CharacterTable` via API (fallback fetch). The name field may be:
+- `{ id, text }` raw i18n object → use `resolveI18n(name, charI18nDict)`.
+- Locale-keyed object (after `expandI18nFields`) → use `localeText(obj, locale)` which reads `obj[locale] || obj.CN`.
+
+#### Profile Voice/Record Grouping
+Voice changes come as `profileVoice[N].fieldName` paths. Always group by index N and show the voice title+desc header (from `newValue`) once before listing individual field diffs. The unlock info (`unlockType`/`unlockValue`) is at the `profileVoice[N]` level, not at individual field level.
+
+#### unlockType/unlockValue Coupling
+`unlockType` is a sibling field at the `profileVoice[N]` or `profileRecord[N]` level, while `unlockValue` is at `profileVoice[N].unlockValue`. To display `unlockValue` correctly:
+- Parse the N from the change path.
+- Look up that entry's `unlockType` from `newValue`.
+- Render as `初始解锁` (type 0), `精英阶段 N` (type 2), or `信赖值 N` (type 4).
+
+#### RichText Diff Breaks Rich Tag Structure
+DO NOT wrap individual tokens inside `<color>`/`<mark>` tags to highlight diffs — that would break hyperlink and color tag structure. Instead, use character-level prefix/suffix matching (`commonPrefixLen`/`commonSuffixLen`) to isolate the changed portion and wrap whole segments with `<span>` elements that have CSS `line-through`/background styles. Each segment (prefix, old-mid, new-mid, suffix) is independently rendered through `<RichText>`.
+
+#### Added Operator Card Shows All Data
+When an operator is entirely new, the card expands to show:
+- Full operator info (portrait, name, rarity, profession, element, attributes, tags)
+- Skills fetched from `CharGrowthTable` + `SkillPatchTable` with blackboard-substituted descriptions
+- Factory/spaceship skills from `SpaceshipCharSkillTable` + `SpaceshipSkillTable`
+- Profile records and voices (fetched from `CharacterTable` API fallback)
+Has a blue border + "新增" badge.
+
+#### diff-tables Numeric ID Handling
+`safeParse` in the diff script uses the same 64-bit integer quoting pattern as `api.ts`. `isI18nField` checks `typeof (value as any).id === 'number' || typeof (value as any).id === 'string'` — after JSON parse, 64-bit IDs are strings. Always compare with `String(field.id)` in both build-time and runtime.
