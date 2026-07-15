@@ -5,6 +5,8 @@ import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useOperatorAggregatedDiff } from '../../hooks/useOperatorAggregatedDiff'
 import type { OperatorChange } from '../../hooks/useOperatorAggregatedDiff'
+import { RichText } from '../../lib/richText'
+import { formatBlackboard } from '../../lib/formatText'
 
 const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
 
@@ -61,6 +63,14 @@ function renderValue(v: unknown, locale: string): string {
   }
   if (typeof v === 'string') return `"${v}"`
   return String(v)
+}
+
+function renderTableEntry(change: { tableName: string; op: string; key: string; entry: any }, locale: string) {
+  const { tableName, op, entry } = change
+  if (tableName === 'SkillPatchTable') return <SkillEntry entry={entry} op={op} />
+  if (tableName === 'PotentialTalentEffectTable') return <PotentialEntry entry={entry} op={op} locale={locale} />
+  if (tableName === 'SpaceshipSkillTable') return <SpaceshipEntry entry={entry} op={op} />
+  return renderChangeEntry(entry, op, locale)
 }
 
 function renderChangeEntry(entry: any, op: string, locale: string) {
@@ -299,7 +309,7 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
                     <span className="font-mono text-[10px] px-1 rounded" style={{ backgroundColor: `${color}18`, color }}>{label}</span>
                     <span className="text-[10px] font-mono" style={{ color: opColor }}>{opLabel}</span>
                   </div>
-                  {renderChangeEntry(c.entry, c.op, locale)}
+                  {renderTableEntry(c, locale)}
                 </div>
               )
             })
@@ -430,6 +440,68 @@ function SkillPreview({ charId }: { charId: string }) {
         ))}
       </div>
     </details>
+  )
+}
+
+let _skillI18n: Record<string, string> | null = null
+async function getSkillPatchI18n(): Promise<Record<string, string>> {
+  if (!_skillI18n) {
+    _skillI18n = await getCachedData<Record<string, string>>('I18nDict_CN_SkillPatchTable', () => fetchTableDictAll('SkillPatchTable', 'CN')).catch(() => ({}))
+  }
+  return _skillI18n
+}
+
+function SkillEntry({ entry, op }: { entry: any; op: string }) {
+  const [i18n, setI18n] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(true)
+  useEffect(() => { getSkillPatchI18n().then(d => { setI18n(d); setLoading(false) }) }, [])
+  if (loading) return <div className="text-[10px] text-[#5A5A62]">加载技能…</div>
+
+  if (op === 'changed') {
+    const e = entry as { changed?: Record<string, any> }
+    if (e.changed) return renderChangeEntry(entry, op, 'CN')
+    return <div className="text-[10px] text-[#5A5A62]">无技能变更</div>
+  }
+
+  const bundle = entry?.SkillPatchDataBundle
+  if (!bundle?.length) return <div className="text-[10px] text-[#5A5A62]">无技能数据</div>
+  const first = bundle[0]
+  const name = resolveI18n(first.skillName, i18n) || first.skillId || ''
+  const desc = resolveI18n(first.description, i18n) || ''
+  const bb: Record<string, number> = {}
+  for (const b of (first.blackboard ?? [])) bb[b.key] = b.value
+  const formattedDesc = Object.keys(bb).length > 0 ? formatBlackboard(desc, bb) : desc
+  return (
+    <div className="text-xs">
+      {name && <div className="text-[#E8E6E3] font-medium mb-1">{name}</div>}
+      {formattedDesc && <div className="text-[#B0ACA6] leading-relaxed"><RichText text={formattedDesc} /></div>}
+      <div className="text-[10px] text-[#5A5A62] mt-1">Lv.{first.level} · {bundle.length} 级</div>
+    </div>
+  )
+}
+
+function PotentialEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
+  if (op === 'changed') return renderChangeEntry(entry, op, locale)
+  return <div className="text-[#8B8982] text-[10px] font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">{renderObj(entry)}</div>
+}
+
+function SpaceshipEntry({ entry, op }: { entry: any; op: string }) {
+  const [i18n, setI18n] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    getCachedData<Record<string, string>>('I18nDict_CN_SpaceshipSkillTable', () => fetchTableDictAll('SpaceshipSkillTable', 'CN'))
+      .then(d => { setI18n(d); setLoading(false) }).catch(() => setLoading(false))
+  }, [])
+  if (loading) return <div className="text-[10px] text-[#5A5A62]">加载基建技能…</div>
+  if (op === 'changed') return renderChangeEntry(entry, op, 'CN')
+  const name = resolveI18n(entry?.name, i18n) || ''
+  const desc = resolveI18n(entry?.desc, i18n) || ''
+  return (
+    <div className="text-xs">
+      {name && <div className="text-[#E8E6E3] font-medium mb-1">{name}</div>}
+      {desc && <div className="text-[#B0ACA6] leading-relaxed"><RichText text={desc} /></div>}
+      {entry.effectType !== undefined && <div className="text-[10px] text-[#5A5A62] mt-1">效果类型 {entry.effectType}</div>}
+    </div>
   )
 }
 
