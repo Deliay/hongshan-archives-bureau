@@ -235,6 +235,12 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
   const isAdded = op.changes.some(c => c.op === 'added' && c.tableName === 'CharacterTable')
   const maps = useLookupMaps()
   const [fallbackCharData, setFallbackCharData] = useState<Record<string, any> | null>(null)
+  const [charI18n, setCharI18n] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    getCachedData<Record<string, string>>(`I18nDict_${locale}_CharacterTable`, () => fetchTableDictAll('CharacterTable', locale))
+      .then(d => setCharI18n(d)).catch(() => {})
+  }, [locale])
 
   useEffect(() => {
     const hasCharEntry = op.changes.some(c =>
@@ -254,7 +260,7 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
 
   const name = localeText(op.name, locale)
     || localeText(charEntry?.name, locale)
-    || (fallbackCharData?.name ? resolveI18n(fallbackCharData.name, {}) : null)
+    || (fallbackCharData?.name ? resolveI18n(fallbackCharData.name, charI18n) : null)
     || op.charId
   const rarity = op.rarity ?? charEntry?.rarity ?? fallbackCharData?.rarity ?? 0
   const professionVal = op.profession ?? charEntry?.profession ?? fallbackCharData?.profession

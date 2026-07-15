@@ -69,4 +69,25 @@ test.describe('更新日志 (Update Log)', () => {
       expect(hasRawUnlockType).toBe(false)
     }
   })
+
+  test('非CharacterTable变更的干员名字也能正确显示', async ({ page }) => {
+    await waitForDiffReady(page)
+
+    // chr_0016_laevat only has PotentialTalentEffectTable changes, no CharacterTable diff
+    // Its name must resolve via API fallback
+    const card = page.locator('button').filter({ hasText: 'chr_0016_laevat' }).first()
+    await expect(card).toBeVisible({ timeout: 10000 })
+
+    // Wait for the localized name to appear (not just the ID)
+    await page.waitForFunction(() => {
+      const buttons = document.querySelectorAll('button')
+      for (const btn of buttons) {
+        if (btn.textContent?.includes('chr_0016_laevat')) {
+          const parent = btn.closest('div')?.textContent || ''
+          return parent.includes('莱万汀') || parent.includes('Laevatain')
+        }
+      }
+      return false
+    }, { timeout: 15000 })
+  })
 })
