@@ -143,22 +143,83 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
       if (cancelled) return
       const map: Record<string, string> = {}
       for (const id of distIds) {
-        const entry = (raw as Record<string, any>)[id]
-        if (entry) map[id] = resolveI18n(entry.areaName, i18n as Record<string, string>) || id
+        const e = (raw as Record<string, any>)[id]
+        if (e) map[id] = resolveI18n(e.areaName, i18n as Record<string, string>) || id
       }
       setAreaNames(map)
     }).catch(() => {})
     return () => { cancelled = true }
   }, [distIds.join(','), locale])
+
+  const changed = op === 'changed' ? (entry as any)?.changed ?? {} : {}
+  const distChanged = changed.distributionIds
+  const oldDistIds: string[] = distChanged?.type === 'value' ? (distChanged.oldValue ?? []) : []
+  const newDistIds: string[] = distChanged?.type === 'value' ? (distChanged.newValue ?? []) : []
+
+  const hasDistDiff = oldDistIds.length > 0 || newDistIds.length > 0
+  const added = hasDistDiff ? newDistIds.filter(id => !oldDistIds.includes(id)) : (op === 'added' ? distIds : [])
+  const removed = hasDistDiff ? oldDistIds.filter(id => !newDistIds.includes(id)) : (op === 'removed' ? distIds : [])
+  const unchanged = hasDistDiff ? newDistIds.filter(id => oldDistIds.includes(id)) : []
+
+  const otherChanges = op === 'changed' ? Object.keys(changed).filter(k => k !== 'distributionIds') : []
+
   return (
     <div className="space-y-1">
-      {renderChangeEntry(entry, op, locale)}
-      {distIds.length > 0 && Object.keys(areaNames).length > 0 && (
+      {otherChanges.length > 0 && (
+        <div className="space-y-1">
+          {otherChanges.map(path => {
+            const change = changed[path]
+            if (change.type === 'value') {
+              return (
+                <div key={path} className="text-[10px]">
+                  <span className="text-[#5A5A62] font-mono">{path}</span>
+                  <div className="flex gap-3 mt-0.5">
+                    <span className="text-[#ef4444]">旧 {formatDiffValue(change.oldValue, locale)}</span>
+                    <span className="text-[#26bbfd]">新 {formatDiffValue(change.newValue, locale)}</span>
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <div key={path} className="text-[10px]">
+                <span className="text-[#5A5A62] font-mono">{path}</span>
+                <div className="mt-0.5 space-y-0.5">
+                  {Object.entries(change.changedLocales).map(([loc, val]) => {
+                    const v = val as { oldText: string; newText: string }
+                    return (
+                      <div key={loc}>
+                        <span className="text-[#C9A96E]">{loc}</span>
+                        <RichTextDiff oldText={v.oldText || ''} newText={v.newText || ''} />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {(op === 'added' || op === 'removed' || hasDistDiff) && Object.keys(areaNames).length > 0 && (
         <div className="px-2 py-1 rounded bg-[#0F0F12]">
           <div className="text-[10px] text-[#8B8982] mb-0.5">分布区域</div>
           <div className="flex flex-wrap gap-1">
-            {distIds.map(id => (
-              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6] font-mono">
+            {removed.map(id => (
+              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#ef4444] line-through">
+                {areaNames[id] || id}
+              </span>
+            ))}
+            {added.map(id => (
+              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#14321e] text-[#26bbfd]">
+                {areaNames[id] || id}
+              </span>
+            ))}
+            {unchanged.map(id => (
+              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6]">
+                {areaNames[id] || id}
+              </span>
+            ))}
+            {!hasDistDiff && op === 'added' && distIds.map(id => (
+              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6]">
                 {areaNames[id] || id}
               </span>
             ))}
