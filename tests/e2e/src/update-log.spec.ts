@@ -94,21 +94,21 @@ test.describe('更新日志 (Update Log)', () => {
   test('展开后rich text正确渲染超链接', async ({ page }) => {
     await waitForDiffReady(page)
 
-    // Find and expand the operator with PotentialTalentEffectTable changes
     const card = page.locator('button').filter({ hasText: 'chr_0016_laevat' }).first()
     await expect(card).toBeVisible({ timeout: 10000 })
-    await page.waitForTimeout(500)
-
-    // Expand the card to show the PotentialTalentEffectTable entry
     await card.click()
     await page.waitForTimeout(1000)
 
-    // The expanded section contains a rich text hyperlink <#ba.absorb>吸收</>
-    // In the DOM, this renders as a <button> with text 吸收
-    const hyperlinks = page.locator('button:has-text("吸收")')
-    // There should be at least one rendered hyperlink in the expanded details
-    // (may be inside a details element)
-    const count = await hyperlinks.count()
-    expect(count).toBeGreaterThanOrEqual(1)
+    // Non-changed hyperlinks in the text (<#ba.lastcombo>, <#ba.fireinflict>, etc.)
+    // should render normally as buttons
+    const 重击Links = page.locator('button', { hasText: '重击' })
+    expect(await 重击Links.count()).toBeGreaterThanOrEqual(1)
+
+    const 灼热附着Links = page.locator('button', { hasText: '灼热附着' })
+    expect(await 灼热附着Links.count()).toBeGreaterThanOrEqual(1)
+
+    // The changed word 吸收 should also render as a hyperlink button
+    const 吸收Links = page.locator('button', { hasText: '吸收' })
+    expect(await 吸收Links.count()).toBeGreaterThanOrEqual(1)
   })
 })
