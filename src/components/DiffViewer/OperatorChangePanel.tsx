@@ -320,49 +320,9 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
   )
 }
 
-function AddedOperatorDetail({ charId, entry, name, rarity }: { charId: string; entry: any; name: string; rarity: number }) {
-  const maps = useLookupMaps()
-
-  const profId: number = entry?.profession ?? 0
-  const charType: string = entry?.charTypeId ?? ''
-  const mainAttrType: number = entry?.mainAttrType ?? 0
-  const subAttrType: number = entry?.subAttrType ?? 0
-  const tags: string[] = entry?.charBattleTagIds ?? []
-  const professionName = maps?.professions[profId] ?? (profId > 0 ? `职业${profId}` : '')
-  const elementName = maps?.elements[charType] ?? charType
-  const mainAttrName = maps?.attributes[mainAttrType] ?? (mainAttrType > 0 ? `属性${mainAttrType}` : '')
-  const subAttrName = maps?.attributes[subAttrType] ?? (subAttrType > 0 ? `属性${subAttrType}` : '')
-
+function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; name?: string; rarity?: number }) {
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-3">
-        <img src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${charId}.png`}
-          alt="" className="w-16 h-16 object-cover bg-[#0F0F12] rounded border border-[#2A2A32]"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-        <div className="min-w-0 flex-1">
-          <div className="text-base font-bold text-[#E8E6E3]">{name}</div>
-          <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-[#8B8982]">
-            {professionName && <span>{professionName}</span>}
-            {elementName && <><span>·</span><span>{elementName}</span></>}
-            <span>·</span>
-            <StarRating level={rarity} />
-          </div>
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {tags.map((t, i) => (
-                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">{maps?.battleTags[t] || t}</span>
-              ))}
-            </div>
-          )}
-          {(mainAttrName || subAttrName) && (
-            <div className="flex flex-wrap gap-3 mt-2 text-xs text-[#B0ACA6]">
-              {mainAttrName && <span>主能力 {mainAttrName}</span>}
-              {subAttrName && <span>副能力 {subAttrName}</span>}
-            </div>
-          )}
-        </div>
-      </div>
-
       <SkillPreview charId={charId} />
 
       {entry?.profileRecord && entry.profileRecord.length > 0 && (
@@ -406,37 +366,61 @@ function AddedOperatorDetail({ charId, entry, name, rarity }: { charId: string; 
 }
 
 function SkillPreview({ charId }: { charId: string }) {
-  const [skillGroups, setSkillGroups] = useState<{ name: string; type: number }[]>([])
+  const [data, setData] = useState<{ name: string; icon: string; desc: string; type: number }[]>([])
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const [growthRaw, growthI18n] = await Promise.all([
+      const [growthRaw, growthI18n, patchRaw, patchI18n] = await Promise.all([
         getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')).catch(() => ({})),
         getCachedData<Record<string, string>>('I18nDict_CN_CharGrowthTable', () => fetchTableDictAll('CharGrowthTable', 'CN')).catch(() => ({}) as Record<string, string>),
+        getCachedData<Record<string, any>>('SkillPatchTable', () => fetchTableAll('SkillPatchTable')).catch(() => ({})),
+        getCachedData<Record<string, string>>('I18nDict_CN_SkillPatchTable', () => fetchTableDictAll('SkillPatchTable', 'CN')).catch(() => ({}) as Record<string, string>),
       ])
       if (cancelled) return
       const growth = (growthRaw as Record<string, any>)[charId]
-      const result: { name: string; type: number }[] = []
+      const result: { name: string; icon: string; desc: string; type: number }[] = []
       if (growth?.skillGroupMap) {
         for (const g of Object.values<any>(growth.skillGroupMap)) {
-          result.push({
-            name: resolveI18n(g.name, growthI18n as Record<string, string>) || g.skillGroupId || '',
-            type: g.skillGroupType ?? 0,
-          })
+          const groupName = resolveI18n(g.name, growthI18n as Record<string, string>) || g.skillGroupId || ''
+          const groupIcon = g.icon || ''
+          let groupDesc = resolveI18n(g.desc, growthI18n as Record<string, string>) || ''
+          const skillId = g.skillIdList?.[0]
+          if (skillId) {
+            const entry = (patchRaw as Record<string, any>)[skillId]
+            const bundle = entry?.SkillPatchDataBundle
+            if (bundle?.length) {
+              const first = bundle[0]
+              const pDesc = resolveI18n(first.description, patchI18n as Record<string, string>) || groupDesc
+              const bb: Record<string, number> = {}
+              for (const b of (first.blackboard ?? [])) bb[b.key] = b.value
+              groupDesc = Object.keys(bb).length > 0 ? formatBlackboard(pDesc, bb) : pDesc
+            }
+          }
+          result.push({ name: groupName, icon: groupIcon, desc: groupDesc, type: g.skillGroupType ?? 0 })
         }
       }
-      setSkillGroups(result)
+      setData(result)
     }
     load()
     return () => { cancelled = true }
   }, [charId])
-  if (skillGroups.length === 0) return null
+  if (data.length === 0) return null
   return (
     <details className="group" open>
-      <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">技能（{skillGroups.length}）</summary>
-      <div className="mt-1 space-y-1">
-        {skillGroups.map((s, i) => (
-          <div key={i} className="px-2 py-1 rounded bg-[#0F0F12] text-xs text-[#E8E6E3]">{s.name}</div>
+      <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">技能（{data.length}）</summary>
+      <div className="mt-1 space-y-2">
+        {data.map((s, i) => (
+          <div key={i} className="px-2 py-1.5 rounded bg-[#0F0F12]">
+            <div className="flex items-center gap-2">
+              {s.icon && (
+                <img src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${s.icon}.png`} alt=""
+                  className="w-6 h-6 object-contain bg-[#1A1B23] rounded"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              )}
+              <div className="text-xs text-[#E8E6E3] font-medium">{s.name}</div>
+            </div>
+            {s.desc && <div className="text-[10px] text-[#B0ACA6] leading-relaxed mt-1"><RichText text={s.desc} /></div>}
+          </div>
         ))}
       </div>
     </details>
