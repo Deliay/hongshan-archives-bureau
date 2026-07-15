@@ -1,8 +1,60 @@
+import { useRaces } from '../../hooks/useData'
+import { Link } from 'react-router-dom'
+import Rarity from '../../components/Rarity'
+
 export default function RaceList() {
+  const { data: races, loading, error } = useRaces()
+
+  if (loading) return <div className="text-[#8B8982] text-sm">加载中…</div>
+  if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
+  if (!races || races.length === 0) return <div className="text-[#8B8982] text-sm">暂无记录</div>
+
   return (
     <div>
-      <h2 className="text-xl font-bold text-[#E8E6E3] mb-4">种族一览</h2>
-      <p className="text-sm text-[#8B8982]">待实现 — 数据来自 TagDataTable 与干员交叉索引</p>
+      <h2 className="text-xl font-bold text-[#E8E6E3] mb-6">种族一览</h2>
+
+      <div className="flex flex-col gap-4">
+        {races.map((race) => (
+          <div
+            key={race.id}
+            className="rounded border border-[#2A2A32] bg-[#1A1B23] p-4"
+          >
+            <div className="flex items-baseline gap-2 mb-3">
+              <h3 className="text-base font-medium text-[#E8E6E3]">{race.name}</h3>
+              <span className="text-xs text-[#5A5A62]">{race.members.length} 人</span>
+            </div>
+
+            {race.members.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {race.members.map((m) => (
+                  <Link
+                    key={m.id}
+                    to={`/archive/operators/${m.id}`}
+                    className="flex items-center gap-2 p-2 rounded border border-transparent
+                               hover:border-[#C9A96E]/40 hover:bg-[#0F0F12]/60 transition-all duration-200 group"
+                  >
+                    <div className="w-10 h-10 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
+                      {m.portrait ? (
+                        <img src={m.portrait} alt={m.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#5A5A62] text-xs">?</div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs text-[#E8E6E3] group-hover:text-[#C9A96E] transition-colors truncate">
+                        {m.name}
+                      </div>
+                      <Rarity level={m.rarity} />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#5A5A62]">暂无干员</p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

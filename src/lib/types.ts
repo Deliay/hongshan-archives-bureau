@@ -156,10 +156,17 @@ export interface Item {
   valuableTabType: number
 }
 
+export interface RaceMember {
+  id: string
+  name: string
+  portrait: string
+  rarity: number
+}
+
 export interface Race {
   id: string
   name: string
-  memberIds: string[]
+  members: RaceMember[]
 }
 
 export interface Faction {

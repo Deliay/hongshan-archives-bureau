@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchTableAll, fetchTableDictAll, fetchI18nLocales } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from '../lib/types'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 
@@ -474,4 +474,58 @@ export function useDocuments(): UseDataResult<StoryDocument[]> {
 
 export function useAreas(): UseDataResult<Area[]> {
   return useTableData('SceneAreaTable', adaptArea)
+}
+
+export function useRaces(): UseDataResult<Race[]> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [[tagRaw, tagI18n], [charTagRaw], [charRaw, charI18n]] = await Promise.all([
+      Promise.all([
+        getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable')),
+        getTableI18nDict('TagDataTable', locale),
+      ]),
+      Promise.all([
+        getCachedData<Record<string, any>>('CharacterTagTable', () => fetchTableAll('CharacterTagTable')),
+      ]),
+      Promise.all([
+        getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
+        getTableI18nDict('CharacterTable', locale),
+      ]),
+    ])
+
+    const raceTags = Object.values(tagRaw).filter((t: any) => t.tagGroupId === 'tag_group_race')
+
+    const charToRace: Record<string, string> = {}
+    for (const [, entry] of Object.entries<any>(charTagRaw)) {
+      if (entry.raceTagId) {
+        charToRace[entry.charId] = entry.raceTagId
+      }
+    }
+
+    const races: Record<string, Race> = {}
+    for (const tag of raceTags) {
+      const raceId = tag.tagId
+      const raceName = resolveI18n(tag.tagName, tagI18n) || raceId
+      races[raceId] = { id: raceId, name: raceName, members: [] }
+    }
+
+    for (const [charId, raceTagId] of Object.entries(charToRace)) {
+      const race = races[raceTagId]
+      if (!race) continue
+      const charData = charRaw[charId]
+      if (!charData) continue
+      race.members.push({
+        id: charId,
+        name: resolveI18n(charData.name, charI18n) || charId,
+        portrait: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${charId}.png`,
+        rarity: charData.rarity ?? 0,
+      })
+    }
+
+    for (const race of Object.values(races)) {
+      race.members.sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+    }
+
+    return Object.values(races).sort((a, b) => a.name.localeCompare(b.name))
+  }, [locale])
 }
