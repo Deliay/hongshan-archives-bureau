@@ -125,7 +125,48 @@ function renderTableEntry(change: { tableName: string; op: string; key: string; 
   const { tableName, op, entry } = change
   if (tableName === 'EnemyAttributeTemplateTable') return <EnemyAttrEntry entry={entry} op={op} locale={locale} />
   if (tableName === 'EnemyTable') return <EnemyTableEntry entry={entry} op={op} locale={locale} />
+  if (tableName === 'EnemyTemplateDisplayInfoTable') return <EnemyDisplayInfoEntry entry={entry} op={op} locale={locale} />
   return renderChangeEntry(entry, op, locale)
+}
+
+function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
+  const data = op === 'changed' ? (entry as any)?.newValue ?? entry : entry
+  const distIds: string[] = data?.distributionIds ?? []
+  const [areaNames, setAreaNames] = useState<Record<string, string>>({})
+  useEffect(() => {
+    if (distIds.length === 0) return
+    let cancelled = false
+    Promise.all([
+      getCachedData<Record<string, any>>('DistributionInfoTable', () => fetchTableAll('DistributionInfoTable')).catch(() => ({})),
+      getCachedData<Record<string, string>>(`I18nDict_${locale}_DistributionInfoTable`, () => fetchTableDictAll('DistributionInfoTable', locale)).catch(() => ({}) as Record<string, string>),
+    ]).then(([raw, i18n]) => {
+      if (cancelled) return
+      const map: Record<string, string> = {}
+      for (const id of distIds) {
+        const entry = (raw as Record<string, any>)[id]
+        if (entry) map[id] = resolveI18n(entry.areaName, i18n as Record<string, string>) || id
+      }
+      setAreaNames(map)
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [distIds.join(','), locale])
+  return (
+    <div className="space-y-1">
+      {renderChangeEntry(entry, op, locale)}
+      {distIds.length > 0 && Object.keys(areaNames).length > 0 && (
+        <div className="px-2 py-1 rounded bg-[#0F0F12]">
+          <div className="text-[10px] text-[#8B8982] mb-0.5">分布区域</div>
+          <div className="flex flex-wrap gap-1">
+            {distIds.map(id => (
+              <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6] font-mono">
+                {areaNames[id] || id}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function EnemyTableEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
