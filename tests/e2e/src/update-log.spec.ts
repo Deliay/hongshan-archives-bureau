@@ -146,14 +146,20 @@ test.describe('更新日志 (Update Log)', () => {
     const cardText = await card.textContent() || ''
     expect(cardText).toContain('变体')
 
+    // No raw distributionIds field should appear anywhere on the page
+    const pageText = await page.locator('body').textContent() || ''
+    expect(pageText).not.toContain('distributionIds')
+
     // Click to expand and verify the variant entry key
     await card.click()
-    await page.waitForTimeout(2000)
-    const html = await page.locator('body').innerHTML()
-    expect(html).toContain('eny_0046_lbshamman_hdg016')
+
+    // Wait for expanded section content
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('eny_0046_lbshamman_hdg016')
+    }, { timeout: 15000 })
 
     // Verify attribute panel rendered from EnemyTable's attrTemplateId lookup
-    // Wait for the async attribute data fetch to complete
     await page.waitForFunction(() => {
       const body = document.body.textContent || ''
       return body.includes('属性模板') && (body.includes('攻击力') || body.includes('HP'))
