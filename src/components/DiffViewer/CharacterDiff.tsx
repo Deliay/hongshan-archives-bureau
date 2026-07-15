@@ -292,7 +292,20 @@ function Section({ title, items, renderItem, itemKey }: { title: string; items: 
   )
 }
 
+function renderUnlockInfo(unlockType: number, unlockValue: number): string {
+  if (unlockType === 0) return '初始解锁'
+  if (unlockType === 2) return `精英阶段 ${unlockValue}`
+  if (unlockType === 4) return `信赖值 ${unlockValue}`
+  return `解锁类型${unlockType}·值${unlockValue}`
+}
+
 function FieldDiff({ path, change, maps }: { path: string; change: FieldChange; maps: LookupMaps }) {
+  const format = (v: unknown) => {
+    if (path.endsWith('unlockType') && typeof v === 'number') {
+      return renderUnlockInfo(v, 0)
+    }
+    return formatFieldValue(v, maps)
+  }
   return (
     <div className="text-xs border-b border-[#2A2A32]/50 pb-1.5 last:border-0">
       <div className="text-[#8B8982] font-mono mb-0.5">{path}</div>
@@ -300,11 +313,11 @@ function FieldDiff({ path, change, maps }: { path: string; change: FieldChange; 
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <span className="text-[#ef4444]">旧 </span>
-            <span className="text-[#E8E6E3]">{formatFieldValue(change.oldValue, maps)}</span>
+            <span className="text-[#E8E6E3]">{format(change.oldValue)}</span>
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[#26bbfd]">新 </span>
-            <span className="text-[#E8E6E3]">{formatFieldValue(change.newValue, maps)}</span>
+            <span className="text-[#E8E6E3]">{format(change.newValue)}</span>
           </div>
         </div>
       ) : (
