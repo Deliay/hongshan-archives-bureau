@@ -5,6 +5,7 @@ import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useOperatorAggregatedDiff } from '../../hooks/useOperatorAggregatedDiff'
 import type { OperatorChange } from '../../hooks/useOperatorAggregatedDiff'
+import type { ChangedEntry } from '../../lib/types-diff'
 import { RichText } from '../../lib/richText'
 import { formatBlackboard } from '../../lib/formatText'
 
@@ -56,23 +57,6 @@ function localeText(obj: unknown, locale: string): string {
   return dict[locale] || dict.CN || ''
 }
 
-let _globalI18n: Record<string, string> | null = null
-async function ensureGlobalI18n(): Promise<Record<string, string>> {
-  if (!_globalI18n) {
-    _globalI18n = await getCachedData<Record<string, string>>('I18nDict_CN_I18nTextTable', () => fetchTableDictAll('I18nTextTable', 'CN')).catch(() => ({}))
-  }
-  return _globalI18n
-}
-
-function resolveI18nValue(v: any): string {
-  if (v && typeof v === 'object' && 'id' in v) {
-    const id = String(v.id)
-    if (_globalI18n && _globalI18n[id]) return _globalI18n[id]
-    if (v.text) return v.text
-  }
-  return ''
-}
-
 function StarRating({ level }: { level: number }) {
   return (
     <span className="inline-flex gap-0.5 text-xs" style={{ color: RARITY_COLORS[level] || '#6b7280' }}>
@@ -109,9 +93,9 @@ function formatDiffValue(path: string, v: unknown, locale: string): string {
 
 function renderTableEntry(change: { tableName: string; op: string; key: string; entry: any }, locale: string) {
   const { tableName, op, entry } = change
-  if (tableName === 'SkillPatchTable') return <SkillEntry entry={entry} op={op} />
+  if (tableName === 'SkillPatchTable') return <SkillEntry entry={entry} op={op} locale={locale} />
   if (tableName === 'PotentialTalentEffectTable') return <PotentialEntry entry={entry} op={op} locale={locale} />
-  if (tableName === 'SpaceshipSkillTable') return <SpaceshipEntry entry={entry} op={op} />
+  if (tableName === 'SpaceshipSkillTable') return <SpaceshipEntry entry={entry} op={op} locale={locale} />
   return renderChangeEntry(entry, op, locale)
 }
 
@@ -186,18 +170,6 @@ function renderObj(obj: any, indent = ''): string {
   return String(obj)
 }
 
-function useFullCharData(charId: string): Record<string, any> | null {
-  const [data, setData] = useState<Record<string, any> | null>(null)
-  useEffect(() => {
-    let cancelled = false
-    getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')).then((raw) => {
-      if (!cancelled) setData(raw[charId] ?? null)
-    }).catch(() => {})
-    return () => { cancelled = true }
-  }, [charId])
-  return data
-}
-
 interface LookupMaps {
   professions: Record<number, string>
   elements: Record<string, string>
@@ -250,24 +222,35 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
   const [expanded, setExpanded] = useState(false)
   const isAdded = op.changes.some(c => c.op === 'added' && c.tableName === 'CharacterTable')
   const maps = useLookupMaps()
-  const [i18nDict, setI18nDict] = useState<Record<string, string>>({})
+  const [fallbackCharData, setFallbackCharData] = useState<Record<string, any> | null>(null)
 
   useEffect(() => {
-    getCachedData<Record<string, string>>(`I18nDict_CN_CharacterTable`, () => fetchTableDictAll('CharacterTable', 'CN'))
-      .then(d => setI18nDict(d)).catch(() => {})
-  }, [])
+    const hasCharEntry = op.changes.some(c =>
+      c.tableName === 'CharacterTable'
+    )
+    if (hasCharEntry) return
+    getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable'))
+      .then(raw => setFallbackCharData(raw[op.charId] ?? null))
+      .catch(() => {})
+  }, [op.charId, op.changes])
 
-  const fullData = useFullCharData(op.charId)
+  const charEntry = (() => {
+    const c = op.changes.find(c => c.tableName === 'CharacterTable')
+    if (!c) return null
+    return c.op === 'changed' ? (c.entry as ChangedEntry).newValue : c.entry
+  })()
 
   const name = localeText(op.name, locale)
-    || (fullData ? resolveI18n(fullData.name, i18nDict) : '')
+    || (op.name ? '' : null)
+    || (charEntry ? localeText(charEntry.name, locale) : null)
+    || (fallbackCharData?.name ? resolveI18n(fallbackCharData.name, {}) : null)
     || op.charId
-  const rarity = op.rarity ?? fullData?.rarity ?? 0
-  const professionVal = op.profession ?? fullData?.profession
-  const charTypeId = op.charTypeId ?? fullData?.charTypeId ?? ''
-  const tags: string[] = fullData?.charBattleTagIds ?? []
-  const mainAttrType: number = fullData?.mainAttrType ?? 0
-  const subAttrType: number = fullData?.subAttrType ?? 0
+  const rarity = op.rarity ?? charEntry?.rarity ?? fallbackCharData?.rarity ?? 0
+  const professionVal = op.profession ?? charEntry?.profession ?? fallbackCharData?.profession
+  const charTypeId = op.charTypeId ?? charEntry?.charTypeId ?? fallbackCharData?.charTypeId ?? ''
+  const tags: string[] = op.charBattleTagIds ?? charEntry?.charBattleTagIds ?? fallbackCharData?.charBattleTagIds ?? []
+  const mainAttrType: number = op.mainAttrType ?? charEntry?.mainAttrType ?? fallbackCharData?.mainAttrType ?? 0
+  const subAttrType: number = op.subAttrType ?? charEntry?.subAttrType ?? fallbackCharData?.subAttrType ?? 0
 
   const professionName = maps?.professions[professionVal ?? -1] ?? (professionVal !== undefined ? `职业${professionVal}` : '')
   const elementName = maps?.elements[charTypeId] ?? charTypeId
@@ -560,7 +543,7 @@ async function getSkillPatchI18n(): Promise<Record<string, string>> {
   return _skillI18n
 }
 
-function SkillEntry({ entry, op }: { entry: any; op: string }) {
+function SkillEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
   const [i18n, setI18n] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   useEffect(() => { getSkillPatchI18n().then(d => { setI18n(d); setLoading(false) }) }, [])
@@ -568,15 +551,15 @@ function SkillEntry({ entry, op }: { entry: any; op: string }) {
 
   if (op === 'changed') {
     const e = entry as { changed?: Record<string, any> }
-    if (e.changed) return renderChangeEntry(entry, op, 'CN')
+    if (e.changed) return renderChangeEntry(entry, op, locale)
     return <div className="text-[10px] text-[#5A5A62]">无技能变更</div>
   }
 
   const bundle = entry?.SkillPatchDataBundle
   if (!bundle?.length) return <div className="text-[10px] text-[#5A5A62]">无技能数据</div>
   const first = bundle[0]
-  const name = resolveI18n(first.skillName, i18n) || first.skillId || ''
-  const desc = resolveI18n(first.description, i18n) || ''
+  const name = localeText(first.skillName, locale) || resolveI18n(first.skillName, i18n) || first.skillId || ''
+  const desc = localeText(first.description, locale) || resolveI18n(first.description, i18n) || ''
   const bb: Record<string, number> = {}
   for (const b of (first.blackboard ?? [])) bb[b.key] = b.value
   const formattedDesc = Object.keys(bb).length > 0 ? formatBlackboard(desc, bb) : desc
@@ -594,7 +577,7 @@ function PotentialEntry({ entry, op, locale }: { entry: any; op: string; locale:
   return <div className="text-[#8B8982] text-[10px] font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">{renderObj(entry)}</div>
 }
 
-function SpaceshipEntry({ entry, op }: { entry: any; op: string }) {
+function SpaceshipEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
   const [i18n, setI18n] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   useEffect(() => {
@@ -602,9 +585,9 @@ function SpaceshipEntry({ entry, op }: { entry: any; op: string }) {
       .then(d => { setI18n(d); setLoading(false) }).catch(() => setLoading(false))
   }, [])
   if (loading) return <div className="text-[10px] text-[#5A5A62]">加载基建技能…</div>
-  if (op === 'changed') return renderChangeEntry(entry, op, 'CN')
-  const name = resolveI18n(entry?.name, i18n) || ''
-  const desc = resolveI18n(entry?.desc, i18n) || ''
+  if (op === 'changed') return renderChangeEntry(entry, op, locale)
+  const name = localeText(entry?.name, locale) || resolveI18n(entry?.name, i18n) || ''
+  const desc = localeText(entry?.desc, locale) || resolveI18n(entry?.desc, i18n) || ''
   return (
     <div className="text-xs">
       {name && <div className="text-[#E8E6E3] font-medium mb-1">{name}</div>}

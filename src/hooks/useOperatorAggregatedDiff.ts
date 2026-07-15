@@ -8,6 +8,9 @@ export interface OperatorChange {
   profession: number | null
   rarity: number | null
   charTypeId: string | null
+  charBattleTagIds: string[] | null
+  mainAttrType: number | null
+  subAttrType: number | null
   changes: {
     tableName: string
     op: 'added' | 'removed' | 'changed'
@@ -52,7 +55,7 @@ function collectEntries(
 
     let change = changes.get(charId)
     if (!change) {
-      change = { charId, name: null, profession: null, rarity: null, charTypeId: null, changes: [] }
+      change = { charId, name: null, profession: null, rarity: null, charTypeId: null, charBattleTagIds: null, mainAttrType: null, subAttrType: null, changes: [] }
       changes.set(charId, change)
     }
     change.changes.push({ tableName, op, key, entry })
@@ -63,6 +66,9 @@ function collectEntries(
       if (change.profession === null) change.profession = e.profession ?? null
       if (change.rarity === null) change.rarity = e.rarity ?? null
       if (!change.charTypeId) change.charTypeId = e.charTypeId ?? null
+      if (!change.charBattleTagIds) change.charBattleTagIds = e.charBattleTagIds ?? null
+      if (change.mainAttrType === null) change.mainAttrType = e.mainAttrType ?? null
+      if (change.subAttrType === null) change.subAttrType = e.subAttrType ?? null
     }
   }
 }

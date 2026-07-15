@@ -13,6 +13,7 @@ interface LookupMaps {
   battleTags: Record<string, string>
   attributes: Record<number, { name: string; icon: string }>
   i18n: Record<string, string>
+  locale: string
 }
 
 export default function CharacterDiff({ diff }: TableDiffComponentProps) {
@@ -71,7 +72,7 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
         }
       }
 
-      setMaps({ professions, elements, battleTags, attributes, i18n: i18nRaw })
+      setMaps({ professions, elements, battleTags, attributes, i18n: i18nRaw, locale })
     }
     load()
     return () => { cancelled = true }
@@ -112,7 +113,7 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
 
       {tab === 'added' && <EntryCards entries={entries.added} maps={maps} />}
       {tab === 'removed' && <EntryCards entries={entries.removed} maps={maps} />}
-      {tab === 'changed' && <ChangedCards entries={entries.changed} maps={maps} />}
+      {tab === 'changed' && <ChangedCards entries={entries.changed} maps={maps} locale={locale} />}
     </div>
   )
 }
@@ -129,7 +130,7 @@ function EntryCards({ entries, maps }: { entries: Record<string, any>; maps: Loo
   )
 }
 
-function ChangedCards({ entries, maps }: { entries: Record<string, ChangedEntry>; maps: LookupMaps }) {
+function ChangedCards({ entries, maps, locale }: { entries: Record<string, ChangedEntry>; maps: LookupMaps; locale: string }) {
   const keys = Object.keys(entries)
   if (keys.length === 0) return <p className="text-sm text-[#5A5A62]">无</p>
   return (
@@ -140,7 +141,7 @@ function ChangedCards({ entries, maps }: { entries: Record<string, ChangedEntry>
           <details key={key} className="group border border-[#2A2A32] rounded bg-[#1A1B23]">
             <summary className="px-3 py-2 cursor-pointer hover:text-[#C9A96E] transition-colors">
               <span className="font-mono text-sm text-[#E8E6E3]">{key}</span>
-              <span className="ml-2 text-sm text-[#8B8982]">「{resolveEntryName(e.newValue, maps.i18n) || key}」</span>
+              <span className="ml-2 text-sm text-[#8B8982]">「{resolveEntryName(e.newValue, locale, maps.i18n) || key}」</span>
             </summary>
             <div className="px-3 pb-3 border-t border-[#2A2A32]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
@@ -168,7 +169,7 @@ function ChangedCards({ entries, maps }: { entries: Record<string, ChangedEntry>
 }
 
 function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; maps: LookupMaps; compact?: boolean }) {
-  const name = resolveEntryName(entry, maps.i18n) || charId
+  const name = resolveFieldText(entry?.name, maps.locale, maps.i18n) || charId
   const rarity = entry?.rarity ?? 0
   const profId: number = entry?.profession ?? 0
   const prof = maps.professions[profId]
@@ -218,9 +219,9 @@ function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; 
         <div className="mt-3 space-y-2 border-t border-[#2A2A32] pt-2">
           <Section title="档案记录" items={entry?.profileRecord} renderItem={(r: any) => (
             <div>
-              <div className="text-[#8B8982] text-[10px]">{resolveI18n(r.recordTitle, maps.i18n)}</div>
+              <div className="text-[#8B8982] text-[10px]">{resolveFieldText(r.recordTitle, maps.locale, maps.i18n)}</div>
               <div className="text-[#E8E6E3] text-xs mt-0.5 whitespace-pre-wrap line-clamp-3">
-                {resolveI18n(r.recordDesc, maps.i18n)}
+                {resolveFieldText(r.recordDesc, maps.locale, maps.i18n)}
               </div>
             </div>
           )} itemKey={(r: any) => r.id || r.recordID} />
@@ -228,8 +229,8 @@ function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; 
             <div className="flex items-start gap-2">
               <span className="text-[10px] text-[#5A5A62] font-mono shrink-0 mt-0.5">#{v.voiceIndex}</span>
               <div>
-                <div className="text-[#8B8982] text-[10px]">{resolveI18n(v.voiceTitle, maps.i18n)}</div>
-                <div className="text-[#E8E6E3] text-xs">{resolveI18n(v.voiceDesc, maps.i18n)}</div>
+                <div className="text-[#8B8982] text-[10px]">{resolveFieldText(v.voiceTitle, maps.locale, maps.i18n)}</div>
+                <div className="text-[#E8E6E3] text-xs">{resolveFieldText(v.voiceDesc, maps.locale, maps.i18n)}</div>
               </div>
             </div>
           )} itemKey={(v: any) => v.id || v.voiceIndex} />
@@ -304,7 +305,7 @@ const LOCALE_LABELS: Record<string, string> = {
 function formatFieldValue(v: unknown, maps: LookupMaps): string {
   if (v === undefined || v === null) return '（空）'
   if (typeof v === 'object' && !Array.isArray(v)) {
-    const resolved = resolveI18n(v as any, maps.i18n)
+    const resolved = resolveFieldText(v, maps.locale, maps.i18n)
     if (resolved) return resolved
     return JSON.stringify(v)
   }
@@ -313,11 +314,21 @@ function formatFieldValue(v: unknown, maps: LookupMaps): string {
   return JSON.stringify(v)
 }
 
-function resolveEntryName(entry: any, i18n: Record<string, string>): string {
+function resolveFieldText(field: any, locale: string, i18nDict?: Record<string, string>): string {
+  if (field === undefined || field === null) return ''
+  if (typeof field !== 'object') return String(field)
+  if ('id' in field) {
+    return resolveI18n(field, i18nDict)
+  }
+  const obj = field as Record<string, string>
+  return obj[locale] || obj.CN || ''
+}
+
+function resolveEntryName(entry: any, locale: string, i18n: Record<string, string>): string {
   if (!entry) return ''
   const name = entry.name
   if (!name) return ''
-  return resolveI18n(name, i18n) || name.text || ''
+  return resolveFieldText(name, locale, i18n) || name.text || ''
 }
 
 async function getTableI18nDict(table: string, locale: string): Promise<Record<string, string>> {
