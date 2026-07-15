@@ -16,13 +16,6 @@ const ENEMY_TYPE_LABELS: Record<number, string> = {
 
 const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
 
-const TABLE_LABELS: Record<string, string> = {
-  EnemyTemplateDisplayInfoTable: '展示信息',
-  EnemyDisplayInfoTable: '显示信息',
-  EnemyTable: '原始',
-  EnemyAttributeTemplateTable: '属性',
-}
-
 const TABLE_COLORS: Record<string, string> = {
   EnemyTemplateDisplayInfoTable: '#26bbfd',
   EnemyDisplayInfoTable: '#ffbb03',
@@ -246,7 +239,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
           </div>
           <div className="flex flex-wrap gap-1 mt-1.5">
             {Object.entries(tableCounts).map(([table, info]) => (
-              <ChangeBadge key={table} label={TABLE_LABELS[table] || table}
+              <ChangeBadge key={table} label={table}
                 color={TABLE_COLORS[table] || '#8B8982'} count={info.count} />
             ))}
           </div>
@@ -260,7 +253,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
             <AddedEnemyDetail templateId={displayEntry?.templateId || ep.enemyId} displayEntry={displayEntry} locale={locale} />
           ) : (
             ep.changes.map((c) => {
-              const label = TABLE_LABELS[c.tableName] || c.tableName
+              const label = c.tableName
               const color = TABLE_COLORS[c.tableName] || '#8B8982'
               const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
               const opColor = c.op === 'added' ? '#26bbfd' : c.op === 'removed' ? '#ef4444' : '#ffbb03'

@@ -17,12 +17,6 @@ const RARITY_COLORS: Record<number, string> = {
   6: '#fe5a00',
 }
 
-const TABLE_LABELS: Record<string, string> = {
-  WeaponBasicTable: '基础',
-  ItemTable: '物品',
-  SkillPatchTable: '技能',
-}
-
 const TABLE_COLORS: Record<string, string> = {
   WeaponBasicTable: '#26bbfd',
   ItemTable: '#9452fa',
@@ -260,7 +254,7 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
           </div>
           <div className="flex flex-wrap gap-1 mt-1.5">
             {Object.entries(tableCounts).map(([table, info]) => (
-              <ChangeBadge key={table} label={TABLE_LABELS[table] || table}
+              <ChangeBadge key={table} label={table}
                 color={TABLE_COLORS[table] || '#8B8982'} count={info.count} />
             ))}
           </div>
@@ -274,7 +268,7 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
             <AddedWeaponDetail weaponId={wp.weaponId} basicEntry={basicEntry} itemEntry={itemEntry} locale={locale} />
           ) : (
             wp.changes.map((c) => {
-              const label = TABLE_LABELS[c.tableName] || c.tableName
+              const label = c.tableName
               const color = TABLE_COLORS[c.tableName] || '#8B8982'
               const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
               const opColor = c.op === 'added' ? '#26bbfd' : c.op === 'removed' ? '#ef4444' : '#ffbb03'

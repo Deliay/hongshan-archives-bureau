@@ -12,15 +12,6 @@ import { RichTextDiff } from './RichTextDiff'
 
 const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
 
-const TABLE_LABELS: Record<string, string> = {
-  CharacterTable: '档案',
-  CharGrowthTable: '成长',
-  SkillPatchTable: '技能',
-  PotentialTalentEffectTable: '潜能天赋',
-  SpaceshipSkillTable: '基建技能',
-  SpaceshipCharSkillTable: '基建关联',
-}
-
 const TABLE_COLORS: Record<string, string> = {
   CharacterTable: '#26bbfd',
   CharGrowthTable: '#9452fa',
@@ -337,7 +328,7 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
           )}
           <div className="flex flex-wrap gap-1 mt-1.5">
             {Object.entries(tableCounts).map(([table, info]) => (
-              <ChangeBadge key={table} label={TABLE_LABELS[table] || table}
+              <ChangeBadge key={table} label={table}
                 color={TABLE_COLORS[table] || '#8B8982'} count={info.count} />
             ))}
           </div>
@@ -351,7 +342,7 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
             <AddedOperatorDetail charId={op.charId} entry={addedEntry.entry} locale={locale} />
           ) : (
             op.changes.map((c) => {
-              const label = TABLE_LABELS[c.tableName] || c.tableName
+              const label = c.tableName
               const color = TABLE_COLORS[c.tableName] || '#8B8982'
               const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
               const opColor = c.op === 'added' ? '#26bbfd' : c.op === 'removed' ? '#ef4444' : '#ffbb03'
