@@ -287,3 +287,31 @@ Has a blue border + "新增" badge.
 
 #### diff-tables Numeric ID Handling
 `safeParse` in the diff script uses the same 64-bit integer quoting pattern as `api.ts`. `isI18nField` checks `typeof (value as any).id === 'number' || typeof (value as any).id === 'string'` — after JSON parse, 64-bit IDs are strings. Always compare with `String(field.id)` in both build-time and runtime.
+
+#### Array Diff Uses Index Paths
+When an array field changes (e.g. `distributionIds`), the diff output uses **index paths** like `distributionIds[2]`, `distributionIds[3]` — NOT a top-level `distributionIds` key. To detect if an array field changed, use `Object.keys(changed).filter(k => k.startsWith('distributionIds'))`, and to get the full old/new arrays, read `entry.oldValue.distributionIds` and `entry.newValue.distributionIds` directly from the ChangedEntry.
+
+#### Enemy Attribute Template Data Structure
+`EnemyAttributeTemplateTable` entries have a non-obvious structure:
+- `levelDependentAttributes`: array of `{ attrs: [{ attrType, attrValue }] }` — NO `level` field. Level is encoded by **array index + 1** (position 0 = level 1). If `level` is absent, compute level from index.
+- `levelIndependentAttributes`: a **plain object** `{ attrs: [...] }` — NOT an iterable array. Always access via `data.levelIndependentAttributes.attrs`, never iterate the object itself (causes `TypeError: data is not iterable`).
+- Top-level resist scalars: `physicalDmgResistScalar`, `fireDmgResistScalar`, etc. are direct float properties.
+
+#### Enemy Display Tables: Two Separate Sources
+Two tables coexist with similar data:
+- **`EnemyTemplateDisplayInfoTable`**: Richer source with `displayType`, `tags`, `distributionIds`, `templateId` (key IS templateId). Used by `adaptEnemy()` at runtime.
+- **`EnemyDisplayInfoTable`**: Simpler source with `name`, `nickname`, `description`, `abilityDescIds`, `enemyId`, `templateId`. Entries often have `templateId` that **differs from the key** (key = enemyId variant, templateId = base template).
+
+Always track BOTH tables in aggregations. The key is the primary ID (`enemyId` for DisplayInfo, `templateId` for TemplateDisplayInfo). For grouping, prefer `templateId` when it differs from entry key.
+
+#### Enemy Variant Grouping by templateId
+Many enemy entries are variants with keys like `eny_0046_lbshamman_hdg016` and `templateId: eny_0046_lbshamman`. When aggregating changes, build a `keyToGroupId` map that maps every entry key to its group ID: prefer the entry's `templateId` field when it differs from the key. This ensures variants from all tables (EnemyDisplayInfoTable, EnemyTable, EnemyAttributeTemplateTable) are grouped under the base templateId.
+
+#### DistributionInfoTable Lookup
+`EnemyTemplateDisplayInfoTable` entries contain `distributionIds[]` — array of distribution area IDs. To resolve these to human-readable area names:
+- Fetch `DistributionInfoTable` + its i18n dict
+- Look up each ID → `entry.areaName` (i18n)
+- Display as color-coded badges: green for added, strikethrough red for removed, neutral for unchanged
+
+#### Inline Attribute Panel for EnemyTable
+`EnemyTable` entries have `attrTemplateId` referencing `EnemyAttributeTemplateTable`. When rendering EnemyTable changes, fetch the referenced attribute template and display it inline below the generic change entry. This gives context about the enemy's combat stats without requiring a separate attribute table expansion.

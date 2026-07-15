@@ -4,6 +4,7 @@ import { useFolderManifest } from '../../hooks/useUpdateDiff'
 import OperatorChangePanel from '../../components/DiffViewer/OperatorChangePanel'
 import WeaponChangePanel from '../../components/DiffViewer/WeaponChangePanel'
 import EnemyChangePanel from '../../components/DiffViewer/EnemyChangePanel'
+import ItemChangePanel from '../../components/DiffViewer/ItemChangePanel'
 
 function sumTableStats(
   fn: (s: { added: number; removed: number; changed: number }) => number,
@@ -79,6 +80,8 @@ function SummaryContent({
     'EnemyTemplateDisplayInfoTable',
     'EnemyTable',
     'EnemyAttributeTemplateTable',
+    'ItemTable',
+    'UsableItemChestTable',
   ]
 
   const tables = useMemo(() => {
@@ -120,6 +123,8 @@ function SummaryContent({
       <WeaponChangePanel versionName={versionName} />
 
       <EnemyChangePanel versionName={versionName} />
+
+      <ItemChangePanel versionName={versionName} />
 
       <h3 className="text-sm font-medium text-[#E8E6E3] mb-3">
         变更表一览（{folder.fileCount} 个表）

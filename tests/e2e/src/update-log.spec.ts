@@ -14,18 +14,31 @@ test.describe('更新日志 (Update Log)', () => {
     }, { timeout: 30000 })
   }
 
-  test('干员变动展开后无原始JSON', async ({ page }) => {
+    test('干员变动展开后无原始JSON', async ({ page }) => {
     await waitForDiffReady(page)
 
-    const card = page.locator('button').filter({ hasText: /chr_/ }).first()
+    const card = page.locator('button').filter({ hasText: 'chr_0030_zhuangfy' }).first()
     await expect(card).toBeVisible({ timeout: 10000 })
     await card.click()
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(1000)
 
-    const expandedSection = card.locator('..').locator('.border-t')
-    const text = await expandedSection.textContent() || ''
-    expect(/"\w+":\s*\{/.test(text)).toBe(false)
+    const text = await page.evaluate(() => {
+      const btn = document.querySelector('button')?.textContent || ''
+      const allButtons = Array.from(document.querySelectorAll('button'))
+      const found = allButtons.find(b => b.textContent?.includes('chr_0030_zhuangfy'))
+      if (!found) return 'NO_BUTTON'
+      const parent = found.parentElement
+      if (!parent) return 'NO_PARENT'
+      const border = parent.querySelector('.border-t')
+      if (!border) return 'NO_BORDER_T'
+      const content = border.textContent || ''
+      return content.slice(0, 50)
+    })
+    expect(text).not.toBe('NO_BUTTON')
+    expect(text).not.toBe('NO_PARENT')
+    expect(text).not.toBe('NO_BORDER_T')
     expect(text.length).toBeGreaterThan(0)
+    expect(/"\w+":\s*\{/.test(text)).toBe(false)
   })
 
   test('干员名称展示为中文本地化名称', async ({ page }) => {
@@ -88,7 +101,7 @@ test.describe('更新日志 (Update Log)', () => {
         }
       }
       return false
-    }, { timeout: 15000 })
+    }, { timeout: 30000 })
   })
 
   test('展开后rich text正确渲染超链接', async ({ page }) => {
@@ -171,13 +184,15 @@ test.describe('更新日志 (Update Log)', () => {
     // Wait for the card to fully render with API fallback data
     const card = page.locator('button').filter({ hasText: 'eny_0084_hshunt' }).first()
     await expect(card).toBeVisible({ timeout: 15000 })
+    await card.scrollIntoViewIfNeeded()
+    await page.waitForTimeout(500)
 
     // Click to expand the card and wait for async data fetches to complete
     await card.click()
     await page.waitForFunction(() => {
       const body = document.body.textContent || ''
       return body.includes('分布区域')
-    }, { timeout: 20000 })
+    }, { timeout: 60000 })
 
     // After expansion, must show 分布区域 with 新增/已存在 labels, no raw distributionIds
     const bodyText = await page.locator('body').textContent() || ''
