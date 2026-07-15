@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useOperator, useWeapon } from '../../hooks/useData'
+import { useOperator, useWeapon, useRaces, useFactions } from '../../hooks/useData'
 
 const LIST_LABEL: Record<string, string> = {
   operators: '干员档案',
@@ -14,6 +14,18 @@ const LIST_LABEL: Record<string, string> = {
   story: '剧情记录',
 }
 
+function RaceName({ id }: { id: string }) {
+  const { data: races } = useRaces()
+  const race = races?.find(r => r.id === id)
+  return <span className="text-[#E8E6E3]">{race?.name || id}</span>
+}
+
+function FactionName({ id }: { id: string }) {
+  const { data: factions } = useFactions()
+  const faction = factions?.find(f => f.id === id)
+  return <span className="text-[#E8E6E3]">{faction?.name || id}</span>
+}
+
 function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
   const { data: op } = useOperator(id)
   const { data: wpn } = useWeapon(id)
@@ -22,6 +34,12 @@ function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
   }
   if (listKey === 'weapons') {
     return <span className="text-[#E8E6E3]">{wpn?.name || id}</span>
+  }
+  if (listKey === 'races') {
+    return <RaceName id={id} />
+  }
+  if (listKey === 'factions') {
+    return <FactionName id={id} />
   }
   return <span className="text-[#E8E6E3]">{id}</span>
 }

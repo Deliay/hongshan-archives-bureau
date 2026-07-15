@@ -44,3 +44,13 @@ export async function fetchTableDictAll(table: string, locale: string = 'CN'): P
 export async function fetchTableDictEntry(table: string, key: string, locale: string = 'CN'): Promise<Record<string, string>> {
   return fetchJson(`${API_BASE}/i18n/dict/${locale}/table/${table}/${key}`)
 }
+
+export async function fetchI18nSearch(regex: string): Promise<{ Table: string; Path: string; Id: string }[]> {
+  return fetchJson(`${API_BASE}/i18n/search/all/${encodeURIComponent(regex)}`)
+}
+
+export async function fetchI18nText(locale: string, id: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/i18n/${locale}/${id}`)
+  if (!res.ok) return ''
+  return res.text()
+}

@@ -15,6 +15,8 @@ export function adaptOperator(
   elementMap?: Record<string, { name: string; color: string; icon: string }>,
   battleTagMap?: Record<string, string>,
   attrMap?: Record<number, { id: number; name: string; icon: string }>,
+  raceMap?: Record<string, string>,
+  blocMap?: Record<string, string>,
 ): Operator {
   const profId: number = raw.profession ?? raw.professionId ?? 0
   const charType: string = raw.charTypeId ?? raw.charType ?? raw.attributeType ?? ''
@@ -45,6 +47,8 @@ export function adaptOperator(
       text: resolveI18n(v.voiceDesc, i18nMap),
     })),
     tags: (raw.charBattleTagIds ?? []).map((id: string) => battleTagMap?.[id] ?? id),
+    race: raceMap?.[charId] ?? '',
+    faction: blocMap?.[charId] ?? '',
   }
 }
 

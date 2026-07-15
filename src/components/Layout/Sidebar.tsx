@@ -3,20 +3,18 @@ import { Link, useLocation } from 'react-router-dom'
 import { useLocale } from '../../lib/locale'
 import { useI18nLocales } from '../../hooks/useData'
 
-const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
-
 const NAV_ITEMS = [
-  { label: '干员档案', path: '/archive/operators', icon: 'assets/beyond/arts/ui/sprites/watch/watchnew/charinfo_icon.png' },
-  { label: '武器档案', path: '/archive/weapons', icon: 'assets/beyond/dynamicassets/gameplay/ui/sprites/inventory/valuable_depot_weapon_icon_shadow.png' },
-  { label: '敌人图鉴', path: '/archive/enemies', icon: 'assets/beyond/dynamicassets/gameplay/ui/sprites/map/markicon/icon_map_enemyspawner.png' },
-  { label: '道具材料', path: '/archive/items', icon: 'assets/beyond/arts/ui/sprites/watch/watchnew/storage_icon.png' },
-  { label: '种族一览', path: '/archive/races', icon: 'assets/beyond/arts/ui/sprites/watch/watchnew/wiki_icon.png' },
-  { label: '势力阵营', path: '/archive/factions', icon: 'assets/beyond/arts/ui/sprites/watch/watchnew/checkin_icon.png' },
-  { label: '地区地理', path: '/archive/geography', icon: 'assets/beyond/dynamicassets/gameplay/ui/sprites/puzzletrack/icon_puzzletrack_search.png' },
-  { label: '装备系统', path: '/archive/equipment', icon: 'assets/beyond/arts/ui/sprites/charinfo/main/icon_talent_equipment_01.png' },
-  { label: '工厂系统', path: '/archive/factory', icon: 'assets/beyond/dynamicassets/gameplay/ui/sprites/factory/buildingpanelicon/icon_port_sp_hub_1.png' },
-  { label: '剧情记录', path: '/archive/story', icon: 'assets/beyond/dynamicassets/gameplay/ui/sprites/settings/icon_settings_language.png' },
-  { label: '更新日志', path: '/archive/updates', icon: 'assets/beyond/arts/ui/sprites/watch/watchnew/battle_pass_icon.png' },
+  { label: '干员档案', path: '/archive/operators' },
+  { label: '武器档案', path: '/archive/weapons' },
+  { label: '敌人图鉴', path: '/archive/enemies' },
+  { label: '道具材料', path: '/archive/items' },
+  { label: '种族一览', path: '/archive/races' },
+  { label: '势力阵营', path: '/archive/factions' },
+  { label: '地区地理', path: '/archive/geography' },
+  { label: '装备系统', path: '/archive/equipment' },
+  { label: '工厂系统', path: '/archive/factory' },
+  { label: '剧情记录', path: '/archive/story' },
+  { label: '更新日志', path: '/archive/updates' },
 ]
 
 const LOCALE_LABELS: Record<string, string> = {
@@ -76,13 +74,6 @@ export default function Sidebar() {
                     : 'text-[#8B8982] hover:text-[#E8E6E3] hover:bg-[#1A1B23]'
                 }`}
               >
-                <img
-                  src={`${ASSET_BASE}/${item.icon}`}
-                  alt={item.label}
-                  className="shrink-0 opacity-60 group-hover:opacity-100 transition-opacity"
-                  style={{ width: 18, height: 18, objectFit: 'contain' }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                />
                 {item.label}
               </Link>
             )

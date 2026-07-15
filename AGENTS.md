@@ -87,10 +87,18 @@ tests/
 | DisplayEnemyTypeTable | numeric string | `name` (i18n) | Enemy type names (Normal/Elite/Boss/Advanced/Leader) |
 | WikiEntryDataTable | string key | `refMonsterTemplateId`, `groupId` | Maps enemies to wiki groups |
 | WikiGroupTable | `groupId` | `list[]` with `groupName` (i18n), `iconId` | Wiki group definitions (天使, 裂地者, 宏山, 动物) |
+| TagDataTable | tag ID like `tag_race_fox` | `tagName` (i18n), `tagGroupId`, `hideTag` | Race/hobby/expert/disposition/gift tags |
+| TagGroupDataTable | group ID like `tag_group_race` | `tagGroupName` (i18n), `desc` (i18n) | Tag group categories (种族/专长/爱好/阵营等) |
+| CharacterTagTable | `charId` | `raceTagId`, `blocTagId`, `dispositionTagIds[]`, `hobbyTagIds[]`, `expertTagIds[]`, `giftPreferTagId[]`, `behaviourHateTagIds[]`, `behaviourUnavailableTagIds[]` | Maps operators to their tags (race, bloc, hobbies, etc.) |
+| CharacterTagDesTable | `charId` | `tagDesc` map: `{ tagId: { desc: { id, text }, tagId } }` | Per-character tag descriptions (not for race tags) |
 
 ### Per-table I18n
 
-Each table's text is resolved at the hook level: the hook fetches the table data and the locale's i18n dict in parallel, then passes the dict into `adapt*`. Domain hooks (`getProfessionMap`, `getElementMap`, `getBattleTagMap`, `getAttributeMap`) are cached per locale in `Map<string, Promise<...>>`.
+Each table's text is resolved at the hook level: the hook fetches the table data and the locale's i18n dict in parallel, then passes the dict into `adapt*`. Domain hooks (`getProfessionMap`, `getElementMap`, `getBattleTagMap`, `getAttributeMap`, `getRaceMap`) are cached per locale in `Map<string, Promise<...>>`.
+
+**Race map** (`getRaceMap`): Fetches `TagDataTable` + i18n dict → filters `tagGroupId === 'tag_group_race'` to build `raceTagId → raceName`, then fetches `CharacterTagTable` to build `charId → raceName`. Used by `useOperators()`, `useOperator()`, and `useOperatorDetail()` to attach `op.race` to each operator.
+
+**Race list** (`useRaces`): Same three-table fetch (`TagDataTable`, `CharacterTagTable`, `CharacterTable`) to produce `Race[]` with `{ id, name, members[] }`. Built data is cached under `__built_races` cache key to avoid recomputation in `useRaceDetail`.
 
 **Important**: Each table has its own i18n dict. Using the wrong table's dict (e.g., `SkillPatchTable` dict for `SpaceshipSkillTable` data) results in empty/fallback text. Always pair `getTableI18nDict(table, locale)` with the correct table name.
 
@@ -315,3 +323,18 @@ Many enemy entries are variants with keys like `eny_0046_lbshamman_hdg016` and `
 
 #### Inline Attribute Panel for EnemyTable
 `EnemyTable` entries have `attrTemplateId` referencing `EnemyAttributeTemplateTable`. When rendering EnemyTable changes, fetch the referenced attribute template and display it inline below the generic change entry. This gives context about the enemy's combat stats without requiring a separate attribute table expansion.
+
+### `mark` Tag Requires Color Attribute
+RichText's `<mark>` tag is parsed as `<mark=#hexcolor>` (color attribute). Bare `<mark>` without `=color` results in `attrs.mark === undefined` and no visible highlight. Always write `<mark=#C9A96E>text</mark>` or similar.
+
+### Card-as-Link with Nested Child Links
+To make an entire card clickable (navigating to a detail page) while keeping nested operator/entity links working: wrap the card in `<Link>` and add `onClick={(e) => e.stopPropagation()}` on the child link container. Also add `onKeyDown` + `role="none"` for a11y compliance.
+
+### I18n Search for Content Discovery
+Use `fetchI18nSearch(regex)` → `GET /i18n/search/all/{regex}` to find all i18n text entries matching a pattern across all tables. Results are `{ Table, Path, Id }[]`. Resolve actual text via `fetchI18nText(locale, id)` → `GET /i18n/{locale}/{id}` (returns plain string, not JSON). Race descriptions can be discovered this way — the game has no dedicated per-race description table.
+
+### Breadcrumb for New Detail Pages
+When adding a detail page (e.g., `RaceDetail`), update `src/components/Layout/Breadcrumb.tsx`:
+- Add a case in `DetailLabel` for the new list key
+- Create a sub-component that fetches the entity name and renders it
+- This prevents the breadcrumb from showing raw IDs like `tag_race_fox` instead of the localized name

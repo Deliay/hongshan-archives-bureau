@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchTableAll, fetchTableDictAll, fetchI18nLocales } from '../lib/api'
+import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race } from '../lib/types'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 
@@ -164,10 +164,66 @@ function getAttributeMap(locale: string): Promise<Record<number, { id: number; n
   return attrMapCaches.get(locale)!
 }
 
+let raceMapCaches = new Map<string, Promise<Record<string, string>>>()
+
+function getRaceMap(locale: string): Promise<Record<string, string>> {
+  if (!raceMapCaches.has(locale)) {
+    raceMapCaches.set(locale, (async () => {
+      const [tagRaw, tagI18n, charTagRaw] = await Promise.all([
+        getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable')),
+        getTableI18nDict('TagDataTable', locale),
+        getCachedData<Record<string, any>>('CharacterTagTable', () => fetchTableAll('CharacterTagTable')),
+      ])
+      const raceNameMap: Record<string, string> = {}
+      for (const [, tag] of Object.entries<any>(tagRaw)) {
+        if (tag.tagGroupId === 'tag_group_race') {
+          raceNameMap[tag.tagId] = resolveI18n(tag.tagName, tagI18n) || tag.tagId
+        }
+      }
+      const charToRace: Record<string, string> = {}
+      for (const [, entry] of Object.entries<any>(charTagRaw)) {
+        if (entry.raceTagId && raceNameMap[entry.raceTagId]) {
+          charToRace[entry.charId] = raceNameMap[entry.raceTagId]
+        }
+      }
+      return charToRace
+    })())
+  }
+  return raceMapCaches.get(locale)!
+}
+
+let blocMapCaches = new Map<string, Promise<Record<string, string>>>()
+
+function getBlocMap(locale: string): Promise<Record<string, string>> {
+  if (!blocMapCaches.has(locale)) {
+    blocMapCaches.set(locale, (async () => {
+      const [tagRaw, tagI18n, charTagRaw] = await Promise.all([
+        getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable')),
+        getTableI18nDict('TagDataTable', locale),
+        getCachedData<Record<string, any>>('CharacterTagTable', () => fetchTableAll('CharacterTagTable')),
+      ])
+      const blocNameMap: Record<string, string> = {}
+      for (const [, tag] of Object.entries<any>(tagRaw)) {
+        if (tag.tagGroupId === 'tag_group_power') {
+          blocNameMap[tag.tagId] = resolveI18n(tag.tagName, tagI18n) || tag.tagId
+        }
+      }
+      const charToBloc: Record<string, string> = {}
+      for (const [, entry] of Object.entries<any>(charTagRaw)) {
+        if (entry.blocTagId && blocNameMap[entry.blocTagId]) {
+          charToBloc[entry.charId] = blocNameMap[entry.blocTagId]
+        }
+      }
+      return charToBloc
+    })())
+  }
+  return blocMapCaches.get(locale)!
+}
+
 export function useOperators(): UseDataResult<Operator[]> {
   const { locale } = useLocale()
   return useData(async () => {
-    const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap] = await Promise.all([
+    const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap, raceMap, blocMap] = await Promise.all([
       Promise.all([
         getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
         getTableI18nDict('CharacterTable', locale),
@@ -176,15 +232,17 @@ export function useOperators(): UseDataResult<Operator[]> {
       getElementMap(locale),
       getBattleTagMap(locale),
       getAttributeMap(locale),
+      getRaceMap(locale),
+      getBlocMap(locale),
     ])
-    return Object.entries(rawData).map(([, v]) => adaptOperator(v, i18nMap, profMap, elemMap, tagMap, attrMap))
+    return Object.entries(rawData).map(([, v]) => adaptOperator(v, i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap))
   }, [locale])
 }
 
 export function useOperator(id: string): UseDataResult<Operator> {
   const { locale } = useLocale()
   return useData(async () => {
-    const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap] = await Promise.all([
+    const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap, raceMap, blocMap] = await Promise.all([
       Promise.all([
         getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
         getTableI18nDict('CharacterTable', locale),
@@ -193,15 +251,17 @@ export function useOperator(id: string): UseDataResult<Operator> {
       getElementMap(locale),
       getBattleTagMap(locale),
       getAttributeMap(locale),
+      getRaceMap(locale),
+      getBlocMap(locale),
     ])
-    return adaptOperator(rawData[id], i18nMap, profMap, elemMap, tagMap, attrMap)
+    return adaptOperator(rawData[id], i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap)
   }, [locale, id])
 }
 
 export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData> {
   const { locale } = useLocale()
   return useData(async () => {
-    const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap] = await Promise.all([
+    const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap, raceMap, blocMap] = await Promise.all([
       Promise.all([
         getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
         getTableI18nDict('CharacterTable', locale),
@@ -210,6 +270,8 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
       getElementMap(locale),
       getBattleTagMap(locale),
       getAttributeMap(locale),
+      getRaceMap(locale),
+      getBlocMap(locale),
     ])
     const raw = rawData[id]
     if (!raw) throw new Error(`Operator ${id} not found`)
@@ -225,7 +287,7 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
       getTableI18nDict('SpaceshipSkillTable', locale).catch(() => ({}) as Record<string, string>),
     ])
 
-    const op = adaptOperator(raw, i18nMap, profMap, elemMap, tagMap, attrMap)
+    const op = adaptOperator(raw, i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap)
 
     const attributes: CharacterAttributeSet[] = (raw.attributes ?? []).map((a: any) => ({
       breakStage: a.breakStage ?? a.BreakStage ?? 0,
@@ -528,4 +590,238 @@ export function useRaces(): UseDataResult<Race[]> {
 
     return Object.values(races).sort((a, b) => a.name.localeCompare(b.name))
   }, [locale])
+}
+
+export interface RaceEntry {
+  id: string
+  name: string
+  members: RaceMember[]
+  texts: { source: string; text: string }[]
+}
+
+export function useRaceDetail(raceId: string): UseDataResult<RaceEntry> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [races, results] = await Promise.all([
+      getCachedData<Race[]>('__built_races', async () => {
+        const [[tagRaw, tagI18n], [charTagRaw], [charRaw, charI18n]] = await Promise.all([
+          Promise.all([
+            getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable')),
+            getTableI18nDict('TagDataTable', locale),
+          ]),
+          Promise.all([
+            getCachedData<Record<string, any>>('CharacterTagTable', () => fetchTableAll('CharacterTagTable')),
+          ]),
+          Promise.all([
+            getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
+            getTableI18nDict('CharacterTable', locale),
+          ]),
+        ])
+        const raceTags = Object.values(tagRaw).filter((t: any) => t.tagGroupId === 'tag_group_race')
+        const charToRace: Record<string, string> = {}
+        for (const [, entry] of Object.entries<any>(charTagRaw)) {
+          if (entry.raceTagId) charToRace[entry.charId] = entry.raceTagId
+        }
+        const races: Record<string, Race> = {}
+        for (const tag of raceTags) {
+          const raceId = tag.tagId
+          const raceName = resolveI18n(tag.tagName, tagI18n) || raceId
+          races[raceId] = { id: raceId, name: raceName, members: [] }
+        }
+        for (const [charId, raceTagId] of Object.entries(charToRace)) {
+          const race = races[raceTagId]
+          if (!race) continue
+          const charData = charRaw[charId]
+          if (!charData) continue
+          race.members.push({
+            id: charId,
+            name: resolveI18n(charData.name, charI18n) || charId,
+            portrait: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${charId}.png`,
+            rarity: charData.rarity ?? 0,
+          })
+        }
+        for (const race of Object.values(races)) {
+          race.members.sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+        }
+        return Object.values(races).sort((a, b) => a.name.localeCompare(b.name))
+      }),
+      getCachedData<{ Table: string; Path: string; Id: string }[]>(`__i18n_search_${raceId}`, async () => {
+        const tags = await getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable'))
+        const tagI18n = await getTableI18nDict('TagDataTable', locale)
+        const tag = tags[raceId]
+        if (!tag) return []
+        const raceName = resolveI18n(tag.tagName, tagI18n) || raceId
+        if (!raceName) return []
+        const results = await fetchI18nSearch(raceName)
+        return results.filter(r => r.Table !== 'TagDataTable')
+      }),
+    ])
+
+    const race = races.find(r => r.id === raceId)
+    if (!race) throw new Error(`Race ${raceId} not found`)
+
+    const texts = await Promise.all(
+      results.slice(0, 30).map(async (r) => {
+        const text = await fetchI18nText(locale, String(r.Id))
+        return { source: `${r.Table}`, text }
+      }),
+    )
+
+  return { ...race, texts: texts.filter(t => t.text) }
+}, [locale, raceId])
+}
+
+export function useFactions(): UseDataResult<Faction[]> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [[tagRaw, tagI18n], [blocRaw], [charTagRaw], [charRaw, charI18n]] = await Promise.all([
+      Promise.all([
+        getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable')),
+        getTableI18nDict('TagDataTable', locale),
+      ]),
+      Promise.all([
+        getCachedData<Record<string, any>>('BlocDataTable', () => fetchTableAll('BlocDataTable')).catch(() => ({}) as Record<string, any>),
+      ]),
+      Promise.all([
+        getCachedData<Record<string, any>>('CharacterTagTable', () => fetchTableAll('CharacterTagTable')),
+      ]),
+      Promise.all([
+        getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
+        getTableI18nDict('CharacterTable', locale),
+      ]),
+    ])
+
+    const powerTags = Object.values(tagRaw).filter((t: any) => t.tagGroupId === 'tag_group_power')
+
+    const charToBloc: Record<string, string> = {}
+    for (const [, entry] of Object.entries<any>(charTagRaw)) {
+      if (entry.blocTagId) {
+        charToBloc[entry.charId] = entry.blocTagId
+      }
+    }
+
+    const factions: Record<string, Faction> = {}
+    for (const tag of powerTags) {
+      const tagId = tag.tagId
+      const blocId = tagId.replace('tag_', '')
+      const blocEntry = blocRaw[blocId]
+      factions[tagId] = {
+        id: tagId,
+        name: resolveI18n(tag.tagName, tagI18n) || tagId,
+        engName: blocEntry?.engName ?? '',
+        icon: blocEntry?.icon ?? '',
+        members: [],
+      }
+    }
+
+    for (const [charId, blocTagId] of Object.entries(charToBloc)) {
+      const faction = factions[blocTagId]
+      if (!faction) continue
+      const charData = charRaw[charId]
+      if (!charData) continue
+      faction.members.push({
+        id: charId,
+        name: resolveI18n(charData.name, charI18n) || charId,
+        portrait: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${charId}.png`,
+        rarity: charData.rarity ?? 0,
+      })
+    }
+
+    for (const faction of Object.values(factions)) {
+      faction.members.sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+    }
+
+    return Object.values(factions).sort((a, b) => a.name.localeCompare(b.name))
+  }, [locale])
+}
+
+export interface FactionEntry {
+  id: string
+  name: string
+  engName: string
+  icon: string
+  members: FactionMember[]
+  texts: { source: string; text: string }[]
+}
+
+export function useFactionDetail(factionId: string): UseDataResult<FactionEntry> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [factions, results] = await Promise.all([
+      getCachedData<Faction[]>('__built_factions', async () => {
+        const [[tagRaw, tagI18n], [blocRaw], [charTagRaw], [charRaw, charI18n]] = await Promise.all([
+          Promise.all([
+            getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable')),
+            getTableI18nDict('TagDataTable', locale),
+          ]),
+          Promise.all([
+            getCachedData<Record<string, any>>('BlocDataTable', () => fetchTableAll('BlocDataTable')).catch(() => ({}) as Record<string, any>),
+          ]),
+          Promise.all([
+            getCachedData<Record<string, any>>('CharacterTagTable', () => fetchTableAll('CharacterTagTable')),
+          ]),
+          Promise.all([
+            getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
+            getTableI18nDict('CharacterTable', locale),
+          ]),
+        ])
+        const powerTags = Object.values(tagRaw).filter((t: any) => t.tagGroupId === 'tag_group_power')
+        const charToBloc: Record<string, string> = {}
+        for (const [, entry] of Object.entries<any>(charTagRaw)) {
+          if (entry.blocTagId) charToBloc[entry.charId] = entry.blocTagId
+        }
+        const factions: Record<string, Faction> = {}
+        for (const tag of powerTags) {
+          const tagId = tag.tagId
+          const blocId = tagId.replace('tag_', '')
+          const blocEntry = blocRaw[blocId]
+          factions[tagId] = {
+            id: tagId,
+            name: resolveI18n(tag.tagName, tagI18n) || tagId,
+            engName: blocEntry?.engName ?? '',
+            icon: blocEntry?.icon ?? '',
+            members: [],
+          }
+        }
+        for (const [charId, blocTagId] of Object.entries(charToBloc)) {
+          const faction = factions[blocTagId]
+          if (!faction) continue
+          const charData = charRaw[charId]
+          if (!charData) continue
+          faction.members.push({
+            id: charId,
+            name: resolveI18n(charData.name, charI18n) || charId,
+            portrait: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${charId}.png`,
+            rarity: charData.rarity ?? 0,
+          })
+        }
+        for (const faction of Object.values(factions)) {
+          faction.members.sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+        }
+        return Object.values(factions).sort((a, b) => a.name.localeCompare(b.name))
+      }),
+      getCachedData<{ Table: string; Path: string; Id: string }[]>(`__i18n_search_${factionId}`, async () => {
+        const tags = await getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable'))
+        const tagI18n = await getTableI18nDict('TagDataTable', locale)
+        const tag = tags[factionId]
+        if (!tag) return []
+        const factionName = resolveI18n(tag.tagName, tagI18n) || factionId
+        if (!factionName) return []
+        const results = await fetchI18nSearch(factionName)
+        return results.filter(r => r.Table !== 'TagDataTable' && r.Table !== 'BlocDataTable' && r.Table !== 'CharacterTagTable')
+      }),
+    ])
+
+    const faction = factions.find(f => f.id === factionId)
+    if (!faction) throw new Error(`Faction ${factionId} not found`)
+
+    const texts = await Promise.all(
+      results.slice(0, 30).map(async (r) => {
+        const text = await fetchI18nText(locale, String(r.Id))
+        return { source: `${r.Table}`, text }
+      }),
+    )
+
+    return { ...faction, texts: texts.filter(t => t.text) }
+  }, [locale, factionId])
 }

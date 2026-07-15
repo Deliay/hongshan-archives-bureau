@@ -8,7 +8,9 @@ import WeaponList from './pages/weapons/WeaponList'
 import WeaponDetail from './pages/weapons/WeaponDetail'
 import ProfessionOverview from './pages/professions/ProfessionOverview'
 import RaceList from './pages/races/RaceList'
-import FactionOverview from './pages/factions/FactionOverview'
+import RaceDetail from './pages/races/RaceDetail'
+import FactionList from './pages/factions/FactionList'
+import FactionDetail from './pages/factions/FactionDetail'
 import GeographyList from './pages/geography/GeographyList'
 import EnemyList from './pages/enemies/EnemyList'
 import EnemyDetail from './pages/enemies/EnemyDetail'
@@ -35,7 +37,9 @@ export default function App() {
           <Route path="weapons/:id" element={<WeaponDetail />} />
           <Route path="professions" element={<ProfessionOverview />} />
           <Route path="races" element={<RaceList />} />
-          <Route path="factions" element={<FactionOverview />} />
+          <Route path="races/:raceId" element={<RaceDetail />} />
+          <Route path="factions" element={<FactionList />} />
+          <Route path="factions/:factionId" element={<FactionDetail />} />
           <Route path="geography" element={<GeographyList />} />
           <Route path="enemies" element={<EnemyList />} />
           <Route path="enemies/:id" element={<EnemyDetail />} />

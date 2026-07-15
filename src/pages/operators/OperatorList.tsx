@@ -3,7 +3,8 @@ import { useOperators } from '../../hooks/useData'
 import { Link } from 'react-router-dom'
 import Rarity from '../../components/Rarity'
 
-type SortKey = 'profession' | 'rarity' | 'element'
+type SortKey = 'profession' | 'rarity' | 'element' | 'race' | 'faction'
+type GroupKey = '' | 'element' | 'profession' | 'rarity' | 'race' | 'faction' | 'mainAttr'
 
 export default function OperatorList() {
   const { data: operators, loading, error } = useOperators()
@@ -12,10 +13,13 @@ export default function OperatorList() {
   const [filterProfession, setFilterProfession] = useState('')
   const [filterRarity, setFilterRarity] = useState<number | ''>('')
   const [filterTag, setFilterTag] = useState('')
+  const [filterRace, setFilterRace] = useState('')
+  const [filterFaction, setFilterFaction] = useState('')
   const [filterMainAttr, setFilterMainAttr] = useState('')
   const [filterSubAttr, setFilterSubAttr] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('rarity')
   const [sortDesc, setSortDesc] = useState(true)
+  const [groupKey, setGroupKey] = useState<GroupKey>('')
 
   const elementOptions = useMemo(() => {
     if (!operators) return []
@@ -32,6 +36,16 @@ export default function OperatorList() {
     const tags = new Set<string>()
     operators.forEach((o) => o.tags.forEach((t) => tags.add(t)))
     return [...tags].sort()
+  }, [operators])
+
+  const raceOptions = useMemo(() => {
+    if (!operators) return []
+    return [...new Set(operators.map((o) => o.race).filter(Boolean))].sort()
+  }, [operators])
+
+  const factionOptions = useMemo(() => {
+    if (!operators) return []
+    return [...new Set(operators.map((o) => o.faction).filter(Boolean))].sort()
   }, [operators])
 
   const attrOptions = useMemo(() => {
@@ -57,6 +71,8 @@ export default function OperatorList() {
     if (filterProfession) list = list.filter((o) => o.profession === filterProfession)
     if (filterRarity !== '') list = list.filter((o) => o.rarity === filterRarity)
     if (filterTag) list = list.filter((o) => o.tags.includes(filterTag))
+    if (filterRace) list = list.filter((o) => o.race === filterRace)
+    if (filterFaction) list = list.filter((o) => o.faction === filterFaction)
     if (filterMainAttr) list = list.filter((o) => o.mainAttr.name === filterMainAttr)
     if (filterSubAttr) list = list.filter((o) => o.subAttr.name === filterSubAttr)
 
@@ -66,11 +82,29 @@ export default function OperatorList() {
       if (sortKey === 'profession') cmp = a.profession.localeCompare(b.profession)
       else if (sortKey === 'rarity') cmp = a.rarity - b.rarity
       else if (sortKey === 'element') cmp = a.element.localeCompare(b.element)
+      else if (sortKey === 'race') cmp = a.race.localeCompare(b.race)
+      else if (sortKey === 'faction') cmp = a.faction.localeCompare(b.faction)
       return cmp * dir
     })
 
     return list
-  }, [operators, filterElement, filterProfession, filterRarity, filterTag, filterMainAttr, filterSubAttr, sortKey, sortDesc])
+  }, [operators, filterElement, filterProfession, filterRarity, filterTag, filterRace, filterFaction, filterMainAttr, filterSubAttr, sortKey, sortDesc])
+
+  const grouped = useMemo(() => {
+    if (!groupKey || !visible.length) return null
+    const groups: Record<string, typeof visible> = {}
+    for (const op of visible) {
+      const k = groupKey === 'mainAttr' ? op.mainAttr.name
+              : groupKey === 'rarity' ? String(op.rarity)
+              : String((op as any)[groupKey] ?? '未知')
+      if (!groups[k]) groups[k] = []
+      groups[k].push(op)
+    }
+    return Object.entries(groups).sort(([a], [b]) => {
+      if (groupKey === 'rarity') return Number(b) - Number(a)
+      return a.localeCompare(b)
+    })
+  }, [visible, groupKey])
 
   if (loading) return <div className="text-[#8B8982] text-sm">加载中…</div>
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
@@ -106,6 +140,18 @@ export default function OperatorList() {
           {tagOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
+        <select value={filterRace} onChange={(e) => setFilterRace(e.target.value)}
+          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          <option value="">全部种族</option>
+          {raceOptions.map((v) => <option key={v} value={v}>{v}</option>)}
+        </select>
+
+        <select value={filterFaction} onChange={(e) => setFilterFaction(e.target.value)}
+          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          <option value="">全部阵营</option>
+          {factionOptions.map((v) => <option key={v} value={v}>{v}</option>)}
+        </select>
+
         <select value={filterMainAttr} onChange={(e) => setFilterMainAttr(e.target.value)}
           className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
           <option value="">全部主属性</option>
@@ -127,65 +173,155 @@ export default function OperatorList() {
           <option value="profession">职业</option>
           <option value="rarity">稀有度</option>
           <option value="element">元素</option>
+          <option value="race">种族</option>
+          <option value="faction">阵营</option>
         </select>
 
         <button onClick={() => setSortDesc((d) => !d)}
           className="px-2 py-1.5 rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] hover:border-[#C9A96E]/40 transition-colors">
           {sortDesc ? '降序 ↓' : '升序 ↑'}
         </button>
+
+        <span className="text-[#5A5A62]">|</span>
+
+        {/* Group */}
+        <span className="text-[#8B8982]">分组：</span>
+        <select value={groupKey} onChange={(e) => setGroupKey(e.target.value as GroupKey)}
+          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          <option value="">不分组</option>
+          <option value="element">元素</option>
+          <option value="profession">职业</option>
+          <option value="rarity">稀有度</option>
+          <option value="race">种族</option>
+          <option value="faction">阵营</option>
+          <option value="mainAttr">主属性</option>
+        </select>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {visible.map((op) => (
-          <Link
-            key={op.id}
-            to={`/archive/operators/${op.id}`}
-            className="block p-4 rounded border border-[#2A2A32] bg-[#1A1B23]
-                       hover:border-[#C9A96E]/40 transition-all duration-200 group"
-          >
-            <div className="flex gap-3">
-              <div className="w-14 h-14 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
-                {op.portrait ? (
-                  <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[#5A5A62] text-lg">?</div>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-medium text-[#E8E6E3] group-hover:text-[#C9A96E] transition-colors truncate">
-                  {op.name || '未知'}
-                </h3>
-                <Rarity level={op.rarity} />
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="flex items-center gap-1">
-                <img src={op.elementIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                <span className="text-xs shrink-0" style={{ color: op.elementColor }}>{op.element}</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <img src={op.professionIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                <span className="text-xs text-[#8B8982] shrink-0">{op.profession}</span>
-              </span>
-              {op.mainAttr.icon && (
-                <span className="flex items-center gap-1 ml-auto">
-                  <img src={op.mainAttr.icon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                  <span className="text-xs text-[#8B8982] shrink-0">{op.mainAttr.name}</span>
-                </span>
-              )}
-            </div>
-            {op.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {op.tags.slice(0, 3).map((tag, i) => (
-                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
-                    {tag}
-                  </span>
+      {grouped ? (
+        <div className="flex flex-col gap-6">
+          {grouped.map(([groupLabel, ops]) => (
+            <div key={groupLabel}>
+              <h3 className="text-sm font-medium text-[#E8E6E3] mb-2">{groupLabel} · {ops.length}</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {ops.map((op) => (
+                  <Link
+                    key={op.id}
+                    to={`/archive/operators/${op.id}`}
+                    className="block p-4 rounded border border-[#2A2A32] bg-[#1A1B23]
+                               hover:border-[#C9A96E]/40 transition-all duration-200 group"
+                  >
+                    <div className="flex gap-3">
+                      <div className="w-14 h-14 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
+                        {op.portrait ? (
+                          <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[#5A5A62] text-lg">?</div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-medium text-[#E8E6E3] group-hover:text-[#C9A96E] transition-colors truncate">
+                          {op.name || '未知'}
+                        </h4>
+                        <Rarity level={op.rarity} />
+                        {op.race && (
+                          <div className="text-[10px] text-[#8B8982] leading-tight">{op.race}</div>
+                        )}
+                        {op.faction && (
+                          <div className="text-[10px] text-[#5A5A62] leading-tight">{op.faction}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="flex items-center gap-1">
+                        <img src={op.elementIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-xs shrink-0" style={{ color: op.elementColor }}>{op.element}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <img src={op.professionIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-xs text-[#8B8982] shrink-0">{op.profession}</span>
+                      </span>
+                      {op.mainAttr.icon && (
+                        <span className="flex items-center gap-1 ml-auto">
+                          <img src={op.mainAttr.icon} alt="" className="w-3.5 h-3.5 shrink-0" />
+                          <span className="text-xs text-[#8B8982] shrink-0">{op.mainAttr.name}</span>
+                        </span>
+                      )}
+                    </div>
+                    {op.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {op.tags.slice(0, 3).map((tag, i) => (
+                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </Link>
                 ))}
               </div>
-            )}
-          </Link>
-        ))}
-      </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {visible.map((op) => (
+            <Link
+              key={op.id}
+              to={`/archive/operators/${op.id}`}
+              className="block p-4 rounded border border-[#2A2A32] bg-[#1A1B23]
+                         hover:border-[#C9A96E]/40 transition-all duration-200 group"
+            >
+              <div className="flex gap-3">
+                <div className="w-14 h-14 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
+                  {op.portrait ? (
+                    <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[#5A5A62] text-lg">?</div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-medium text-[#E8E6E3] group-hover:text-[#C9A96E] transition-colors truncate">
+                    {op.name || '未知'}
+                  </h3>
+                  <Rarity level={op.rarity} />
+                  {op.race && (
+                    <div className="text-[10px] text-[#8B8982] leading-tight">{op.race}</div>
+                  )}
+                  {op.faction && (
+                    <div className="text-[10px] text-[#5A5A62] leading-tight">{op.faction}</div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="flex items-center gap-1">
+                  <img src={op.elementIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
+                  <span className="text-xs shrink-0" style={{ color: op.elementColor }}>{op.element}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <img src={op.professionIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
+                  <span className="text-xs text-[#8B8982] shrink-0">{op.profession}</span>
+                </span>
+                {op.mainAttr.icon && (
+                  <span className="flex items-center gap-1 ml-auto">
+                    <img src={op.mainAttr.icon} alt="" className="w-3.5 h-3.5 shrink-0" />
+                    <span className="text-xs text-[#8B8982] shrink-0">{op.mainAttr.name}</span>
+                  </span>
+                )}
+              </div>
+              {op.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {op.tags.slice(0, 3).map((tag, i) => (
+                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

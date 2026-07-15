@@ -105,6 +105,8 @@ export interface Operator {
   profileRecords: string[]
   voiceLines: VoiceLine[]
   tags: string[]
+  race: string
+  faction: string
 }
 
 export interface VoiceLine {
@@ -169,10 +171,19 @@ export interface Race {
   members: RaceMember[]
 }
 
+export interface FactionMember {
+  id: string
+  name: string
+  portrait: string
+  rarity: number
+}
+
 export interface Faction {
   id: string
   name: string
-  memberIds: string[]
+  engName: string
+  icon: string
+  members: FactionMember[]
 }
 
 export interface Area {
