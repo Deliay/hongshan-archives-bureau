@@ -112,7 +112,7 @@ function renderTableEntry(change: { tableName: string; op: string; key: string; 
   return renderChangeEntry(entry, op, locale)
 }
 
-function renderChangeEntry(entry: any, op: string, locale: string) {
+function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (text: string) => string) {
   if (op === 'changed') {
     const e = entry as { oldValue?: Record<string, any>; newValue?: Record<string, any>; changed?: Record<string, any> }
     const changed = e.changed ?? {}
@@ -144,7 +144,7 @@ function renderChangeEntry(entry: any, op: string, locale: string) {
                     return (
                       <div key={loc}>
                         <span className="text-[#C9A96E]">{loc}</span>
-                        <RichTextDiff oldText={v.oldText || ''} newText={v.newText || ''} />
+                        <RichTextDiff oldText={v.oldText || ''} newText={v.newText || ''} formatter={formatter} />
                       </div>
                     )
                   })}
@@ -568,8 +568,17 @@ function SkillEntry({ entry, op, locale }: { entry: any; op: string; locale: str
   if (loading) return <div className="text-[10px] text-[#5A5A62]">加载技能…</div>
 
   if (op === 'changed') {
-    const e = entry as { changed?: Record<string, any> }
-    if (e.changed) return renderChangeEntry(entry, op, locale)
+    const e = entry as { changed?: Record<string, any>; newValue?: Record<string, any> }
+    if (e.changed) {
+      const bundle = e.newValue?.SkillPatchDataBundle
+      let formatter: ((text: string) => string) | undefined
+      if (bundle?.length) {
+        const bb: Record<string, number> = {}
+        for (const b of (bundle[0].blackboard ?? [])) bb[b.key] = b.value
+        if (Object.keys(bb).length > 0) formatter = (text: string) => formatBlackboard(text, bb)
+      }
+      return renderChangeEntry(entry, op, locale, formatter)
+    }
     return <div className="text-[10px] text-[#5A5A62]">无技能变更</div>
   }
 

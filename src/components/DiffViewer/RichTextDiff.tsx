@@ -39,16 +39,17 @@ function wrapDiff(text: string, additions: string[], removals: string[]): string
 interface Props {
   oldText: string
   newText: string
+  formatter?: (text: string) => string
 }
 
-export function RichTextDiff({ oldText, newText }: Props) {
+export function RichTextDiff({ oldText, newText, formatter }: Props) {
   const { oldOnly, newOnly } = wordDiff(oldText, newText)
   const hasChanges = oldOnly.length > 0 || newOnly.length > 0
 
   if (!hasChanges) {
     return (
       <div className="text-[10px]">
-        <RichText text={newText} />
+        <RichText text={formatter ? formatter(newText) : newText} />
       </div>
     )
   }
@@ -57,11 +58,11 @@ export function RichTextDiff({ oldText, newText }: Props) {
     <div className="space-y-1">
       <div className="text-[10px]">
         <span className="text-[#8B8982]">旧 </span>
-        <RichText text={wrapDiff(oldText, [], oldOnly)} />
+        <RichText text={formatter ? formatter(wrapDiff(oldText, [], oldOnly)) : wrapDiff(oldText, [], oldOnly)} />
       </div>
       <div className="text-[10px]">
         <span className="text-[#8B8982]">新 </span>
-        <RichText text={wrapDiff(newText, newOnly, [])} />
+        <RichText text={formatter ? formatter(wrapDiff(newText, newOnly, [])) : wrapDiff(newText, newOnly, [])} />
       </div>
     </div>
   )
