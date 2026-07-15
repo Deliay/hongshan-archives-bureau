@@ -30,22 +30,22 @@ const TABLE_COLORS: Record<string, string> = {
   SpaceshipCharSkillTable: '#06b6d4',
 }
 
-function getFieldContext(path: string, newValue: any): string {
+function getFieldContext(path: string, newValue: any, locale: string): string {
   const match = path.match(/^(profileVoice|profileRecord)\[(\d+)]\./)
   if (!match) return ''
   const [, field, idxStr] = match
   const idx = Number(idxStr)
   const newEntry = newValue?.[field]?.[idx]
   if (field === 'profileVoice') {
-    const title = newEntry ? localeText(newEntry.voiceTitle, 'CN') || '' : ''
-    const desc = newEntry ? localeText(newEntry.voiceDesc, 'CN') || '' : ''
+    const title = newEntry ? localeText(newEntry.voiceTitle, locale) || '' : ''
+    const desc = newEntry ? localeText(newEntry.voiceDesc, locale) || '' : ''
     let result = `#${idx}`
     if (title) result += ` ${title}`
     if (desc) result += ` — ${desc}`
     return result
   }
   if (field === 'profileRecord') {
-    const title = newEntry ? localeText(newEntry.recordTitle, 'CN') || '' : ''
+    const title = newEntry ? localeText(newEntry.recordTitle, locale) || '' : ''
     return title ? `[${idx}] ${title}` : ''
   }
   return ''
@@ -122,7 +122,7 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
         <div className="space-y-1">
           {keys.map((path) => {
             const change = changed[path]
-            const context = getFieldContext(path, e.newValue)
+            const context = getFieldContext(path, e.newValue, locale)
             if (change.type === 'value') {
               return (
                 <div key={path} className="text-[10px]">
@@ -190,20 +190,20 @@ interface LookupMaps {
   attributes: Record<number, string>
 }
 
-function useLookupMaps(): LookupMaps | null {
+function useLookupMaps(locale: string): LookupMaps | null {
   const [maps, setMaps] = useState<LookupMaps | null>(null)
   useEffect(() => {
     let cancelled = false
     Promise.all([
       getCachedData<Record<string, any>>('CharProfessionTable', () => fetchTableAll('CharProfessionTable')).catch(() => ({})),
-      getCachedData<Record<string, string>>('I18nDict_CN_CharProfessionTable', () => fetchTableDictAll('CharProfessionTable', 'CN')).catch(() => ({})),
+      getCachedData<Record<string, string>>(`I18nDict_${locale}_CharProfessionTable`, () => fetchTableDictAll('CharProfessionTable', locale)).catch(() => ({})),
       getCachedData<Record<string, any>>('CharTypeTable', () => fetchTableAll('CharTypeTable')).catch(() => ({})),
-      getCachedData<Record<string, string>>('I18nDict_CN_CharTypeTable', () => fetchTableDictAll('CharTypeTable', 'CN')).catch(() => ({})),
+      getCachedData<Record<string, string>>(`I18nDict_${locale}_CharTypeTable`, () => fetchTableDictAll('CharTypeTable', locale)).catch(() => ({})),
       getCachedData<Record<string, any>>('CharBattleTagTable', () => fetchTableAll('CharBattleTagTable')).catch(() => ({})),
-      getCachedData<Record<string, string>>('I18nDict_CN_CharBattleTagTable', () => fetchTableDictAll('CharBattleTagTable', 'CN')).catch(() => ({})),
+      getCachedData<Record<string, string>>(`I18nDict_${locale}_CharBattleTagTable`, () => fetchTableDictAll('CharBattleTagTable', locale)).catch(() => ({})),
       getCachedData<Record<string, any>>('AttributeMetaTable', () => fetchTableAll('AttributeMetaTable')).catch(() => ({})),
       getCachedData<Record<string, any>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')).catch(() => ({})),
-      getCachedData<Record<string, string>>('I18nDict_CN_AttributeShowConfigTable', () => fetchTableDictAll('AttributeShowConfigTable', 'CN')).catch(() => ({})),
+      getCachedData<Record<string, string>>(`I18nDict_${locale}_AttributeShowConfigTable`, () => fetchTableDictAll('AttributeShowConfigTable', locale)).catch(() => ({})),
     ]).then(([profRaw, profI18n, elemRaw, elemI18n, tagRaw, tagI18n, attrMetaVal, attrShowVal, attrI18nVal]) => {
       if (cancelled) return
       const professions: Record<number, string> = {}
@@ -227,14 +227,14 @@ function useLookupMaps(): LookupMaps | null {
       setMaps({ professions, elements, battleTags, attributes })
     })
     return () => { cancelled = true }
-  }, [])
+  }, [locale])
   return maps
 }
 
 function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
   const [expanded, setExpanded] = useState(false)
   const isAdded = op.changes.some(c => c.op === 'added' && c.tableName === 'CharacterTable')
-  const maps = useLookupMaps()
+  const maps = useLookupMaps(locale)
   const [fallbackCharData, setFallbackCharData] = useState<Record<string, any> | null>(null)
   const [charI18n, setCharI18n] = useState<Record<string, string>>({})
 
@@ -348,7 +348,7 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
       {expanded && (
         <div className="border-t border-[#2A2A32] p-3 space-y-3">
           {isAdded && addedEntry ? (
-            <AddedOperatorDetail charId={op.charId} entry={addedEntry.entry} name={name} rarity={rarity} />
+            <AddedOperatorDetail charId={op.charId} entry={addedEntry.entry} locale={locale} />
           ) : (
             op.changes.map((c) => {
               const label = TABLE_LABELS[c.tableName] || c.tableName
@@ -380,11 +380,11 @@ function renderUnlockInfo(unlockType: number, unlockValue: number): string {
   return `解锁类型${unlockType}·值${unlockValue}`
 }
 
-function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; name?: string; rarity?: number }) {
+function AddedOperatorDetail({ charId, entry, locale }: { charId: string; entry: any; locale: string }) {
   return (
     <div className="space-y-3">
-      <SkillPreview charId={charId} />
-      <SpaceshipSkillPreview charId={charId} />
+      <SkillPreview charId={charId} locale={locale} />
+      <SpaceshipSkillPreview charId={charId} locale={locale} />
 
       {entry?.profileRecord && entry.profileRecord.length > 0 && (
         <details className="group">
@@ -395,13 +395,13 @@ function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; na
             {entry.profileRecord.map((r: any) => (
               <div key={r.id} className="px-2 py-1 rounded bg-[#0F0F12]">
                 <div className="flex items-center gap-2">
-                  <div className="text-[10px] text-[#8B8982]">{localeText(r.recordTitle, 'CN')}</div>
+                  <div className="text-[10px] text-[#8B8982]">{localeText(r.recordTitle, locale)}</div>
                   {renderUnlockInfo(r.unlockType, r.unlockValue) && (
                     <span className="text-[9px] text-[#5A5A62]">{renderUnlockInfo(r.unlockType, r.unlockValue)}</span>
                   )}
                 </div>
                 <div className="text-xs text-[#E8E6E3] mt-0.5 whitespace-pre-wrap line-clamp-3">
-                  <RichText text={localeText(r.recordDesc, 'CN')} />
+                  <RichText text={localeText(r.recordDesc, locale)} />
                 </div>
               </div>
             ))}
@@ -420,12 +420,12 @@ function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; na
                 <span className="text-[10px] text-[#5A5A62] font-mono shrink-0 mt-0.5">#{v.voiceIndex}</span>
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="text-[10px] text-[#8B8982]">{localeText(v.voiceTitle, 'CN')}</div>
+                    <div className="text-[10px] text-[#8B8982]">{localeText(v.voiceTitle, locale)}</div>
                     {renderUnlockInfo(v.unlockType, v.unlockValue) && (
                       <span className="text-[9px] text-[#5A5A62]">{renderUnlockInfo(v.unlockType, v.unlockValue)}</span>
                     )}
                   </div>
-                  <div className="text-xs text-[#E8E6E3]"><RichText text={localeText(v.voiceDesc, 'CN')} /></div>
+                  <div className="text-xs text-[#E8E6E3]"><RichText text={localeText(v.voiceDesc, locale)} /></div>
                 </div>
               </div>
             ))}
@@ -436,16 +436,16 @@ function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; na
   )
 }
 
-function SkillPreview({ charId }: { charId: string }) {
+function SkillPreview({ charId, locale }: { charId: string; locale: string }) {
   const [data, setData] = useState<{ name: string; icon: string; desc: string; type: number }[]>([])
   useEffect(() => {
     let cancelled = false
     async function load() {
       const [growthRaw, growthI18n, patchRaw, patchI18n] = await Promise.all([
         getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')).catch(() => ({})),
-        getCachedData<Record<string, string>>('I18nDict_CN_CharGrowthTable', () => fetchTableDictAll('CharGrowthTable', 'CN')).catch(() => ({}) as Record<string, string>),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_CharGrowthTable`, () => fetchTableDictAll('CharGrowthTable', locale)).catch(() => ({}) as Record<string, string>),
         getCachedData<Record<string, any>>('SkillPatchTable', () => fetchTableAll('SkillPatchTable')).catch(() => ({})),
-        getCachedData<Record<string, string>>('I18nDict_CN_SkillPatchTable', () => fetchTableDictAll('SkillPatchTable', 'CN')).catch(() => ({}) as Record<string, string>),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_SkillPatchTable`, () => fetchTableDictAll('SkillPatchTable', locale)).catch(() => ({}) as Record<string, string>),
       ])
       if (cancelled) return
       const growth = (growthRaw as Record<string, any>)[charId]
@@ -474,7 +474,7 @@ function SkillPreview({ charId }: { charId: string }) {
     }
     load()
     return () => { cancelled = true }
-  }, [charId])
+  }, [charId, locale])
   if (data.length === 0) return null
   return (
     <details className="group" open>
@@ -498,7 +498,7 @@ function SkillPreview({ charId }: { charId: string }) {
   )
 }
 
-function SpaceshipSkillPreview({ charId }: { charId: string }) {
+function SpaceshipSkillPreview({ charId, locale }: { charId: string; locale: string }) {
   const [data, setData] = useState<{ name: string; desc: string; icon: string; roomType: number }[]>([])
   useEffect(() => {
     let cancelled = false
@@ -506,7 +506,7 @@ function SpaceshipSkillPreview({ charId }: { charId: string }) {
       const [charSkillRaw, skillRaw, skillI18n] = await Promise.all([
         getCachedData<Record<string, any>>('SpaceshipCharSkillTable', () => fetchTableAll('SpaceshipCharSkillTable')).catch(() => ({})),
         getCachedData<Record<string, any>>('SpaceshipSkillTable', () => fetchTableAll('SpaceshipSkillTable')).catch(() => ({})),
-        getCachedData<Record<string, string>>('I18nDict_CN_SpaceshipSkillTable', () => fetchTableDictAll('SpaceshipSkillTable', 'CN')).catch(() => ({}) as Record<string, string>),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_SpaceshipSkillTable`, () => fetchTableDictAll('SpaceshipSkillTable', locale)).catch(() => ({}) as Record<string, string>),
       ])
       if (cancelled) return
       const charSkills = (charSkillRaw as Record<string, any>)[charId] as { skillList?: { skillId: string }[] } | undefined
@@ -528,7 +528,7 @@ function SpaceshipSkillPreview({ charId }: { charId: string }) {
     }
     load()
     return () => { cancelled = true }
-  }, [charId])
+  }, [charId, locale])
   if (data.length === 0) return null
   return (
     <details className="group" open>
@@ -553,18 +553,21 @@ function SpaceshipSkillPreview({ charId }: { charId: string }) {
   )
 }
 
-let _skillI18n: Record<string, string> | null = null
-async function getSkillPatchI18n(): Promise<Record<string, string>> {
-  if (!_skillI18n) {
-    _skillI18n = await getCachedData<Record<string, string>>('I18nDict_CN_SkillPatchTable', () => fetchTableDictAll('SkillPatchTable', 'CN')).catch(() => ({}))
+let _skillI18n: Map<string, Record<string, string>> | null = null
+async function getSkillPatchI18n(locale: string): Promise<Record<string, string>> {
+  if (!_skillI18n) _skillI18n = new Map()
+  let cached = _skillI18n.get(locale)
+  if (!cached) {
+    cached = await getCachedData<Record<string, string>>(`I18nDict_${locale}_SkillPatchTable`, () => fetchTableDictAll('SkillPatchTable', locale)).catch(() => ({}))
+    _skillI18n.set(locale, cached)
   }
-  return _skillI18n
+  return cached
 }
 
 function SkillEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
   const [i18n, setI18n] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
-  useEffect(() => { getSkillPatchI18n().then(d => { setI18n(d); setLoading(false) }) }, [])
+  useEffect(() => { getSkillPatchI18n(locale).then(d => { setI18n(d); setLoading(false) }) }, [locale])
   if (loading) return <div className="text-[10px] text-[#5A5A62]">加载技能…</div>
 
   if (op === 'changed') {
@@ -608,9 +611,9 @@ function SpaceshipEntry({ entry, op, locale }: { entry: any; op: string; locale:
   const [i18n, setI18n] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   useEffect(() => {
-    getCachedData<Record<string, string>>('I18nDict_CN_SpaceshipSkillTable', () => fetchTableDictAll('SpaceshipSkillTable', 'CN'))
+    getCachedData<Record<string, string>>(`I18nDict_${locale}_SpaceshipSkillTable`, () => fetchTableDictAll('SpaceshipSkillTable', locale))
       .then(d => { setI18n(d); setLoading(false) }).catch(() => setLoading(false))
-  }, [])
+  }, [locale])
   if (loading) return <div className="text-[10px] text-[#5A5A62]">加载基建技能…</div>
   if (op === 'changed') return renderChangeEntry(entry, op, locale)
   const name = localeText(entry?.name, locale) || resolveI18n(entry?.name, i18n) || ''

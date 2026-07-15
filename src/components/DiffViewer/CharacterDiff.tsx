@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
+import { useLocale } from '../../lib/locale'
 import type { TableDiffComponentProps } from './registry'
 import { RichTextDiff } from './RichTextDiff'
 import type { FieldChange, ChangedEntry } from '../../lib/types-diff'
@@ -18,7 +19,8 @@ interface LookupMaps {
 }
 
 export default function CharacterDiff({ diff }: TableDiffComponentProps) {
-  const locale = diff.locale || 'CN'
+  const diffLocale = diff.locale || 'CN'
+  const { locale: globalLocale } = useLocale()
   const [maps, setMaps] = useState<LookupMaps | null>(null)
   const [tab, setTab] = useState<'added' | 'removed' | 'changed'>('changed')
 
@@ -27,15 +29,15 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
     async function load() {
       const [profRaw, profI18n, elemRaw, elemI18n, tagRaw, tagI18n, attrMetaVal, attrShowVal, attrI18n, i18nRaw] = await Promise.all([
         getCachedData<Record<string, any>>('CharProfessionTable', () => fetchTableAll('CharProfessionTable')).catch(() => ({} as Record<string, any>)),
-        getCachedData<Record<string, string>>('I18nDict_CN_CharProfessionTable', () => fetchTableDictAll('CharProfessionTable', 'CN')).catch(() => ({} as Record<string, string>)),
+        getCachedData<Record<string, string>>(`I18nDict_${globalLocale}_CharProfessionTable`, () => fetchTableDictAll('CharProfessionTable', globalLocale)).catch(() => ({} as Record<string, string>)),
         getCachedData<Record<string, any>>('CharTypeTable', () => fetchTableAll('CharTypeTable')).catch(() => ({} as Record<string, any>)),
-        getCachedData<Record<string, string>>('I18nDict_CN_CharTypeTable', () => fetchTableDictAll('CharTypeTable', 'CN')).catch(() => ({} as Record<string, string>)),
+        getCachedData<Record<string, string>>(`I18nDict_${globalLocale}_CharTypeTable`, () => fetchTableDictAll('CharTypeTable', globalLocale)).catch(() => ({} as Record<string, string>)),
         getCachedData<Record<string, any>>('CharBattleTagTable', () => fetchTableAll('CharBattleTagTable')).catch(() => ({} as Record<string, any>)),
-        getCachedData<Record<string, string>>('I18nDict_CN_CharBattleTagTable', () => fetchTableDictAll('CharBattleTagTable', 'CN')).catch(() => ({} as Record<string, string>)),
+        getCachedData<Record<string, string>>(`I18nDict_${globalLocale}_CharBattleTagTable`, () => fetchTableDictAll('CharBattleTagTable', globalLocale)).catch(() => ({} as Record<string, string>)),
         getCachedData<Record<string, any>>('AttributeMetaTable', () => fetchTableAll('AttributeMetaTable')).catch(() => ({} as Record<string, any>)),
         getCachedData<Record<string, any>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')).catch(() => ({} as Record<string, any>)),
-        getCachedData<Record<string, string>>('I18nDict_CN_AttributeShowConfigTable', () => fetchTableDictAll('AttributeShowConfigTable', 'CN')).catch(() => ({} as Record<string, string>)),
-        getTableI18nDict('I18nTextTable', locale).catch(() => ({}) as Record<string, string>),
+        getCachedData<Record<string, string>>(`I18nDict_${globalLocale}_AttributeShowConfigTable`, () => fetchTableDictAll('AttributeShowConfigTable', globalLocale)).catch(() => ({} as Record<string, string>)),
+        getTableI18nDict('I18nTextTable', diffLocale).catch(() => ({}) as Record<string, string>),
       ])
       if (cancelled) return
 
@@ -73,11 +75,11 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
         }
       }
 
-      setMaps({ professions, elements, battleTags, attributes, i18n: i18nRaw, locale })
+      setMaps({ professions, elements, battleTags, attributes, i18n: i18nRaw, locale: diffLocale })
     }
     load()
     return () => { cancelled = true }
-  }, [locale])
+  }, [globalLocale, diffLocale])
 
   const { stats, entries } = diff
 
@@ -114,7 +116,7 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
 
       {tab === 'added' && <EntryCards entries={entries.added} maps={maps} />}
       {tab === 'removed' && <EntryCards entries={entries.removed} maps={maps} />}
-      {tab === 'changed' && <ChangedCards entries={entries.changed} maps={maps} locale={locale} />}
+      {tab === 'changed' && <ChangedCards entries={entries.changed} maps={maps} locale={diffLocale} />}
     </div>
   )
 }
