@@ -22,13 +22,16 @@ export default function UpdateHome() {
             className="block p-4 rounded border border-[#2A2A32] bg-[#1A1B23]
                        hover:border-[#C9A96E]/40 transition-all duration-200 group"
           >
-            <h3 className="text-sm font-medium text-[#E8E6E3] group-hover:text-[#C9A96E] transition-colors font-mono">
-              {folder.name.replace(/__/g, '  →  ')}
+            <h3 className="text-sm font-medium text-[#E8E6E3] group-hover:text-[#C9A96E] transition-colors">
+              生成于 {manifest.generatedAt}
             </h3>
+            <p className="text-xs text-[#5A5A62] mt-1 font-mono">
+              {folder.name.replace(/__/g, '  →  ')}
+            </p>
             {folder.description && (
-              <p className="text-xs text-[#5A5A62] mt-1">{folder.description}</p>
+              <p className="text-xs text-[#8B8982] mt-1">{folder.description}</p>
             )}
-            <p className="text-xs text-[#8B8982] mt-2">
+            <p className="text-xs text-[#5A5A62] mt-2">
               {folder.fileCount} 个表有变更
             </p>
           </Link>
