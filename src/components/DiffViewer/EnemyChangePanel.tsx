@@ -204,6 +204,8 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
     removed: ep.changes.filter(c => c.op === 'removed').length,
     changed: ep.changes.filter(c => c.op === 'changed').length,
   }
+  const variantKeys = new Set(ep.changes.map(c => c.key))
+  const hasVariants = variantKeys.size > 1 || (variantKeys.size === 1 && !variantKeys.has(ep.enemyId))
 
   return (
     <div className={`rounded overflow-hidden transition-colors ${
@@ -240,7 +242,8 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
             <span className="text-[10px] text-[#5A5A62]">
               {changeCategories.added > 0 && <span className="text-[#26bbfd] mr-1">+{changeCategories.added}</span>}
               {changeCategories.removed > 0 && <span className="text-[#ef4444] mr-1">-{changeCategories.removed}</span>}
-              {changeCategories.changed > 0 && <span className="text-[#ffbb03]">~{changeCategories.changed}</span>}
+              {changeCategories.changed > 0 && <span className="text-[#ffbb03] mr-1">~{changeCategories.changed}</span>}
+              {hasVariants && <span className="text-[#8B8982]">({variantKeys.size} 个变体)</span>}
             </span>
           </div>
           <div className="flex flex-wrap gap-1 mt-1.5">

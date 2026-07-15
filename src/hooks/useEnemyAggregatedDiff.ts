@@ -16,13 +16,18 @@ export interface EnemyChange {
   }[]
 }
 
-const ENEMY_ID_TABLES = ['EnemyTemplateDisplayInfoTable', 'EnemyDisplayInfoTable', 'EnemyTable', 'EnemyAttributeTemplateTable'] as const
+function getEntryTemplateId(entry: any): string | undefined {
+  if (!entry || typeof entry !== 'object') return undefined
+  if ('newValue' in entry && entry.newValue?.templateId) return entry.newValue.templateId
+  if ('templateId' in entry && typeof entry.templateId === 'string') return entry.templateId
+  return undefined
+}
 
-function extractEnemyId(key: string, tableName: string): string | null {
-  if ((ENEMY_ID_TABLES as readonly string[]).includes(tableName)) {
-    return key
-  }
-  return null
+function resolveGroupKey(key: string, entry: any, tableName: string): string {
+  if (tableName === 'EnemyTemplateDisplayInfoTable' || tableName === 'EnemyAttributeTemplateTable') return key
+  const tpl = getEntryTemplateId(entry)
+  if (tpl && tpl !== key) return tpl
+  return key
 }
 
 function collectEntries(
@@ -33,13 +38,13 @@ function collectEntries(
   changes: Map<string, EnemyChange>,
 ) {
   for (const [key, entry] of Object.entries(dict)) {
-    const enemyId = extractEnemyId(key, tableName)
-    if (!enemyId || !enemyIdSet.has(enemyId)) continue
+    const groupId = resolveGroupKey(key, entry, tableName)
+    if (!groupId || !enemyIdSet.has(groupId)) continue
 
-    let change = changes.get(enemyId)
+    let change = changes.get(groupId)
     if (!change) {
-      change = { enemyId, name: null, nickname: null, displayType: null, tags: null, changes: [] }
-      changes.set(enemyId, change)
+      change = { enemyId: groupId, name: null, nickname: null, displayType: null, tags: null, changes: [] }
+      changes.set(groupId, change)
     }
     change.changes.push({ tableName, op, key, entry })
 
@@ -75,9 +80,13 @@ export function useEnemyAggregatedDiff(versionName: string) {
     for (const { name, diff } of allDiffs) {
       if (!diff) continue
       for (const entries of [diff.entries.added, diff.entries.removed, diff.entries.changed]) {
-        for (const key of Object.keys(entries)) {
-          const eid = extractEnemyId(key, name)
-          if (eid) enemyIdSet.add(eid)
+        for (const [key, entry] of Object.entries(entries)) {
+          const groupId = resolveGroupKey(key, entry, name)
+          if (groupId) {
+            enemyIdSet.add(groupId)
+            // Also add all unique key references so they stay in the set
+            enemyIdSet.add(key)
+          }
         }
       }
     }
