@@ -20,8 +20,12 @@ const CHAR_ID_TABLES = ['CharacterTable', 'CharGrowthTable', 'SpaceshipCharSkill
 
 function extractCharId(key: string, tableName: string): string | null {
   if (tableName === 'SpaceshipSkillTable') {
-    const m = key.match(/(chr_\w+)/)
-    return m ? m[1] : null
+    const m = key.match(/chr_\d+_[a-zA-Z]+/)
+    return m ? m[0] : null
+  }
+  if (tableName === 'SkillPatchTable') {
+    const m = key.match(/chr_\d+_[a-zA-Z]+/)
+    return m ? m[0] : null
   }
   if (key.startsWith('chr_')) {
     const parts = key.split('_')
