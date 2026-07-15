@@ -206,10 +206,18 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
   const [expanded, setExpanded] = useState(false)
   const isAdded = op.changes.some(c => c.op === 'added' && c.tableName === 'CharacterTable')
   const maps = useLookupMaps()
+  const [i18nDict, setI18nDict] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    getCachedData<Record<string, string>>(`I18nDict_CN_CharacterTable`, () => fetchTableDictAll('CharacterTable', 'CN'))
+      .then(d => setI18nDict(d)).catch(() => {})
+  }, [])
 
   const fullData = useFullCharData(op.charId)
 
-  const name = localeText(op.name, locale) || (fullData ? localeText(fullData.name, locale) : '') || op.charId
+  const name = localeText(op.name, locale)
+    || (fullData ? resolveI18n(fullData.name, i18nDict) : '')
+    || op.charId
   const rarity = op.rarity ?? fullData?.rarity ?? 0
   const professionVal = op.profession ?? fullData?.profession
   const charTypeId = op.charTypeId ?? fullData?.charTypeId ?? ''

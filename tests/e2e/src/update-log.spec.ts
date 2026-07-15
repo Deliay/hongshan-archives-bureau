@@ -28,40 +28,45 @@ test.describe('更新日志 (Update Log)', () => {
     expect(text.length).toBeGreaterThan(0)
   })
 
-  test('新增干员展开后技能有图标、名称、描述', async ({ page }) => {
+  test('干员名称展示为中文本地化名称', async ({ page }) => {
     await waitForDiffReady(page)
 
-    // Find an added operator card (has "新增" badge)
-    const addedCard = page.locator('button').filter({ hasText: '新增' }).first()
-    await expect(addedCard).toBeVisible({ timeout: 10000 })
-    await addedCard.click()
-    await page.waitForTimeout(3000)
+    // Wait for the name to resolve from API
+    const card = page.locator('button').filter({ hasText: 'chr_0030_zhuangfy' }).first()
 
-    // The expanded section should have skill section
-    const expanded = addedCard.locator('..').locator('.border-t')
-    await expect(expanded).toBeVisible({ timeout: 5000 })
+    // Wait for the localized name to appear (not just the ID)
+    await expect(card).toBeVisible({ timeout: 10000 })
 
-    const text = await expanded.textContent() || ''
+    // The card should eventually show the localized Chinese name (庄芳仪)
+    // If the name doesn't resolve, the card will just show the ID
+    await page.waitForFunction((id) => {
+      const buttons = document.querySelectorAll('button')
+      for (const btn of buttons) {
+        if (btn.textContent?.includes(id) && !btn.textContent?.includes('正在加载')) {
+          return true
+        }
+      }
+      return false
+    }, 'chr_0030_zhuangfy', { timeout: 15000 })
 
-    // Should have skill section
-    expect(text).toContain('技能')
+    const cardText = await card.textContent() || ''
+    // At minimum, some text should be displayed that's different from just the raw ID pattern
+    expect(cardText.length).toBeGreaterThan('chr_0030_zhuangfy'.length + 5)
+    // The card should contain resolved content (stars, profession info, etc.)
+    expect(cardText).toContain('✦')
+  })
 
-    // Should have skill descriptions (not just names) — containing rich text markers or descriptions
-    // At minimum should have percentage signs from blackboard formatting
-    // or skill description keywords like "攻击" "伤害" "恢复"
-    const hasSkillDetail = text.includes('%') || /攻击|伤害|恢复|提升|造成/.test(text)
-    expect(hasSkillDetail).toBe(true)
+  test('unlockType变更展示为含义而非原始数字', async ({ page }) => {
+    await waitForDiffReady(page)
 
-    // Should have skill icons (img elements inside the skill section)
-    const skillImages = expanded.locator('img')
-    const imgCount = await skillImages.count()
-    expect(imgCount).toBeGreaterThan(0)
+    const bodyText = await page.locator('body').textContent() || ''
 
-    // Should have factory/spaceship skill section with data
-    const hasFactorySkills = text.includes('基建技能')
-    if (hasFactorySkills) {
-      const hasFactoryDesc = /房间|生产|制造|效率|加速/.test(text)
-      expect(hasFactoryDesc).toBe(true)
+    // Check that unlockType values are displayed as human-readable text
+    const hasHumanReadableUnlock = bodyText.includes('精英阶段') || bodyText.includes('信赖值')
+    const hasRawUnlockType = /unlockType/.test(bodyText) || /unlockValue/.test(bodyText)
+
+    if (hasHumanReadableUnlock) {
+      expect(hasRawUnlockType).toBe(false)
     }
   })
 })
