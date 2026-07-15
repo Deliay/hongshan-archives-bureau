@@ -75,9 +75,22 @@ function ChangeBadge({ label, color, count }: { label: string; color: string; co
   )
 }
 
-function formatDiffValue(path: string, v: unknown, locale: string): string {
+function formatDiffValue(path: string, v: unknown, locale: string, entry?: any): string {
   if (path.endsWith('unlockType') && typeof v === 'number') {
-    return renderUnlockInfo(v, 0) || String(v)
+    if (v === 0) return '初始解锁'
+    if (v === 2) return '精英阶段'
+    if (v === 4) return '信赖值'
+    return ''
+  }
+  if (path.endsWith('unlockValue') && typeof v === 'number') {
+    const m = path.match(/^(profileVoice|profileRecord)\[(\d+)]\./)
+    if (m && entry) {
+      const [, field, idx] = m
+      const unlockType = entry[field]?.[Number(idx)]?.unlockType ?? 0
+      if (unlockType === 0) return '初始解锁'
+      if (unlockType === 2) return `精英阶段 ${v}`
+      if (unlockType === 4) return `信赖值 ${v}`
+    }
   }
   if (v === undefined || v === null) return '（空）'
   if (typeof v === 'object' && !Array.isArray(v)) {
@@ -115,8 +128,8 @@ function renderChangeEntry(entry: any, op: string, locale: string) {
                   <span className="text-[#5A5A62] font-mono">{path}</span>
                   {context && <span className="ml-2 text-[#8B8982]">{context}</span>}
                   <div className="flex gap-3 mt-0.5">
-                    <span className="text-[#ef4444]">旧 {formatDiffValue(path, change.oldValue, locale)}</span>
-                    <span className="text-[#26bbfd]">新 {formatDiffValue(path, change.newValue, locale)}</span>
+                    <span className="text-[#ef4444]">旧 {formatDiffValue(path, change.oldValue, locale, e.newValue)}</span>
+                    <span className="text-[#26bbfd]">新 {formatDiffValue(path, change.newValue, locale, e.newValue)}</span>
                   </div>
                 </div>
               )

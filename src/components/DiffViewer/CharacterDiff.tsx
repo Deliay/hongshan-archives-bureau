@@ -180,13 +180,13 @@ function ChangedCards({ entries, maps, locale }: { entries: Record<string, Chang
                       <div className="text-xs text-[#C9A96E] font-medium mb-1">#{index} {title}</div>
                       {desc && <div className="text-[10px] text-[#8B8982] mb-1">{desc}</div>}
                       {changes.map(([path, change]) => (
-                        <FieldDiff key={path} path={path} change={change} maps={maps} />
+                        <FieldDiff key={path} path={path} change={change} maps={maps} entry={e.newValue} />
                       ))}
                     </div>
                   )
                 })}
                 {otherChanges.map(([path, change]) => (
-                  <FieldDiff key={path} path={path} change={change} maps={maps} />
+                  <FieldDiff key={path} path={path} change={change} maps={maps} entry={e.newValue} />
                 ))}
               </div>
             </div>
@@ -296,13 +296,28 @@ function renderUnlockInfo(unlockType: number, unlockValue: number): string {
   if (unlockType === 0) return '初始解锁'
   if (unlockType === 2) return `精英阶段 ${unlockValue}`
   if (unlockType === 4) return `信赖值 ${unlockValue}`
-  return `解锁类型${unlockType}·值${unlockValue}`
+  return ''
 }
 
-function FieldDiff({ path, change, maps }: { path: string; change: FieldChange; maps: LookupMaps }) {
+function findRelatedUnlockType(path: string, entry: any): number {
+  const m = path.match(/^(profileVoice|profileRecord)\[(\d+)]\./)
+  if (!m || !entry) return 0
+  const [, field, idx] = m
+  const obj = entry[field]?.[Number(idx)]
+  return obj?.unlockType ?? 0
+}
+
+function FieldDiff({ path, change, maps, entry }: { path: string; change: FieldChange; maps: LookupMaps; entry?: any }) {
   const format = (v: unknown) => {
-    if (path.endsWith('unlockType') && typeof v === 'number') {
-      return renderUnlockInfo(v, 0)
+    if (typeof v === 'number' && path.endsWith('unlockType')) {
+      if (v === 0) return '初始解锁'
+      if (v === 2) return '精英阶段'
+      if (v === 4) return '信赖值'
+      return ''
+    }
+    if (typeof v === 'number' && path.endsWith('unlockValue')) {
+      const unlockType = findRelatedUnlockType(path, entry)
+      return renderUnlockInfo(unlockType, v) || formatFieldValue(v, maps)
     }
     return formatFieldValue(v, maps)
   }
