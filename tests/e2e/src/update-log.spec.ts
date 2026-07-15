@@ -111,4 +111,55 @@ test.describe('更新日志 (Update Log)', () => {
     const 吸收Links = page.locator('button', { hasText: '吸收' })
     expect(await 吸收Links.count()).toBeGreaterThanOrEqual(1)
   })
+
+  test('敌人变体按templateId分组并正确解析名称', async ({ page }) => {
+    await waitForDiffReady(page)
+
+    // Wait for enemy change overview to appear
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('敌人变动概览')
+    }, { timeout: 15000 })
+
+    // eny_0046_lbshamman_hdg016 has templateId=eny_0046_lbshamman
+    // It should be grouped under eny_0046_lbshamman card
+    // eny_0046_lbshamman itself has no diff changes, so the name
+    // must resolve via API fallback from EnemyTemplateDisplayInfoTable
+    const card = page.locator('button').filter({ hasText: 'eny_0046_lbshamman' }).first()
+    await expect(card).toBeVisible({ timeout: 10000 })
+
+    // Verify variant count indicator exists (the entry is grouped)
+    await page.waitForFunction(() => {
+      const buttons = document.querySelectorAll('button')
+      for (const btn of buttons) {
+        if (btn.textContent?.includes('eny_0046_lbshamman')) {
+          return btn.textContent.includes('变体')
+        }
+      }
+      return false
+    }, { timeout: 10000 })
+    const cardText = await card.textContent() || ''
+    expect(cardText).toContain('变体')
+
+    // Click to expand and verify the variant entry key
+    await card.click()
+    await page.waitForTimeout(500)
+
+    // The expanded section should contain the variant key
+    const parentDiv = card.locator('..')
+    const expandedText = await parentDiv.textContent() || ''
+    expect(expandedText).toContain('eny_0046_lbshamman_hdg016')
+
+    // Verify API fallback resolved the name (not just raw ID)
+    await page.waitForFunction(() => {
+      const buttons = document.querySelectorAll('button')
+      for (const btn of buttons) {
+        if (btn.textContent?.includes('eny_0046_lbshamman')) {
+          const parent = btn.closest('div')?.textContent || btn.textContent
+          return parent.includes('✦')
+        }
+      }
+      return false
+    }, { timeout: 15000 })
+  })
 })

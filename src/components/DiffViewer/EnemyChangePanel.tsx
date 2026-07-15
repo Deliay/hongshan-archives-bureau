@@ -134,7 +134,7 @@ function renderTableEntry(change: { tableName: string; op: string; key: string; 
 
 function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   const [expanded, setExpanded] = useState(false)
-  const isAdded = ep.changes.some(c => c.op === 'added' && (c.tableName === 'EnemyTemplateDisplayInfoTable' || c.tableName === 'EnemyDisplayInfoTable'))
+  const isAdded = ep.changes.some(c => c.op === 'added' && c.key === ep.enemyId && (c.tableName === 'EnemyTemplateDisplayInfoTable' || c.tableName === 'EnemyDisplayInfoTable'))
   const [tagI18n, setTagI18n] = useState<Record<string, string>>({})
   const [fallbackDisplayData, setFallbackDisplayData] = useState<Record<string, any> | null>(null)
   const [fallbackDisplayData2, setFallbackDisplayData2] = useState<Record<string, any> | null>(null)
@@ -154,8 +154,6 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   }, [locale])
 
   useEffect(() => {
-    const hasAnyDisplay = ep.changes.some(c => c.tableName === 'EnemyTemplateDisplayInfoTable' || c.tableName === 'EnemyDisplayInfoTable')
-    if (hasAnyDisplay) return
     Promise.all([
       getCachedData<Record<string, any>>('EnemyTemplateDisplayInfoTable', () => fetchTableAll('EnemyTemplateDisplayInfoTable')).catch(() => ({})),
       getCachedData<Record<string, any>>('EnemyDisplayInfoTable', () => fetchTableAll('EnemyDisplayInfoTable')).catch(() => ({})),
@@ -167,7 +165,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
       if (key) setFallbackDisplayData((raw as Record<string, any>)[key])
       if (key2) setFallbackDisplayData2((raw2 as Record<string, any>)[key2])
     }).catch(() => {})
-  }, [ep.enemyId, ep.changes])
+  }, [ep.enemyId])
 
   const displayEntry = (() => {
     for (const tn of ['EnemyTemplateDisplayInfoTable', 'EnemyDisplayInfoTable']) {
