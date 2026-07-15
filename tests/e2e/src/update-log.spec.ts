@@ -56,5 +56,12 @@ test.describe('更新日志 (Update Log)', () => {
     const skillImages = expanded.locator('img')
     const imgCount = await skillImages.count()
     expect(imgCount).toBeGreaterThan(0)
+
+    // Should have factory/spaceship skill section with data
+    const hasFactorySkills = text.includes('基建技能')
+    if (hasFactorySkills) {
+      const hasFactoryDesc = /房间|生产|制造|效率|加速/.test(text)
+      expect(hasFactoryDesc).toBe(true)
+    }
   })
 })

@@ -324,6 +324,7 @@ function AddedOperatorDetail({ charId, entry }: { charId: string; entry: any; na
   return (
     <div className="space-y-3">
       <SkillPreview charId={charId} />
+      <SpaceshipSkillPreview charId={charId} />
 
       {entry?.profileRecord && entry.profileRecord.length > 0 && (
         <details className="group">
@@ -418,6 +419,61 @@ function SkillPreview({ charId }: { charId: string }) {
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
               )}
               <div className="text-xs text-[#E8E6E3] font-medium">{s.name}</div>
+            </div>
+            {s.desc && <div className="text-[10px] text-[#B0ACA6] leading-relaxed mt-1"><RichText text={s.desc} /></div>}
+          </div>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function SpaceshipSkillPreview({ charId }: { charId: string }) {
+  const [data, setData] = useState<{ name: string; desc: string; icon: string; roomType: number }[]>([])
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const [charSkillRaw, skillRaw, skillI18n] = await Promise.all([
+        getCachedData<Record<string, any>>('SpaceshipCharSkillTable', () => fetchTableAll('SpaceshipCharSkillTable')).catch(() => ({})),
+        getCachedData<Record<string, any>>('SpaceshipSkillTable', () => fetchTableAll('SpaceshipSkillTable')).catch(() => ({})),
+        getCachedData<Record<string, string>>('I18nDict_CN_SpaceshipSkillTable', () => fetchTableDictAll('SpaceshipSkillTable', 'CN')).catch(() => ({}) as Record<string, string>),
+      ])
+      if (cancelled) return
+      const charSkills = (charSkillRaw as Record<string, any>)[charId] as { skillList?: { skillId: string }[] } | undefined
+      const result: { name: string; desc: string; icon: string; roomType: number }[] = []
+      if (charSkills?.skillList) {
+        for (const item of charSkills.skillList) {
+          const skill = (skillRaw as Record<string, any>)[item.skillId]
+          if (skill) {
+            result.push({
+              name: resolveI18n(skill.name, skillI18n as Record<string, string>) || item.skillId,
+              desc: resolveI18n(skill.desc, skillI18n as Record<string, string>) || '',
+              icon: skill.icon || '',
+              roomType: skill.roomType ?? 0,
+            })
+          }
+        }
+      }
+      setData(result)
+    }
+    load()
+    return () => { cancelled = true }
+  }, [charId])
+  if (data.length === 0) return null
+  return (
+    <details className="group" open>
+      <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">基建技能（{data.length}）</summary>
+      <div className="mt-1 space-y-2">
+        {data.map((s, i) => (
+          <div key={i} className="px-2 py-1.5 rounded bg-[#0F0F12]">
+            <div className="flex items-center gap-2">
+              {s.icon && (
+                <img src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/${s.icon}.png`} alt=""
+                  className="w-6 h-6 object-contain bg-[#1A1B23] rounded"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              )}
+              <div className="text-xs text-[#E8E6E3] font-medium">{s.name}</div>
+              {s.roomType > 0 && <span className="text-[9px] text-[#5A5A62]">房间{s.roomType}</span>}
             </div>
             {s.desc && <div className="text-[10px] text-[#B0ACA6] leading-relaxed mt-1"><RichText text={s.desc} /></div>}
           </div>
