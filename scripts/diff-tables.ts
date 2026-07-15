@@ -273,7 +273,8 @@ async function main() {
 
   const dir1 = join(DATA_DIR, v1)
   const dir2 = join(DATA_DIR, v2)
-  const outDir = join(opts.opts().outDir || join(DATA_DIR, '__diffs__'), `${v1}__${v2}`)
+  const baseDir = opts.opts().outDir || join(DATA_DIR, '__diffs__')
+  const outDir = join(baseDir, `${v1}__${v2}`)
 
   console.log(`Old:  ${dir1}`)
   console.log(`New:  ${dir2}`)
@@ -364,6 +365,25 @@ async function main() {
   }
 
   process.stdout.write(`\r${completed}/${commonFiles.length}\n`)
+
+  // Write manifest
+  const writtenFiles = (await readdir(outDir)).filter((f) => f.endsWith('.json'))
+  const manifestPath = join(baseDir, 'manifest.json')
+  let manifest: { generatedAt: string; folders: { name: string; description?: string; fileCount: number; files: string[] }[] } = { generatedAt: new Date().toISOString().slice(0, 10), folders: [] }
+  try {
+    manifest = JSON.parse(await readFile(manifestPath, 'utf-8'))
+  } catch { /* new manifest */ }
+
+  const folderName = `${v1}__${v2}`
+  const existing = manifest.folders.findIndex((f) => f.name === folderName)
+  const entry = { name: folderName, description: existing >= 0 ? manifest.folders[existing].description : undefined, fileCount: writtenFiles.length, files: writtenFiles.sort() }
+  if (existing >= 0) {
+    manifest.folders[existing] = entry
+  } else {
+    manifest.folders.push(entry)
+  }
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2))
+  console.log(`Manifest: ${manifestPath}`)
   console.log('Done.')
 }
 
