@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useFolderManifest } from '../../hooks/useUpdateDiff'
+import OperatorChangePanel from '../../components/DiffViewer/OperatorChangePanel'
 
 function sumTableStats(
   fn: (s: { added: number; removed: number; changed: number }) => number,
@@ -64,10 +65,27 @@ function SummaryContent({
   const totalRemoved = tableStats ? sumTableStats(v => v.removed, tableStats) : 0
   const totalChanged = tableStats ? sumTableStats(v => v.changed, tableStats) : 0
 
+  const PINNED_TABLES = [
+    'CharacterTable',
+    'CharGrowthTable',
+    'SkillPatchTable',
+    'PotentialTalentEffectTable',
+    'SpaceshipSkillTable',
+    'SpaceshipCharSkillTable',
+  ]
+
   const tables = useMemo(() => {
-    return Object.entries(tableStats ?? {})
-      .sort((a, b) => (b[1].added + b[1].removed + b[1].changed) - (a[1].added + a[1].removed + a[1].changed))
-      .slice(0, maxTables)
+    const entries = Object.entries(tableStats ?? {})
+    const pinned: typeof entries = []
+    const rest: typeof entries = []
+    const pinnedSet = new Set(PINNED_TABLES.map(n => `${n}.json`))
+    for (const entry of entries) {
+      if (pinnedSet.has(entry[0])) pinned.push(entry)
+      else rest.push(entry)
+    }
+    pinned.sort((a, b) => PINNED_TABLES.indexOf(a[0].replace('.json', '')) - PINNED_TABLES.indexOf(b[0].replace('.json', '')))
+    rest.sort((a, b) => (b[1].added + b[1].removed + b[1].changed) - (a[1].added + a[1].removed + a[1].changed))
+    return [...pinned, ...rest].slice(0, maxTables)
   }, [tableStats, maxTables])
 
   return (
@@ -89,6 +107,8 @@ function SummaryContent({
         <StatCard label="移除" value={totalRemoved} color="#ef4444" />
         <StatCard label="变更" value={totalChanged} color="#ffbb03" />
       </div>
+
+      <OperatorChangePanel versionName={versionName} />
 
       <h3 className="text-sm font-medium text-[#E8E6E3] mb-3">
         变更表一览（{folder.fileCount} 个表）
