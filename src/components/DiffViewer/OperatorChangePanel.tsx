@@ -57,6 +57,87 @@ function ChangeBadge({ label, color, count }: { label: string; color: string; co
   )
 }
 
+function renderValue(v: unknown, locale: string): string {
+  if (v === undefined || v === null) return '（空）'
+  if (typeof v === 'object' && !Array.isArray(v)) {
+    const text = localeText(v, locale)
+    if (text) return `"${text}"`
+    if ('text' in (v as any) && (v as any).text) return `"${(v as any).text}"`
+    return JSON.stringify(v)
+  }
+  if (typeof v === 'string') return `"${v}"`
+  return String(v)
+}
+
+function renderChangeEntry(entry: any, op: string, locale: string) {
+  if (op === 'changed') {
+    const e = entry as { oldValue?: Record<string, any>; newValue?: Record<string, any>; changed?: Record<string, any> }
+    const changed = e.changed ?? {}
+    const keys = Object.keys(changed)
+    if (keys.length > 0) {
+      return (
+        <div className="space-y-1">
+          {keys.map((path) => {
+            const change = changed[path]
+            if (change.type === 'value') {
+              return (
+                <div key={path} className="text-[10px]">
+                  <span className="text-[#5A5A62] font-mono">{path}</span>
+                  <div className="flex gap-3 mt-0.5">
+                    <span className="text-[#ef4444]">旧 {renderValue(change.oldValue, locale)}</span>
+                    <span className="text-[#26bbfd]">新 {renderValue(change.newValue, locale)}</span>
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <div key={path} className="text-[10px]">
+                <span className="text-[#5A5A62] font-mono">{path}</span>
+                {Object.entries(change.changedLocales).map(([loc, val]) => {
+                  const v = val as { oldText: string; newText: string }
+                  return (
+                    <div key={loc} className="flex gap-2 mt-0.5">
+                      <span className="text-[#C9A96E]">{loc}</span>
+                      <span className="text-[#ef4444]">"{v.oldText}"</span>
+                      <span className="text-[#5A5A62]">→</span>
+                      <span className="text-[#26bbfd]">"{v.newText}"</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+    return <div className="text-[#8B8982] text-[10px]">无详细变更信息</div>
+  }
+  return <div className="text-[#8B8982] text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry)}</div>
+}
+
+function renderObj(obj: any, indent = ''): string {
+  if (obj === null || obj === undefined) return indent + '（空）'
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return indent + '[]'
+    return obj.map((v, i) => `${indent}[${i}]: ${renderObj(v, indent + '  ')}`).join('\n')
+  }
+  if (typeof obj === 'object') {
+    const text = 'text' in obj ? (obj.text || '') : ''
+    const id = 'id' in obj ? String(obj.id) : ''
+    if (id || text) return `${indent}${text ? `"${text}"` : ''}${id && text ? ' ' : ''}${id ? `(${id})` : ''}`.trim()
+    const keys = Object.keys(obj)
+    if (keys.length === 0) return indent + '{}'
+    return keys.map(k => {
+      const v = obj[k]
+      if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0) {
+        return `${indent}${k}:\n${renderObj(v, indent + '  ')}`
+      }
+      return `${indent}${k}: ${renderObj(v, '')}`.trim()
+    }).join('\n')
+  }
+  return String(obj)
+}
+
 function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
   const [expanded, setExpanded] = useState(false)
   const name = localeText(op.name, locale) || op.charId
@@ -142,16 +223,14 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
             const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
             const opColor = c.op === 'added' ? '#26bbfd' : c.op === 'removed' ? '#ef4444' : '#ffbb03'
             const e = c.entry
-            const value = c.op === 'changed' ? (e as any).newValue ?? (e as any).oldValue : e
-            const detail = typeof value === 'object' ? JSON.stringify(value).slice(0, 120) : String(value)
             return (
               <div key={c.tableName + c.key} className="text-xs border-b border-[#2A2A32]/50 pb-1.5 last:border-0 last:pb-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-1">
                   <span className="font-mono text-[10px] text-[#5A5A62]">{c.key}</span>
                   <span className="font-mono text-[10px] px-1 rounded" style={{ backgroundColor: `${color}18`, color }}>{label}</span>
                   <span className="text-[10px] font-mono" style={{ color: opColor }}>{opLabel}</span>
                 </div>
-                <div className="text-[#8B8982] mt-0.5 truncate">{detail}</div>
+                {renderChangeEntry(e, c.op, locale)}
               </div>
             )
           })}
