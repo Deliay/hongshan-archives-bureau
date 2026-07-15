@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useLocale } from '../../lib/locale'
 import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
 import { getCachedData } from '../../lib/cache'
@@ -259,7 +259,7 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
                   {c.tableName === 'UsableItemChestTable' ? (
                     <ChestContentEntry entry={c.entry} op={c.op} locale={locale} />
                   ) : (
-                    renderChangeEntry(c.entry, c.op, locale)
+                    <ItemEntryRenderer entry={c.entry} op={c.op} locale={locale} />
                   )}
                 </div>
               )
@@ -310,6 +310,107 @@ function ChestContentEntry({ entry, op, locale }: { entry: any; op: string; loca
               </span>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ItemEntryRenderer({ entry, op, locale }: { entry: any; op: string; locale: string }) {
+  if (op !== 'changed') return renderChangeEntry(entry, op, locale)
+  const changed = (entry as any)?.changed ?? {}
+  const obtainWayKeys = Object.keys(changed).filter(k => k.startsWith('obtainWayIds'))
+  const otherKeys = Object.keys(changed).filter(k => !k.startsWith('obtainWayIds'))
+  const filteredEntry = otherKeys.length > 0
+    ? { ...(entry as any), changed: Object.fromEntries(otherKeys.map(k => [k, changed[k]])) }
+    : { ...(entry as any), changed: {} }
+  return (
+    <div className="space-y-2">
+      {obtainWayKeys.length > 0 && <ObtainWayEntry entry={entry} locale={locale} />}
+      {otherKeys.length > 0 && renderChangeEntry(filteredEntry, op, locale)}
+    </div>
+  )
+}
+
+function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
+  const changed = (entry as any)?.changed ?? {}
+  const obtainWayKeys = Object.keys(changed).filter(k => k.startsWith('obtainWayIds'))
+  const oldValue: string[] = (entry as any)?.oldValue?.obtainWayIds ?? []
+  const newValue: string[] = (entry as any)?.newValue?.obtainWayIds ?? []
+  const removed = oldValue.filter(id => !newValue.includes(id))
+  const added = newValue.filter(id => !oldValue.includes(id))
+  const unchanged = newValue.filter(id => oldValue.includes(id))
+
+  const [wayNames, setWayNames] = useState<Record<string, string>>({})
+  const [systemJumpI18n, setSystemJumpI18n] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    getCachedData<Record<string, string>>(`I18nDict_${locale}_SystemJumpTable`, () => fetchTableDictAll('SystemJumpTable', locale))
+      .then(d => setSystemJumpI18n(d)).catch(() => {})
+  }, [locale])
+
+  const allWayIds = useMemo(() => [...new Set([...oldValue, ...newValue])], [oldValue, newValue])
+  useEffect(() => {
+    if (allWayIds.length === 0) return
+    let cancelled = false
+    getCachedData<Record<string, any>>('SystemJumpTable', () => fetchTableAll('SystemJumpTable'))
+      .then(raw => {
+        if (cancelled) return
+        const map: Record<string, string> = {}
+        for (const wid of allWayIds) {
+          const e = (raw as Record<string, any>)[wid]
+          if (e) map[wid] = resolveI18n(e.desc, systemJumpI18n) || localeText(e.desc, locale) || wid
+        }
+        setWayNames(map)
+      }).catch(() => {})
+    return () => { cancelled = true }
+  }, [allWayIds, locale, systemJumpI18n])
+
+  const hasChanges = added.length > 0 || removed.length > 0 || unchanged.length > 0
+
+  return (
+    <div className="px-2 py-1 rounded bg-[#0F0F12]">
+      <div className="text-[10px] text-[#8B8982] mb-1">获取方式</div>
+      {obtainWayKeys.length > 0 && !hasChanges ? (
+        <div className="text-[10px] text-[#5A5A62]">数组长度变更（{oldValue.length} → {newValue.length}）</div>
+      ) : (
+        <div className="space-y-1">
+          {removed.length > 0 && (
+            <div>
+              <div className="text-[10px] text-[#ef4444] mb-0.5">移除</div>
+              <div className="flex flex-wrap gap-1">
+                {removed.map(wid => (
+                  <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#ef4444] line-through">
+                    <RichText text={wayNames[wid] || wid} />
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {added.length > 0 && (
+            <div>
+              <div className="text-[10px] text-[#26bbfd] mb-0.5">新增</div>
+              <div className="flex flex-wrap gap-1">
+                {added.map(wid => (
+                  <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-[#14321e] text-[#26bbfd]">
+                    <RichText text={wayNames[wid] || wid} />
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {unchanged.length > 0 && (
+            <div>
+              <div className="text-[10px] text-[#8B8982] mb-0.5">已存在</div>
+              <div className="flex flex-wrap gap-1">
+                {unchanged.map(wid => (
+                  <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6]">
+                    <RichText text={wayNames[wid] || wid} />
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
