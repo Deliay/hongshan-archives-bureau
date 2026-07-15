@@ -28,6 +28,28 @@ const TABLE_COLORS: Record<string, string> = {
   SpaceshipCharSkillTable: '#06b6d4',
 }
 
+function getFieldContext(path: string, oldValue: any, newValue: any): string {
+  const match = path.match(/^(profileVoice|profileRecord)\[(\d+)]\./)
+  if (!match) return ''
+  const [, field, idxStr] = match
+  const idx = Number(idxStr)
+  const oldEntry = oldValue?.[field]?.[idx]
+  const newEntry = newValue?.[field]?.[idx]
+  if (field === 'profileVoice') {
+    const oldTitle = oldEntry ? localeText(oldEntry.voiceTitle, 'CN') || oldEntry.voiceIndex || '' : ''
+    const newTitle = newEntry ? localeText(newEntry.voiceTitle, 'CN') || newEntry.voiceIndex || '' : ''
+    const title = newTitle || oldTitle
+    return title ? `#${idx} ${title}` : ''
+  }
+  if (field === 'profileRecord') {
+    const oldTitle = oldEntry ? localeText(oldEntry.recordTitle, 'CN') || '' : ''
+    const newTitle = newEntry ? localeText(newEntry.recordTitle, 'CN') || '' : ''
+    const title = newTitle || oldTitle
+    return title ? `[${idx}] ${title}` : ''
+  }
+  return ''
+}
+
 function localeText(obj: unknown, locale: string): string {
   if (!obj || typeof obj !== 'object') return String(obj ?? '')
   const dict = obj as Record<string, string>
@@ -86,10 +108,12 @@ function renderChangeEntry(entry: any, op: string, locale: string) {
         <div className="space-y-1">
           {keys.map((path) => {
             const change = changed[path]
+            const context = getFieldContext(path, e.oldValue, e.newValue)
             if (change.type === 'value') {
               return (
                 <div key={path} className="text-[10px]">
                   <span className="text-[#5A5A62] font-mono">{path}</span>
+                  {context && <span className="ml-2 text-[#8B8982]">{context}</span>}
                   <div className="flex gap-3 mt-0.5">
                     <span className="text-[#ef4444]">旧 {formatDiffValue(path, change.oldValue, locale)}</span>
                     <span className="text-[#26bbfd]">新 {formatDiffValue(path, change.newValue, locale)}</span>
