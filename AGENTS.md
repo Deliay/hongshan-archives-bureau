@@ -73,9 +73,20 @@ tests/
 | SpaceshipSkillTable | `skillId` | `name`, `desc`, `icon`, `roomType`, `effectType`, `parameters` | Factory/spaceship skill data |
 | ItemTable | `itemId` | `name` (i18n), `rarity`, `type` (numeric), `desc` (i18n), `decoDesc` (i18n), `iconId`, `iconCompositeId`, `obtainWayIds[]`, `noObtainWayHint` (i18n) | Items/materials |
 | ItemTypeTable | numeric string | `name` (i18n), `itemType`, `storageSpace` | Item type display names |
+| ItemShowingTypeTable | numeric string | `name` (i18n), `icon`, `sortId`, `type` | Item showing type names/icons |
+| ValuableDepot | numeric string | `name` (i18n), `icon`, `storageItemType[]`, `type` | Item valuable tab type names/icons |
 | FullBottleTable | `itemId` | `liquidId`, `liquidCapacity` | Item full-bottle liquid overlay |
 | SystemJumpTable | `wayId` | `iconId`, `desc` (i18n) | Item obtain way hints |
 | UsableItemChestTable | `itemId` | `rewardIdList[]` | Item chest contents |
+| TextTable | string key | `{ id, text }` i18n object | Global text strings, e.g. `LUA_WEAPON_TYPE_1` → weapon type names |
+| EnemyTemplateDisplayInfoTable | `templateId` | `name` (i18n), `nickname` (i18n), `description` (i18n), `displayType`, `abilityDescIds[]`, `tags[]` | Enemy display info (name, desc, abilities, type) |
+| EnemyTable | `enemyId` | `attrTemplateId`, `templateId`, `modelId` | Enemy raw data (no name/desc) |
+| EnemyAbilityDescTable | `abilityId` | `name` (i18n), `description` (i18n) | Enemy ability descriptions |
+| EnemyAttributeTemplateTable | `templateId` | `levelDependentAttributes[]`, `levelIndependentAttributes`, `physicalDmgResistScalar`, `fireDmgResistScalar`, etc. | Enemy combat attributes per level |
+| EnemyTagTable | `tagId` | `tagText` (i18n) | Enemy tag display names |
+| DisplayEnemyTypeTable | numeric string | `name` (i18n) | Enemy type names (Normal/Elite/Boss/Advanced/Leader) |
+| WikiEntryDataTable | string key | `refMonsterTemplateId`, `groupId` | Maps enemies to wiki groups |
+| WikiGroupTable | `groupId` | `list[]` with `groupName` (i18n), `iconId` | Wiki group definitions (天使, 裂地者, 宏山, 动物) |
 
 ## Data Flow Pattern (example: operators)
 
@@ -151,3 +162,30 @@ Fixed-position tooltips (`position: fixed`) must be measured after render via `g
 
 ### Item Tooltip
 `ItemTooltipOverlay` uses a centered modal (`fixed inset-0`) — this is safe for viewport overflow. The `HyperlinkTooltip` component uses positioned tooltips and needs manual viewport clamping.
+
+### Blackboard % Format
+`formatBlackboard` handles `{key:0.0%}` patterns by multiplying the value by 100 before applying decimal formatting and appending `%`. This matches .NET's numeric format string behavior where `%` means "multiply by 100".
+
+### Weapon Type Names from TextTable
+Weapon type names (单手剑/施术单元/双手剑/长柄武器/手铳) are stored in `TextTable` with keys `LUA_WEAPON_TYPE_{1,2,3,5,6}`. Fetch `TextTable` + i18n dict to resolve them at the hook level.
+
+### Weapon Data Source (WeaponBasicTable + ItemTable)
+Weapons have data in two tables: `WeaponBasicTable` (combat data: weaponType, skills, breakthrough, upgrade templates) and `ItemTable` (display data: name, decoDesc, iconId). The `ItemTable` key is the weaponId (e.g. `wpn_sword_0003`), NOT `item_wpn_xxx`. Always pair both tables when adapting weapons.
+
+### Skill tagId
+Each skill in `SkillPatchDataBundle[0]` has a `tagId` field that categorizes it (e.g. `"attr_str"`, `"attr_main"`, `"tactic"`). The third weapon skill (`sk_wpn_*`) always has `tagId: "tactic"`.
+
+### EnemyTemplateDisplayInfoTable (not EnemyDisplayInfoTable)
+Enemy names, descriptions, types, tags, and ability IDs come from `EnemyTemplateDisplayInfoTable` (keyed by `templateId`). This table does NOT have an `enemyId` field — use `templateId` as the canonical ID. `EnemyDisplayInfoTable` exists but `EnemyTemplateDisplayInfoTable` has richer data.
+
+### Enemy Template ID as ID
+`EnemyTemplateDisplayInfoTable` entries have `templateId` but no `enemyId`. Always fall back to `templateId` when building the enemy ID in `adaptEnemy`.
+
+### Enemy Wiki Groups
+Enemy faction/group membership is through `WikiEntryDataTable` (maps `refMonsterTemplateId` → `groupId`) + `WikiGroupTable` (group names with i18n). The `wiki_type_monster` entry in `WikiGroupTable` contains `list[]` with group definitions (天使/裂地者/宏山/动物).
+
+### Enemy Ability Descriptions
+`EnemyTemplateDisplayInfoTable.abilityDescIds[]` contains keys into `EnemyAbilityDescTable`. Each ability entry has `name` (often empty/0) and `description` (i18n). Fetch at component level — the detail page needs the raw display info table to find the right abilityDescIds for the given templateId.
+
+### Enemy Attribute Template
+`EnemyAttributeTemplateTable` contains per-level attribute arrays (`levelDependentAttributes[]` each with `{attrType, attrValue}`), fixed attributes (`levelIndependentAttributes`), damage resist scalars, and resilience stats.
