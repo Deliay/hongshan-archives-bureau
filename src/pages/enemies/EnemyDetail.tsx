@@ -43,21 +43,22 @@ export default function EnemyDetail() {
     if (!enemy) return
     let cancelled = false
     async function load() {
-      const [abilityRaw, abilityI18n, attrRaw] = await Promise.all([
+      const [dispRaw, abilityRaw, abilityI18n, attrRaw] = await Promise.all([
+        getCachedData<Record<string, any>>('EnemyTemplateDisplayInfoTable', () => fetchTableAll('EnemyTemplateDisplayInfoTable')),
         getCachedData<Record<string, any>>('EnemyAbilityDescTable', () => fetchTableAll('EnemyAbilityDescTable')),
         getCachedData<Record<string, string>>(`I18nDict_${locale}_EnemyAbilityDescTable`, () => fetchTableDictAll('EnemyAbilityDescTable', locale)),
         getCachedData<Record<string, any>>('EnemyAttributeTemplateTable', () => fetchTableAll('EnemyAttributeTemplateTable')),
       ])
       if (cancelled) return
 
-      const abilityList: { name: string; description: string }[] = []
-      const displayInfo = Object.values(enemies ?? []).find((e: any) => e.templateId === enemy.templateId) as any
+      const displayInfo = dispRaw[enemy.templateId] as { abilityDescIds?: string[] } | undefined
       const abilityIds: string[] = displayInfo?.abilityDescIds ?? []
+      const abilityList: { name: string; description: string }[] = []
       for (const aid of abilityIds) {
         const entry = abilityRaw[aid]
         if (entry) {
           abilityList.push({
-            name: resolveI18n(entry.name, abilityI18n) || aid,
+            name: resolveI18n(entry.name, abilityI18n),
             description: resolveI18n(entry.description, abilityI18n),
           })
         }
@@ -74,7 +75,7 @@ export default function EnemyDetail() {
     setExtraLoading(true)
     load()
     return () => { cancelled = true }
-  }, [enemy, locale, enemies])
+  }, [enemy, locale])
 
   if (loading || !enemy) {
     if (loading) return <div className="text-[#8B8982] text-sm">加载中…</div>
