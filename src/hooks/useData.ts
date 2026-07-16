@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember } from '../lib/types'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 
@@ -276,7 +276,7 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
     const raw = rawData[id]
     if (!raw) throw new Error(`Operator ${id} not found`)
 
-    const [growthRaw, growthI18n, wpnRaw, skillPatchRaw, skillPatchI18n, spaceshipCharRaw, spaceshipSkillRaw, spaceshipI18n] = await Promise.all([
+    const [growthRaw, growthI18n, wpnRaw, skillPatchRaw, skillPatchI18n, spaceshipCharRaw, spaceshipSkillRaw, spaceshipI18n, skillConditionRaw, skillConditionI18n] = await Promise.all([
       getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')).then(r => r[id]),
       getTableI18nDict('CharGrowthTable', locale).catch(() => ({}) as Record<string, string>),
       getCachedData<Record<string, any>>('CharWpnRecommendTable', () => fetchTableAll('CharWpnRecommendTable')).then(r => r[id]).catch(() => null),
@@ -285,6 +285,8 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
       getCachedData<Record<string, any>>('SpaceshipCharSkillTable', () => fetchTableAll('SpaceshipCharSkillTable')).catch(() => ({}) as Record<string, any>),
       getCachedData<Record<string, any>>('SpaceshipSkillTable', () => fetchTableAll('SpaceshipSkillTable')).catch(() => ({}) as Record<string, any>),
       getTableI18nDict('SpaceshipSkillTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('SkillConditionTable', () => fetchTableAll('SkillConditionTable')).catch(() => ({}) as Record<string, any>),
+      getTableI18nDict('SkillConditionTable', locale).catch(() => ({}) as Record<string, string>),
     ])
 
     const op = adaptOperator(raw, i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap)
@@ -346,6 +348,23 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
           icon: g.icon ?? '',
           skillIdList: g.skillIdList ?? [],
           desc: resolveI18n(g.desc, growthI18n) ? { text: resolveI18n(g.desc, growthI18n) } : (g.desc ?? { text: '' }),
+          condition1: g.conditionId1 ? {
+            conditionId: g.conditionId1,
+            name: resolveI18n(g.conditionName1, growthI18n) || '',
+            icon: g.conditionIcon1 || '',
+            desc: resolveI18n(g.conditionDesc1, growthI18n) || '',
+            postDesc: resolveI18n(g.conditionPostDesc1, growthI18n) || '',
+            descInactive: resolveI18n(g.conditionDescInactive1, growthI18n) || '',
+          } : undefined,
+          condition2: g.conditionId2 ? {
+            conditionId: g.conditionId2,
+            name: resolveI18n(g.conditionName2, growthI18n) || '',
+            icon: g.conditionIcon2 || '',
+            desc: resolveI18n(g.conditionDesc2, growthI18n) || '',
+            postDesc: resolveI18n(g.conditionPostDesc2, growthI18n) || '',
+            descInactive: resolveI18n(g.conditionDescInactive2, growthI18n) || '',
+            skillId: g.skillIdList?.length > 1 ? g.skillIdList[g.skillIdList.length - 1] : undefined,
+          } : undefined,
         }))
       : []
 
@@ -408,7 +427,19 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
       }
     }
 
-    return { op, attributes, breakCostMap, talentNodeMap, wpnRecommend, skillGroups, skillLevelUp, skillPatchMap, factorySkills }
+    const skillConditions: Record<string, SkillCondition> = {}
+    for (const [k, v] of Object.entries<any>(skillConditionRaw)) {
+      skillConditions[k] = {
+        condId: v.condId,
+        condType: v.condType,
+        leftAttrType: v.leftAttrType,
+        rightAttrType: v.rightAttrType,
+        compareOp: v.compareOp,
+        toastText: resolveI18n(v.toastText, skillConditionI18n) || '',
+      }
+    }
+
+    return { op, attributes, breakCostMap, talentNodeMap, wpnRecommend, skillGroups, skillLevelUp, skillPatchMap, factorySkills, skillConditions }
   }, [locale, id])
 }
 

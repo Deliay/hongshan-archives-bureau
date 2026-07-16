@@ -330,6 +330,12 @@ function getPatchesAtLevel(group: SkillGroup, skillPatchMap: Record<string, Skil
   return patches
 }
 
+function getPatchesForSkill(skillId: string, skillPatchMap: Record<string, SkillPatchData[]>, level: number): SkillPatchData[] {
+  const bundle = skillPatchMap[skillId]
+  if (!bundle) return []
+  return bundle.filter(p => p.level === level)
+}
+
 function collectBlackboards(patches: SkillPatchData[]): Record<string, number> {
   const bb: Record<string, number> = {}
   for (const patch of patches) {
@@ -347,31 +353,28 @@ function localeText(obj: unknown, locale: string, fallback?: string): string {
   return dict[locale] || dict.CN || (obj as any).text || fallback || ''
 }
 
-function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatchMap: Record<string, SkillPatchData[]> }) {
-  const [level, setLevel] = useState(12)
-  const { locale } = useLocale()
-
-  const patches = useMemo(() => getPatchesAtLevel(group, skillPatchMap, level), [group, skillPatchMap, level])
-
-  const typeName = SKILL_TYPE_LABELS[group.skillGroupType] ?? `类型${group.skillGroupType}`
-  const groupName = localeText(group.name, locale)
-  const groupDesc = localeText(group.desc, locale)
-
-  const blackboards = useMemo(() => collectBlackboards(patches), [patches])
-
-  const descText = useMemo(() => {
-    if (!groupDesc) return ''
-    if (Object.keys(blackboards).length === 0) return groupDesc
-    return formatBlackboard(groupDesc, blackboards)
-  }, [groupDesc, blackboards])
-
+function SkillFormColumn({
+  icon,
+  name,
+  patches,
+  descText,
+  postDescText,
+  locale: locale_,
+}: {
+  icon: string
+  name: string
+  patches: SkillPatchData[]
+  descText: string
+  postDescText: string
+  locale: string
+}) {
   return (
-    <div className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0 flex items-center justify-center">
-          {group.icon ? (
+    <div className="flex-1 min-w-0 p-2.5 rounded border border-[#2A2A32] bg-[#0F0F12]">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 rounded border border-[#2A2A32] bg-[#1A1B23] overflow-hidden shrink-0 flex items-center justify-center">
+          {icon ? (
             <img
-              src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${group.icon}.png`}
+              src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${icon}.png`}
               alt=""
               className="w-full h-full object-cover"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
@@ -380,64 +383,213 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
             <span className="text-xs text-[#5A5A62]">?</span>
           )}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#C9A96E]/20 text-[#C9A96E] font-mono">{typeName}</span>
-            <span className="text-sm font-medium text-[#E8E6E3] truncate">{groupName || group.skillGroupId}</span>
+        <div className="min-w-0">
+          <div className="text-xs font-medium text-[#E8E6E3] truncate leading-tight">{name}</div>
+        </div>
+      </div>
+
+      {patches.length > 0 && (() => {
+        const p = patches[0]
+        return (
+          <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#5A5A62] mb-2">
+            {p.costType !== undefined && p.costValue > 0 && (
+              <span>SP {p.costValue}</span>
+            )}
+            {p.coolDown > 0 && (
+              <span>CD {p.coolDown}s</span>
+            )}
           </div>
+        )
+      })()}
 
-          {patches.length > 0 && (() => {
-            const p = patches[0]
+      {descText && (
+        <div className="text-xs text-[#B0ACA6] leading-relaxed">
+          <RichText text={descText} />
+        </div>
+      )}
+
+      {postDescText && (
+        <div className="text-xs text-[#8B8982] leading-relaxed mt-1.5">
+          <RichText text={postDescText} />
+        </div>
+      )}
+
+      {patches.length > 0 && patches[0].subDescNameList?.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {patches[0].subDescNameList.map((sub, i) => {
+            const subName = localeText(sub, locale_)
+            if (!subName) return null
+            const subVal = patches[0].subDescList?.[i] ?? ''
             return (
-              <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#5A5A62] mt-1">
-                {p.costType !== undefined && p.costValue > 0 && (
-                  <span>SP {p.costValue}</span>
-                )}
-                {p.coolDown > 0 && (
-                  <span>CD {p.coolDown}s</span>
-                )}
-                <span>Lv.{level}</span>
-                {level === 12 && <span className="text-[10px] text-[#C9A96E]">M3</span>}
-              </div>
+              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
+                {subName}: {subVal}
+              </span>
             )
-          })()}
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
-          {descText && (
-            <div className="text-xs text-[#B0ACA6] leading-relaxed mt-2">
-              <RichText text={descText} />
-            </div>
-          )}
+function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatchMap: Record<string, SkillPatchData[]> }) {
+  const [level, setLevel] = useState(12)
+  const { locale } = useLocale()
 
-          {patches.length > 0 && patches[0].subDescNameList?.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {patches[0].subDescNameList.map((sub, i) => {
-                const subName = localeText(sub, locale)
-                if (!subName) return null
-                const subVal = patches[0].subDescList?.[i] ?? ''
-                return (
-                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
-                    {subName}: {subVal}
-                  </span>
-                )
-              })}
-            </div>
-          )}
+  const isDual = !!(group.condition1 && group.condition2 && group.condition1.conditionId)
 
-          <div className="flex items-center gap-1 mt-3">
-            <span className="text-[10px] text-[#5A5A62]">等级</span>
-            <input
-              type="range"
-              min={1}
-              max={12}
-              value={level}
-              onChange={(e) => setLevel(Number(e.target.value))}
-              className="flex-1 h-1 accent-[#C9A96E]"
-            />
-            <span className="text-[10px] text-[#C9A96E] font-mono w-6 text-right">
-              {level}
-            </span>
+  const typeName = SKILL_TYPE_LABELS[group.skillGroupType] ?? `类型${group.skillGroupType}`
+  const groupName = localeText(group.name, locale)
+
+  const patches1 = useMemo(() => {
+    if (!isDual) return getPatchesAtLevel(group, skillPatchMap, level)
+    return getPatchesForSkill(group.skillIdList[0], skillPatchMap, level)
+  }, [isDual, group, skillPatchMap, level])
+
+  const patches2 = useMemo(() => {
+    if (!isDual) return []
+    const skillId = group.condition2?.skillId || group.skillIdList[0]
+    return getPatchesForSkill(skillId, skillPatchMap, level)
+  }, [isDual, group, skillPatchMap, level])
+
+  const blackboards1 = useMemo(() => collectBlackboards(patches1), [patches1])
+  const blackboards2 = useMemo(() => collectBlackboards(patches2), [patches2])
+
+  const cond1 = group.condition1!
+  const cond2 = group.condition2!
+
+  const descText1 = useMemo(() => {
+    if (!cond1?.desc || !isDual) return ''
+    const bb = Object.keys(blackboards1).length > 0 ? blackboards1 : blackboards2
+    if (Object.keys(bb).length === 0) return cond1.desc
+    return formatBlackboard(cond1.desc, bb)
+  }, [cond1?.desc, blackboards1, blackboards2, isDual])
+
+  const descText2 = useMemo(() => {
+    if (!cond2?.desc || !isDual) return ''
+    const bb = Object.keys(blackboards2).length > 0 ? blackboards2 : blackboards1
+    if (Object.keys(bb).length === 0) return cond2.desc
+    return formatBlackboard(cond2.desc, bb)
+  }, [cond2?.desc, blackboards2, blackboards1, isDual])
+
+  const postDescText1 = useMemo(() => {
+    if (!cond1?.postDesc || !isDual) return ''
+    const bb = Object.keys(blackboards1).length > 0 ? blackboards1 : blackboards2
+    if (Object.keys(bb).length === 0) return cond1.postDesc
+    return formatBlackboard(cond1.postDesc, bb)
+  }, [cond1?.postDesc, blackboards1, blackboards2, isDual])
+
+  const postDescText2 = useMemo(() => {
+    if (!cond2?.postDesc || !isDual) return ''
+    const bb = Object.keys(blackboards2).length > 0 ? blackboards2 : blackboards1
+    if (Object.keys(bb).length === 0) return cond2.postDesc
+    return formatBlackboard(cond2.postDesc, bb)
+  }, [cond2?.postDesc, blackboards2, blackboards1, isDual])
+
+  /* --- single-form (original) --- */
+  const groupDesc = localeText(group.desc, locale)
+  const singlePatches = useMemo(() => getPatchesAtLevel(group, skillPatchMap, level), [group, skillPatchMap, level])
+  const singleBlackboards = useMemo(() => collectBlackboards(singlePatches), [singlePatches])
+  const singleDescText = useMemo(() => {
+    if (!groupDesc) return ''
+    if (Object.keys(singleBlackboards).length === 0) return groupDesc
+    return formatBlackboard(groupDesc, singleBlackboards)
+  }, [groupDesc, singleBlackboards])
+
+  return (
+    <div className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#C9A96E]/20 text-[#C9A96E] font-mono">{typeName}</span>
+        <span className="text-sm font-medium text-[#E8E6E3] truncate">{groupName || group.skillGroupId}</span>
+      </div>
+
+      {isDual ? (
+        <div className="flex gap-3">
+          <SkillFormColumn
+            icon={cond1.icon || group.icon}
+            name={cond1.name}
+            patches={patches1}
+            descText={descText1}
+            postDescText={postDescText1}
+            locale={locale}
+          />
+          <SkillFormColumn
+            icon={cond2.icon || group.icon}
+            name={cond2.name}
+            patches={patches2}
+            descText={descText2}
+            postDescText={postDescText2}
+            locale={locale}
+          />
+        </div>
+      ) : (
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0 flex items-center justify-center">
+            {group.icon ? (
+              <img
+                src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${group.icon}.png`}
+                alt=""
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            ) : (
+              <span className="text-xs text-[#5A5A62]">?</span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            {singlePatches.length > 0 && (() => {
+              const p = singlePatches[0]
+              return (
+                <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#5A5A62] mt-1">
+                  {p.costType !== undefined && p.costValue > 0 && (
+                    <span>SP {p.costValue}</span>
+                  )}
+                  {p.coolDown > 0 && (
+                    <span>CD {p.coolDown}s</span>
+                  )}
+                  <span>Lv.{level}</span>
+                  {level === 12 && <span className="text-[10px] text-[#C9A96E]">M3</span>}
+                </div>
+              )
+            })()}
+
+            {singleDescText && (
+              <div className="text-xs text-[#B0ACA6] leading-relaxed mt-2">
+                <RichText text={singleDescText} />
+              </div>
+            )}
+
+            {singlePatches.length > 0 && singlePatches[0].subDescNameList?.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {singlePatches[0].subDescNameList.map((sub, i) => {
+                  const subName = localeText(sub, locale)
+                  if (!subName) return null
+                  const subVal = singlePatches[0].subDescList?.[i] ?? ''
+                  return (
+                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
+                      {subName}: {subVal}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
+      )}
+
+      <div className="flex items-center gap-1 mt-3">
+        <span className="text-[10px] text-[#5A5A62]">等级</span>
+        <input
+          type="range"
+          min={1}
+          max={12}
+          value={level}
+          onChange={(e) => setLevel(Number(e.target.value))}
+          className="flex-1 h-1 accent-[#C9A96E]"
+        />
+        <span className="text-[10px] text-[#C9A96E] font-mono w-6 text-right">
+          {level}
+        </span>
       </div>
     </div>
   )

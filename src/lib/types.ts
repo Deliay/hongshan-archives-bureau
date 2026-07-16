@@ -36,6 +36,16 @@ export interface WeaponRecommendation {
   weaponIds3: string[]
 }
 
+export interface SkillGroupCondition {
+  conditionId: string
+  name: string
+  icon: string
+  desc: string
+  postDesc: string
+  descInactive: string
+  skillId?: string
+}
+
 export interface SkillGroup {
   skillGroupId: string
   skillGroupType: number
@@ -43,6 +53,17 @@ export interface SkillGroup {
   icon: string
   skillIdList: string[]
   desc: { id?: number; text?: string }
+  condition1?: SkillGroupCondition
+  condition2?: SkillGroupCondition
+}
+
+export interface SkillCondition {
+  condId: string
+  condType: number
+  leftAttrType: number
+  rightAttrType: number
+  compareOp: number
+  toastText: string
 }
 
 export interface SkillPatchData {
@@ -88,6 +109,7 @@ export interface OperatorDetailData {
   skillLevelUp: SkillLevelUpCost[]
   skillPatchMap: Record<string, SkillPatchData[]>
   factorySkills: FactorySkill[]
+  skillConditions: Record<string, SkillCondition>
 }
 
 export interface Operator {
