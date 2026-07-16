@@ -415,11 +415,12 @@ function SkillFormColumn({
       )}
 
       {patches.length > 0 && (() => {
-        const subDescs = patches[0].subDescDataList.filter(s => !conditionId || s.conditionId === conditionId || s.conditionId === '')
-        if (subDescs.length === 0) return null
+        const allSubDescs = patches.flatMap(p => p.subDescDataList)
+          .filter(s => !conditionId || s.conditionId === conditionId || s.conditionId === '')
+        if (allSubDescs.length === 0) return null
         return (
           <div className="flex flex-wrap gap-1 mt-2">
-            {subDescs.map((s, i) => (
+            {allSubDescs.map((s, i) => (
               <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
                 {s.name?.text || s.name?.id || ''}: {s.desc}
               </span>
@@ -548,11 +549,11 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
             )}
 
             {singlePatches.length > 0 && (() => {
-              const subDescs = singlePatches[0].subDescDataList.filter(s => !s.conditionId)
-              if (subDescs.length === 0) return null
+              const allSubDescs = singlePatches.flatMap(p => p.subDescDataList).filter(s => !s.conditionId)
+              if (allSubDescs.length === 0) return null
               return (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {subDescs.map((s, i) => (
+                  {allSubDescs.map((s, i) => (
                     <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
                       {s.name?.text || s.name?.id || ''}: {s.desc}
                     </span>
