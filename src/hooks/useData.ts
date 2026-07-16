@@ -392,12 +392,13 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
           level: p.level,
           skillId: p.skillId,
           skillName: p.skillName ?? { text: '' },
-          subDescList: p.subDescList ?? [],
-          subDescNameList: (p.subDescNameList ?? []).map((s: any) =>
-            resolveI18n(s, skillPatchI18n)
-              ? { text: resolveI18n(s, skillPatchI18n) }
-              : s,
-          ),
+          subDescDataList: (p.subDescDataList ?? []).map((s: any) => ({
+            conditionId: s.conditionId ?? '',
+            desc: s.desc ?? '',
+            name: resolveI18n(s.name, skillPatchI18n)
+              ? { text: resolveI18n(s.name, skillPatchI18n) }
+              : s.name ?? { text: '' },
+          })),
         }))
       }
     }

@@ -353,61 +353,20 @@ function localeText(obj: unknown, locale: string, fallback?: string): string {
   return dict[locale] || dict.CN || (obj as any).text || fallback || ''
 }
 
-const BB_LABELS: Record<string, string> = {
-  atk_scale: '伤害倍率',
-  atk_scale_wisd: '智识伤害倍率',
-  atk_scale_will: '意志伤害倍率',
-  poise: '失衡值',
-  duration: '持续时间',
-  duration2: '意志持续时间',
-  laser_count: '激光数量',
-  atk_scale_laser: '激光伤害倍率',
-  display_atk_scale_laser: '激光总伤害',
-  atk_scale_laser_will: '意志激光伤害倍率',
-  display_atk_scale_laser_will: '意志激光总伤害',
-  atb: 'ATB获取',
-  atb_return_wisd: '智识ATB返还',
-  atk_scale_touch: '接触伤害倍率',
-  atk_scale_boom: '爆炸伤害倍率',
-  atk_scale_laser1: '激光一段倍率',
-  atk_scale_laser2: '激光二段倍率',
-}
-
-function BlackboardParams({ blackboard }: { blackboard: Record<string, number> }) {
-  const entries = Object.entries(blackboard).filter(([k]) => !k.startsWith('display_'))
-  if (entries.length === 0) return null
-  return (
-    <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2">
-      {entries.map(([key, value]) => {
-        const label = BB_LABELS[key] || key
-        const isPct = value < 1 && /scale|rate|vul|reduce/i.test(key)
-        const fmt = isPct ? `{${key}:0.0%}` : `{${key}:0}`
-        const formatted = formatBlackboard(fmt, { [key]: value })
-        return (
-          <span key={key} className="text-[10px] text-[#8B8982] whitespace-nowrap">
-            <span className="text-[#5A5A62]">{label}</span>
-            <span className="text-[#C9A96E] ml-1">{formatted}</span>
-          </span>
-        )
-      })}
-    </div>
-  )
-}
-
 function SkillFormColumn({
   icon,
   name,
   patches,
   mainDescText,
   postDescText,
-  locale: locale_,
+  conditionId,
 }: {
   icon: string
   name: string
   patches: SkillPatchData[]
   mainDescText: string
   postDescText: string
-  locale: string
+  conditionId: string
 }) {
   return (
     <div className="flex-1 min-w-0 p-2.5 rounded border border-[#2A2A32] bg-[#0F0F12]">
@@ -449,28 +408,25 @@ function SkillFormColumn({
         </div>
       )}
 
-      {patches.length > 0 && <BlackboardParams blackboard={collectBlackboards(patches)} />}
-
       {postDescText && (
         <div className="text-xs text-[#C9A96E]/70 leading-relaxed mt-1.5 border-t border-[#2A2A32] pt-1.5">
           <RichText text={postDescText} />
         </div>
       )}
 
-      {patches.length > 0 && patches[0].subDescNameList?.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2">
-          {patches[0].subDescNameList.map((sub, i) => {
-            const subName = localeText(sub, locale_)
-            if (!subName) return null
-            const subVal = patches[0].subDescList?.[i] ?? ''
-            return (
+      {patches.length > 0 && (() => {
+        const subDescs = patches[0].subDescDataList.filter(s => !conditionId || s.conditionId === conditionId || s.conditionId === '')
+        if (subDescs.length === 0) return null
+        return (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {subDescs.map((s, i) => (
               <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
-                {subName}: {subVal}
+                {s.name?.text || s.name?.id || ''}: {s.desc}
               </span>
-            )
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -543,7 +499,7 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
             patches={condPatches1}
             mainDescText={mainDescText}
             postDescText={postDescText1}
-            locale={locale}
+            conditionId={cond1.conditionId}
           />
           <SkillFormColumn
             icon={cond2.icon || group.icon}
@@ -551,7 +507,7 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
             patches={condPatches2}
             mainDescText={mainDescText}
             postDescText={postDescText2}
-            locale={locale}
+            conditionId={cond2.conditionId}
           />
         </div>
       ) : (
@@ -591,20 +547,19 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
               </div>
             )}
 
-            {singlePatches.length > 0 && singlePatches[0].subDescNameList?.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {singlePatches[0].subDescNameList.map((sub, i) => {
-                  const subName = localeText(sub, locale)
-                  if (!subName) return null
-                  const subVal = singlePatches[0].subDescList?.[i] ?? ''
-                  return (
+            {singlePatches.length > 0 && (() => {
+              const subDescs = singlePatches[0].subDescDataList.filter(s => !s.conditionId)
+              if (subDescs.length === 0) return null
+              return (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {subDescs.map((s, i) => (
                     <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
-                      {subName}: {subVal}
+                      {s.name?.text || s.name?.id || ''}: {s.desc}
                     </span>
-                  )
-                })}
-              </div>
-            )}
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}

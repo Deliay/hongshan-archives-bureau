@@ -66,6 +66,12 @@ export interface SkillCondition {
   toastText: string
 }
 
+export interface SubDescEntry {
+  conditionId: string
+  desc: string
+  name: { id?: number; text?: string }
+}
+
 export interface SkillPatchData {
   blackboard: { key: string; value: number; valueStr: string }[]
   coolDown: number
@@ -76,8 +82,7 @@ export interface SkillPatchData {
   level: number
   skillId: string
   skillName: { id?: number; text?: string }
-  subDescList: string[]
-  subDescNameList: { id?: number; text?: string }[]
+  subDescDataList: SubDescEntry[]
 }
 
 export interface SkillLevelUpCost {
