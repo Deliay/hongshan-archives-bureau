@@ -357,14 +357,14 @@ function SkillFormColumn({
   icon,
   name,
   patches,
-  mainDescText,
+  descText,
   postDescText,
   locale: locale_,
 }: {
   icon: string
   name: string
   patches: SkillPatchData[]
-  mainDescText: string
+  descText: string
   postDescText: string
   locale: string
 }) {
@@ -402,14 +402,14 @@ function SkillFormColumn({
         )
       })()}
 
-      {mainDescText && (
+      {descText && (
         <div className="text-xs text-[#B0ACA6] leading-relaxed">
-          <RichText text={mainDescText} />
+          <RichText text={descText} />
         </div>
       )}
 
       {postDescText && (
-        <div className="text-xs text-[#C9A96E]/70 leading-relaxed mt-1.5 border-t border-[#2A2A32] pt-1.5">
+        <div className="text-xs text-[#8B8982] leading-relaxed mt-1.5">
           <RichText text={postDescText} />
         </div>
       )}
@@ -440,50 +440,61 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
 
   const typeName = SKILL_TYPE_LABELS[group.skillGroupType] ?? `类型${group.skillGroupType}`
   const groupName = localeText(group.name, locale)
-  const groupDesc = localeText(group.desc, locale)
 
-  /* --- patches for each condition (dual) or all (single) --- */
-  const singlePatches = useMemo(() => getPatchesAtLevel(group, skillPatchMap, level), [group, skillPatchMap, level])
-  const singleBlackboards = useMemo(() => collectBlackboards(singlePatches), [singlePatches])
-
-  const condPatches1 = useMemo(() => {
-    if (!isDual) return singlePatches
+  const patches1 = useMemo(() => {
+    if (!isDual) return getPatchesAtLevel(group, skillPatchMap, level)
     return getPatchesForSkill(group.skillIdList[0], skillPatchMap, level)
-  }, [isDual, group, skillPatchMap, level, singlePatches])
+  }, [isDual, group, skillPatchMap, level])
 
-  const condPatches2 = useMemo(() => {
+  const patches2 = useMemo(() => {
     if (!isDual) return []
     const skillId = group.condition2?.skillId || group.skillIdList[0]
     return getPatchesForSkill(skillId, skillPatchMap, level)
   }, [isDual, group, skillPatchMap, level])
 
-  const condBB1 = useMemo(() => collectBlackboards(condPatches1), [condPatches1])
-  const condBB2 = useMemo(() => collectBlackboards(condPatches2), [condPatches2])
+  const blackboards1 = useMemo(() => collectBlackboards(patches1), [patches1])
+  const blackboards2 = useMemo(() => collectBlackboards(patches2), [patches2])
 
-  /* --- main description: shared group.desc with blackboard --- */
-  const mainDescText = useMemo(() => {
+  const cond1 = group.condition1!
+  const cond2 = group.condition2!
+
+  const descText1 = useMemo(() => {
+    if (!cond1?.desc || !isDual) return ''
+    const bb = Object.keys(blackboards1).length > 0 ? blackboards1 : blackboards2
+    if (Object.keys(bb).length === 0) return cond1.desc
+    return formatBlackboard(cond1.desc, bb)
+  }, [cond1?.desc, blackboards1, blackboards2, isDual])
+
+  const descText2 = useMemo(() => {
+    if (!cond2?.desc || !isDual) return ''
+    const bb = Object.keys(blackboards2).length > 0 ? blackboards2 : blackboards1
+    if (Object.keys(bb).length === 0) return cond2.desc
+    return formatBlackboard(cond2.desc, bb)
+  }, [cond2?.desc, blackboards2, blackboards1, isDual])
+
+  const postDescText1 = useMemo(() => {
+    if (!cond1?.postDesc || !isDual) return ''
+    const bb = Object.keys(blackboards1).length > 0 ? blackboards1 : blackboards2
+    if (Object.keys(bb).length === 0) return cond1.postDesc
+    return formatBlackboard(cond1.postDesc, bb)
+  }, [cond1?.postDesc, blackboards1, blackboards2, isDual])
+
+  const postDescText2 = useMemo(() => {
+    if (!cond2?.postDesc || !isDual) return ''
+    const bb = Object.keys(blackboards2).length > 0 ? blackboards2 : blackboards1
+    if (Object.keys(bb).length === 0) return cond2.postDesc
+    return formatBlackboard(cond2.postDesc, bb)
+  }, [cond2?.postDesc, blackboards2, blackboards1, isDual])
+
+  /* --- single-form (original) --- */
+  const groupDesc = localeText(group.desc, locale)
+  const singlePatches = useMemo(() => getPatchesAtLevel(group, skillPatchMap, level), [group, skillPatchMap, level])
+  const singleBlackboards = useMemo(() => collectBlackboards(singlePatches), [singlePatches])
+  const singleDescText = useMemo(() => {
     if (!groupDesc) return ''
     if (Object.keys(singleBlackboards).length === 0) return groupDesc
     return formatBlackboard(groupDesc, singleBlackboards)
   }, [groupDesc, singleBlackboards])
-
-  /* --- condition-specific post-desc --- */
-  const cond1 = group.condition1!
-  const cond2 = group.condition2!
-
-  const postDescText1 = useMemo(() => {
-    if (!cond1?.postDesc || !isDual) return ''
-    const bb = Object.keys(condBB1).length > 0 ? condBB1 : singleBlackboards
-    if (Object.keys(bb).length === 0) return cond1.postDesc
-    return formatBlackboard(cond1.postDesc, bb)
-  }, [cond1?.postDesc, condBB1, singleBlackboards, isDual])
-
-  const postDescText2 = useMemo(() => {
-    if (!cond2?.postDesc || !isDual) return ''
-    const bb = Object.keys(condBB2).length > 0 ? condBB2 : singleBlackboards
-    if (Object.keys(bb).length === 0) return cond2.postDesc
-    return formatBlackboard(cond2.postDesc, bb)
-  }, [cond2?.postDesc, condBB2, singleBlackboards, isDual])
 
   return (
     <div className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
@@ -497,16 +508,16 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
           <SkillFormColumn
             icon={cond1.icon || group.icon}
             name={cond1.name}
-            patches={condPatches1}
-            mainDescText={mainDescText}
+            patches={patches1}
+            descText={descText1}
             postDescText={postDescText1}
             locale={locale}
           />
           <SkillFormColumn
             icon={cond2.icon || group.icon}
             name={cond2.name}
-            patches={condPatches2}
-            mainDescText={mainDescText}
+            patches={patches2}
+            descText={descText2}
             postDescText={postDescText2}
             locale={locale}
           />
@@ -542,9 +553,9 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
               )
             })()}
 
-            {mainDescText && (
+            {singleDescText && (
               <div className="text-xs text-[#B0ACA6] leading-relaxed mt-2">
-                <RichText text={mainDescText} />
+                <RichText text={singleDescText} />
               </div>
             )}
 
