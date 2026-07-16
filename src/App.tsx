@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { LocaleProvider } from './lib/locale'
 import ArchiveLayout from './components/Layout/ArchiveLayout'
 import LandingPage from './routes/Landing'
@@ -23,10 +24,23 @@ import UpdateSummary from './pages/updates/UpdateSummary'
 import UpdateTableDiff from './pages/updates/UpdateTableDiff'
 import './components/DiffViewer/register'
 
+function RedirectHandler() {
+  const navigate = useNavigate()
+  useEffect(() => {
+    const redirect = sessionStorage.getItem('__spa_redirect')
+    if (redirect) {
+      sessionStorage.removeItem('__spa_redirect')
+      navigate(redirect, { replace: true })
+    }
+  }, [navigate])
+  return null
+}
+
 export default function App() {
   return (
     <LocaleProvider>
     <BrowserRouter>
+      <RedirectHandler />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/archive" element={<ArchiveLayout />}>

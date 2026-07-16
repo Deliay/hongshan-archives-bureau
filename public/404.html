@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宏山档案馆</title>
+  <script>
+    (function() {
+      var loc = window.location;
+      var original = loc.pathname + loc.search + loc.hash;
+      if (original !== '/' && original !== '') {
+        sessionStorage.setItem('__spa_redirect', original);
+      }
+      loc.replace('/');
+    })();
+  </script>
+</head>
+<body>
+</body>
+</html>
