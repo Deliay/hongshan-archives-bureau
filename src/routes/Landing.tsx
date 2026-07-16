@@ -7,6 +7,12 @@ export default function LandingPage() {
   const [show, setShow] = useState(true)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const spaRedirect = params.get('__spa')
+    if (spaRedirect) {
+      navigate(spaRedirect, { replace: true })
+      return
+    }
     if (localStorage.getItem('hs_visited')) {
       navigate('/archive', { replace: true })
     }

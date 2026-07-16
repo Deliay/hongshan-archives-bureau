@@ -9,9 +9,10 @@
       var loc = window.location;
       var original = loc.pathname + loc.search + loc.hash;
       if (original !== '/' && original !== '') {
-        sessionStorage.setItem('__spa_redirect', original);
+        loc.replace('/?__spa=' + encodeURIComponent(original));
+      } else {
+        loc.replace('/');
       }
-      loc.replace('/');
     })();
   </script>
 </head>
