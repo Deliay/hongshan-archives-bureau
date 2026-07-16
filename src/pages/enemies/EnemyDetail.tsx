@@ -41,6 +41,7 @@ export default function EnemyDetail() {
 
   useEffect(() => {
     if (!enemy) return
+    const e = enemy
     let cancelled = false
     async function load() {
       const [dispRaw, abilityRaw, abilityI18n, attrRaw] = await Promise.all([
@@ -51,7 +52,7 @@ export default function EnemyDetail() {
       ])
       if (cancelled) return
 
-      const displayInfo = dispRaw[enemy.templateId] as { abilityDescIds?: string[] } | undefined
+      const displayInfo = dispRaw[e.templateId] as { abilityDescIds?: string[] } | undefined
       const abilityIds: string[] = displayInfo?.abilityDescIds ?? []
       const abilityList: { name: string; description: string }[] = []
       for (const aid of abilityIds) {
@@ -65,7 +66,7 @@ export default function EnemyDetail() {
       }
       setAbilities(abilityList)
 
-      const attrEntry = attrRaw[enemy.templateId]
+      const attrEntry = attrRaw[e.templateId]
       if (attrEntry) {
         setAttrTemplate(attrEntry)
         setAttrLevel(attrEntry.levelDependentAttributes?.length ?? 1)
