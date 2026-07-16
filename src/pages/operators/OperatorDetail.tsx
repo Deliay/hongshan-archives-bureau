@@ -353,34 +353,6 @@ function localeText(obj: unknown, locale: string, fallback?: string): string {
   return dict[locale] || dict.CN || (obj as any).text || fallback || ''
 }
 
-function formatBbVal(key: string, value: number): string {
-  if (value <= 1 && /scale|rate|vul|modifier|modify|reduce/i.test(key)) {
-    return `${(value * 100).toFixed(1)}%`
-  }
-  return Number.isInteger(value) ? String(value) : value.toFixed(2)
-}
-
-function displayBbKey(key: string): string {
-  return key
-    .replace(/^display_/, '')
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase())
-}
-
-function BlackboardTags({ blackboard }: { blackboard: { key: string; value: number }[] }) {
-  if (blackboard.length === 0) return null
-  return (
-    <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2">
-      {blackboard.map((b) => (
-        <span key={b.key} className="text-[10px] text-[#8B8982]">
-          <span className="text-[#5A5A62]">{displayBbKey(b.key)}</span>
-          <span className="text-[#C9A96E] ml-1">{formatBbVal(b.key, b.value)}</span>
-        </span>
-      ))}
-    </div>
-  )
-}
-
 function SkillFormColumn({
   icon,
   name,
@@ -435,8 +407,6 @@ function SkillFormColumn({
           <RichText text={mainDescText} />
         </div>
       )}
-
-      {patches.length > 0 && <BlackboardTags blackboard={patches[0].blackboard} />}
 
       {postDescText && (
         <div className="text-xs text-[#C9A96E]/70 leading-relaxed mt-1.5 border-t border-[#2A2A32] pt-1.5">
@@ -577,8 +547,6 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
                 <RichText text={mainDescText} />
               </div>
             )}
-
-            {singlePatches.length > 0 && <BlackboardTags blackboard={singlePatches[0].blackboard} />}
 
             {singlePatches.length > 0 && singlePatches[0].subDescNameList?.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
