@@ -85,7 +85,9 @@ function SummaryContent({
   ]
 
   const tables = useMemo(() => {
-    const entries = Object.entries(tableStats ?? {})
+    const entries = Object.entries(tableStats ?? {}).filter(
+      ([, s]) => s.added + s.removed + s.changed > 0,
+    )
     const pinned: typeof entries = []
     const rest: typeof entries = []
     const pinnedSet = new Set(PINNED_TABLES.map(n => `${n}.json`))
@@ -127,7 +129,7 @@ function SummaryContent({
       <ItemChangePanel versionName={versionName} />
 
       <h3 className="text-sm font-medium text-[#E8E6E3] mb-3">
-        变更表一览（{folder.fileCount} 个表）
+        变更表一览（{tables.length} 个表）
       </h3>
       <div className="space-y-1">
         {tables.map(([file, stats]) => (
@@ -146,13 +148,13 @@ function SummaryContent({
           </Link>
         ))}
       </div>
-      {Object.keys(tableStats ?? {}).length > maxTables && (
+      {tables.length > maxTables && (
         <button
           type="button"
           onClick={() => setMaxTables(Infinity)}
           className="mt-3 text-sm text-[#C9A96E] hover:text-[#d4b87a] transition-colors"
         >
-          显示全部 {Object.keys(tableStats ?? {}).length} 个表
+          显示全部 {tables.length} 个表
         </button>
       )}
     </div>
