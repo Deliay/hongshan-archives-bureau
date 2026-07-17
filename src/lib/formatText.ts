@@ -59,6 +59,16 @@ function compile(expr: string): (vars: Record<string, number>) => number {
     const name = tokens[0].value
     return (vars) => vars[name] ?? 0
   }
+  if (tokens.length === 2 && tokens[0].type === 'op' && tokens[0].value === '-') {
+    if (tokens[1].type === 'number') {
+      const val = -Number(tokens[1].value)
+      return () => val
+    }
+    if (tokens[1].type === 'variable') {
+      const name = tokens[1].value
+      return (vars) => -(vars[name] ?? 0)
+    }
+  }
   return (vars) => parseAndEval(tokens, vars)
 }
 

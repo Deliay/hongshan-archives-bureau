@@ -4,8 +4,8 @@ import { useOperator, useWeapon, useRaces, useFactions } from '../../hooks/useDa
 const LIST_LABEL: Record<string, string> = {
   operators: '干员档案',
   weapons: '武器档案',
-  races: '种族一览',
-  factions: '势力阵营',
+  races: '干员种族',
+  factions: '干员阵营',
   geography: '地区地理',
   enemies: '敌人图鉴',
   equipment: '装备系统',

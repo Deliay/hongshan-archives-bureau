@@ -3,15 +3,25 @@ import { Link, useLocation } from 'react-router-dom'
 import { useLocale } from '../../lib/locale'
 import { useI18nLocales } from '../../hooks/useData'
 
-const NAV_ITEMS = [
-  { label: '干员档案', path: '/archive/operators' },
+type NavItem = {
+  label: string
+  path: string
+  children?: { label: string; path: string }[]
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    label: '干员档案', path: '/archive/operators',
+    children: [
+      { label: '干员种族', path: '/archive/races' },
+      { label: '干员阵营', path: '/archive/factions' },
+    ],
+  },
   { label: '武器档案', path: '/archive/weapons' },
-  { label: '种族一览', path: '/archive/races' },
-  { label: '势力阵营', path: '/archive/factions' },
-  { label: '地区地理', path: '/archive/geography' },
   { label: '敌人图鉴', path: '/archive/enemies' },
-  { label: '装备系统', path: '/archive/equipment' },
   { label: '道具材料', path: '/archive/items' },
+  { label: '地区地理', path: '/archive/geography' },
+  { label: '装备系统', path: '/archive/equipment' },
   { label: '工厂系统', path: '/archive/factory' },
   { label: '剧情记录', path: '/archive/story' },
   { label: '更新日志', path: '/archive/updates' },
@@ -20,6 +30,59 @@ const NAV_ITEMS = [
 const LOCALE_LABELS: Record<string, string> = {
   CN: '简中', TC: '繁中', EN: 'English',
   JP: '日本語', KR: '한국어', RU: 'Русский',
+}
+
+function NavDropdown({ item, location }: { item: NavItem; location: ReturnType<typeof useLocation> }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const active = location.pathname.startsWith(item.path)
+
+  return (
+    <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <Link
+        to={item.path}
+        className={`px-3 py-1.5 rounded text-sm whitespace-nowrap transition-colors ${
+          active
+            ? 'text-[#C9A96E] bg-[#C9A96E]/10'
+            : 'text-[#8B8982] hover:text-[#E8E6E3]'
+        }`}
+      >
+        {item.label}
+      </Link>
+      {open && item.children && (
+        <div className="absolute left-0 top-full mt-0.5 w-32 py-1 rounded border border-[#2A2A32] bg-[#0F0F12] shadow-lg">
+          {item.children.map((child) => {
+            const childActive = location.pathname.startsWith(child.path)
+            return (
+              <Link
+                key={child.path}
+                to={child.path}
+                onClick={() => setOpen(false)}
+                className={`block px-3 py-1.5 text-sm transition-colors ${
+                  childActive
+                    ? 'text-[#C9A96E] bg-[#C9A96E]/10'
+                    : 'text-[#8B8982] hover:text-[#E8E6E3] hover:bg-[#1A1B23]'
+                }`}
+              >
+                {child.label}
+              </Link>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function TopNav() {
@@ -47,6 +110,9 @@ export default function TopNav() {
         </Link>
         <nav className="hidden md:flex items-center gap-1 overflow-x-auto">
           {NAV_ITEMS.map((item) => {
+            if (item.children) {
+              return <NavDropdown key={item.path} item={item} location={location} />
+            }
             const active = location.pathname.startsWith(item.path)
             return (
               <Link

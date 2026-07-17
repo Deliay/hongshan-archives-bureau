@@ -3,13 +3,23 @@ import { Link, useLocation } from 'react-router-dom'
 import { useLocale } from '../../lib/locale'
 import { useI18nLocales } from '../../hooks/useData'
 
-const NAV_ITEMS = [
-  { label: '干员档案', path: '/archive/operators' },
+type NavItem = {
+  label: string
+  path: string
+  children?: { label: string; path: string }[]
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    label: '干员档案', path: '/archive/operators',
+    children: [
+      { label: '干员种族', path: '/archive/races' },
+      { label: '干员阵营', path: '/archive/factions' },
+    ],
+  },
   { label: '武器档案', path: '/archive/weapons' },
   { label: '敌人图鉴', path: '/archive/enemies' },
   { label: '道具材料', path: '/archive/items' },
-  { label: '种族一览', path: '/archive/races' },
-  { label: '势力阵营', path: '/archive/factions' },
   { label: '地区地理', path: '/archive/geography' },
   { label: '装备系统', path: '/archive/equipment' },
   { label: '工厂系统', path: '/archive/factory' },
@@ -62,6 +72,44 @@ export default function Sidebar() {
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {NAV_ITEMS.map((item) => {
+            if (item.children) {
+              const childActive = item.children.some(c => location.pathname.startsWith(c.path))
+              const groupActive = location.pathname.startsWith(item.path) || childActive
+              return (
+                <div key={item.path}>
+                  <Link
+                    to={item.path}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors ${
+                      groupActive
+                        ? 'text-[#C9A96E] bg-[#C9A96E]/10'
+                        : 'text-[#8B8982] hover:text-[#E8E6E3] hover:bg-[#1A1B23]'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                  <div className="ml-4 mt-0.5 space-y-0.5">
+                    {item.children.map((child) => {
+                      const active = location.pathname.startsWith(child.path)
+                      return (
+                        <Link
+                          key={child.path}
+                          to={child.path}
+                          onClick={() => setOpen(false)}
+                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded text-sm transition-colors ${
+                            active
+                              ? 'text-[#C9A96E] bg-[#C9A96E]/10'
+                              : 'text-[#8B8982] hover:text-[#E8E6E3] hover:bg-[#1A1B23]'
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            }
             const active = location.pathname.startsWith(item.path)
             return (
               <Link
