@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useOperator, useWeapon, useRaces, useFactions } from '../../hooks/useData'
+import { useOperator, useWeapon, useRaces, useFactions, useEnemies } from '../../hooks/useData'
 
 const LIST_LABEL: Record<string, string> = {
   operators: '干员档案',
@@ -26,6 +26,12 @@ function FactionName({ id }: { id: string }) {
   return <span className="text-[#E8E6E3]">{faction?.name || id}</span>
 }
 
+function EnemyName({ id }: { id: string }) {
+  const { data: enemies } = useEnemies()
+  const enemy = enemies?.find(e => e.id === id)
+  return <span className="text-[#E8E6E3]">{enemy?.name || id}</span>
+}
+
 function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
   const { data: op } = useOperator(id)
   const { data: wpn } = useWeapon(id)
@@ -40,6 +46,9 @@ function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
   }
   if (listKey === 'factions') {
     return <FactionName id={id} />
+  }
+  if (listKey === 'enemies') {
+    return <EnemyName id={id} />
   }
   return <span className="text-[#E8E6E3]">{id}</span>
 }

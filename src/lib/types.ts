@@ -168,6 +168,11 @@ export interface Enemy {
   nickname: string
   wikiGroup: string
   templateId: string
+  enemyId: string
+  distributionIds: string[]
+  abilityDescIds: string[]
+  attrTemplateId: string
+  sourceTable: 'TemplateDisplayInfo' | 'DisplayInfo'
 }
 
 export interface Item {

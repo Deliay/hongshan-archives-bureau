@@ -324,6 +324,15 @@ Many enemy entries are variants with keys like `eny_0046_lbshamman_hdg016` and `
 #### Inline Attribute Panel for EnemyTable
 `EnemyTable` entries have `attrTemplateId` referencing `EnemyAttributeTemplateTable`. When rendering EnemyTable changes, fetch the referenced attribute template and display it inline below the generic change entry. This gives context about the enemy's combat stats without requiring a separate attribute table expansion.
 
+#### EnemyTable attrModifiers
+`EnemyTable` entries can have an `attrModifiers[]` array that applies per-attribute corrections. Each entry has:
+- `attrType`: attribute type ID (1=HP, 2=ATK, 20=move speed)
+- `attrValue`: modifier magnitude
+- `modifierType`: 0=flat add, 1=multiplicative (final = base × (1+attrValue)), 4=multiplicative (same formula as 1)
+- `modifyAttributeType`: 0=modify base attribute
+
+Dummy/training enemies use `attrType:1, attrValue:1000, modifierType:1` for ×1001 HP (+100000%). Always fetch `EnemyTable` alongside attribute template data and apply modifiers when displaying stats. Use `AttributeShowConfigTable` + i18n to resolve attribute names for modifier display.
+
 ### `mark` Tag Requires Color Attribute
 RichText's `<mark>` tag is parsed as `<mark=#hexcolor>` (color attribute). Bare `<mark>` without `=color` results in `attrs.mark === undefined` and no visible highlight. Always write `<mark=#C9A96E>text</mark>` or similar.
 

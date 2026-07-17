@@ -30,20 +30,28 @@ export default function EnemyList() {
   const [groupField, setGroupField] = useState<GroupField>('')
   const [groupPageMap, setGroupPageMap] = useState<Record<string, number>>({})
   const [tagNameMap, setTagNameMap] = useState<Record<string, string>>({})
+  const [typeNameMap, setTypeNameMap] = useState<Record<number, string>>({})
 
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const [raw, i18nMap] = await Promise.all([
+      const [tagRaw, tagI18n, typeRaw, typeI18n] = await Promise.all([
         getCachedData<Record<string, any>>('EnemyTagTable', () => fetchTableAll('EnemyTagTable')),
         getCachedData<Record<string, string>>(`I18nDict_${locale}_EnemyTagTable`, () => fetchTableDictAll('EnemyTagTable', locale)),
+        getCachedData<Record<string, any>>('DisplayEnemyTypeTable', () => fetchTableAll('DisplayEnemyTypeTable')),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_DisplayEnemyTypeTable`, () => fetchTableDictAll('DisplayEnemyTypeTable', locale)),
       ])
       if (cancelled) return
-      const map: Record<string, string> = {}
-      for (const [, v] of Object.entries<any>(raw)) {
-        map[v.tagId] = resolveI18n(v.tagText, i18nMap) || v.tagId
+      const tMap: Record<string, string> = {}
+      for (const [, v] of Object.entries<any>(tagRaw)) {
+        tMap[v.tagId] = resolveI18n(v.tagText, tagI18n) || v.tagId
       }
-      setTagNameMap(map)
+      setTagNameMap(tMap)
+      const tmMap: Record<number, string> = {}
+      for (const [k, v] of Object.entries<any>(typeRaw)) {
+        tmMap[Number(k)] = resolveI18n(v.name, typeI18n) || `类型${k}`
+      }
+      setTypeNameMap(tmMap)
     }
     load()
     return () => { cancelled = true }
@@ -191,7 +199,7 @@ export default function EnemyList() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {groupPaged.map(e => (
-                    <EnemyCard key={e.id} enemy={e} tagNameMap={tagNameMap} />
+                    <EnemyCard key={e.id} enemy={e} tagNameMap={tagNameMap} typeNameMap={typeNameMap} />
                   ))}
                 </div>
                 {pageSize > 0 && groupTotalPages > 1 && (
@@ -213,7 +221,7 @@ export default function EnemyList() {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
             {paged.map(e => (
-              <EnemyCard key={e.id} enemy={e} tagNameMap={tagNameMap} />
+              <EnemyCard key={e.id} enemy={e} tagNameMap={tagNameMap} typeNameMap={typeNameMap} />
             ))}
           </div>
           {filtered.length === 0 && <p className="text-sm text-[#5A5A62] mt-4">未找到匹配敌人</p>}
@@ -232,15 +240,7 @@ export default function EnemyList() {
   )
 }
 
-const ENEMY_TYPE_LABELS: Record<number, string> = {
-  0: '普通',
-  1: '精英',
-  2: '首领',
-  3: '进阶',
-  4: '领袖',
-}
-
-function EnemyCard({ enemy, tagNameMap }: { enemy: import('../../lib/types').Enemy; tagNameMap: Record<string, string> }) {
+function EnemyCard({ enemy, tagNameMap, typeNameMap }: { enemy: import('../../lib/types').Enemy; tagNameMap: Record<string, string>; typeNameMap: Record<number, string> }) {
   const stars = ENEMY_STARS[enemy.displayType] ?? 1
   return (
     <Link to={`/archive/enemies/${enemy.id}`} className="flex gap-3 p-2 rounded border border-[#2A2A32] bg-[#1A1B23] hover:border-[#C9A96E]/40 transition-colors">
@@ -255,7 +255,7 @@ function EnemyCard({ enemy, tagNameMap }: { enemy: import('../../lib/types').Ene
       <div className="flex-1 min-w-0">
         <div className="text-sm text-[#E8E6E3] truncate">{enemy.name}</div>
         <div className="flex items-center gap-1 mt-0.5">
-          <span className="text-[10px] text-[#5A5A62]">{ENEMY_TYPE_LABELS[enemy.displayType] || `类型${enemy.displayType}`}</span>
+          <span className="text-[10px] text-[#5A5A62]">{typeNameMap[enemy.displayType] || `类型${enemy.displayType}`}</span>
           <Rarity level={stars} />
         </div>
         {enemy.tags.length > 0 && (

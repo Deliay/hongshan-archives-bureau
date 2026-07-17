@@ -77,6 +77,7 @@ export function adaptWeapon(raw: any, itemRaw: any, i18nMap?: Record<string, str
 
 export function adaptEnemy(raw: any, i18nMap?: Record<string, string>, wikiGroupMap?: Record<string, string>): Enemy {
   const id = raw.enemyId ?? raw.templateId ?? raw.$key ?? ''
+  const templateId = raw.templateId ?? id
   return {
     id,
     name: resolveI18n(raw.name ?? raw.enemyName, i18nMap) || id,
@@ -84,8 +85,13 @@ export function adaptEnemy(raw: any, i18nMap?: Record<string, string>, wikiGroup
     description: resolveI18n(raw.description, i18nMap),
     displayType: raw.displayType ?? 0,
     nickname: resolveI18n(raw.nickname, i18nMap) || '',
-    wikiGroup: wikiGroupMap?.[raw.templateId ?? raw.enemyId ?? ''] ?? '',
-    templateId: raw.templateId ?? id,
+    wikiGroup: wikiGroupMap?.[templateId] ?? wikiGroupMap?.[raw.enemyId ?? ''] ?? '',
+    templateId,
+    enemyId: raw.enemyId ?? '',
+    distributionIds: raw.distributionIds ?? [],
+    abilityDescIds: raw.abilityDescIds ?? [],
+    attrTemplateId: raw.attrTemplateId ?? '',
+    sourceTable: raw.enemyId !== undefined ? 'DisplayInfo' : 'TemplateDisplayInfo',
   }
 }
 

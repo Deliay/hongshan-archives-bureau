@@ -509,6 +509,47 @@ export function useWeapon(id: string): UseDataResult<Weapon | null> {
   }, [locale, id])
 }
 
+let typeNameMapCaches = new Map<string, Promise<Record<number, string>>>()
+
+export function getEnemyTypeNameMap(locale: string): Promise<Record<number, string>> {
+  if (!typeNameMapCaches.has(locale)) {
+    typeNameMapCaches.set(locale, (async () => {
+      const [raw, i18nMap] = await Promise.all([
+        getCachedData<Record<string, any>>('DisplayEnemyTypeTable', () => fetchTableAll('DisplayEnemyTypeTable')),
+        getTableI18nDict('DisplayEnemyTypeTable', locale),
+      ])
+      const map: Record<number, string> = {}
+      for (const [k, v] of Object.entries<any>(raw)) {
+        map[Number(k)] = resolveI18n(v.name, i18nMap) || `类型${k}`
+      }
+      return map
+    })())
+  }
+  return typeNameMapCaches.get(locale)!
+}
+
+let attrNameMapCaches = new Map<string, Promise<Record<number, string>>>()
+
+export function getEnemyAttrNameMap(locale: string): Promise<Record<number, string>> {
+  if (!attrNameMapCaches.has(locale)) {
+    attrNameMapCaches.set(locale, (async () => {
+      const [showRaw, i18nMap] = await Promise.all([
+        getCachedData<Record<string, any>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')),
+        getTableI18nDict('AttributeShowConfigTable', locale),
+      ])
+      const map: Record<number, string> = {}
+      for (const [k, v] of Object.entries<any>(showRaw)) {
+        const attrType = Number(k)
+        const configItem = v?.list?.[0]
+        const nameId = String(configItem?.name?.id ?? '')
+        map[attrType] = (nameId && i18nMap[nameId]) || `属性${k}`
+      }
+      return map
+    })())
+  }
+  return attrNameMapCaches.get(locale)!
+}
+
 export function useEnemies(): UseDataResult<Enemy[]> {
   const { locale } = useLocale()
   return useData(async () => {

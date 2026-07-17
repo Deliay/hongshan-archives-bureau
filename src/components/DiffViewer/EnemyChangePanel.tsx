@@ -4,15 +4,13 @@ import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useEnemyAggregatedDiff } from '../../hooks/useEnemyAggregatedDiff'
+import { getEnemyTypeNameMap, getEnemyAttrNameMap } from '../../hooks/useData'
 import type { EnemyChange } from '../../hooks/useEnemyAggregatedDiff'
 import type { ChangedEntry } from '../../lib/types-diff'
 import { RichText } from '../../lib/richText'
 import { RichTextDiff } from './RichTextDiff'
 
 const ENEMY_STARS: Record<number, number> = { 0: 1, 1: 3, 2: 6, 3: 4, 4: 5 }
-const ENEMY_TYPE_LABELS: Record<number, string> = {
-  0: '普通', 1: '精英', 2: '首领', 3: '进阶', 4: '领袖',
-}
 
 const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
 
@@ -349,6 +347,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   const [expanded, setExpanded] = useState(false)
   const isAdded = ep.changes.some(c => c.op === 'added' && c.key === ep.enemyId && (c.tableName === 'EnemyTemplateDisplayInfoTable' || c.tableName === 'EnemyDisplayInfoTable'))
   const [tagI18n, setTagI18n] = useState<Record<string, string>>({})
+  const [typeNameMap, setTypeNameMap] = useState<Record<number, string>>({})
   const [fallbackDisplayData, setFallbackDisplayData] = useState<Record<string, any> | null>(null)
   const [fallbackDisplayData2, setFallbackDisplayData2] = useState<Record<string, any> | null>(null)
   const [displayI18n, setDisplayI18n] = useState<Record<string, string>>({})
@@ -364,6 +363,10 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   useEffect(() => {
     getCachedData<Record<string, string>>(`I18nDict_${locale}_EnemyTagTable`, () => fetchTableDictAll('EnemyTagTable', locale))
       .then(d => setTagI18n(d)).catch(() => {})
+  }, [locale])
+
+  useEffect(() => {
+    getEnemyTypeNameMap(locale).then(setTypeNameMap).catch(() => {})
   }, [locale])
 
   useEffect(() => {
@@ -399,7 +402,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   const nickname = localeText(ep.nickname, locale) || localeText(displayEntry?.nickname, locale) || ''
   const displayType = ep.displayType ?? displayEntry?.displayType ?? fallbackData?.displayType ?? 0
   const stars = ENEMY_STARS[displayType] ?? 1
-  const typeLabel = ENEMY_TYPE_LABELS[displayType] || `类型${displayType}`
+  const typeLabel = typeNameMap[displayType] || `类型${displayType}`
   const tags: string[] = ep.tags ?? displayEntry?.tags ?? fallbackData?.tags ?? []
 
   const tableCounts: Record<string, { op: string; count: number }> = {}
@@ -470,7 +473,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
       {expanded && (
         <div className="border-t border-[#2A2A32] p-3 space-y-3">
           {isAdded && displayEntry ? (
-            <AddedEnemyDetail templateId={displayEntry?.templateId || ep.enemyId} displayEntry={displayEntry} locale={locale} />
+            <AddedEnemyDetail templateId={displayEntry?.templateId || ep.enemyId} displayEntry={displayEntry} locale={locale} typeNameMap={typeNameMap} />
           ) : (
             ep.changes.map((c) => {
               const label = c.tableName
@@ -495,17 +498,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   )
 }
 
-const ATTR_TYPE_NAMES: Record<number, string> = {
-  0: '等级', 1: '生命值', 2: '攻击力', 3: '防御力',
-  8: '暴击率', 9: '暴击伤害', 10: '暴击抵抗', 11: '暴击伤害抵抗',
-  12: '命中率', 15: '穿透力',
-  20: '移动速度', 21: '攻击速度',
-  27: '索敌范围',
-  80: '物理伤害抗性', 81: '灼热伤害抗性', 82: '寒冷伤害抗性',
-  83: '电磁伤害抗性', 84: '自然伤害抗性', 85: '超域伤害抗性',
-}
-
-function AddedEnemyDetail({ templateId, displayEntry, locale }: { templateId: string; displayEntry: any; locale: string }) {
+function AddedEnemyDetail({ templateId, displayEntry, locale, typeNameMap }: { templateId: string; displayEntry: any; locale: string; typeNameMap: Record<number, string> }) {
   const [abilities, setAbilities] = useState<{ name: string; description: string }[]>([])
   const [attrData, setAttrData] = useState<any>(null)
   const [attrLevel, setAttrLevel] = useState(1)
@@ -600,7 +593,7 @@ function AddedEnemyDetail({ templateId, displayEntry, locale }: { templateId: st
           <dt className="text-[#5A5A62]">模板 ID</dt>
           <dd className="text-[#E8E6E3] font-mono">{templateId}</dd>
           <dt className="text-[#5A5A62]">显示类型</dt>
-          <dd className="text-[#E8E6E3]">{ENEMY_TYPE_LABELS[displayEntry?.displayType ?? 0] || `类型${displayEntry?.displayType}`}</dd>
+            <dd className="text-[#E8E6E3]">{typeNameMap[displayEntry?.displayType ?? 0] || `类型${displayEntry?.displayType}`}</dd>
           {nickname && <>
             <dt className="text-[#5A5A62]">别称</dt>
             <dd className="text-[#E8E6E3]">{nickname}</dd>
@@ -612,6 +605,13 @@ function AddedEnemyDetail({ templateId, displayEntry, locale }: { templateId: st
 }
 
 function AttributeView({ attrData, level }: { attrData: any; level: number }) {
+  const [attrNameMap, setAttrNameMap] = useState<Record<number, string>>({})
+  const { locale } = useLocale()
+
+  useEffect(() => {
+    getEnemyAttrNameMap(locale).then(setAttrNameMap).catch(() => {})
+  }, [locale])
+
   const lda: { attrs: { attrType: number; attrValue: number }[] }[] = attrData?.levelDependentAttributes ?? []
   const hasLevelField = lda.some(a => a != null && typeof a === 'object' && 'level' in a)
   const depAttrs: Record<number, number> = {}
@@ -642,7 +642,7 @@ function AttributeView({ attrData, level }: { attrData: any; level: number }) {
     <div className="grid grid-cols-2 gap-x-4 gap-y-1">
       {allTypes.map(type => (
         <div key={type} className="flex items-center justify-between text-[10px]">
-          <span className="text-[#8B8982]">{ATTR_TYPE_NAMES[type] || `属性${type}`}</span>
+          <span className="text-[#8B8982]">{attrNameMap[type] || `属性${type}`}</span>
           <span className="text-[#E8E6E3] font-mono">
             {depAttrs[type] ?? fixedAttrs[type] ?? '-'}
           </span>
