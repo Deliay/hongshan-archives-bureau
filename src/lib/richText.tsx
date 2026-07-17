@@ -4,7 +4,7 @@ import { ASSET_BASE } from './adapter'
 import { getCachedData } from './cache'
 import { fetchTableAll, fetchTableDictAll } from './api'
 
-const TAG_REGEX = /(<(@|#)?(.*?)>)|(<\/.*?>)|(\n)/g
+const TAG_REGEX = /(<(?=\S)(@|#)?(.*?)>)|(<\/.*?>)|(\n)/g
 const ATTR_REGEX = /(\w+)=(?:"([^"]*)"|(\S+))/g
 
 function parseAttrs(raw: string): Record<string, string> {
@@ -105,29 +105,51 @@ interface TagCloseSeg { type: 'tag-close' }
 interface OrphanSeg { type: 'orphan'; tagName: string; attrs: Record<string, string> }
 type RawSegment = TextSeg | BrSeg | ImageSeg | TagOpenSeg | TagCloseSeg | OrphanSeg
 
+const COMMENT_OPEN = '/*'
+const COMMENT_CLOSE = '*/'
+
 function tokenize(text: string): RawSegment[] {
   const segments: RawSegment[] = []
   let lastIndex = 0
   TAG_REGEX.lastIndex = 0
   for (;;) {
+    const nextCommentOpen = text.indexOf(COMMENT_OPEN, lastIndex)
+    const nextCommentClose = text.indexOf(COMMENT_CLOSE, lastIndex)
     const match = TAG_REGEX.exec(text)
-    if (!match) break
-    const prefix = text.slice(lastIndex, match.index)
+    const nextTagIndex = match ? match.index : -1
+    const candidates: { index: number; type: 'open' | 'close' | 'tag' }[] = []
+    if (nextCommentOpen !== -1) candidates.push({ index: nextCommentOpen, type: 'open' })
+    if (nextCommentClose !== -1) candidates.push({ index: nextCommentClose, type: 'close' })
+    if (nextTagIndex !== -1) candidates.push({ index: nextTagIndex, type: 'tag' })
+    if (candidates.length === 0) break
+    candidates.sort((a, b) => a.index - b.index)
+    const earliest = candidates[0]
+    const prefix = text.slice(lastIndex, earliest.index)
     if (prefix) segments.push({ type: 'text', text: prefix })
-    lastIndex = match.index + match[0].length
-    if (match[5] !== undefined) {
-      segments.push({ type: 'br' })
-    } else if (match[0].startsWith('</')) {
+    if (earliest.type === 'open') {
+      segments.push({ type: 'tag-open', tagName: 'comment', attrs: {}, prefix: '' })
+      lastIndex = earliest.index + COMMENT_OPEN.length
+      TAG_REGEX.lastIndex = lastIndex
+    } else if (earliest.type === 'close') {
       segments.push({ type: 'tag-close' })
+      lastIndex = earliest.index + COMMENT_CLOSE.length
+      TAG_REGEX.lastIndex = lastIndex
     } else {
-      const raw = match[3] ?? ''
-      const pfx = match[2] ?? ''
-      if (isOrphanTag(match)) {
-        const attrs = parseAttrs(raw)
-        const firstKey = Object.keys(attrs)[0] ?? ''
-        segments.push({ type: 'orphan', tagName: firstKey, attrs })
+      lastIndex = match!.index + match![0].length
+      if (match![5] !== undefined) {
+        segments.push({ type: 'br' })
+      } else if (match![0].startsWith('</')) {
+        segments.push({ type: 'tag-close' })
       } else {
-        segments.push({ type: 'tag-open', tagName: raw, attrs: parseAttrs(raw), prefix: pfx })
+        const raw = match![3] ?? ''
+        const pfx = match![2] ?? ''
+        if (isOrphanTag(match!)) {
+          const attrs = parseAttrs(raw)
+          const firstKey = Object.keys(attrs)[0] ?? ''
+          segments.push({ type: 'orphan', tagName: firstKey, attrs })
+        } else {
+          segments.push({ type: 'tag-open', tagName: raw, attrs: parseAttrs(raw), prefix: pfx })
+        }
       }
     }
   }
@@ -202,6 +224,7 @@ function wrapTag(tagName: string, attrs: Record<string, string>, children: React
     case 'mark': return <span style={{ backgroundColor: attrs.mark }}>{children}</span>
     case 'b': return <b>{children}</b>
     case 'align': return <span>{children}</span>
+    case 'comment': return <span style={{ color: '#5A5A62', fontSize: '0.75rem' }}>{children}</span>
     default: return <span>{children}</span>
   }
 }

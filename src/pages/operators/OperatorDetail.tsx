@@ -360,6 +360,8 @@ function SkillFormColumn({
   mainDescText,
   postDescText,
   conditionId,
+  condDesc,
+  condDescInactive,
 }: {
   icon: string
   name: string
@@ -367,6 +369,8 @@ function SkillFormColumn({
   mainDescText: string
   postDescText: string
   conditionId: string
+  condDesc?: string
+  condDescInactive?: string
 }) {
   return (
     <div className="flex-1 min-w-0 p-2.5 rounded border border-[#2A2A32] bg-[#0F0F12]">
@@ -385,6 +389,16 @@ function SkillFormColumn({
         </div>
         <div className="min-w-0">
           <div className="text-xs font-medium text-[#E8E6E3] truncate leading-tight">{name}</div>
+          {condDesc && (
+            <div className="text-[10px] text-[#8B8982] leading-tight mt-0.5">
+              <RichText text={condDesc} />
+              {condDescInactive && (
+                <div className="text-[#5A5A62] mt-0.5">
+                  <RichText text={condDescInactive} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -485,6 +499,34 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
     return formatBlackboard(cond2.postDesc, bb)
   }, [cond2?.postDesc, condBB2, singleBlackboards, isDual])
 
+  const condDesc1 = useMemo(() => {
+    if (!cond1?.desc || !isDual) return ''
+    const bb = Object.keys(condBB1).length > 0 ? condBB1 : singleBlackboards
+    if (Object.keys(bb).length === 0) return cond1.desc
+    return formatBlackboard(cond1.desc, bb)
+  }, [cond1?.desc, condBB1, singleBlackboards, isDual])
+
+  const condDesc2 = useMemo(() => {
+    if (!cond2?.desc || !isDual) return ''
+    const bb = Object.keys(condBB2).length > 0 ? condBB2 : singleBlackboards
+    if (Object.keys(bb).length === 0) return cond2.desc
+    return formatBlackboard(cond2.desc, bb)
+  }, [cond2?.desc, condBB2, singleBlackboards, isDual])
+
+  const condInactive1 = useMemo(() => {
+    if (!cond1?.descInactive || !isDual) return ''
+    const bb = Object.keys(condBB1).length > 0 ? condBB1 : singleBlackboards
+    if (Object.keys(bb).length === 0) return cond1.descInactive
+    return formatBlackboard(cond1.descInactive, bb)
+  }, [cond1?.descInactive, condBB1, singleBlackboards, isDual])
+
+  const condInactive2 = useMemo(() => {
+    if (!cond2?.descInactive || !isDual) return ''
+    const bb = Object.keys(condBB2).length > 0 ? condBB2 : singleBlackboards
+    if (Object.keys(bb).length === 0) return cond2.descInactive
+    return formatBlackboard(cond2.descInactive, bb)
+  }, [cond2?.descInactive, condBB2, singleBlackboards, isDual])
+
   return (
     <div className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
       <div className="flex items-center gap-2 mb-3">
@@ -501,6 +543,8 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
             mainDescText={mainDescText}
             postDescText={postDescText1}
             conditionId={cond1.conditionId}
+            condDesc={condDesc1}
+            condDescInactive={condInactive1}
           />
           <SkillFormColumn
             icon={cond2.icon || group.icon}
@@ -509,6 +553,8 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
             mainDescText={mainDescText}
             postDescText={postDescText2}
             conditionId={cond2.conditionId}
+            condDesc={condDesc2}
+            condDescInactive={condInactive2}
           />
         </div>
       ) : (

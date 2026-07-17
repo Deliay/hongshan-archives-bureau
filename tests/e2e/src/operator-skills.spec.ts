@@ -19,18 +19,12 @@ test.describe('干员技能 (Operator Skills)', () => {
   test('技能标签页存在并可点击', async ({ page }) => {
     await waitForDetailReady(page, 'chr_0005_chen')
 
-    const skillTab = page.getByRole('button', { name: '技能', exact: true })
-    await expect(skillTab).toBeVisible({ timeout: 5000 })
-    await skillTab.click()
-
-    // After clicking the skill tab, check that we see skill group type labels
+    // Skills are rendered inline; check that we see skill group type labels
     await expect(page.getByText('普通攻击', { exact: true }).first()).toBeVisible({ timeout: 5000 })
   })
 
   test('技能组名称正确渲染（非空文本）', async ({ page }) => {
     await waitForDetailReady(page, 'chr_0005_chen')
-
-    await page.getByRole('button', { name: '技能', exact: true }).click()
     await page.waitForTimeout(2000)
 
     // Check that skill cards are rendered with non-empty text
@@ -48,8 +42,6 @@ test.describe('干员技能 (Operator Skills)', () => {
 
   test('技能等级滑块可操作并更新显示', async ({ page }) => {
     await waitForDetailReady(page, 'chr_0005_chen')
-
-    await page.getByRole('button', { name: '技能', exact: true }).click()
     await page.waitForTimeout(2000)
 
     const slider = page.locator('input[type="range"]').first()
@@ -69,8 +61,6 @@ test.describe('干员技能 (Operator Skills)', () => {
 
   test('干员「阿格莉娜」普通攻击描述中 color 标签正确渲染', async ({ page }) => {
     await waitForDetailReady(page, 'chr_0013_aglina')
-
-    await page.getByRole('button', { name: '技能', exact: true }).click()
     await page.waitForTimeout(3000)
 
     // The normal attack description contains <@ba.natur>自然伤害</> which
@@ -104,8 +94,6 @@ test.describe('干员技能 (Operator Skills)', () => {
 
   test('干员「陈千语」技能组显示中文名称', async ({ page }) => {
     await waitForDetailReady(page, 'chr_0005_chen')
-
-    await page.getByRole('button', { name: '技能', exact: true }).click()
     await page.waitForTimeout(3000)
 
     // The skill cards should contain Chinese text labels
@@ -122,5 +110,70 @@ test.describe('干员技能 (Operator Skills)', () => {
     // Should not contain raw placeholder text like empty id references
     expect(sectionText).not.toContain('"id":')
     expect(sectionText).not.toContain('"text":')
+  })
+
+  test.describe('双形态技能切换条件 (Dual-Form Skill Condition)', () => {
+
+    test('干员「丽兹妍」双形态技能显示条件名称（阵诀·智 / 阵诀·意）', async ({ page }) => {
+      await waitForDetailReady(page, 'chr_0032_lizhiyan')
+
+      // Condition names should be visible somewhere on the page
+      const condWisd = page.getByText('阵诀·智', { exact: true })
+      const condWill = page.getByText('阵诀·意', { exact: true })
+      await expect(condWisd.first()).toBeVisible({ timeout: 10000 })
+      await expect(condWill.first()).toBeVisible({ timeout: 10000 })
+    })
+
+    test('双形态技能条件描述不含 /* */ 注释标记', async ({ page }) => {
+      await waitForDetailReady(page, 'chr_0032_lizhiyan')
+      await page.waitForTimeout(3000)
+
+      const bodyText = await page.locator('body').textContent() || ''
+
+      // The RichText stripRichComments should have removed all /* */
+      expect(bodyText).not.toContain('/*')
+      expect(bodyText).not.toContain('*/')
+    })
+
+    test('双形态技能条件描述中 RichText 标签正确渲染', async ({ page }) => {
+      await waitForDetailReady(page, 'chr_0032_lizhiyan')
+      await page.waitForTimeout(3000)
+
+      // The condition descriptions contain "智识值" and "意志值" from the i18n text
+      // after stripRichComments removes the outer /* ... */ wrapper
+      const wisdText = page.getByText('智识值', { exact: false })
+      const willText = page.getByText('意志值', { exact: false })
+
+      // Both should be visible (at least one occurrence each across all skill cards)
+      await expect(wisdText.first()).toBeVisible({ timeout: 5000 })
+      await expect(willText.first()).toBeVisible({ timeout: 5000 })
+
+      // No raw {/* ... */} wrapper should appear
+      const rawComment = page.getByText('/*智识值', { exact: false })
+      const rawCloseComment = page.getByText('*/生效中', { exact: false })
+      await expect(rawComment).toHaveCount(0)
+      await expect(rawCloseComment).toHaveCount(0)
+
+      // Log DOM context around "生效中" to verify it's rendered as normal text, not inside a comment
+      const effectText = page.getByText('生效中', { exact: false })
+      const count = await effectText.count()
+      expect(count).toBeGreaterThan(0)
+
+      const treeDump = await effectText.first().evaluate((el) => {
+        const parts: string[] = []
+        let cur = el
+        for (let d = 0; d < 8; d++) {
+          const tag = cur.tagName || '#text'
+          const style = cur.getAttribute ? cur.getAttribute('style') : null
+          const cls = cur.getAttribute ? cur.getAttribute('class') : null
+          const text = cur.textContent ? cur.textContent.substring(0, 50) : ''
+          parts.push(`depth=${d} tag=${tag} style=${style} class=${cls} text=${JSON.stringify(text)}`)
+          if (cur.parentElement) cur = cur.parentElement
+          else break
+        }
+        return parts
+      })
+      console.log('DOM tree around "生效中":', treeDump.join('\n'))
+    })
   })
 })
