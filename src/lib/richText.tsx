@@ -270,21 +270,20 @@ function renderNode(node: TreeNode, showTips?: boolean): ReactNode {
 function HyperlinkTag({ tag, children, showTips }: { tag: string; children: ReactNode; showTips?: boolean }) {
   const [showTooltip, setShowTooltip] = useState(false)
   const ref = useRef<HTMLButtonElement>(null)
-  const tooltipId = `hl-${tag.replace(/[^a-zA-Z0-9_]/g, '_')}`
   const handleClick = useCallback(() => setShowTooltip(v => !v), [])
   const handleClose = useCallback(() => setShowTooltip(false), [])
   const realShow = showTips !== false && showTooltip
   return (
     <>
-      <button type="button" ref={ref} id={tooltipId}
+      <button type="button" ref={ref}
         className="inline text-[#C9A96E] underline cursor-pointer hover:text-[#d4b87a] transition-colors bg-transparent border-0 p-0 font-inherit"
         onClick={handleClick}>{children}</button>
-      {realShow && <HyperlinkTooltip tag={tag} anchorId={tooltipId} onClose={handleClose} />}
+      {realShow && <HyperlinkTooltip tag={tag} anchorRef={ref} onClose={handleClose} />}
     </>
   )
 }
 
-function HyperlinkTooltip({ tag, anchorId, onClose }: { tag: string; anchorId: string; onClose: () => void }) {
+function HyperlinkTooltip({ tag, anchorRef, onClose }: { tag: string; anchorRef: React.RefObject<HTMLButtonElement | null>; onClose: () => void }) {
   const [data, setData] = useState<{ name?: string; desc?: string; iconPath?: string } | null>(null)
   const { locale } = useLocale()
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -304,18 +303,18 @@ function HyperlinkTooltip({ tag, anchorId, onClose }: { tag: string; anchorId: s
   }, [tag, locale])
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      const anchor = document.getElementById(anchorId)
+      const anchor = anchorRef.current
       const tooltip = tooltipRef.current
       if (anchor && tooltip && !anchor.contains(e.target as Node) && !tooltip.contains(e.target as Node)) onClose()
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [anchorId, onClose])
+  }, [anchorRef, onClose])
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
 
   useEffect(() => {
     if (!data || !tooltipRef.current) return
-    const el = document.getElementById(anchorId)
+    const el = anchorRef.current
     if (!el) return
     const anchorRect = el.getBoundingClientRect()
     const tooltipRect = tooltipRef.current.getBoundingClientRect()
@@ -331,7 +330,7 @@ function HyperlinkTooltip({ tag, anchorId, onClose }: { tag: string; anchorId: s
     if (left < 0) left = gap
     if (top < 0) top = gap
     setPos({ top, left })
-  }, [data, anchorId])
+  }, [data, anchorRef])
 
   if (!data) return null
   return (

@@ -333,6 +333,9 @@ Many enemy entries are variants with keys like `eny_0046_lbshamman_hdg016` and `
 
 Dummy/training enemies use `attrType:1, attrValue:1000, modifierType:1` for ×1001 HP (+100000%). Always fetch `EnemyTable` alongside attribute template data and apply modifiers when displaying stats. Use `AttributeShowConfigTable` + i18n to resolve attribute names for modifier display.
 
+### HyperlinkTooltip 传 ref 而非 anchorId
+每个 `HyperlinkTag` 持有自己的 `ref`。`HyperlinkTooltip` 通过 `anchorRef` prop 直接使用该 ref 定位和检测点击外部，而非 `document.getElementById(anchorId)`。避免同一 tag 在页面中出现多次时 `getElementById` 只返回第一个元素导致 tooltip 定位错误。
+
 ### `mark` Tag Requires Color Attribute
 RichText's `<mark>` tag is parsed as `<mark=#hexcolor>` (color attribute). Bare `<mark>` without `=color` results in `attrs.mark === undefined` and no visible highlight. Always write `<mark=#C9A96E>text</mark>` or similar.
 
