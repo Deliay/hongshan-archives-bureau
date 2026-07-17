@@ -30,6 +30,7 @@ function isImageTag(match: RegExpExecArray): boolean {
 function isOrphanTag(match: RegExpExecArray): boolean {
   if (match[5] !== undefined) return true
   const raw = match[3] ?? ''
+  if (ORPHAN_TAGS.has(raw)) return true
   const attrs = parseAttrs(raw)
   const firstKey = Object.keys(attrs)[0] ?? ''
   if (isImageTag(match) && isSpecialImageTag(match)) return false
@@ -145,7 +146,7 @@ function tokenize(text: string): RawSegment[] {
         const pfx = match![2] ?? ''
         if (isOrphanTag(match!)) {
           const attrs = parseAttrs(raw)
-          const firstKey = Object.keys(attrs)[0] ?? ''
+          const firstKey = Object.keys(attrs)[0] ?? raw
           segments.push({ type: 'orphan', tagName: firstKey, attrs })
         } else {
           segments.push({ type: 'tag-open', tagName: raw, attrs: parseAttrs(raw), prefix: pfx })
