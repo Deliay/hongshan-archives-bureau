@@ -340,7 +340,7 @@ function collectBlackboards(patches: SkillPatchData[]): Record<string, number> {
   const bb: Record<string, number> = {}
   for (const patch of patches) {
     for (const b of patch.blackboard) {
-      if (!(b.key in bb)) bb[b.key] = b.value
+      bb[b.key] = b.value
     }
   }
   return bb
@@ -357,7 +357,6 @@ function SkillFormColumn({
   icon,
   name,
   patches,
-  mainDescText,
   postDescText,
   conditionId,
   condDesc,
@@ -366,7 +365,6 @@ function SkillFormColumn({
   icon: string
   name: string
   patches: SkillPatchData[]
-  mainDescText: string
   postDescText: string
   conditionId: string
   condDesc?: string
@@ -416,14 +414,8 @@ function SkillFormColumn({
         )
       })()}
 
-      {mainDescText && (
-        <div className="text-xs text-[#B0ACA6] leading-relaxed">
-          <RichText text={mainDescText} />
-        </div>
-      )}
-
       {postDescText && (
-        <div className="text-xs text-[#C9A96E]/70 leading-relaxed mt-1.5 border-t border-[#2A2A32] pt-1.5">
+        <div className="text-xs text-[#B0ACA6] leading-relaxed mt-1.5 border-t border-[#2A2A32] pt-1.5">
           <RichText text={postDescText} />
         </div>
       )}
@@ -535,28 +527,33 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
       </div>
 
       {isDual ? (
-        <div className="flex gap-3">
-          <SkillFormColumn
-            icon={cond1.icon || group.icon}
-            name={cond1.name}
-            patches={condPatches1}
-            mainDescText={mainDescText}
-            postDescText={postDescText1}
-            conditionId={cond1.conditionId}
-            condDesc={condDesc1}
-            condDescInactive={condInactive1}
-          />
-          <SkillFormColumn
-            icon={cond2.icon || group.icon}
-            name={cond2.name}
-            patches={condPatches2}
-            mainDescText={mainDescText}
-            postDescText={postDescText2}
-            conditionId={cond2.conditionId}
-            condDesc={condDesc2}
-            condDescInactive={condInactive2}
-          />
-        </div>
+        <>
+          {mainDescText && (
+            <div className="text-xs text-[#B0ACA6] leading-relaxed mb-3">
+              <RichText text={mainDescText} />
+            </div>
+          )}
+          <div className="flex gap-3">
+            <SkillFormColumn
+              icon={cond1.icon || group.icon}
+              name={cond1.name}
+              patches={condPatches1}
+              postDescText={postDescText1}
+              conditionId={cond1.conditionId}
+              condDesc={condDesc1}
+              condDescInactive={condInactive1}
+            />
+            <SkillFormColumn
+              icon={cond2.icon || group.icon}
+              name={cond2.name}
+              patches={condPatches2}
+              postDescText={postDescText2}
+              conditionId={cond2.conditionId}
+              condDesc={condDesc2}
+              condDescInactive={condInactive2}
+            />
+          </div>
+        </>
       ) : (
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0 flex items-center justify-center">
