@@ -154,7 +154,7 @@ export default function ItemList() {
     return [...filtered].sort((a, b) => {
       let cmp = 0
       if (sortField === 'rarity') cmp = a.rarity - b.rarity
-      else if (sortField === 'type') cmp = Number(a.type) - Number(b.type)
+      else if (sortField === 'type') cmp = a.type - b.type
       else if (sortField === 'showingType') cmp = a.showingType - b.showingType
       return cmp * dir
     })

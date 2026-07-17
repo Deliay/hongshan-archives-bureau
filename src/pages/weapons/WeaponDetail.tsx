@@ -1,12 +1,8 @@
-import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useWeapon } from '../../hooks/useData'
-import { getCachedData } from '../../lib/cache'
-import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
-import { useLocale } from '../../lib/locale'
-import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
+import { ASSET_BASE } from '../../lib/adapter'
 import { RichText } from '../../lib/richText'
-import { formatBlackboard } from '../../lib/formatText'
+import WeaponSkillPanel from '../../components/Weapons/WeaponSkillPanel'
 
 const RARITY_COLORS: Record<number, string> = {
   3: '#26BBFD',
@@ -71,7 +67,7 @@ export default function WeaponDetail() {
         </div>
       )}
 
-      <WeaponSkills weaponId={weapon.id} skillIds={weapon.skills} />
+      <WeaponSkillPanel skillIds={weapon.skills} showLevelSlider />
 
       <div className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
         <div className="text-[10px] text-[#8B8982] uppercase tracking-wide mb-1">基本信息</div>
@@ -97,112 +93,4 @@ export default function WeaponDetail() {
       )}
     </div>
   )
-}
-
-function WeaponSkills({ skillIds }: { weaponId?: string; skillIds: string[] }) {
-  const { locale } = useLocale()
-  const [skillPatches, setSkillPatches] = useState<Record<string, {
-    level: number
-    skillName: string
-    description: string
-    iconId: string
-    blackboard: Record<string, number>
-  }[]>>({})
-  const [levels, setLevels] = useState<Record<string, number>>({})
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      const [patchRaw, patchI18n] = await Promise.all([
-        getCachedData<Record<string, any>>('SkillPatchTable', () => fetchTableAll('SkillPatchTable')),
-        getTableI18nDict('SkillPatchTable', locale),
-      ])
-      if (cancelled) return
-
-      const result: Record<string, { level: number; skillName: string; description: string; iconId: string; blackboard: Record<string, number> }[]> = {}
-      const defaultLevels: Record<string, number> = {}
-
-      for (const skillId of skillIds) {
-        const entry = patchRaw[skillId]
-        if (entry?.SkillPatchDataBundle) {
-          result[skillId] = entry.SkillPatchDataBundle.map((p: any) => {
-            const bb: Record<string, number> = {}
-            for (const b of (p.blackboard ?? [])) {
-              bb[b.key] = b.value ?? 0
-            }
-            return {
-              level: p.level,
-              skillName: resolveI18n(p.skillName, patchI18n) || '',
-              description: resolveI18n(p.description, patchI18n) || '',
-              iconId: p.iconId ?? '',
-              blackboard: bb,
-            }
-          })
-          defaultLevels[skillId] = result[skillId].length
-        }
-      }
-      setSkillPatches(result)
-      setLevels(defaultLevels)
-      setLoading(false)
-    }
-    load()
-    return () => { cancelled = true }
-  }, [locale, skillIds.join(',')])
-
-  if (loading) return <div className="text-[#8B8982] text-sm mb-4 p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">加载技能…</div>
-  if (Object.keys(skillPatches).length === 0) return null
-
-  return (
-    <div className="mb-4 space-y-3">
-      <h3 className="text-sm font-medium text-[#C9A96E]">武器技能</h3>
-      {Object.entries(skillPatches).map(([skillId, patches]) => {
-        const level = levels[skillId] ?? patches.length
-        const current = patches.find(p => p.level === level) ?? patches[patches.length - 1]
-        const sorted = [...patches].sort((a, b) => a.level - b.level)
-        return (
-          <div key={skillId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
-            <div className="flex items-start gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  {current.iconId && (
-                    <img src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${current.iconId}.png`}
-                      alt="" className="w-8 h-8 object-contain bg-[#0F0F12] rounded"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                  )}
-                  <div>
-                    <div className="text-sm font-medium text-[#E8E6E3]">{current.skillName || skillId}</div>
-                    <div className="text-[10px] text-[#5A5A62] font-mono">Lv.{current.level}</div>
-                  </div>
-                </div>
-                <div className="mt-2 text-xs text-[#E8E6E3] leading-relaxed">
-                  <RichText text={formatBlackboard(current.description, current.blackboard)} />
-                </div>
-              </div>
-            </div>
-            {sorted.length > 1 && (
-              <div className="mt-3">
-                <input
-                  type="range"
-                  min={sorted[0].level}
-                  max={sorted[sorted.length - 1].level}
-                  value={level}
-                  onChange={(e) => setLevels(m => ({ ...m, [skillId]: Number(e.target.value) }))}
-                  className="w-full h-1 rounded-full appearance-none bg-[#2A2A32] accent-[#C9A96E] cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-[#5A5A62] mt-1">
-                  <span>Lv.{sorted[0].level}</span>
-                  <span>Lv.{sorted[sorted.length - 1].level}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-async function getTableI18nDict(table: string, locale: string): Promise<Record<string, string>> {
-  return getCachedData<Record<string, string>>(`I18nDict_${locale}_${table}`, () => fetchTableDictAll(table, locale))
 }

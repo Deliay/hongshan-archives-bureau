@@ -5,6 +5,9 @@ import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
 import ItemIcon from './ItemIcon'
 import { resolveI18n, ASSET_BASE } from '../../lib/adapter'
+import { ITEM_TYPE } from '../../data/constants'
+import WeaponSkillPanel from '../Weapons/WeaponSkillPanel'
+import RewardPanel from './RewardPanel'
 
 const RARITY_COLORS: Record<number, string> = {
   1: '#a0a0a0',
@@ -26,6 +29,7 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
   const [i18nMap, setI18nMap] = useState<Record<string, string> | null>(null)
   const [fullBottle, setFullBottle] = useState<{ liquidId: string; liquidCapacity: number } | null>(null)
   const [itemChest, setItemChest] = useState<{ rewardIdList?: string[] } | null>(null)
+  const [rewardTable, setRewardTable] = useState<Record<string, any> | null>(null)
   const [obtainWayMap, setObtainWayMap] = useState<Record<string, any>>({})
   const [jumpI18nMap, setJumpI18nMap] = useState<Record<string, string> | null>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -56,6 +60,8 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
       const chest = chestRaw[itemId]
       if (chest?.rewardIdList?.length) {
         setItemChest(chest)
+        const rewardRaw = await getCachedData<Record<string, any>>('RewardTable', () => fetchTableAll('RewardTable'))
+        if (!cancelled) setRewardTable(rewardRaw)
       }
 
       const map: Record<string, any> = {}
@@ -186,16 +192,14 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
             </div>
           )}
 
-          {itemChest?.rewardIdList && itemChest.rewardIdList.length > 0 && (
+          {itemChest?.rewardIdList && itemChest.rewardIdList.length > 0 && rewardTable && (
+            <RewardPanel rewardIds={itemChest.rewardIdList} rewardTable={rewardTable} />
+          )}
+
+          {itemData && Number(itemData.type) === ITEM_TYPE.Weapon && (
             <div>
-              <div className="text-[10px] text-[#8B8982] uppercase tracking-wide mb-1">包含内容</div>
-              <div className="flex flex-wrap gap-2">
-                {itemChest.rewardIdList.map((rewardId) => (
-                  <span key={rewardId} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#5A5A62] font-mono">
-                    {rewardId}
-                  </span>
-                ))}
-              </div>
+              <div className="text-[10px] text-[#8B8982] uppercase tracking-wide mb-1">武器技能</div>
+              <WeaponSkillPanel weaponId={itemId} />
             </div>
           )}
 

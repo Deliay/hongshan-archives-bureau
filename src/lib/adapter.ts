@@ -99,7 +99,7 @@ export function adaptItem(raw: any, i18nMap?: Record<string, string>): Item {
   return {
     id: raw.itemId ?? raw.$key ?? raw.id ?? '',
     name: resolveI18n(raw.name, i18nMap) || raw.id || '',
-    type: raw.type ?? raw.itemType ?? '',
+    type: Number(raw.type) ?? 0,
     rarity: raw.rarity ?? 0,
     description: resolveI18n(raw.desc, i18nMap),
     decoDesc: resolveI18n(raw.decoDesc, i18nMap),

@@ -59,7 +59,7 @@ function compile(expr: string): (vars: Record<string, number>) => number {
     const name = tokens[0].value
     return (vars) => vars[name] ?? 0
   }
-  if (tokens.length === 2 && tokens[0].type === 'op' && tokens[0].value === '-') {
+  if (tokens.length === 2 && tokens[0].type === 'op' && tokens[0].value === 'u') {
     if (tokens[1].type === 'number') {
       const val = -Number(tokens[1].value)
       return () => val
@@ -81,7 +81,16 @@ function tokenize(expr: string): Token[] {
     const match = regex.exec(expr)
     if (!match) break
     if (match[1]) tokens.push({ type: 'variable', value: match[1] })
-    else if (match[2]) tokens.push({ type: 'op', value: match[2] })
+    else if (match[2]) {
+      const ch = match[2]
+      if (ch === '-') {
+        const prev = tokens[tokens.length - 1] ?? null
+        const isUnary = !prev || prev.value === '(' || prev.type === 'op'
+        tokens.push({ type: 'op', value: isUnary ? 'u' : '-' })
+      } else {
+        tokens.push({ type: 'op', value: ch })
+      }
+    }
     else if (match[3]) tokens.push({ type: 'paren', value: '(' })
     else if (match[4]) tokens.push({ type: 'paren', value: ')' })
     else if (match[5]) tokens.push({ type: 'number', value: match[5] })
@@ -92,10 +101,15 @@ function tokenize(expr: string): Token[] {
 function parseAndEval(tokens: Token[], vars: Record<string, number>): number {
   const output: (number | string)[] = []
   const ops: string[] = []
-  const prec: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2 }
+  const prec: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2, 'u': 3 }
 
   function applyOp() {
     const op = ops.pop()!
+    if (op === 'u') {
+      const a = output.pop() as number
+      output.push(-a)
+      return
+    }
     const b = output.pop() as number
     const a = output.pop() as number
     switch (op) {
@@ -112,10 +126,14 @@ function parseAndEval(tokens: Token[], vars: Record<string, number>): number {
     } else if (token.type === 'variable') {
       output.push(vars[token.value] ?? 0)
     } else if (token.type === 'op') {
-      while (ops.length && ops[ops.length - 1] !== '(' && prec[ops[ops.length - 1]] >= prec[token.value]) {
-        applyOp()
+      if (token.value === 'u') {
+        ops.push('u')
+      } else {
+        while (ops.length && ops[ops.length - 1] !== '(' && prec[ops[ops.length - 1]] >= prec[token.value]) {
+          applyOp()
+        }
+        ops.push(token.value)
       }
-      ops.push(token.value)
     } else if (token.value === '(') {
       ops.push('(')
     } else if (token.value === ')') {

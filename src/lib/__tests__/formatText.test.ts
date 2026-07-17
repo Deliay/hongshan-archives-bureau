@@ -21,4 +21,20 @@ describe('formatBlackboard', () => {
   it('handles unary minus with missing variable', () => {
     expect(formatBlackboard('{-x}', {})).toBe('0')
   })
+
+  it('handles compound expression with leading unary minus', () => {
+    expect(formatBlackboard('{-x + 5}', { x: 10 })).toBe('-5')
+  })
+
+  it('handles unary minus after binary operator', () => {
+    expect(formatBlackboard('{x + -y}', { x: 10, y: 5 })).toBe('5')
+  })
+
+  it('handles unary minus before parenthesized expr', () => {
+    expect(formatBlackboard('{-(x + 5)}', { x: 10 })).toBe('-15')
+  })
+
+  it('handles constant negative number', () => {
+    expect(formatBlackboard('{-5}', {})).toBe('-5')
+  })
 })

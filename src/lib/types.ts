@@ -178,7 +178,7 @@ export interface Enemy {
 export interface Item {
   id: string
   name: string
-  type: string
+  type: number
   rarity: number
   description: string
   decoDesc: string
