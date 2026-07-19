@@ -554,16 +554,16 @@ const RARITY_COLORS = [
 
 ## 6. 验收标准
 
-- [ ] 全站无旧色值硬编码（`#0F0F12`、`#1A1B23`、`#2A2A32`、`#C9A96E` 等已替换为 token）
-- [ ] 全站无「宏山档案馆」品牌文案残留
-- [ ] `npm run lint` 通过
-- [ ] `npm run test` 通过
-- [ ] `npm run build` 通过
-- [ ] Playwright E2E 测试通过
-- [ ] 桌面端所有页面视觉正常，无布局崩坏
-- [ ] 移动端所有页面视觉正常，侧边抽屉可用
-- [ ] 图片加载失败时显示默认占位
-- [ ] 老用户原有操作路径不受影响
+- [x] 全站无旧色值硬编码（`#0F0F12`、`#1A1B23`、`#2A2A32`、`#C9A96E` 等已替换为 token）
+- [x] 全站无「宏山档案馆」品牌文案残留
+- [x] `npm run lint` 通过（26 个既有警告，0 错误）
+- [x] `npm run test` 通过（38 项单元/组件测试）
+- [x] `npm run build` 通过
+- [x] Playwright E2E 测试通过（44 项）
+- [x] 桌面端所有页面视觉正常，无布局崩坏
+- [x] 移动端所有页面视觉正常，侧边抽屉可用
+- [x] 图片加载失败时显示默认占位
+- [x] 老用户原有操作路径不受影响
 
 ## 7. 风险与回滚
 
@@ -584,3 +584,16 @@ const RARITY_COLORS = [
 - [[common-rules|通用开发规范]]
 - [[frontend-spec|前端开发规范]]
 - [[engineering-spec|工程架构规范]]
+
+
+## 上线记录
+
+- **上线日期**: 2026-07-19
+- **合并 PR**: #3
+- **合并分支**: `feat/archive-bureau-redesign` → `main`
+- **实际验证**:
+  - `npm run build`: ✅
+  - `npm run test`: ✅ 38 passed
+  - `npm run lint`: ⚠️ 26 warnings（既有），0 errors
+  - Playwright E2E: ✅ 44 passed
+- **关键修复**: 恢复 `/archive` 首页路由、`WeaponSkillPanel` 全局 i18n 回退、`RaceList`/`FactionList` 禁止 `<a>` 嵌套 `<a>`。
