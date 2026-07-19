@@ -4,28 +4,53 @@ import { useLocale } from '../../lib/locale'
 import { useI18nLocales } from '../../hooks/useData'
 import { ArchiveSeal } from '../ui/ArchiveSeal'
 
-type NavItem = {
+type NavLink = {
   label: string
   path: string
-  children?: { label: string; path: string }[]
 }
 
-const NAV_ITEMS: NavItem[] = [
+type NavGroup = {
+  label: string
+  items: NavLink[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
-    label: '干员档案', path: '/archive/operators',
-    children: [
+    label: '人事档案',
+    items: [
+      { label: '干员档案', path: '/archive/operators' },
       { label: '干员种族', path: '/archive/races' },
       { label: '干员阵营', path: '/archive/factions' },
     ],
   },
-  { label: '武器档案', path: '/archive/weapons' },
-  { label: '敌人图鉴', path: '/archive/enemies' },
-  { label: '道具材料', path: '/archive/items' },
-  { label: '地区地理', path: '/archive/geography' },
-  { label: '装备系统', path: '/archive/equipment' },
-  { label: '工厂系统', path: '/archive/factory' },
-  { label: '剧情记录', path: '/archive/story' },
-  { label: '更新日志', path: '/archive/updates' },
+  {
+    label: '威胁档案',
+    items: [
+      { label: '敌人图鉴', path: '/archive/enemies' },
+    ],
+  },
+  {
+    label: '物资档案',
+    items: [
+      { label: '道具材料', path: '/archive/items' },
+      { label: '武器档案', path: '/archive/weapons' },
+      { label: '装备系统', path: '/archive/equipment' },
+      { label: '工厂系统', path: '/archive/factory' },
+    ],
+  },
+  {
+    label: '地理档案',
+    items: [
+      { label: '地区地理', path: '/archive/geography' },
+    ],
+  },
+  {
+    label: '大事记',
+    items: [
+      { label: '剧情记录', path: '/archive/story' },
+      { label: '更新日志', path: '/archive/updates' },
+    ],
+  },
 ]
 
 const LOCALE_LABELS: Record<string, string> = {
@@ -72,62 +97,33 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {NAV_ITEMS.map((item) => {
-            if (item.children) {
-              const childActive = item.children.some(c => location.pathname.startsWith(c.path))
-              const groupActive = location.pathname.startsWith(item.path) || childActive
-              return (
-                <div key={item.path}>
-                  <Link
-                    to={item.path}
-                    onClick={() => setOpen(false)}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors ${
-                      groupActive
-                        ? 'text-archive-gold bg-archive-gold/10'
-                        : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-file'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                  <div className="ml-4 mt-0.5 space-y-0.5">
-                    {item.children.map((child) => {
-                      const active = location.pathname.startsWith(child.path)
-                      return (
-                        <Link
-                          key={child.path}
-                          to={child.path}
-                          onClick={() => setOpen(false)}
-                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded text-sm transition-colors ${
-                            active
-                              ? 'text-archive-gold bg-archive-gold/10'
-                              : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-file'
-                          }`}
-                        >
-                          {child.label}
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            }
-            const active = location.pathname.startsWith(item.path)
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors ${
-                  active
-                    ? 'text-archive-gold bg-archive-gold/10'
-                    : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-file'
-                }`}
-              >
-                {item.label}
-              </Link>
-            )
-          })}
+        <nav className="flex-1 overflow-y-auto p-2 space-y-5">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              <div className="px-3 py-1 text-xs font-medium tracking-wider text-archive-lead uppercase">
+                {group.label}
+              </div>
+              <div className="mt-1 space-y-0.5">
+                {group.items.map((item) => {
+                  const active = location.pathname.startsWith(item.path)
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setOpen(false)}
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors ${
+                        active
+                          ? 'text-archive-gold bg-archive-gold/10'
+                          : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-file'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="p-3 border-t border-archive-border relative">
