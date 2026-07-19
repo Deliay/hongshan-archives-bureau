@@ -2,16 +2,18 @@ import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
 import { PROFESSION_MAP, ELEMENT_MAP } from '../../data/constants'
 import { Link } from 'react-router-dom'
+import { useI18n } from '../../i18n'
 
 export default function ProfessionOverview() {
+  const { t } = useI18n()
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <h2 className="font-display text-xl font-bold text-archive-ivory">职业与属性</h2>
+        <h2 className="font-display text-xl font-bold text-archive-ivory">{t('profession.title')}</h2>
         <Badge variant="ghost" className="font-mono">{MODULE_CODES.professions}</Badge>
       </div>
 
-      <h3 className="text-sm font-medium text-archive-gold mb-2 tracking-wider">职业</h3>
+      <h3 className="text-sm font-medium text-archive-gold mb-2 tracking-wider">{t('profession.profession')}</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
         {Object.entries(PROFESSION_MAP).map(([id, name]) => (
           <Link
@@ -24,7 +26,7 @@ export default function ProfessionOverview() {
         ))}
       </div>
 
-      <h3 className="text-sm font-medium text-archive-gold mb-2 tracking-wider">属性形态</h3>
+      <h3 className="text-sm font-medium text-archive-gold mb-2 tracking-wider">{t('profession.element')}</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {Object.entries(ELEMENT_MAP).map(([id, el]) => (
           <Link

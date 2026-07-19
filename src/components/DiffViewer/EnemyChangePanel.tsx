@@ -9,6 +9,7 @@ import type { EnemyChange } from '../../hooks/useEnemyAggregatedDiff'
 import type { ChangedEntry } from '../../lib/types-diff'
 import { RichText } from '../../lib/richText'
 import { RichTextDiff } from './RichTextDiff'
+import { useI18n, translate } from '../../i18n'
 
 const ENEMY_STARS: Record<number, number> = { 0: 1, 1: 3, 2: 6, 3: 4, 4: 5 }
 
@@ -38,11 +39,11 @@ function ChangeBadge({ label, color, count }: { label: string; color: string; co
   )
 }
 
-function renderObj(obj: any, indent = ''): string {
-  if (obj === null || obj === undefined) return indent + '（空）'
+function renderObj(obj: any, locale: string, indent = ''): string {
+  if (obj === null || obj === undefined) return `${indent}${translate(locale, 'diff.empty')}`
   if (Array.isArray(obj)) {
     if (obj.length === 0) return indent + '[]'
-    return obj.map((_v, i) => `${indent}[${i}]: ${renderObj(_v, indent + '  ')}`).join('\n')
+    return obj.map((_v, i) => `${indent}[${i}]: ${renderObj(_v, locale, indent + '  ')}`).join('\n')
   }
   if (typeof obj === 'object') {
     const text = 'text' in obj ? (obj.text || '') : ''
@@ -53,16 +54,16 @@ function renderObj(obj: any, indent = ''): string {
     return keys.map(k => {
       const v = obj[k]
       if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0) {
-        return `${indent}${k}:\n${renderObj(v, indent + '  ')}`
+        return `${indent}${k}:\n${renderObj(v, locale, indent + '  ')}`
       }
-      return `${indent}${k}: ${renderObj(v, '')}`.trim()
+      return `${indent}${k}: ${renderObj(v, locale, '')}`.trim()
     }).join('\n')
   }
   return String(obj)
 }
 
 function formatDiffValue(v: unknown, locale: string): string {
-  if (v === undefined || v === null) return '（空）'
+  if (v === undefined || v === null) return translate(locale, 'diff.empty')
   if (typeof v === 'object' && !Array.isArray(v)) {
     const text = localeText(v, locale)
     if (text) return `"${text}"`
@@ -88,8 +89,8 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
                 <div key={path} className="text-[10px]">
                   <span className="text-archive-lead font-mono">{path}</span>
                   <div className="flex gap-3 mt-0.5">
-                    <span className="text-[archive-seal]">旧 {formatDiffValue(change.oldValue, locale)}</span>
-                    <span className="text-[archive-bronze]">新 {formatDiffValue(change.newValue, locale)}</span>
+                    <span className="text-[archive-seal]">{translate(locale, 'diff.old')} {formatDiffValue(change.oldValue, locale)}</span>
+                    <span className="text-[archive-bronze]">{translate(locale, 'diff.new')} {formatDiffValue(change.newValue, locale)}</span>
                   </div>
                 </div>
               )
@@ -114,9 +115,9 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
         </div>
       )
     }
-    return <div className="text-archive-dust text-[10px]">无详细变更信息</div>
+    return <div className="text-archive-dust text-[10px]">{translate(locale, 'diff.noDetail')}</div>
   }
-  return <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry)}</div>
+  return <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry, locale)}</div>
 }
 
 function renderTableEntry(change: { tableName: string; op: string; key: string; entry: any }, locale: string) {
@@ -165,7 +166,7 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
     <div className="space-y-1">
       {op !== 'changed' && (
         <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
-          {renderObjFiltered(data, ['distributionIds'], '')}
+          {renderObjFiltered(data, locale, ['distributionIds'], '')}
         </div>
       )}
       {otherChanges.length > 0 && (
@@ -177,8 +178,8 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
                 <div key={path} className="text-[10px]">
                   <span className="text-archive-lead font-mono">{path}</span>
                   <div className="flex gap-3 mt-0.5">
-                    <span className="text-[archive-seal]">旧 {formatDiffValue(change.oldValue, locale)}</span>
-                    <span className="text-[archive-bronze]">新 {formatDiffValue(change.newValue, locale)}</span>
+                    <span className="text-[archive-seal]">{translate(locale, 'diff.old')} {formatDiffValue(change.oldValue, locale)}</span>
+                    <span className="text-[archive-bronze]">{translate(locale, 'diff.new')} {formatDiffValue(change.newValue, locale)}</span>
                   </div>
                 </div>
               )
@@ -204,11 +205,11 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
       )}
       {(op === 'added' || op === 'removed' || hasDistDiff) && Object.keys(areaNames).length > 0 && (
         <div className="px-2 py-1 rounded bg-archive-ink">
-          <div className="text-[10px] text-archive-dust mb-0.5">分布区域</div>
+          <div className="text-[10px] text-archive-dust mb-0.5">{translate(locale, 'enemy.distribution')}</div>
           <div className="space-y-1">
             {removed.length > 0 && (
               <div>
-                <div className="text-[10px] text-[archive-seal] mb-0.5">移除</div>
+                <div className="text-[10px] text-[archive-seal] mb-0.5">{translate(locale, 'update.removed')}</div>
                 <div className="flex flex-wrap gap-1">
                   {removed.map(id => (
                     <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-[archive-seal] line-through">
@@ -220,7 +221,7 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
             )}
             {added.length > 0 && (
               <div>
-                <div className="text-[10px] text-[archive-bronze] mb-0.5">新增</div>
+                <div className="text-[10px] text-[archive-bronze] mb-0.5">{translate(locale, 'update.added')}</div>
                 <div className="flex flex-wrap gap-1">
                   {added.map(id => (
                     <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-bronze/10 text-[archive-bronze]">
@@ -232,7 +233,7 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
             )}
             {unchanged.length > 0 && (
               <div>
-                <div className="text-[10px] text-archive-dust mb-0.5">已存在</div>
+                <div className="text-[10px] text-archive-dust mb-0.5">{translate(locale, 'diff.unchanged')}</div>
                 <div className="flex flex-wrap gap-1">
                   {unchanged.map(id => (
                     <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
@@ -258,11 +259,11 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
   )
 }
 
-function renderObjFiltered(obj: any, excludeKeys: string[], indent: string): string {
-  if (obj === null || obj === undefined) return indent + '（空）'
+function renderObjFiltered(obj: any, locale: string, excludeKeys: string[], indent: string): string {
+  if (obj === null || obj === undefined) return `${indent}${translate(locale, 'diff.empty')}`
   if (Array.isArray(obj)) {
     if (obj.length === 0) return indent + '[]'
-    return obj.map((_v, i) => `${indent}[${i}]: ${renderObjFiltered(_v, excludeKeys, indent + '  ')}`).join('\n')
+    return obj.map((_v, i) => `${indent}[${i}]: ${renderObjFiltered(_v, locale, excludeKeys, indent + '  ')}`).join('\n')
   }
   if (typeof obj === 'object') {
     const text = 'text' in obj ? (obj.text || '') : ''
@@ -273,9 +274,9 @@ function renderObjFiltered(obj: any, excludeKeys: string[], indent: string): str
     return keys.map(k => {
       const v = obj[k]
       if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0) {
-        return `${indent}${k}:\n${renderObjFiltered(v, excludeKeys, indent + '  ')}`
+        return `${indent}${k}:\n${renderObjFiltered(v, locale, excludeKeys, indent + '  ')}`
       }
-      return `${indent}${k}: ${renderObjFiltered(v, excludeKeys, '')}`.trim()
+      return `${indent}${k}: ${renderObjFiltered(v, locale, excludeKeys, '')}`.trim()
     }).join('\n')
   }
   return String(obj)
@@ -306,7 +307,7 @@ function EnemyTableEntry({ entry, op, locale }: { entry: any; op: string; locale
       {renderChangeEntry(entry, op, locale)}
       {attrData && (
         <div className="px-2 py-1.5 rounded bg-archive-ink mt-1">
-          <div className="text-[10px] text-archive-dust mb-1">属性模板 ({attrTemplateId})</div>
+          <div className="text-[10px] text-archive-dust mb-1">{translate(locale, 'diff.attrTemplate')} ({attrTemplateId})</div>
           <AttributeView attrData={attrData} level={level} />
           {levelCount > 1 && (
             <div className="mt-2">
@@ -344,6 +345,7 @@ function EnemyAttrEntry({ entry, op, locale }: { entry: any; op: string; locale:
 }
 
 function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
+  const { t } = useI18n()
   const [expanded, setExpanded] = useState(false)
   const isAdded = ep.changes.some(c => c.op === 'added' && c.key === ep.enemyId && (c.tableName === 'EnemyTemplateDisplayInfoTable' || c.tableName === 'EnemyDisplayInfoTable'))
   const [tagI18n, setTagI18n] = useState<Record<string, string>>({})
@@ -402,7 +404,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   const nickname = localeText(ep.nickname, locale) || localeText(displayEntry?.nickname, locale) || ''
   const displayType = ep.displayType ?? displayEntry?.displayType ?? fallbackData?.displayType ?? 0
   const stars = ENEMY_STARS[displayType] ?? 1
-  const typeLabel = typeNameMap[displayType] || `类型${displayType}`
+  const typeLabel = typeNameMap[displayType] || `${t('common.unknown')} ${displayType}`
   const tags: string[] = ep.tags ?? displayEntry?.tags ?? fallbackData?.tags ?? []
 
   const tableCounts: Record<string, { op: string; count: number }> = {}
@@ -439,7 +441,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <div className="truncate flex items-center gap-1.5">
-              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[archive-bronze] text-white font-bold shrink-0">新增</span>}
+              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[archive-bronze] text-white font-bold shrink-0">{t('update.added')}</span>}
               <span className="text-sm font-medium text-archive-ivory">{name}</span>
               <span className="text-[10px] text-archive-lead font-mono">{ep.enemyId}</span>
             </div>
@@ -457,7 +459,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
               {changeCategories.added > 0 && <span className="text-[archive-bronze] mr-1">+{changeCategories.added}</span>}
               {changeCategories.removed > 0 && <span className="text-[archive-seal] mr-1">-{changeCategories.removed}</span>}
               {changeCategories.changed > 0 && <span className="text-[archive-gold] mr-1">~{changeCategories.changed}</span>}
-              {hasVariants && <span className="text-archive-dust">({variantKeys.size} 个变体)</span>}
+              {hasVariants && <span className="text-archive-dust">{t('diff.variantCount', { count: variantKeys.size })}</span>}
             </span>
           </div>
           <div className="flex flex-wrap gap-1 mt-1.5">
@@ -478,7 +480,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
             ep.changes.map((c) => {
               const label = c.tableName
               const color = TABLE_COLORS[c.tableName] || '#8B8982'
-              const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
+              const opLabel = c.op === 'added' ? t('update.added') : c.op === 'removed' ? t('update.removed') : t('update.changed')
               const opColor = c.op === 'added' ? '#5A7A6A' : c.op === 'removed' ? '#9E3A3A' : '#B89A6A'
               return (
                 <div key={c.tableName + c.key} className="text-xs border-b border-archive-border/50 pb-1.5 last:border-0 last:pb-0">
@@ -498,7 +500,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
   )
 }
 
-function AddedEnemyDetail({ templateId, displayEntry, locale, typeNameMap }: { templateId: string; displayEntry: any; locale: string; typeNameMap: Record<number, string> }) {
+function AddedEnemyDetail({ templateId, displayEntry, locale: _locale, typeNameMap }: { templateId: string; displayEntry: any; locale: string; typeNameMap: Record<number, string> }) {
   const [abilities, setAbilities] = useState<{ name: string; description: string }[]>([])
   const [attrData, setAttrData] = useState<any>(null)
   const [attrLevel, setAttrLevel] = useState(1)
@@ -510,7 +512,7 @@ function AddedEnemyDetail({ templateId, displayEntry, locale, typeNameMap }: { t
     async function load() {
       const [abilityRaw, abilityI18n, attrRaw] = await Promise.all([
         getCachedData<Record<string, any>>('EnemyAbilityDescTable', () => fetchTableAll('EnemyAbilityDescTable')).catch(() => ({})),
-        getCachedData<Record<string, string>>(`I18nDict_${locale}_EnemyAbilityDescTable`, () => fetchTableDictAll('EnemyAbilityDescTable', locale)).catch(() => ({}) as Record<string, string>),
+        getCachedData<Record<string, string>>(`I18nDict_${_locale}_EnemyAbilityDescTable`, () => fetchTableDictAll('EnemyAbilityDescTable', _locale)).catch(() => ({}) as Record<string, string>),
         getCachedData<Record<string, any>>('EnemyAttributeTemplateTable', () => fetchTableAll('EnemyAttributeTemplateTable')).catch(() => ({})),
       ])
       if (cancelled) return
@@ -536,16 +538,16 @@ function AddedEnemyDetail({ templateId, displayEntry, locale, typeNameMap }: { t
     }
     load()
     return () => { cancelled = true }
-  }, [templateId, abilityDescIds.join(','), locale])
+  }, [templateId, abilityDescIds.join(','), _locale])
 
-  const desc = localeText(displayEntry?.description, locale) || ''
-  const nickname = localeText(displayEntry?.nickname, locale) || ''
+  const desc = localeText(displayEntry?.description, _locale) || ''
+  const nickname = localeText(displayEntry?.nickname, _locale) || ''
 
   return (
     <div className="space-y-3">
       {desc && (
         <div className="p-2 rounded bg-archive-ink">
-          <div className="text-[10px] text-archive-dust mb-1">描述</div>
+          <div className="text-[10px] text-archive-dust mb-1">{translate(_locale, 'enemy.description')}</div>
           <div className="text-xs text-archive-ivory leading-relaxed"><RichText text={desc} /></div>
         </div>
       )}
@@ -553,7 +555,7 @@ function AddedEnemyDetail({ templateId, displayEntry, locale, typeNameMap }: { t
       {abilities.length > 0 && (
         <details className="group" open>
           <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">
-            能力（{abilities.length}）
+            {translate(_locale, 'diff.abilities', { count: abilities.length })}
           </summary>
           <div className="mt-1 space-y-2">
             {abilities.map((a) => (
@@ -568,7 +570,7 @@ function AddedEnemyDetail({ templateId, displayEntry, locale, typeNameMap }: { t
 
       {attrData && (
         <details className="group" open>
-          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">属性模板</summary>
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{translate(_locale, 'diff.attrTemplate')}</summary>
           <div className="mt-1 px-2 py-1.5 rounded bg-archive-ink">
             <AttributeView attrData={attrData} level={attrLevel} />
             {attrData.levelDependentAttributes?.length > 1 && (
@@ -588,14 +590,14 @@ function AddedEnemyDetail({ templateId, displayEntry, locale, typeNameMap }: { t
       )}
 
       <details className="group" open>
-        <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">基本信息</summary>
+        <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{translate(_locale, 'common.basicInfo')}</summary>
         <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs px-2">
-          <dt className="text-archive-lead">模板 ID</dt>
+          <dt className="text-archive-lead">{translate(_locale, 'enemy.templateId')}</dt>
           <dd className="text-archive-ivory font-mono">{templateId}</dd>
-          <dt className="text-archive-lead">显示类型</dt>
-            <dd className="text-archive-ivory">{typeNameMap[displayEntry?.displayType ?? 0] || `类型${displayEntry?.displayType}`}</dd>
+          <dt className="text-archive-lead">{translate(_locale, 'enemy.displayType')}</dt>
+            <dd className="text-archive-ivory">{typeNameMap[displayEntry?.displayType ?? 0] || `${translate(_locale, 'common.unknown')} ${displayEntry?.displayType}`}</dd>
           {nickname && <>
-            <dt className="text-archive-lead">别称</dt>
+            <dt className="text-archive-lead">{translate(_locale, 'enemy.alias')}</dt>
             <dd className="text-archive-ivory">{nickname}</dd>
           </>}
         </dl>
@@ -636,13 +638,13 @@ function AttributeView({ attrData, level }: { attrData: any; level: number }) {
   }
 
   const allTypes = [...new Set([...Object.keys(depAttrs).map(Number), ...Object.keys(fixedAttrs).map(Number)])].sort((a, b) => a - b)
-  if (allTypes.length === 0) return <div className="text-[10px] text-archive-lead">无属性数据</div>
+  if (allTypes.length === 0) return <div className="text-[10px] text-archive-lead">{translate(locale, 'diff.noAttrData')}</div>
 
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-1">
       {allTypes.map(type => (
         <div key={type} className="flex items-center justify-between text-[10px]">
-          <span className="text-archive-dust">{attrNameMap[type] || `属性${type}`}</span>
+          <span className="text-archive-dust">{attrNameMap[type] || `${translate(locale, 'common.unknown')} ${type}`}</span>
           <span className="text-archive-ivory font-mono">
             {depAttrs[type] ?? fixedAttrs[type] ?? '-'}
           </span>
@@ -650,13 +652,13 @@ function AttributeView({ attrData, level }: { attrData: any; level: number }) {
       ))}
       {attrData?.physicalDmgResistScalar != null && (
         <div className="flex items-center justify-between text-[10px] col-span-2">
-          <span className="text-archive-dust">物理抗性倍率</span>
+          <span className="text-archive-dust">{translate(locale, 'diff.physicalResistScalar')}</span>
           <span className="text-archive-ivory font-mono">{attrData.physicalDmgResistScalar}</span>
         </div>
       )}
       {attrData?.resilience != null && (
         <div className="flex items-center justify-between text-[10px] col-span-2">
-          <span className="text-archive-dust">韧性</span>
+          <span className="text-archive-dust">{translate(locale, 'enemy.resilience')}</span>
           <span className="text-archive-ivory font-mono">{attrData.resilience}</span>
         </div>
       )}
@@ -670,12 +672,13 @@ interface Props {
 
 export default function EnemyChangePanel({ versionName }: Props) {
   const { locale } = useLocale()
+  const { t } = useI18n()
   const { data: enemies, loading, error } = useEnemyAggregatedDiff(versionName)
 
   if (loading) {
     return (
       <div className="mb-8">
-        <h3 className="text-sm font-medium text-archive-ivory mb-3">敌人变动概览</h3>
+        <h3 className="text-sm font-medium text-archive-ivory mb-3">{t('diff.enemyOverview')}</h3>
         <div className="space-y-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-16 rounded border border-archive-border bg-archive-file animate-pulse" />
@@ -696,15 +699,15 @@ export default function EnemyChangePanel({ versionName }: Props) {
     <div className="mb-8">
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="text-sm font-medium text-archive-ivory">
-          敌人变动概览
+          {t('diff.enemyOverview')}
           <span className="text-xs text-archive-lead font-normal ml-2">
-            {enemies.length} 个敌人 · {totalChanges} 处变动
+            {t('diff.enemyCount', { count: enemies.length, changes: totalChanges })}
           </span>
         </h3>
         <div className="flex gap-2 text-[10px] text-archive-lead">
-          {withAdded > 0 && <span className="text-[archive-bronze]">新增 {withAdded}</span>}
-          {withRemoved > 0 && <span className="text-[archive-seal]">移除 {withRemoved}</span>}
-          {withChanged > 0 && <span className="text-[archive-gold]">变更 {withChanged}</span>}
+          {withAdded > 0 && <span className="text-[archive-bronze]">{t('update.added')} {withAdded}</span>}
+          {withRemoved > 0 && <span className="text-[archive-seal]">{t('update.removed')} {withRemoved}</span>}
+          {withChanged > 0 && <span className="text-[archive-gold]">{t('update.changed')} {withChanged}</span>}
         </div>
       </div>
 

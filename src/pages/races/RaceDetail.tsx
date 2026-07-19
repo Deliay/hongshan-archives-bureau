@@ -6,6 +6,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useRaceDetail } from '../../hooks/useData'
 import Rarity from '../../components/Rarity'
 import { RichText } from '../../lib/richText'
+import { useI18n } from '../../i18n'
 
 const HIGHLIGHT_COLOR = '#B89A6A'
 
@@ -17,6 +18,7 @@ function highlightName(text: string, name: string): string {
 
 export default function RaceDetail() {
   const { raceId } = useParams<{ raceId: string }>()
+  const { t } = useI18n()
   const { data, loading, error } = useRaceDetail(raceId ?? '')
 
   const highlighted = useMemo(() => {
@@ -28,8 +30,8 @@ export default function RaceDetail() {
   }, [data])
 
   if (loading) return <Skeleton className="h-32 w-full" />
-  if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!data) return <div className="text-archive-dust text-sm">暂无记录</div>
+  if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
+  if (!data) return <div className="text-archive-dust text-sm">{t('common.empty')}</div>
 
   return (
     <div>
@@ -44,12 +46,12 @@ export default function RaceDetail() {
         </Link>
         <h2 className="font-display text-xl font-bold text-archive-ivory">{data.name}</h2>
         <Badge variant="ghost" className="font-mono">{MODULE_CODES.races}</Badge>
-        <span className="text-xs text-archive-lead">{data.members.length} 人</span>
+        <span className="text-xs text-archive-lead">{t('common.countPeople', { count: data.members.length })}</span>
       </div>
 
       {highlighted.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-archive-dust mb-2">相关记载</h3>
+          <h3 className="text-sm font-medium text-archive-dust mb-2">{t('race.relatedRecords')}</h3>
           <div className="flex flex-col gap-3">
             {highlighted.map((t, i) => (
               <div key={i} className="rounded border border-archive-border bg-archive-file p-3">
@@ -63,7 +65,7 @@ export default function RaceDetail() {
         </div>
       )}
 
-      <h3 className="text-sm font-medium text-archive-dust mb-2">所属干员</h3>
+      <h3 className="text-sm font-medium text-archive-dust mb-2">{t('race.members')}</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {data.members.map((m) => (
           <Link

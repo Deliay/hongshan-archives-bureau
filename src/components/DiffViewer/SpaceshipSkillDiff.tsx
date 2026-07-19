@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocale } from '../../lib/locale'
 import type { TableDiffComponentProps } from './registry'
+import { useI18n, translate } from '../../i18n'
 
 function lt(obj: unknown, locale: string): string {
   if (!obj || typeof obj !== 'object') return String(obj ?? '')
@@ -8,6 +9,7 @@ function lt(obj: unknown, locale: string): string {
 }
 
 export default function SpaceshipSkillDiff({ diff }: TableDiffComponentProps) {
+  const { t } = useI18n()
   const { locale } = useLocale()
   const [tab, setTab] = useState<'added' | 'removed' | 'changed'>(
     diff.stats.changed > 0 ? 'changed' : diff.stats.added > 0 ? 'added' : 'removed',
@@ -16,9 +18,9 @@ export default function SpaceshipSkillDiff({ diff }: TableDiffComponentProps) {
 
   const tabs = (
     [
-      { id: 'added' as const, label: '新增', count: stats.added },
-      { id: 'removed' as const, label: '移除', count: stats.removed },
-      { id: 'changed' as const, label: '变更', count: stats.changed },
+      { id: 'added' as const, label: t('update.added'), count: stats.added },
+      { id: 'removed' as const, label: t('update.removed'), count: stats.removed },
+      { id: 'changed' as const, label: t('update.changed'), count: stats.changed },
     ] as const
   ).filter((t) => t.count > 0)
 
@@ -41,7 +43,7 @@ export default function SpaceshipSkillDiff({ diff }: TableDiffComponentProps) {
 
 function EntryCards({ entries, locale }: { entries: Record<string, any>; locale: string }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{translate(locale, 'common.empty')}</p>
   return (
     <div className="space-y-2">
       {keys.map((id) => {
@@ -56,8 +58,8 @@ function EntryCards({ entries, locale }: { entries: Record<string, any>; locale:
               <span className="text-xs text-archive-lead shrink-0">Lv.{e.level ?? '?'}</span>
             </div>
             <div className="flex flex-wrap gap-2 mt-1 text-xs text-archive-lead">
-              {e.effectType && <span>类型 {e.effectType}</span>}
-              {e.roomType && <span>房间 {e.roomType}</span>}
+              {e.effectType && <span>{translate(locale, 'diff.effectType', { type: e.effectType })}</span>}
+              {e.roomType && <span>{translate(locale, 'diff.room', { type: e.roomType })}</span>}
               {e.icon && <span>{e.icon}</span>}
             </div>
             {lt(e.talentName, locale) && (
@@ -82,7 +84,7 @@ function EntryCards({ entries, locale }: { entries: Record<string, any>; locale:
 
 function ChangedCards({ entries, locale }: { entries: Record<string, any>; locale: string }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{translate(locale, 'common.empty')}</p>
   return (
     <div className="space-y-2">
       {keys.map((id) => {
@@ -106,17 +108,17 @@ function ChangedCards({ entries, locale }: { entries: Record<string, any>; local
                     <div className="text-archive-dust font-mono mb-0.5">{path}</div>
                     {change.type === 'value' ? (
                       <div className="flex gap-3">
-                        <span className="text-[archive-seal]">旧 {JSON.stringify(change.oldValue)}</span>
-                        <span className="text-[archive-bronze]">新 {JSON.stringify(change.newValue)}</span>
+                        <span className="text-[archive-seal]">{translate(locale, 'diff.old')} {JSON.stringify(change.oldValue)}</span>
+                        <span className="text-[archive-bronze]">{translate(locale, 'diff.new')} {JSON.stringify(change.newValue)}</span>
                       </div>
                     ) : (
                       Object.entries(change.changedLocales).map(([loc, { oldText, newText }]: [string, any]) => (
                         <div key={loc} className="mb-0.5 last:mb-0">
                           <span className="text-archive-gold font-mono">{loc}</span>
-                          <span className="mx-1 text-archive-lead">旧</span>
-                          <span className="text-[archive-seal]">{oldText || '（空）'}</span>
+                          <span className="mx-1 text-archive-lead">{translate(locale, 'diff.old')}</span>
+                          <span className="text-[archive-seal]">{oldText || translate(locale, 'diff.empty')}</span>
                           <span className="mx-1 text-archive-lead">→</span>
-                          <span className="text-[archive-bronze]">{newText || '（空）'}</span>
+                          <span className="text-[archive-bronze]">{newText || translate(locale, 'diff.empty')}</span>
                         </div>
                       ))
                     )}

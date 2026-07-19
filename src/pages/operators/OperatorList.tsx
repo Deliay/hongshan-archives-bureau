@@ -5,11 +5,13 @@ import { useState, useMemo } from 'react'
 import { useOperators } from '../../hooks/useData'
 import { Link } from 'react-router-dom'
 import Rarity from '../../components/Rarity'
+import { useI18n } from '../../i18n'
 
 type SortKey = 'profession' | 'rarity' | 'element' | 'race' | 'faction'
 type GroupKey = '' | 'element' | 'profession' | 'rarity' | 'race' | 'faction' | 'mainAttr'
 
 export default function OperatorList() {
+  const { t } = useI18n()
   const { data: operators, loading, error } = useOperators()
 
   const [filterElement, setFilterElement] = useState('')
@@ -99,7 +101,7 @@ export default function OperatorList() {
     for (const op of visible) {
       const k = groupKey === 'mainAttr' ? op.mainAttr.name
               : groupKey === 'rarity' ? String(op.rarity)
-              : String((op as any)[groupKey] ?? '未知')
+              : String((op as any)[groupKey] ?? t('common.unknown'))
       if (!groups[k]) groups[k] = []
       groups[k].push(op)
     }
@@ -110,13 +112,13 @@ export default function OperatorList() {
   }, [visible, groupKey])
 
   if (loading) return <PageSkeleton />
-  if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!operators || operators.length === 0) return <div className="text-archive-dust text-sm">暂无记录</div>
+  if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
+  if (!operators || operators.length === 0) return <div className="text-archive-dust text-sm">{t('common.empty')}</div>
 
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <h2 className="font-display text-xl font-bold text-archive-ivory">干员档案</h2>
+        <h2 className="font-display text-xl font-bold text-archive-ivory">{t('operator.title')}</h2>
         <Badge variant="ghost" className="font-mono">{MODULE_CODES.operators}</Badge>
       </div>
 
@@ -124,83 +126,83 @@ export default function OperatorList() {
       <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
         <select value={filterElement} onChange={(e) => setFilterElement(e.target.value)}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="">全部元素</option>
+          <option value="">{t('operator.allElements')}</option>
           {elementOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterProfession} onChange={(e) => setFilterProfession(e.target.value)}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="">全部职业</option>
+          <option value="">{t('operator.allProfessions')}</option>
           {professionOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value ? Number(e.target.value) : '')}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="">全部稀有度</option>
-          {[0, 1, 2, 3, 4, 5, 6].map((v) => <option key={v} value={v}>稀有度 {v}</option>)}
+          <option value="">{t('operator.allRarities')}</option>
+          {[0, 1, 2, 3, 4, 5, 6].map((v) => <option key={v} value={v}>{t('operator.rarityLevel', { level: v })}</option>)}
         </select>
 
         <select value={filterTag} onChange={(e) => setFilterTag(e.target.value)}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="">全部Tags</option>
+          <option value="">{t('operator.allTags')}</option>
           {tagOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterRace} onChange={(e) => setFilterRace(e.target.value)}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="">全部种族</option>
+          <option value="">{t('operator.allRaces')}</option>
           {raceOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterFaction} onChange={(e) => setFilterFaction(e.target.value)}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="">全部阵营</option>
+          <option value="">{t('operator.allFactions')}</option>
           {factionOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterMainAttr} onChange={(e) => setFilterMainAttr(e.target.value)}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="">全部主属性</option>
+          <option value="">{t('operator.allMainAttrs')}</option>
           {attrOptions.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
         </select>
 
         <select value={filterSubAttr} onChange={(e) => setFilterSubAttr(e.target.value)}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="">全部副属性</option>
+          <option value="">{t('operator.allSubAttrs')}</option>
           {attrOptions.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
         </select>
 
         <span className="text-archive-lead">|</span>
 
         {/* Sort */}
-        <span className="text-archive-dust">排序：</span>
+        <span className="text-archive-dust">{t('common.sort')}：</span>
         <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="profession">职业</option>
-          <option value="rarity">稀有度</option>
-          <option value="element">元素</option>
-          <option value="race">种族</option>
-          <option value="faction">阵营</option>
+          <option value="profession">{t('operator.sortByProfession')}</option>
+          <option value="rarity">{t('operator.sortByRarity')}</option>
+          <option value="element">{t('operator.sortByElement')}</option>
+          <option value="race">{t('operator.sortByRace')}</option>
+          <option value="faction">{t('operator.sortByFaction')}</option>
         </select>
 
         <button onClick={() => setSortDesc((d) => !d)}
           className="px-2 py-1.5 rounded border border-archive-border bg-archive-file text-archive-ivory hover:border-archive-gold/40 transition-colors">
-          {sortDesc ? '降序 ↓' : '升序 ↑'}
+          {sortDesc ? t('common.desc') : t('common.asc')}
         </button>
 
         <span className="text-archive-lead">|</span>
 
         {/* Group */}
-        <span className="text-archive-dust">分组：</span>
+        <span className="text-archive-dust">{t('common.group')}：</span>
         <select value={groupKey} onChange={(e) => setGroupKey(e.target.value as GroupKey)}
           className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
-          <option value="">不分组</option>
-          <option value="element">元素</option>
-          <option value="profession">职业</option>
-          <option value="rarity">稀有度</option>
-          <option value="race">种族</option>
-          <option value="faction">阵营</option>
-          <option value="mainAttr">主属性</option>
+          <option value="">{t('common.noGroup')}</option>
+          <option value="element">{t('operator.groupByElement')}</option>
+          <option value="profession">{t('operator.groupByProfession')}</option>
+          <option value="rarity">{t('operator.groupByRarity')}</option>
+          <option value="race">{t('operator.groupByRace')}</option>
+          <option value="faction">{t('operator.groupByFaction')}</option>
+          <option value="mainAttr">{t('operator.groupByMainAttr')}</option>
         </select>
       </div>
 
@@ -227,7 +229,7 @@ export default function OperatorList() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-medium text-archive-ivory group-hover:text-archive-gold transition-colors truncate">
-                          {op.name || '未知'}
+                          {op.name || t('common.unknown')}
                         </h4>
                         <Rarity level={op.rarity} />
                         {op.race && (

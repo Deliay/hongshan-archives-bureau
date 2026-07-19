@@ -5,6 +5,7 @@ import { useLocale } from '../../lib/locale'
 import { ASSET_BASE } from '../../lib/adapter'
 import { RichText } from '../../lib/richText'
 import { formatBlackboard } from '../../lib/formatText'
+import { useI18n } from '../../i18n'
 
 interface SkillData {
   level: number
@@ -28,6 +29,7 @@ async function getTableI18nDict(table: string, locale: string): Promise<Record<s
 
 export default function WeaponSkillPanel({ weaponId, skillIds: propSkillIds, showLevelSlider = false }: WeaponSkillPanelProps) {
   const { locale } = useLocale()
+  const { t } = useI18n()
   const [resolvedSkillIds, setResolvedSkillIds] = useState<string[] | null>(null)
   const [skillPatches, setSkillPatches] = useState<Record<string, SkillData[]>>({})
   const [levels, setLevels] = useState<Record<string, number>>({})
@@ -143,7 +145,7 @@ export default function WeaponSkillPanel({ weaponId, skillIds: propSkillIds, sho
                 />
               )}
               <span className="text-xs font-medium text-archive-ivory">{current.skillName || skillId}</span>
-              <span className="text-[10px] text-archive-lead font-mono ml-auto">Lv.{current.level}</span>
+              <span className="text-[10px] text-archive-lead font-mono ml-auto">{t('common.level', { level: current.level })}</span>
             </div>
             {current.description && (
               <div className="mt-1 text-xs text-archive-ivory leading-relaxed">
@@ -161,8 +163,8 @@ export default function WeaponSkillPanel({ weaponId, skillIds: propSkillIds, sho
                   className="w-full h-1 rounded-full appearance-none bg-archive-border accent-archive-gold cursor-pointer"
                 />
                 <div className="flex justify-between text-[10px] text-archive-lead mt-1">
-                  <span>Lv.{sorted[0].level}</span>
-                  <span>Lv.{sorted[sorted.length - 1].level}</span>
+                  <span>{t('common.level', { level: sorted[0].level })}</span>
+                  <span>{t('common.level', { level: sorted[sorted.length - 1].level })}</span>
                 </div>
               </div>
             )}

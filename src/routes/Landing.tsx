@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArchiveSeal } from '../components/ui/ArchiveSeal'
+import { useI18n } from '../i18n'
 
 export default function LandingPage() {
   const navigate = useNavigate()
   const [entered, setEntered] = useState(false)
   const [show, setShow] = useState(true)
+  const { t } = useI18n()
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -39,10 +41,10 @@ export default function LandingPage() {
       <ArchiveSeal size={80} className="mb-6" />
 
       <h1 className="font-display text-3xl md:text-5xl font-bold tracking-[0.2em] text-archive-gold mb-3">
-        宏山档案局
+        {t('site.name')}
       </h1>
       <p className="text-sm md:text-base text-archive-dust tracking-widest mb-12">
-        塔卫二官方档案管理与调阅系统
+        {t('site.subtitle')}
       </p>
 
       <button
@@ -50,11 +52,11 @@ export default function LandingPage() {
         className="px-10 py-3 border border-archive-gold/50 text-archive-gold tracking-widest text-sm
                    hover:bg-archive-gold hover:text-archive-ink transition-all duration-300"
       >
-        进入档案局
+        {t('site.enter')}
       </button>
 
       <p className="absolute bottom-8 text-xs text-archive-lead tracking-wider">
-        — 管理员记录 —
+        — {t('site.dataSource')} —
       </p>
     </div>
   )

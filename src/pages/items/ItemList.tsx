@@ -8,6 +8,7 @@ import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
 import { resolveI18n, ASSET_BASE } from '../../lib/adapter'
 import ItemPanel from '../../components/Items/ItemPanel'
+import { useI18n } from '../../i18n'
 
 const PAGE_SIZES = [24, 48, 96, 0] as const
 const RARITIES = [1, 2, 3, 4, 5, 6]
@@ -36,6 +37,7 @@ function getGroupIcon(groupField: GroupField, key: string, showingTypeMap: Recor
 
 export default function ItemList() {
   const { locale } = useLocale()
+  const { t } = useI18n()
   const { data: items, loading, error } = useItems()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
@@ -188,13 +190,13 @@ export default function ItemList() {
   }, [search, typeFilter, rarityFilter, showingTypeFilter, valuableTabFilter, pageSize, sortField, sortDesc, groupField])
 
   if (loading) return <PageSkeleton />
-  if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!items || items.length === 0) return <div className="text-archive-dust text-sm">暂无记录</div>
+  if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
+  if (!items || items.length === 0) return <div className="text-archive-dust text-sm">{t('common.empty')}</div>
 
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <h2 className="font-display text-xl font-bold text-archive-ivory">道具材料</h2>
+        <h2 className="font-display text-xl font-bold text-archive-ivory">{t('item.title')}</h2>
         <Badge variant="ghost" className="font-mono">{MODULE_CODES.items}</Badge>
       </div>
 
@@ -204,7 +206,7 @@ export default function ItemList() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索道具名称或 ID…"
+            placeholder={t('common.searchWithName', { name: t('item.title') })}
             className="flex-1 px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory placeholder:text-archive-lead focus:outline-none focus:border-archive-gold/40 transition-colors"
           />
           <select
@@ -213,7 +215,7 @@ export default function ItemList() {
             className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             {PAGE_SIZES.map(ps => (
-              <option key={ps} value={ps}>{ps === 0 ? '全部' : `${ps} / 页`}</option>
+              <option key={ps} value={ps}>{ps === 0 ? t('common.all') : `${ps} / ${t('common.page')}`}</option>
             ))}
           </select>
         </div>
@@ -224,7 +226,7 @@ export default function ItemList() {
             onChange={(e) => setTypeFilter(e.target.value)}
             className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
-            <option value="">全部类型</option>
+            <option value="">{t('item.allTypes')}</option>
             {typeOptions.map(t => (
               <option key={t.key} value={t.key}>{t.name}</option>
             ))}
@@ -235,7 +237,7 @@ export default function ItemList() {
             onChange={(e) => setRarityFilter(e.target.value)}
             className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
-            <option value="">全部稀有度</option>
+            <option value="">{t('common.allRarity')}</option>
             {RARITIES.map(r => (
               <option key={r} value={r}>{'★'.repeat(r)}</option>
             ))}
@@ -246,7 +248,7 @@ export default function ItemList() {
             onChange={(e) => setShowingTypeFilter(e.target.value)}
             className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
-            <option value="">全部显示类型</option>
+            <option value="">{t('item.allShowingTypes')}</option>
             {showingTypeOptions.map(s => (
               <option key={s.key} value={s.key}>{s.name}</option>
             ))}
@@ -257,7 +259,7 @@ export default function ItemList() {
             onChange={(e) => setValuableTabFilter(e.target.value)}
             className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
-            <option value="">全部贵重标签</option>
+            <option value="">{t('item.allValuableTabs')}</option>
             {valuableTabOptions.map(v => (
               <option key={v.key} value={v.key}>{v.name}</option>
             ))}
@@ -270,10 +272,10 @@ export default function ItemList() {
             onChange={(e) => setSortField(e.target.value as SortField)}
             className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
-            <option value="">默认排序</option>
-            <option value="showingType">显示类型</option>
-            <option value="rarity">稀有度</option>
-            <option value="type">物品类型</option>
+            <option value="">{t('common.defaultSort')}</option>
+            <option value="showingType">{t('item.sortByShowingType')}</option>
+            <option value="rarity">{t('item.sortByRarity')}</option>
+            <option value="type">{t('item.sortByType')}</option>
           </select>
 
           <button
@@ -282,7 +284,7 @@ export default function ItemList() {
             className={`px-2 py-1.5 text-sm rounded border transition-colors ${sortField ? 'border-archive-gold/40 text-archive-ivory hover:border-archive-gold' : 'border-archive-border text-archive-lead cursor-not-allowed'}`}
             disabled={!sortField}
           >
-            {sortDesc ? '↓ 倒序' : '↑ 正序'}
+            {sortDesc ? t('common.desc') : t('common.asc')}
           </button>
 
           <div className="w-px bg-archive-border" />
@@ -292,10 +294,10 @@ export default function ItemList() {
             onChange={(e) => setGroupField(e.target.value as GroupField)}
             className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
-            <option value="">不分組</option>
-            <option value="showingType">按显示类型分组</option>
-            <option value="type">按物品类型分组</option>
-            <option value="valuableTabType">按贵重标签分组</option>
+            <option value="">{t('common.noGroup')}</option>
+            <option value="showingType">{t('item.groupByShowingType')}</option>
+            <option value="type">{t('item.groupByType')}</option>
+            <option value="valuableTabType">{t('item.groupByValuableTab')}</option>
           </select>
         </div>
       </div>
@@ -313,7 +315,7 @@ export default function ItemList() {
                 <div className="flex items-center gap-2 mb-2 pb-1 border-b border-archive-border">
                   {icon && <img src={icon} alt="" className="w-5 h-5 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
                   <h3 className="text-sm font-medium text-archive-gold">{label}</h3>
-                  <span className="text-[10px] text-archive-lead">{groupItems.length} 件</span>
+                  <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                   {groupPaged.map(item => (
@@ -328,7 +330,7 @@ export default function ItemList() {
                       onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.max(0, gp - 1) }))}
                       className="px-2 py-1 text-xs rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors"
                     >
-                      上一页
+                      {t('common.prev')}
                     </button>
                     <span className="text-xs text-archive-dust">{gp + 1} / {groupTotalPages}</span>
                     <button
@@ -337,7 +339,7 @@ export default function ItemList() {
                       onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.min(groupTotalPages - 1, gp + 1) }))}
                       className="px-2 py-1 text-xs rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors"
                     >
-                      下一页
+                      {t('common.next')}
                     </button>
                   </div>
                 )}
@@ -354,7 +356,7 @@ export default function ItemList() {
           </div>
 
           {filtered.length === 0 && (
-            <p className="text-sm text-archive-lead mt-4">未找到匹配道具</p>
+            <p className="text-sm text-archive-lead mt-4">{t('common.noResult', { name: t('item.title') })}</p>
           )}
 
           {pageSize > 0 && totalPages > 1 && (
@@ -365,7 +367,7 @@ export default function ItemList() {
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 className="px-3 py-1 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors"
               >
-                上一页
+                {t('common.prev')}
               </button>
               <span className="text-sm text-archive-dust">
                 {page + 1} / {totalPages}
@@ -376,7 +378,7 @@ export default function ItemList() {
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 className="px-3 py-1 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors"
               >
-                下一页
+                {t('common.next')}
               </button>
             </div>
           )}

@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useLocale } from '../../lib/locale'
+import { useI18n } from '../../i18n'
 import { useI18nLocales } from '../../hooks/useData'
 import { ArchiveSeal } from '../ui/ArchiveSeal'
+import { ASSET_BASE } from '../../lib/adapter'
+
+const LANGUAGE_ICON_URL = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/settings/icon_settings_language.png`
 
 type NavLink = {
   label: string
@@ -14,44 +18,47 @@ type NavGroup = {
   items: NavLink[]
 }
 
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: '人事档案',
-    items: [
-      { label: '干员档案', path: '/archive/operators' },
-      { label: '干员种族', path: '/archive/races' },
-      { label: '干员阵营', path: '/archive/factions' },
-    ],
-  },
-  {
-    label: '威胁档案',
-    items: [
-      { label: '敌人图鉴', path: '/archive/enemies' },
-    ],
-  },
-  {
-    label: '物资档案',
-    items: [
-      { label: '道具材料', path: '/archive/items' },
-      { label: '武器档案', path: '/archive/weapons' },
-      { label: '装备系统', path: '/archive/equipment' },
-      { label: '工厂系统', path: '/archive/factory' },
-    ],
-  },
-  {
-    label: '地理档案',
-    items: [
-      { label: '地区地理', path: '/archive/geography' },
-    ],
-  },
-  {
-    label: '大事记',
-    items: [
-      { label: '剧情记录', path: '/archive/story' },
-      { label: '更新日志', path: '/archive/updates' },
-    ],
-  },
-]
+function useNavGroups(): NavGroup[] {
+  const { t } = useI18n()
+  return [
+    {
+      label: t('nav.personnel'),
+      items: [
+        { label: t('nav.operators'), path: '/archive/operators' },
+        { label: t('nav.races'), path: '/archive/races' },
+        { label: t('nav.factions'), path: '/archive/factions' },
+      ],
+    },
+    {
+      label: t('nav.threat'),
+      items: [
+        { label: t('nav.enemies'), path: '/archive/enemies' },
+      ],
+    },
+    {
+      label: t('nav.material'),
+      items: [
+        { label: t('nav.items'), path: '/archive/items' },
+        { label: t('nav.weapons'), path: '/archive/weapons' },
+        { label: t('nav.equipment'), path: '/archive/equipment' },
+        { label: t('nav.factory'), path: '/archive/factory' },
+      ],
+    },
+    {
+      label: t('nav.geography'),
+      items: [
+        { label: t('nav.areas'), path: '/archive/geography' },
+      ],
+    },
+    {
+      label: t('nav.chronicle'),
+      items: [
+        { label: t('nav.story'), path: '/archive/story' },
+        { label: t('nav.updates'), path: '/archive/updates' },
+      ],
+    },
+  ]
+}
 
 const LOCALE_LABELS: Record<string, string> = {
   CN: '简中',
@@ -60,6 +67,14 @@ const LOCALE_LABELS: Record<string, string> = {
   JP: '日本語',
   KR: '한국어',
   RU: 'Русский',
+  MX: 'Español (MX)',
+  BR: 'Português',
+  DE: 'Deutsch',
+  FR: 'Français',
+  VN: 'Tiếng Việt',
+  TH: 'ไทย',
+  ID: 'Bahasa Indonesia',
+  IT: 'Italiano',
 }
 
 export default function Sidebar() {
@@ -68,6 +83,8 @@ export default function Sidebar() {
   const { data: locales } = useI18nLocales()
   const [open, setOpen] = useState(false)
   const [localeOpen, setLocaleOpen] = useState(false)
+  const { t } = useI18n()
+  const navGroups = useNavGroups()
 
   return (
     <>
@@ -93,12 +110,12 @@ export default function Sidebar() {
         <div className="p-4 border-b border-archive-border">
           <Link to="/archive" className="flex items-center gap-3 text-archive-gold">
             <ArchiveSeal size={36} />
-            <span className="font-display font-bold text-lg tracking-wider">宏山档案局</span>
+            <span className="font-display font-bold text-lg tracking-wider">{t('site.name')}</span>
           </Link>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-5">
-          {NAV_GROUPS.map((group) => (
+          {navGroups.map((group) => (
             <div key={group.label}>
               <div className="px-3 py-1 text-xs font-medium tracking-wider text-archive-lead uppercase">
                 {group.label}
@@ -130,8 +147,14 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={() => setLocaleOpen(v => !v)}
-            className="w-full px-3 py-1.5 rounded text-sm text-archive-dust hover:text-archive-ivory border border-archive-border hover:border-archive-lead transition-colors text-left"
+            className="w-full px-3 py-1.5 rounded text-sm text-archive-dust hover:text-archive-ivory border border-archive-border hover:border-archive-lead transition-colors text-left flex items-center gap-2"
           >
+            <img
+              src={LANGUAGE_ICON_URL}
+              alt=""
+              className="w-4 h-4 object-contain opacity-70"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
             {LOCALE_LABELS[locale] || locale}
           </button>
           {localeOpen && locales && (
@@ -141,12 +164,13 @@ export default function Sidebar() {
                   type="button"
                   key={l}
                   onClick={() => { setLocale(l); setLocaleOpen(false) }}
-                  className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
+                  className={`w-full px-3 py-1.5 text-sm text-left transition-colors flex items-center gap-2 ${
                     l === locale
                       ? 'text-archive-gold bg-archive-gold/10'
                       : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-border'
                   }`}
                 >
+                  <span className="w-4" />
                   {LOCALE_LABELS[l] || l}
                 </button>
               ))}

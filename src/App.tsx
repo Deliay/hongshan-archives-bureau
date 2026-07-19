@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { LocaleProvider } from './lib/locale'
+import { LocaleProvider, useLocale } from './lib/locale'
+import { I18nProvider } from './i18n'
 import ArchiveLayout from './components/Layout/ArchiveLayout'
 import LandingPage from './routes/Landing'
 import ArchiveHome from './routes/ArchiveHome'
@@ -24,36 +25,45 @@ import UpdateSummary from './pages/updates/UpdateSummary'
 import UpdateTableDiff from './pages/updates/UpdateTableDiff'
 import './components/DiffViewer/register'
 
+function AppRoutes() {
+  const { locale } = useLocale()
+  return (
+    <I18nProvider locale={locale}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/archive" element={<ArchiveLayout />}>
+            <Route index element={<ArchiveHome />} />
+            <Route path="operators" element={<OperatorList />} />
+            <Route path="operators/:id" element={<OperatorDetail />} />
+            <Route path="weapons" element={<WeaponList />} />
+            <Route path="weapons/:id" element={<WeaponDetail />} />
+            <Route path="professions" element={<ProfessionOverview />} />
+            <Route path="races" element={<RaceList />} />
+            <Route path="races/:raceId" element={<RaceDetail />} />
+            <Route path="factions" element={<FactionList />} />
+            <Route path="factions/:factionId" element={<FactionDetail />} />
+            <Route path="geography" element={<GeographyList />} />
+            <Route path="enemies" element={<EnemyList />} />
+            <Route path="enemies/:id" element={<EnemyDetail />} />
+            <Route path="equipment" element={<EquipmentOverview />} />
+            <Route path="items" element={<ItemList />} />
+            <Route path="factory" element={<FactoryOverview />} />
+            <Route path="story" element={<StoryOverview />} />
+            <Route path="updates" element={<UpdateHome />} />
+            <Route path="updates/:versionName" element={<UpdateSummary />} />
+            <Route path="updates/:versionName/:tableFile" element={<UpdateTableDiff />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </I18nProvider>
+  )
+}
+
 export default function App() {
   return (
     <LocaleProvider>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/archive" element={<ArchiveLayout />}>
-          <Route index element={<ArchiveHome />} />
-          <Route path="operators" element={<OperatorList />} />
-          <Route path="operators/:id" element={<OperatorDetail />} />
-          <Route path="weapons" element={<WeaponList />} />
-          <Route path="weapons/:id" element={<WeaponDetail />} />
-          <Route path="professions" element={<ProfessionOverview />} />
-          <Route path="races" element={<RaceList />} />
-          <Route path="races/:raceId" element={<RaceDetail />} />
-          <Route path="factions" element={<FactionList />} />
-          <Route path="factions/:factionId" element={<FactionDetail />} />
-          <Route path="geography" element={<GeographyList />} />
-          <Route path="enemies" element={<EnemyList />} />
-          <Route path="enemies/:id" element={<EnemyDetail />} />
-          <Route path="equipment" element={<EquipmentOverview />} />
-          <Route path="items" element={<ItemList />} />
-          <Route path="factory" element={<FactoryOverview />} />
-          <Route path="story" element={<StoryOverview />} />
-          <Route path="updates" element={<UpdateHome />} />
-          <Route path="updates/:versionName" element={<UpdateSummary />} />
-          <Route path="updates/:versionName/:tableFile" element={<UpdateTableDiff />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+      <AppRoutes />
     </LocaleProvider>
   )
 }

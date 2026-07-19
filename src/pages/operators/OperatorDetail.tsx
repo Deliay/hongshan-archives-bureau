@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useOperatorDetail } from '../../hooks/useData'
 import { useLocale } from '../../lib/locale'
+import { useI18n } from '../../i18n'
 import Rarity from '../../components/Rarity'
 import { ASSET_BASE } from '../../lib/adapter'
 import { RichText } from '../../lib/richText'
@@ -13,14 +14,15 @@ import { formatBlackboard } from '../../lib/formatText'
 import type { SkillGroup, SkillPatchData } from '../../lib/types'
 
 const SKILL_TYPE_LABELS: Record<number, string> = {
-  0: '普通攻击',
-  1: '主动技能',
-  2: '必杀技能',
-  3: '连携技能',
+  0: 'operator.skillType.0',
+  1: 'operator.skillType.1',
+  2: 'operator.skillType.2',
+  3: 'operator.skillType.3',
 }
 
 export default function OperatorDetail() {
   const { id } = useParams<{ id: string }>()
+  const { t } = useI18n()
   const { data: detail, loading, error } = useOperatorDetail(id ?? '')
 
   const breakCostMap = detail?.breakCostMap ?? {}
@@ -44,8 +46,8 @@ export default function OperatorDetail() {
   )
 
   if (loading) return <Skeleton className="h-32 w-full" />
-  if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!detail) return <div className="text-archive-dust text-sm">干员档案未找到</div>
+  if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
+  if (!detail) return <div className="text-archive-dust text-sm">{t('common.notFound', { name: t('operator.title') })}</div>
 
   const { op, wpnRecommend } = detail
 
@@ -83,14 +85,14 @@ export default function OperatorDetail() {
             {op.mainAttr.icon && (
               <div className="flex items-center gap-1.5 text-archive-dust">
                 <img src={op.mainAttr.icon} alt="" className="w-4 h-4" />
-                <span className="text-archive-gold">主能力</span>
+                <span className="text-archive-gold">{t('operator.mainAttr')}</span>
                 <span>{op.mainAttr.name}</span>
               </div>
             )}
             {op.subAttr.icon && (
               <div className="flex items-center gap-1.5 text-archive-dust">
                 <img src={op.subAttr.icon} alt="" className="w-4 h-4" />
-                <span className="text-archive-gold">副能力</span>
+                <span className="text-archive-gold">{t('operator.subAttr')}</span>
                 <span>{op.subAttr.name}</span>
               </div>
             )}
@@ -100,9 +102,9 @@ export default function OperatorDetail() {
 
       {/* 技能 */}
       <section>
-        <h3 className="text-sm font-medium text-archive-gold mb-3">技能</h3>
+        <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.skill')}</h3>
         {detail.skillGroups.length === 0 ? (
-          <p className="text-sm text-archive-lead">暂无技能数据</p>
+          <p className="text-sm text-archive-lead">{t('common.empty')}</p>
         ) : (
           <div className="space-y-3">
             {[...detail.skillGroups].sort((a, b) => {
@@ -122,7 +124,7 @@ export default function OperatorDetail() {
       {/* 干员天赋 */}
       {talentNodes.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-archive-gold mb-3">干员天赋</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.talent')}</h3>
           <div className="space-y-3">
             {talentNodes.map((node) => (
               <div key={node.nodeId} className="p-3 rounded border border-archive-border bg-archive-file">
@@ -162,7 +164,7 @@ export default function OperatorDetail() {
       {/* 后勤技能 */}
       {detail.factorySkills.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-archive-gold mb-3">后勤技能</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.factorySkill')}</h3>
           <div className="space-y-3">
             {detail.factorySkills.map((fs) => (
               <div key={fs.skillId} className="p-3 rounded border border-archive-border bg-archive-file">
@@ -199,7 +201,7 @@ export default function OperatorDetail() {
       {/* 精英化 */}
       {breakNodes.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-archive-gold mb-3">精英化</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.break')}</h3>
           <div className="space-y-3">
             {breakNodes.map((node) => (
               <div key={node.nodeId} className="p-3 rounded border border-archive-border bg-archive-file">
@@ -223,7 +225,7 @@ export default function OperatorDetail() {
       {/* 能力值提升 */}
       {attrNodes.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-archive-gold mb-3">能力值提升</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.attrBoost')}</h3>
           <div className="space-y-3">
             {attrNodes.map((node) => (
               <div key={node.nodeId} className="p-3 rounded border border-archive-border bg-archive-file">
@@ -246,11 +248,11 @@ export default function OperatorDetail() {
       {/* 装备适配 */}
       {wpnRecommend && (
         <section>
-          <h3 className="text-sm font-medium text-archive-gold mb-3">装备适配</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.equipFit')}</h3>
           <div className="space-y-4">
             {wpnRecommend.weaponIds1.length > 0 && (
               <div>
-                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">推荐武器·第一组</h4>
+                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">{t('operator.equipFit')} I</h4>
                 <div className="flex flex-wrap gap-2">
                   {wpnRecommend.weaponIds1.map((wid) => (
                     <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
@@ -260,7 +262,7 @@ export default function OperatorDetail() {
             )}
             {wpnRecommend.weaponIds2.length > 0 && (
               <div>
-                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">推荐武器·第二组</h4>
+                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">{t('operator.equipFit')} II</h4>
                 <div className="flex flex-wrap gap-2">
                   {wpnRecommend.weaponIds2.map((wid) => (
                     <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
@@ -270,7 +272,7 @@ export default function OperatorDetail() {
             )}
             {wpnRecommend.weaponIds3.length > 0 && (
               <div>
-                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">推荐武器·第三组</h4>
+                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">{t('operator.equipFit')} III</h4>
                 <div className="flex flex-wrap gap-2">
                   {wpnRecommend.weaponIds3.map((wid) => (
                     <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
@@ -280,7 +282,7 @@ export default function OperatorDetail() {
             )}
             {equipBreakNodes.length > 0 && (
               <div className="mt-4">
-                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">装备突破</h4>
+                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">{t('operator.break')}</h4>
                 <div className="space-y-2">
                   {equipBreakNodes.map((node) => (
                     <div key={node.nodeId} className="p-2 rounded border border-archive-border bg-archive-file">
@@ -298,7 +300,7 @@ export default function OperatorDetail() {
       {/* 档案记录 */}
       {op.profileRecords.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-archive-gold mb-3">档案记录</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.profileRecords')}</h3>
           <div className="space-y-3">
             {op.profileRecords.map((record, i) => (
               <p key={i} className="text-sm text-archive-dust leading-relaxed"><RichText text={record} /></p>
@@ -310,11 +312,11 @@ export default function OperatorDetail() {
       {/* 语音记录 */}
       {op.voiceLines.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-archive-gold mb-3">语音记录</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.voiceRecords')}</h3>
           <div className="space-y-2">
             {op.voiceLines.slice(0, 10).map((vl, i) => (
               <div key={i} className="p-3 rounded border border-archive-border bg-archive-file">
-                <p className="text-xs text-archive-lead mb-1">{vl.title || `语音 ${i + 1}`}</p>
+                <p className="text-xs text-archive-lead mb-1">{vl.title || `${t('operator.voiceRecords')} ${i + 1}`}</p>
                 <p className="text-sm text-archive-dust"><RichText text={vl.text} /></p>
               </div>
             ))}
@@ -447,10 +449,11 @@ function SkillFormColumn({
 function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatchMap: Record<string, SkillPatchData[]> }) {
   const [level, setLevel] = useState(12)
   const { locale } = useLocale()
+  const { t } = useI18n()
 
   const isDual = !!(group.condition1 && group.condition2 && group.condition1.conditionId)
 
-  const typeName = SKILL_TYPE_LABELS[group.skillGroupType] ?? `类型${group.skillGroupType}`
+  const typeName = t(SKILL_TYPE_LABELS[group.skillGroupType]) ?? t('common.unknown')
   const groupName = localeText(group.name, locale)
   const groupDesc = localeText(group.desc, locale)
 
@@ -615,7 +618,7 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
       )}
 
       <div className="flex items-center gap-1 mt-3">
-        <span className="text-[10px] text-archive-lead">等级</span>
+        <span className="text-[10px] text-archive-lead">{t('common.level', { level: '' }).replace(/\d+/, '')}</span>
         <input
           type="range"
           min={1}

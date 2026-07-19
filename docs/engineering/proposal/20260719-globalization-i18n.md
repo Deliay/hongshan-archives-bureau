@@ -400,7 +400,7 @@ const messages: Record<string, Record<string, string>> = {
 - [ ] `npm run build` 通过，无 TypeScript 错误。
 - [ ] `npm run lint` 通过，无新增 lint 错误。
 - [ ] `npm run test` 通过。
-- [ ] 切换 `CN / TC / EN / JP / KR / RU` 时，导航、筛选器、按钮、提示即时刷新。
+- [ ] 切换 `/i18n` 接口返回的任意 locale 时，导航、筛选器、按钮、提示即时刷新。
 - [ ] 任意 key 在目标语言缺失时，回退至 CN 显示。
 - [ ] 新增硬编码中文扫描脚本并纳入 CI（可选）。
 - [ ] 产品文档与技术方案均通过 Review。
@@ -412,7 +412,7 @@ const messages: Record<string, Record<string, string>> = {
 | 翻译字典遗漏导致部分文案仍显示中文 | 体验不一致 | 实现前全面梳理硬编码清单，实现后全语言走查 |
 | 官方 i18n 某些语言缺失 | 回退至 CN | `t` 函数内置 CN 回退 |
 | key 命名冲突 | 显示错误文案 | 命名空间隔离，按模块分组 |
-| 体积增长 | 首屏加载变慢 | 仅支持当前项目已列出的 6 种语言，后续按需扩展 |
+| 体积增长 | 首屏加载变慢 | 支持 `/i18n` 接口返回的全部 locale，未提供人工译文的 locale 自动回退到 EN/CN |
 | 占位符替换误伤 | 显示异常 | 单元测试覆盖 vars 替换逻辑 |
 
 回滚策略：本改动为纯前端文案层，若出现严重问题，可直接回滚 `feat/i18n-globalization` 分支，不影响数据与接口。

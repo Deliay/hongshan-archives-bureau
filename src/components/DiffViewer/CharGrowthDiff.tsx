@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocale } from '../../lib/locale'
 import type { TableDiffComponentProps } from './registry'
+import { useI18n, translate } from '../../i18n'
 
 function lt(obj: unknown, locale: string): string {
   if (!obj || typeof obj !== 'object') return String(obj ?? '')
@@ -8,6 +9,7 @@ function lt(obj: unknown, locale: string): string {
 }
 
 export default function CharGrowthDiff({ diff }: TableDiffComponentProps) {
+  const { t } = useI18n()
   const { locale } = useLocale()
   const [tab, setTab] = useState<'added' | 'removed' | 'changed'>(
     diff.stats.changed > 0 ? 'changed' : diff.stats.added > 0 ? 'added' : 'removed',
@@ -16,9 +18,9 @@ export default function CharGrowthDiff({ diff }: TableDiffComponentProps) {
 
   const tabs = (
     [
-      { id: 'added' as const, label: '新增', count: stats.added },
-      { id: 'removed' as const, label: '移除', count: stats.removed },
-      { id: 'changed' as const, label: '变更', count: stats.changed },
+      { id: 'added' as const, label: t('update.added'), count: stats.added },
+      { id: 'removed' as const, label: t('update.removed'), count: stats.removed },
+      { id: 'changed' as const, label: t('update.changed'), count: stats.changed },
     ] as const
   ).filter((t) => t.count > 0)
 
@@ -34,14 +36,14 @@ export default function CharGrowthDiff({ diff }: TableDiffComponentProps) {
 
       {tab === 'added' && <EntryCards entries={entries.added} locale={locale} />}
       {tab === 'removed' && <EntryCards entries={entries.removed} locale={locale} />}
-      {tab === 'changed' && <ChangedCards entries={entries.changed} />}
+      {tab === 'changed' && <ChangedCards entries={entries.changed} locale={locale} />}
     </div>
   )
 }
 
 function EntryCards({ entries, locale }: { entries: Record<string, any>; locale: string }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{translate(locale, 'common.empty')}</p>
   return (
     <div className="space-y-3">
       {keys.map((charId) => {
@@ -57,8 +59,8 @@ function EntryCards({ entries, locale }: { entries: Record<string, any>; locale:
               {e.talentNodeMap && <TalentNodeMap data={e.talentNodeMap} locale={locale} />}
               {e.skillLevelUp && (
                 <div>
-                  <div className="text-xs text-archive-dust mb-1">技能升级（{e.skillLevelUp.length} 条）</div>
-                  <div className="text-xs text-archive-lead">展开查看详细 JSON</div>
+                  <div className="text-xs text-archive-dust mb-1">{translate(locale, 'diff.skillLevelUp', { count: e.skillLevelUp.length })}</div>
+                  <div className="text-xs text-archive-lead">{translate(locale, 'diff.expandJSON')}</div>
                 </div>
               )}
             </div>
@@ -69,9 +71,9 @@ function EntryCards({ entries, locale }: { entries: Record<string, any>; locale:
   )
 }
 
-function ChangedCards({ entries }: { entries: Record<string, any> }) {
+function ChangedCards({ entries, locale }: { entries: Record<string, any>; locale: string }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{translate(locale, 'common.empty')}</p>
   return (
     <div className="space-y-3">
       {keys.map((charId) => {
@@ -88,8 +90,8 @@ function ChangedCards({ entries }: { entries: Record<string, any> }) {
                     <div className="text-archive-dust font-mono mb-0.5">{path}</div>
                     {change.type === 'value' ? (
                       <div className="flex gap-3">
-                        <span className="text-[archive-seal]">旧 {JSON.stringify(change.oldValue)}</span>
-                        <span className="text-[archive-bronze]">新 {JSON.stringify(change.newValue)}</span>
+                        <span className="text-[archive-seal]">{translate(locale, 'diff.old')} {JSON.stringify(change.oldValue)}</span>
+                        <span className="text-[archive-bronze]">{translate(locale, 'diff.new')} {JSON.stringify(change.newValue)}</span>
                       </div>
                     ) : (
                       Object.entries(change.changedLocales).map(([loc, { oldText, newText }]: [string, any]) => (
@@ -113,15 +115,15 @@ function BreakCostMap({ data, locale }: { data: Record<string, any>; locale: str
   const entries = Object.entries(data)
   return (
     <div>
-      <div className="text-xs text-archive-dust mb-1">突破消耗（{entries.length} 阶）</div>
+      <div className="text-xs text-archive-dust mb-1">{translate(locale, 'diff.breakCost', { count: entries.length })}</div>
       <div className="space-y-1">
         {entries.map(([key, node]) => (
           <div key={key} className="text-xs px-2 py-1 rounded bg-archive-ink">
             <span className="text-archive-gold font-mono">{node.nodeId}</span>
-            <span className="text-archive-dust ml-2">Lv.{node.breakStage}</span>
+            <span className="text-archive-dust ml-2">{translate(locale, 'common.level', { level: node.breakStage })}</span>
             <span className="text-archive-ivory ml-2">{lt(node.name, locale) || lt(node.description, locale)}</span>
             {node.requiredItem?.length > 0 && (
-              <span className="text-archive-lead ml-2">素材 {node.requiredItem.length} 种</span>
+              <span className="text-archive-lead ml-2">{translate(locale, 'diff.materialCount', { count: node.requiredItem.length })}</span>
             )}
           </div>
         ))}
@@ -134,13 +136,13 @@ function SkillGroupMap({ data, locale }: { data: Record<string, any>; locale: st
   const entries = Object.entries(data)
   return (
     <div>
-      <div className="text-xs text-archive-dust mb-1">技能组（{entries.length}）</div>
+      <div className="text-xs text-archive-dust mb-1">{translate(locale, 'diff.skillGroup', { count: entries.length })}</div>
       <div className="space-y-1">
         {entries.map(([key, sg]) => (
           <div key={key} className="text-xs px-2 py-1 rounded bg-archive-ink">
             <span className="text-archive-gold font-mono">{sg.skillGroupId}</span>
             <span className="text-archive-ivory ml-2">{lt(sg.name, locale)}</span>
-            <span className="text-archive-lead ml-2">{sg.skillIdList?.length || 0} 个技能</span>
+            <span className="text-archive-lead ml-2">{translate(locale, 'diff.skillCount', { count: sg.skillIdList?.length || 0 })}</span>
             {sg.desc && <div className="text-archive-dust mt-0.5">{lt(sg.desc, locale)}</div>}
           </div>
         ))}
@@ -153,17 +155,17 @@ function TalentNodeMap({ data, locale }: { data: Record<string, any>; locale: st
   const entries = Object.entries(data)
   return (
     <div>
-      <div className="text-xs text-archive-dust mb-1">天赋节点（{entries.length}）</div>
+      <div className="text-xs text-archive-dust mb-1">{translate(locale, 'diff.talentNode', { count: entries.length })}</div>
       <div className="space-y-1">
         {entries.map(([key, tn]) => {
           const psi = tn.passiveSkillNodeInfo
           return (
             <div key={key} className="text-xs px-2 py-1 rounded bg-archive-ink">
               <span className="text-archive-gold font-mono">{tn.nodeId}</span>
-              <span className="text-archive-dust ml-2">阶段 {tn.nodeType}</span>
+              <span className="text-archive-dust ml-2">{translate(locale, 'diff.stage', { level: tn.nodeType })}</span>
               {psi && <span className="text-archive-ivory ml-2">{lt(psi.name, locale)}</span>}
               {tn.requiredItem?.length > 0 && (
-                <span className="text-archive-lead ml-2">素材 {tn.requiredItem.length} 种</span>
+                <span className="text-archive-lead ml-2">{translate(locale, 'diff.materialCount', { count: tn.requiredItem.length })}</span>
               )}
             </div>
           )
