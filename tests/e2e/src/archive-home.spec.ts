@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 const MODULE_GROUPS = [
   {
     label: '人事档案',
-    modules: ['干员档案', '职业与属性', '干员种族', '干员阵营'],
+    modules: ['干员档案', '干员种族', '干员阵营'],
   },
   {
     label: '物资档案',

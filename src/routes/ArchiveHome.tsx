@@ -8,10 +8,9 @@ const MODULE_GROUPS: {
 }[] = [
   {
     label: '人事档案',
-    desc: '干员、职业、种族与阵营',
+    desc: '干员、种族与阵营',
     modules: [
       { label: '干员档案', path: '/archive/operators', desc: '可操作角色一览' },
-      { label: '职业与属性', path: '/archive/professions', desc: '战斗定位与元素' },
       { label: '干员种族', path: '/archive/races', desc: '种族资料归集' },
       { label: '干员阵营', path: '/archive/factions', desc: '势力归属梳理' },
     ],
