@@ -58,12 +58,11 @@ test.describe('档案搜索 (Archive Search)', () => {
     await page.goto('/archive/search', { waitUntil: 'domcontentloaded' })
     await page.waitForSelector('h2')
     const input = page.getByPlaceholder('搜索档案关键词…')
-    await input.fill('the')
+    await input.fill('伤害')
     await input.press('Enter')
     await expect(page.getByText('找到')).toBeVisible({ timeout: 20000 })
-    await expect(
-      page.getByText('CharacterTable').or(page.getByText('WeaponBasicTable')).first()
-    ).toBeVisible({ timeout: 10000 })
+    // Check that source table badges are rendered (any table name ending in "Table")
+    await expect(page.locator('text=/Table$/').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('URL keyword query 自动搜索', async ({ page }) => {

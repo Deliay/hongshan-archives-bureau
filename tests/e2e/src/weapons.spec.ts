@@ -18,7 +18,7 @@ test.describe('武器文章 (Weapon Archive)', () => {
     await page.goto(`/archive/weapons/${weaponId}`)
     await page.waitForFunction(() => {
       const body = document.body.textContent || ''
-      return body.includes('返回武器列表') || body.includes('未找到武器') || body.includes('加载失败')
+      return body.includes('返回武器档案列表') || body.includes('未找到武器档案') || body.includes('加载失败')
     }, { timeout: 30000 })
   }
 
@@ -66,7 +66,7 @@ test.describe('武器文章 (Weapon Archive)', () => {
   test('武器列表展示技能名称「赫拉芬格」', async ({ page }) => {
     await waitForWeaponsReady(page)
 
-    const searchInput = page.getByPlaceholder('搜索武器名称或 ID…')
+    const searchInput = page.getByPlaceholder('搜索武器档案名称或 ID…')
     await searchInput.fill('赫拉芬格')
     await page.waitForTimeout(2000)
 
@@ -99,7 +99,7 @@ test.describe('武器文章 (Weapon Archive)', () => {
     // 等待技能面板异步加载完成
     await page.waitForFunction(() => {
       const body = document.body.textContent || ''
-      return body.includes('%') || body.includes('未找到武器') || body.includes('加载失败')
+      return body.includes('%') || body.includes('未找到武器档案') || body.includes('加载失败')
     }, { timeout: 60000 })
     const bodyText = await page.locator('body').textContent() || ''
     // The formatted description should NOT contain raw {key} patterns
@@ -112,7 +112,7 @@ test.describe('武器文章 (Weapon Archive)', () => {
   test('武器列表搜索功能', async ({ page }) => {
     await waitForWeaponsReady(page)
 
-    const searchInput = page.getByPlaceholder('搜索武器名称或 ID…')
+    const searchInput = page.getByPlaceholder('搜索武器档案名称或 ID…')
     await searchInput.fill('wpn_sword_0003')
     await page.waitForTimeout(2000)
 
