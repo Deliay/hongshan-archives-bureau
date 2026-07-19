@@ -279,6 +279,13 @@ Sidebar 的 `<nav>` 区域由单层循环改为双层循环：外层遍历分组
 - **敌人图鉴归属**：已确认新增「威胁档案」分组。
 - **分组标签样式**：已确认采用纯文本 uppercase 风格。
 
+## 实际验证
+
+- `npm run lint`: ✅ 0 errors（26 个既有 warnings）
+- `npm run test`: ✅ 42 passed
+- `npm run build`: ✅
+- Playwright E2E: ✅ 44 passed
+
 ## 相关文档
 
 - [[20260719-sidebar-navigation-grouping|左侧导航栏分组优化]]
