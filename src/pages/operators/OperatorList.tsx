@@ -106,70 +106,70 @@ export default function OperatorList() {
     })
   }, [visible, groupKey])
 
-  if (loading) return <div className="text-[#8B8982] text-sm">加载中…</div>
+  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!operators || operators.length === 0) return <div className="text-[#8B8982] text-sm">暂无记录</div>
+  if (!operators || operators.length === 0) return <div className="text-archive-dust text-sm">暂无记录</div>
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-[#E8E6E3] mb-4">干员档案</h2>
+      <h2 className="font-display text-xl font-bold text-archive-ivory mb-4">干员档案</h2>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
         <select value={filterElement} onChange={(e) => setFilterElement(e.target.value)}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="">全部元素</option>
           {elementOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterProfession} onChange={(e) => setFilterProfession(e.target.value)}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="">全部职业</option>
           {professionOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value ? Number(e.target.value) : '')}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="">全部稀有度</option>
           {[0, 1, 2, 3, 4, 5, 6].map((v) => <option key={v} value={v}>稀有度 {v}</option>)}
         </select>
 
         <select value={filterTag} onChange={(e) => setFilterTag(e.target.value)}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="">全部Tags</option>
           {tagOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterRace} onChange={(e) => setFilterRace(e.target.value)}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="">全部种族</option>
           {raceOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterFaction} onChange={(e) => setFilterFaction(e.target.value)}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="">全部阵营</option>
           {factionOptions.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
 
         <select value={filterMainAttr} onChange={(e) => setFilterMainAttr(e.target.value)}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="">全部主属性</option>
           {attrOptions.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
         </select>
 
         <select value={filterSubAttr} onChange={(e) => setFilterSubAttr(e.target.value)}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="">全部副属性</option>
           {attrOptions.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
         </select>
 
-        <span className="text-[#5A5A62]">|</span>
+        <span className="text-archive-lead">|</span>
 
         {/* Sort */}
-        <span className="text-[#8B8982]">排序：</span>
+        <span className="text-archive-dust">排序：</span>
         <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="profession">职业</option>
           <option value="rarity">稀有度</option>
           <option value="element">元素</option>
@@ -178,16 +178,16 @@ export default function OperatorList() {
         </select>
 
         <button onClick={() => setSortDesc((d) => !d)}
-          className="px-2 py-1.5 rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] hover:border-[#C9A96E]/40 transition-colors">
+          className="px-2 py-1.5 rounded border border-archive-border bg-archive-file text-archive-ivory hover:border-archive-gold/40 transition-colors">
           {sortDesc ? '降序 ↓' : '升序 ↑'}
         </button>
 
-        <span className="text-[#5A5A62]">|</span>
+        <span className="text-archive-lead">|</span>
 
         {/* Group */}
-        <span className="text-[#8B8982]">分组：</span>
+        <span className="text-archive-dust">分组：</span>
         <select value={groupKey} onChange={(e) => setGroupKey(e.target.value as GroupKey)}
-          className="bg-[#1A1B23] border border-[#2A2A32] rounded px-2 py-1.5 text-[#E8E6E3] outline-none focus:border-[#C9A96E]/40">
+          className="bg-archive-file border border-archive-border rounded px-2 py-1.5 text-archive-ivory outline-none focus:border-archive-gold/40">
           <option value="">不分组</option>
           <option value="element">元素</option>
           <option value="profession">职业</option>
@@ -202,33 +202,33 @@ export default function OperatorList() {
         <div className="flex flex-col gap-6">
           {grouped.map(([groupLabel, ops]) => (
             <div key={groupLabel}>
-              <h3 className="text-sm font-medium text-[#E8E6E3] mb-2">{groupLabel} · {ops.length}</h3>
+              <h3 className="text-sm font-medium text-archive-ivory mb-2">{groupLabel} · {ops.length}</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {ops.map((op) => (
                   <Link
                     key={op.id}
                     to={`/archive/operators/${op.id}`}
-                    className="block p-4 rounded border border-[#2A2A32] bg-[#1A1B23]
-                               hover:border-[#C9A96E]/40 transition-all duration-200 group"
+                    className="block p-4 rounded border border-archive-border bg-archive-file
+                               hover:border-archive-gold/40 transition-all duration-200 group"
                   >
                     <div className="flex gap-3">
-                      <div className="w-14 h-14 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
+                      <div className="w-14 h-14 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
                         {op.portrait ? (
                           <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[#5A5A62] text-lg">?</div>
+                          <div className="w-full h-full flex items-center justify-center text-archive-lead text-lg">?</div>
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium text-[#E8E6E3] group-hover:text-[#C9A96E] transition-colors truncate">
+                        <h4 className="text-sm font-medium text-archive-ivory group-hover:text-archive-gold transition-colors truncate">
                           {op.name || '未知'}
                         </h4>
                         <Rarity level={op.rarity} />
                         {op.race && (
-                          <div className="text-[10px] text-[#8B8982] leading-tight">{op.race}</div>
+                          <div className="text-[10px] text-archive-dust leading-tight">{op.race}</div>
                         )}
                         {op.faction && (
-                          <div className="text-[10px] text-[#5A5A62] leading-tight">{op.faction}</div>
+                          <div className="text-[10px] text-archive-lead leading-tight">{op.faction}</div>
                         )}
                       </div>
                     </div>
@@ -239,19 +239,19 @@ export default function OperatorList() {
                       </span>
                       <span className="flex items-center gap-1">
                         <img src={op.professionIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                        <span className="text-xs text-[#8B8982] shrink-0">{op.profession}</span>
+                        <span className="text-xs text-archive-dust shrink-0">{op.profession}</span>
                       </span>
                       {op.mainAttr.icon && (
                         <span className="flex items-center gap-1 ml-auto">
                           <img src={op.mainAttr.icon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                          <span className="text-xs text-[#8B8982] shrink-0">{op.mainAttr.name}</span>
+                          <span className="text-xs text-archive-dust shrink-0">{op.mainAttr.name}</span>
                         </span>
                       )}
                     </div>
                     {op.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {op.tags.slice(0, 3).map((tag, i) => (
-                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
+                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
                             {tag}
                           </span>
                         ))}
@@ -269,27 +269,27 @@ export default function OperatorList() {
             <Link
               key={op.id}
               to={`/archive/operators/${op.id}`}
-              className="block p-4 rounded border border-[#2A2A32] bg-[#1A1B23]
-                         hover:border-[#C9A96E]/40 transition-all duration-200 group"
+              className="block p-4 rounded border border-archive-border bg-archive-file
+                         hover:border-archive-gold/40 transition-all duration-200 group"
             >
               <div className="flex gap-3">
-                <div className="w-14 h-14 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
+                <div className="w-14 h-14 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
                   {op.portrait ? (
                     <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#5A5A62] text-lg">?</div>
+                    <div className="w-full h-full flex items-center justify-center text-archive-lead text-lg">?</div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-medium text-[#E8E6E3] group-hover:text-[#C9A96E] transition-colors truncate">
+                  <h3 className="text-sm font-medium text-archive-ivory group-hover:text-archive-gold transition-colors truncate">
                     {op.name || '未知'}
                   </h3>
                   <Rarity level={op.rarity} />
                   {op.race && (
-                    <div className="text-[10px] text-[#8B8982] leading-tight">{op.race}</div>
+                    <div className="text-[10px] text-archive-dust leading-tight">{op.race}</div>
                   )}
                   {op.faction && (
-                    <div className="text-[10px] text-[#5A5A62] leading-tight">{op.faction}</div>
+                    <div className="text-[10px] text-archive-lead leading-tight">{op.faction}</div>
                   )}
                 </div>
               </div>
@@ -300,19 +300,19 @@ export default function OperatorList() {
                 </span>
                 <span className="flex items-center gap-1">
                   <img src={op.professionIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                  <span className="text-xs text-[#8B8982] shrink-0">{op.profession}</span>
+                  <span className="text-xs text-archive-dust shrink-0">{op.profession}</span>
                 </span>
                 {op.mainAttr.icon && (
                   <span className="flex items-center gap-1 ml-auto">
                     <img src={op.mainAttr.icon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                    <span className="text-xs text-[#8B8982] shrink-0">{op.mainAttr.name}</span>
+                    <span className="text-xs text-archive-dust shrink-0">{op.mainAttr.name}</span>
                   </span>
                 )}
               </div>
               {op.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
                   {op.tags.slice(0, 3).map((tag, i) => (
-                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
+                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
                       {tag}
                     </span>
                   ))}

@@ -97,21 +97,21 @@ export default function WeaponSkillPanel({ weaponId, skillIds: propSkillIds, sho
         const level = showLevelSlider ? (levels[skillId] ?? sorted[sorted.length - 1].level) : sorted[sorted.length - 1].level
         const current = patches.find(p => p.level === level) ?? sorted[sorted.length - 1]
         return (
-          <div key={skillId} className="p-2 rounded bg-[#0F0F12] border border-[#2A2A32]">
+          <div key={skillId} className="p-2 rounded bg-archive-ink border border-archive-border">
             <div className="flex items-center gap-2">
               {current.iconId && (
                 <img
                   src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${current.iconId}.png`}
                   alt=""
-                  className="w-6 h-6 object-contain bg-[#1A1B23] rounded"
+                  className="w-6 h-6 object-contain bg-archive-file rounded"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                 />
               )}
-              <span className="text-xs font-medium text-[#E8E6E3]">{current.skillName || skillId}</span>
-              <span className="text-[10px] text-[#5A5A62] font-mono ml-auto">Lv.{current.level}</span>
+              <span className="text-xs font-medium text-archive-ivory">{current.skillName || skillId}</span>
+              <span className="text-[10px] text-archive-lead font-mono ml-auto">Lv.{current.level}</span>
             </div>
             {current.description && (
-              <div className="mt-1 text-xs text-[#E8E6E3] leading-relaxed">
+              <div className="mt-1 text-xs text-archive-ivory leading-relaxed">
                 <RichText text={formatBlackboard(current.description, current.blackboard)} />
               </div>
             )}
@@ -123,9 +123,9 @@ export default function WeaponSkillPanel({ weaponId, skillIds: propSkillIds, sho
                   max={sorted[sorted.length - 1].level}
                   value={level}
                   onChange={(e) => setLevels(m => ({ ...m, [skillId]: Number(e.target.value) }))}
-                  className="w-full h-1 rounded-full appearance-none bg-[#2A2A32] accent-[#C9A96E] cursor-pointer"
+                  className="w-full h-1 rounded-full appearance-none bg-archive-border accent-archive-gold cursor-pointer"
                 />
-                <div className="flex justify-between text-[10px] text-[#5A5A62] mt-1">
+                <div className="flex justify-between text-[10px] text-archive-lead mt-1">
                   <span>Lv.{sorted[0].level}</span>
                   <span>Lv.{sorted[sorted.length - 1].level}</span>
                 </div>

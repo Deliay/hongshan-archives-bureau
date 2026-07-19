@@ -93,7 +93,7 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
             if (change.type === 'value') {
               return (
                 <div key={path} className="text-[10px]">
-                  <span className="text-[#5A5A62] font-mono">{path}</span>
+                  <span className="text-archive-lead font-mono">{path}</span>
                   <div className="flex gap-3 mt-0.5">
                     <span className="text-[#ef4444]">旧 {formatDiffValue(change.oldValue, locale)}</span>
                     <span className="text-[#26bbfd]">新 {formatDiffValue(change.newValue, locale)}</span>
@@ -103,13 +103,13 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
             }
             return (
               <div key={path} className="text-[10px]">
-                <span className="text-[#5A5A62] font-mono">{path}</span>
+                <span className="text-archive-lead font-mono">{path}</span>
                 <div className="mt-0.5 space-y-0.5">
                   {Object.entries(change.changedLocales).map(([loc, val]) => {
                     const v = val as { oldText: string; newText: string }
                     return (
                       <div key={loc}>
-                        <span className="text-[#C9A96E]">{loc}</span>
+                        <span className="text-archive-gold">{loc}</span>
                         <RichTextDiff oldText={v.oldText || ''} newText={v.newText || ''} formatter={formatter} />
                       </div>
                     )
@@ -121,9 +121,9 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
         </div>
       )
     }
-    return <div className="text-[#8B8982] text-[10px]">无详细变更信息</div>
+    return <div className="text-archive-dust text-[10px]">无详细变更信息</div>
   }
-  return <div className="text-[#8B8982] text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry)}</div>
+  return <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry)}</div>
 }
 
 function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
@@ -195,14 +195,14 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
 
   return (
     <div className={`rounded overflow-hidden transition-colors ${
-      isAdded ? 'border border-[#26bbfd]/40 bg-[#1A1B23]' : 'border border-[#2A2A32] bg-[#1A1B23]'
+      isAdded ? 'border border-[#26bbfd]/40 bg-archive-file' : 'border border-archive-border bg-archive-file'
     }`}>
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-start gap-3 p-3 text-left hover:bg-[#22222C] transition-colors"
       >
-        <div className="w-12 h-12 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
+        <div className="w-12 h-12 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
           {iconId && (
             <img src={getItemIconUrl(iconId)} alt={name} className="w-full h-full object-cover"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
@@ -212,8 +212,8 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
           <div className="flex items-center justify-between gap-2">
             <div className="truncate flex items-center gap-1.5">
               {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#26bbfd] text-white font-bold shrink-0">新增</span>}
-              <span className="text-sm font-medium text-[#E8E6E3]">{name}</span>
-              <span className="text-[10px] text-[#5A5A62] font-mono">{item.itemId}</span>
+              <span className="text-sm font-medium text-archive-ivory">{name}</span>
+              <span className="text-[10px] text-archive-lead font-mono">{item.itemId}</span>
             </div>
             <span className="inline-flex gap-0.5 text-xs" style={{ color: RARITY_COLORS[rarity] || '#6b7280' }}>
               {'✦'.repeat(Math.min(rarity, 6))}
@@ -221,9 +221,9 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
           </div>
           <div className="flex items-center gap-2 mt-1">
             {typeName && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">{typeName}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">{typeName}</span>
             )}
-            <span className="text-[10px] text-[#5A5A62]">
+            <span className="text-[10px] text-archive-lead">
               {changeCategories.added > 0 && <span className="text-[#26bbfd] mr-1">+{changeCategories.added}</span>}
               {changeCategories.removed > 0 && <span className="text-[#ef4444] mr-1">-{changeCategories.removed}</span>}
               {changeCategories.changed > 0 && <span className="text-[#ffbb03]">~{changeCategories.changed}</span>}
@@ -236,11 +236,11 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
             ))}
           </div>
         </div>
-        <span className={`text-[#5A5A62] text-xs mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}>▼</span>
+        <span className={`text-archive-lead text-xs mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}>▼</span>
       </button>
 
       {expanded && (
-        <div className="border-t border-[#2A2A32] p-3 space-y-3">
+        <div className="border-t border-archive-border p-3 space-y-3">
           {isAdded && itemEntry ? (
             <AddedItemDetail itemId={item.itemId} itemEntry={itemEntry} locale={locale} />
           ) : (
@@ -250,9 +250,9 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
               const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
               const opColor = c.op === 'added' ? '#26bbfd' : c.op === 'removed' ? '#ef4444' : '#ffbb03'
               return (
-                <div key={c.tableName + c.key} className="text-xs border-b border-[#2A2A32]/50 pb-1.5 last:border-0 last:pb-0">
+                <div key={c.tableName + c.key} className="text-xs border-b border-archive-border/50 pb-1.5 last:border-0 last:pb-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-mono text-[10px] text-[#5A5A62]">{c.key}</span>
+                    <span className="font-mono text-[10px] text-archive-lead">{c.key}</span>
                     <span className="font-mono text-[10px] px-1 rounded" style={{ backgroundColor: `${color}18`, color }}>{label}</span>
                     <span className="text-[10px] font-mono" style={{ color: opColor }}>{opLabel}</span>
                   </div>
@@ -301,11 +301,11 @@ function ChestContentEntry({ entry, op, locale }: { entry: any; op: string; loca
   return (
     <div className="space-y-1">
       {op === 'changed' ? renderChangeEntry(entry, op, locale) : (
-        <div className="text-[10px] text-[#8B8982]">
-          <span className="text-[#5A5A62]">rewardIdList</span>
+        <div className="text-[10px] text-archive-dust">
+          <span className="text-archive-lead">rewardIdList</span>
           <div className="flex flex-wrap gap-1 mt-0.5">
             {rewardIds.map(id => (
-              <span key={id} className="px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6] text-[10px]">
+              <span key={id} className="px-1.5 py-0.5 rounded bg-archive-border text-archive-dust text-[10px]">
                 {itemNames[id] || id}
               </span>
             ))}
@@ -369,10 +369,10 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
   const hasChanges = added.length > 0 || removed.length > 0 || unchanged.length > 0
 
   return (
-    <div className="px-2 py-1 rounded bg-[#0F0F12]">
-      <div className="text-[10px] text-[#8B8982] mb-1">获取方式</div>
+    <div className="px-2 py-1 rounded bg-archive-ink">
+      <div className="text-[10px] text-archive-dust mb-1">获取方式</div>
       {obtainWayKeys.length > 0 && !hasChanges ? (
-        <div className="text-[10px] text-[#5A5A62]">数组长度变更（{oldValue.length} → {newValue.length}）</div>
+        <div className="text-[10px] text-archive-lead">数组长度变更（{oldValue.length} → {newValue.length}）</div>
       ) : (
         <div className="space-y-1">
           {removed.length > 0 && (
@@ -380,7 +380,7 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
               <div className="text-[10px] text-[#ef4444] mb-0.5">移除</div>
               <div className="flex flex-wrap gap-1">
                 {removed.map(wid => (
-                  <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#ef4444] line-through">
+                  <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-[#ef4444] line-through">
                     {wayNames[wid] ? `${wayNames[wid]}（${wid}）` : wid}
                   </span>
                 ))}
@@ -401,10 +401,10 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
           )}
           {unchanged.length > 0 && (
             <div>
-              <div className="text-[10px] text-[#8B8982] mb-0.5">已存在</div>
+              <div className="text-[10px] text-archive-dust mb-0.5">已存在</div>
               <div className="flex flex-wrap gap-1">
                 {unchanged.map(wid => (
-                  <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#B0ACA6]">
+                  <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
                     {wayNames[wid] ? `${wayNames[wid]}（${wid}）` : wid}
                   </span>
                 ))}
@@ -454,53 +454,53 @@ function AddedItemDetail({ itemId, itemEntry, locale: _locale }: { itemId: strin
     <div className="space-y-3">
       {itemEntry?.decoDesc && (
         <details className="group">
-          <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">物品描述</summary>
-          <div className="mt-1 text-xs text-[#E8E6E3] leading-relaxed whitespace-pre-wrap">
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">物品描述</summary>
+          <div className="mt-1 text-xs text-archive-ivory leading-relaxed whitespace-pre-wrap">
             <RichText text={localeText(itemEntry.decoDesc, _locale) || ''} />
           </div>
         </details>
       )}
       {itemEntry?.desc && (
         <details className="group">
-          <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">道具说明</summary>
-          <div className="mt-1 text-xs text-[#E8E6E3] leading-relaxed whitespace-pre-wrap">
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">道具说明</summary>
+          <div className="mt-1 text-xs text-archive-ivory leading-relaxed whitespace-pre-wrap">
             <RichText text={localeText(itemEntry.desc, _locale) || ''} />
           </div>
         </details>
       )}
       {obtainWays.length > 0 && (
         <details className="group" open>
-          <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">获取方式（{obtainWays.length}）</summary>
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">获取方式（{obtainWays.length}）</summary>
           <div className="mt-1 space-y-1">
             {obtainWays.map((w) => (
-              <div key={w.wayId} className="px-2 py-1 rounded bg-[#0F0F12]">
-                <div className="text-[10px] text-[#5A5A62] font-mono">{w.wayId}</div>
-                {w.desc && <div className="text-xs text-[#B0ACA6] leading-relaxed"><RichText text={w.desc} /></div>}
+              <div key={w.wayId} className="px-2 py-1 rounded bg-archive-ink">
+                <div className="text-[10px] text-archive-lead font-mono">{w.wayId}</div>
+                {w.desc && <div className="text-xs text-archive-dust leading-relaxed"><RichText text={w.desc} /></div>}
               </div>
             ))}
           </div>
         </details>
       )}
       <details className="group" open>
-        <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">基本信息</summary>
+        <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">基本信息</summary>
         <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs px-2">
-          <dt className="text-[#5A5A62]">物品 ID</dt>
-          <dd className="text-[#E8E6E3] font-mono">{itemId}</dd>
-          <dt className="text-[#5A5A62]">稀有度</dt>
-          <dd className="text-[#E8E6E3]">{itemEntry?.rarity ?? '-'}</dd>
-          <dt className="text-[#5A5A62]">类型</dt>
-          <dd className="text-[#E8E6E3]">{itemEntry?.type ?? '-'}</dd>
+          <dt className="text-archive-lead">物品 ID</dt>
+          <dd className="text-archive-ivory font-mono">{itemId}</dd>
+          <dt className="text-archive-lead">稀有度</dt>
+          <dd className="text-archive-ivory">{itemEntry?.rarity ?? '-'}</dd>
+          <dt className="text-archive-lead">类型</dt>
+          <dd className="text-archive-ivory">{itemEntry?.type ?? '-'}</dd>
           {itemEntry?.maxStackCount != null && <>
-            <dt className="text-[#5A5A62]">最大堆叠</dt>
-            <dd className="text-[#E8E6E3]">{itemEntry.maxStackCount}</dd>
+            <dt className="text-archive-lead">最大堆叠</dt>
+            <dd className="text-archive-ivory">{itemEntry.maxStackCount}</dd>
           </>}
           {itemEntry?.maxBackpackStackCount != null && <>
-            <dt className="text-[#5A5A62]">背包堆叠</dt>
-            <dd className="text-[#E8E6E3]">{itemEntry.maxBackpackStackCount}</dd>
+            <dt className="text-archive-lead">背包堆叠</dt>
+            <dd className="text-archive-ivory">{itemEntry.maxBackpackStackCount}</dd>
           </>}
           {outcomeItemIds.length > 0 && <>
-            <dt className="text-[#5A5A62]">产出物品</dt>
-            <dd className="text-[#E8E6E3] font-mono text-[10px]">{outcomeItemIds.join(', ')}</dd>
+            <dt className="text-archive-lead">产出物品</dt>
+            <dd className="text-archive-ivory font-mono text-[10px]">{outcomeItemIds.join(', ')}</dd>
           </>}
         </dl>
       </details>
@@ -519,10 +519,10 @@ export default function ItemChangePanel({ versionName }: Props) {
   if (loading) {
     return (
       <div className="mb-8">
-        <h3 className="text-sm font-medium text-[#E8E6E3] mb-3">物品变动概览</h3>
+        <h3 className="text-sm font-medium text-archive-ivory mb-3">物品变动概览</h3>
         <div className="space-y-2">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-16 rounded border border-[#2A2A32] bg-[#1A1B23] animate-pulse" />
+            <div key={i} className="h-16 rounded border border-archive-border bg-archive-file animate-pulse" />
           ))}
         </div>
       </div>
@@ -539,13 +539,13 @@ export default function ItemChangePanel({ versionName }: Props) {
   return (
     <div className="mb-8">
       <div className="flex items-baseline justify-between mb-3">
-        <h3 className="text-sm font-medium text-[#E8E6E3]">
+        <h3 className="text-sm font-medium text-archive-ivory">
           物品变动概览
-          <span className="text-xs text-[#5A5A62] font-normal ml-2">
+          <span className="text-xs text-archive-lead font-normal ml-2">
             {items.length} 件物品 · {totalChanges} 处变动
           </span>
         </h3>
-        <div className="flex gap-2 text-[10px] text-[#5A5A62]">
+        <div className="flex gap-2 text-[10px] text-archive-lead">
           {withAdded > 0 && <span className="text-[#26bbfd]">新增 {withAdded}</span>}
           {withRemoved > 0 && <span className="text-[#ef4444]">移除 {withRemoved}</span>}
           {withChanged > 0 && <span className="text-[#ffbb03]">变更 {withChanged}</span>}

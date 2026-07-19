@@ -24,10 +24,10 @@ export default function SkillPatchDiff({ diff }: TableDiffComponentProps) {
 
   return (
     <div>
-      <div className="flex gap-1 mb-4 border-b border-[#2A2A32]">
+      <div className="flex gap-1 mb-4 border-b border-archive-border">
         {tabs.map((t) => (
           <button type="button" key={t.id} onClick={() => setTab(t.id)}
-            className={`px-3 py-2 text-sm border-b-2 transition-colors ${tab === t.id ? 'border-[#C9A96E] text-[#C9A96E]' : 'border-transparent text-[#8B8982] hover:text-[#E8E6E3]'}`}
+            className={`px-3 py-2 text-sm border-b-2 transition-colors ${tab === t.id ? 'border-archive-gold text-archive-gold' : 'border-transparent text-archive-dust hover:text-archive-ivory'}`}
           >{t.label}（{t.count}）</button>
         ))}
       </div>
@@ -41,19 +41,19 @@ export default function SkillPatchDiff({ diff }: TableDiffComponentProps) {
 
 function AddedList({ entries, locale }: { entries: Record<string, any>; locale: string }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-[#5A5A62]">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
   return (
     <div className="space-y-2">
       {keys.map((id) => {
         const e = entries[id]
         const bundle = e.SkillPatchDataBundle || []
         return (
-          <details key={id} className="border border-[#2A2A32] rounded bg-[#1A1B23]">
-            <summary className="px-3 py-2 text-sm text-[#E8E6E3] cursor-pointer hover:text-[#C9A96E] transition-colors font-mono">
+          <details key={id} className="border border-archive-border rounded bg-archive-file">
+            <summary className="px-3 py-2 text-sm text-archive-ivory cursor-pointer hover:text-archive-gold transition-colors font-mono">
               {id}
-              <span className="text-[#8B8982] ml-2 text-xs">{bundle.length} 个数据包</span>
+              <span className="text-archive-dust ml-2 text-xs">{bundle.length} 个数据包</span>
             </summary>
-            <div className="px-3 pb-3 border-t border-[#2A2A32] space-y-2 mt-2">
+            <div className="px-3 pb-3 border-t border-archive-border space-y-2 mt-2">
               {bundle.map((b: any, i: number) => (
                 <SkillBundleCard key={b.skillId || i} bundle={b} locale={locale} />
               ))}
@@ -67,21 +67,21 @@ function AddedList({ entries, locale }: { entries: Record<string, any>; locale: 
 
 function ChangedList({ entries }: { entries: Record<string, any> }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-[#5A5A62]">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
   return (
     <div className="space-y-2">
       {keys.map((id) => {
         const e = entries[id]
         return (
-          <details key={id} className="border border-[#2A2A32] rounded bg-[#1A1B23]">
-            <summary className="px-3 py-2 text-sm text-[#E8E6E3] cursor-pointer hover:text-[#C9A96E] transition-colors font-mono">
+          <details key={id} className="border border-archive-border rounded bg-archive-file">
+            <summary className="px-3 py-2 text-sm text-archive-ivory cursor-pointer hover:text-archive-gold transition-colors font-mono">
               {id}
             </summary>
-            <div className="px-3 pb-3 border-t border-[#2A2A32]">
+            <div className="px-3 pb-3 border-t border-archive-border">
               <div className="mt-2 space-y-1">
                 {Object.entries(e.changed).map(([path, change]: [string, any]) => (
-                  <div key={path} className="text-xs border-b border-[#2A2A32]/50 pb-1">
-                    <div className="text-[#8B8982] font-mono mb-0.5">{path}</div>
+                  <div key={path} className="text-xs border-b border-archive-border/50 pb-1">
+                    <div className="text-archive-dust font-mono mb-0.5">{path}</div>
                     {change.type === 'value' ? (
                       <div className="flex gap-3">
                         <span className="text-[#ef4444]">旧 {JSON.stringify(change.oldValue)}</span>
@@ -90,7 +90,7 @@ function ChangedList({ entries }: { entries: Record<string, any> }) {
                     ) : (
                       Object.entries(change.changedLocales).map(([loc, { oldText, newText }]: [string, any]) => (
                         <div key={loc}>
-                          <span className="text-[#C9A96E]">{loc}</span>: {oldText} → {newText}
+                          <span className="text-archive-gold">{loc}</span>: {oldText} → {newText}
                         </div>
                       ))
                     )}
@@ -107,27 +107,27 @@ function ChangedList({ entries }: { entries: Record<string, any> }) {
 
 function SkillBundleCard({ bundle, locale }: { bundle: any; locale: string }) {
   return (
-    <div className="border border-[#2A2A32] rounded p-2 bg-[#0F0F12]">
+    <div className="border border-archive-border rounded p-2 bg-archive-ink">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <span className="text-xs text-[#C9A96E] font-mono">{bundle.skillId}</span>
-          <span className="text-xs text-[#8B8982] ml-2">Lv.{bundle.level}</span>
-          {bundle.iconId && <span className="text-xs text-[#5A5A62] ml-2">{bundle.iconId}</span>}
+          <span className="text-xs text-archive-gold font-mono">{bundle.skillId}</span>
+          <span className="text-xs text-archive-dust ml-2">Lv.{bundle.level}</span>
+          {bundle.iconId && <span className="text-xs text-archive-lead ml-2">{bundle.iconId}</span>}
         </div>
-        <div className="text-xs text-[#5A5A62]">
+        <div className="text-xs text-archive-lead">
           {bundle.costType && <span>消耗{bundle.costType}×{bundle.costValue}</span>}
           {bundle.coolDown !== undefined && <span className="ml-2">CD{bundle.coolDown}s</span>}
         </div>
       </div>
       {bundle.description && (
-        <div className="text-xs text-[#E8E6E3] mt-1">{lt(bundle.description, locale)}</div>
+        <div className="text-xs text-archive-ivory mt-1">{lt(bundle.description, locale)}</div>
       )}
       {bundle.blackboard && bundle.blackboard.length > 0 && (
         <div className="mt-1">
-          <div className="text-[10px] text-[#5A5A62]">参数（{bundle.blackboard.length}）</div>
+          <div className="text-[10px] text-archive-lead">参数（{bundle.blackboard.length}）</div>
           <div className="flex flex-wrap gap-1 mt-0.5">
             {bundle.blackboard.map((bb: any, i: number) => (
-              <span key={bb.key ?? i} className="text-[10px] px-1 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
+              <span key={bb.key ?? i} className="text-[10px] px-1 py-0.5 rounded bg-archive-border text-archive-dust">
                 {bb.key}={bb.value}
               </span>
             ))}

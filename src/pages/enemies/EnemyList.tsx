@@ -110,13 +110,13 @@ export default function EnemyList() {
     setGroupPageMap({})
   }, [search, starFilter, groupFilter, pageSize, sortField, sortDesc, groupField])
 
-  if (loading) return <div className="text-[#8B8982] text-sm">加载中…</div>
+  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!enemies || enemies.length === 0) return <div className="text-[#8B8982] text-sm">暂无记录</div>
+  if (!enemies || enemies.length === 0) return <div className="text-archive-dust text-sm">暂无记录</div>
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-[#E8E6E3] mb-4">敌人图鉴</h2>
+      <h2 className="font-display text-xl font-bold text-archive-ivory mb-4">敌人图鉴</h2>
 
       <div className="flex flex-col gap-2 mb-4">
         <div className="flex gap-2 flex-wrap">
@@ -125,12 +125,12 @@ export default function EnemyList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索敌人名称或 ID…"
-            className="flex-1 px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] placeholder:text-[#5A5A62] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="flex-1 px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory placeholder:text-archive-lead focus:outline-none focus:border-archive-gold/40 transition-colors"
           />
           <select
             value={pageSize}
             onChange={(e) => setPageSize(Number(e.target.value))}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             {PAGE_SIZES.map(ps => (
               <option key={ps} value={ps}>{ps === 0 ? '全部' : `${ps} / 页`}</option>
@@ -141,7 +141,7 @@ export default function EnemyList() {
           <select
             value={starFilter}
             onChange={(e) => setStarFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">全部星级</option>
             {[1, 2, 3, 4, 5, 6].map(r => (
@@ -151,7 +151,7 @@ export default function EnemyList() {
           <select
             value={groupFilter}
             onChange={(e) => setGroupFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">全部阵营</option>
             {groups.map(g => (
@@ -161,7 +161,7 @@ export default function EnemyList() {
           <select
             value={sortField}
             onChange={(e) => setSortField(e.target.value as SortField)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="displayType">敌人星级</option>
             <option value="name">名称</option>
@@ -169,15 +169,15 @@ export default function EnemyList() {
           <button
             type="button"
             onClick={() => setSortDesc(v => !v)}
-            className="px-2 py-1.5 text-sm rounded border transition-colors border-[#C9A96E]/40 text-[#E8E6E3] hover:border-[#C9A96E]"
+            className="px-2 py-1.5 text-sm rounded border transition-colors border-archive-gold/40 text-archive-ivory hover:border-archive-gold"
           >
             {sortDesc ? '↓ 倒序' : '↑ 正序'}
           </button>
-          <div className="w-px bg-[#2A2A32]" />
+          <div className="w-px bg-archive-border" />
           <select
             value={groupField}
             onChange={(e) => setGroupField(e.target.value as GroupField)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">不分組</option>
             <option value="wikiGroup">按阵营分组</option>
@@ -193,9 +193,9 @@ export default function EnemyList() {
             const groupPaged = pageSize > 0 ? items.slice(gp * pageSize, (gp + 1) * pageSize) : items
             return (
               <section key={key}>
-                <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#2A2A32]">
-                  <h3 className="text-sm font-medium text-[#C9A96E]">{key}</h3>
-                  <span className="text-[10px] text-[#5A5A62]">{items.length} 种</span>
+                <div className="flex items-center gap-2 mb-2 pb-1 border-b border-archive-border">
+                  <h3 className="text-sm font-medium text-archive-gold">{key}</h3>
+                  <span className="text-[10px] text-archive-lead">{items.length} 种</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {groupPaged.map(e => (
@@ -206,11 +206,11 @@ export default function EnemyList() {
                   <div className="flex items-center justify-center gap-3 mt-3">
                     <button type="button" onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.max(0, gp - 1) }))}
                       disabled={gp === 0}
-                      className="px-2 py-1 text-xs rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors">上一页</button>
-                    <span className="text-xs text-[#8B8982]">{gp + 1} / {groupTotalPages}</span>
+                      className="px-2 py-1 text-xs rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors">上一页</button>
+                    <span className="text-xs text-archive-dust">{gp + 1} / {groupTotalPages}</span>
                     <button type="button" onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.min(groupTotalPages - 1, gp + 1) }))}
                       disabled={gp >= groupTotalPages - 1}
-                      className="px-2 py-1 text-xs rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors">下一页</button>
+                      className="px-2 py-1 text-xs rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors">下一页</button>
                   </div>
                 )}
               </section>
@@ -224,14 +224,14 @@ export default function EnemyList() {
               <EnemyCard key={e.id} enemy={e} tagNameMap={tagNameMap} typeNameMap={typeNameMap} />
             ))}
           </div>
-          {filtered.length === 0 && <p className="text-sm text-[#5A5A62] mt-4">未找到匹配敌人</p>}
+          {filtered.length === 0 && <p className="text-sm text-archive-lead mt-4">未找到匹配敌人</p>}
           {pageSize > 0 && totalPages > 1 && (
             <div className="flex items-center justify-center gap-3 mt-6">
               <button type="button" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                className="px-3 py-1 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors">上一页</button>
-              <span className="text-sm text-[#8B8982]">{page + 1} / {totalPages}</span>
+                className="px-3 py-1 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors">上一页</button>
+              <span className="text-sm text-archive-dust">{page + 1} / {totalPages}</span>
               <button type="button" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                className="px-3 py-1 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors">下一页</button>
+                className="px-3 py-1 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors">下一页</button>
             </div>
           )}
         </>
@@ -243,25 +243,25 @@ export default function EnemyList() {
 function EnemyCard({ enemy, tagNameMap, typeNameMap }: { enemy: import('../../lib/types').Enemy; tagNameMap: Record<string, string>; typeNameMap: Record<number, string> }) {
   const stars = ENEMY_STARS[enemy.displayType] ?? 1
   return (
-    <Link to={`/archive/enemies/${enemy.id}`} className="flex gap-3 p-2 rounded border border-[#2A2A32] bg-[#1A1B23] hover:border-[#C9A96E]/40 transition-colors">
+    <Link to={`/archive/enemies/${enemy.id}`} className="flex gap-3 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors">
       <div className="shrink-0">
         <img
           src={getEnemyIconUrl(enemy.templateId)}
           alt=""
-          className="w-12 h-12 object-cover bg-[#2A2A32]"
+          className="w-12 h-12 object-cover bg-archive-border"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm text-[#E8E6E3] truncate">{enemy.name}</div>
+        <div className="text-sm text-archive-ivory truncate">{enemy.name}</div>
         <div className="flex items-center gap-1 mt-0.5">
-          <span className="text-[10px] text-[#5A5A62]">{typeNameMap[enemy.displayType] || `类型${enemy.displayType}`}</span>
+          <span className="text-[10px] text-archive-lead">{typeNameMap[enemy.displayType] || `类型${enemy.displayType}`}</span>
           <Rarity level={stars} />
         </div>
         {enemy.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {enemy.tags.map((t, i) => (
-              <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">{tagNameMap[t] || t}</span>
+              <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-archive-border text-archive-dust">{tagNameMap[t] || t}</span>
             ))}
           </div>
         )}

@@ -117,8 +117,8 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
             if (change.type === 'value') {
               return (
                 <div key={path} className="text-[10px]">
-                  <span className="text-[#5A5A62] font-mono">{path}</span>
-                  {context && <span className="ml-2 text-[#8B8982]">{context}</span>}
+                  <span className="text-archive-lead font-mono">{path}</span>
+                  {context && <span className="ml-2 text-archive-dust">{context}</span>}
                   <div className="flex gap-3 mt-0.5">
                     <span className="text-[#ef4444]">旧 {formatDiffValue(path, change.oldValue, locale, e.newValue)}</span>
                     <span className="text-[#26bbfd]">新 {formatDiffValue(path, change.newValue, locale, e.newValue)}</span>
@@ -128,13 +128,13 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
             }
             return (
               <div key={path} className="text-[10px]">
-                <span className="text-[#5A5A62] font-mono">{path}</span>
+                <span className="text-archive-lead font-mono">{path}</span>
                 <div className="mt-0.5 space-y-0.5">
                   {Object.entries(change.changedLocales).map(([loc, val]) => {
                     const v = val as { oldText: string; newText: string }
                     return (
                       <div key={loc}>
-                        <span className="text-[#C9A96E]">{loc}</span>
+                        <span className="text-archive-gold">{loc}</span>
                         <RichTextDiff oldText={v.oldText || ''} newText={v.newText || ''} formatter={formatter} />
                       </div>
                     )
@@ -146,9 +146,9 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
         </div>
       )
     }
-    return <div className="text-[#8B8982] text-[10px]">无详细变更信息</div>
+    return <div className="text-archive-dust text-[10px]">无详细变更信息</div>
   }
-  return <div className="text-[#8B8982] text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry)}</div>
+  return <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry)}</div>
 }
 
 function renderObj(obj: any, indent = ''): string {
@@ -286,14 +286,14 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
 
   return (
     <div className={`rounded overflow-hidden transition-colors ${
-      isAdded ? 'border border-[#26bbfd]/40 bg-[#1A1B23]' : 'border border-[#2A2A32] bg-[#1A1B23]'
+      isAdded ? 'border border-[#26bbfd]/40 bg-archive-file' : 'border border-archive-border bg-archive-file'
     }`}>
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-start gap-3 p-3 text-left hover:bg-[#22222C] transition-colors"
       >
-        <div className="w-12 h-12 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
+        <div className="w-12 h-12 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
           <img src={portraitUrl} alt={name} className="w-full h-full object-cover"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
         </div>
@@ -301,27 +301,27 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
           <div className="flex items-center justify-between gap-2">
             <div className="truncate flex items-center gap-1.5">
               {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#26bbfd] text-white font-bold shrink-0">新增</span>}
-              <span className="text-sm font-medium text-[#E8E6E3]">{name}</span>
-              <span className="text-[10px] text-[#5A5A62] font-mono">{op.charId}</span>
+              <span className="text-sm font-medium text-archive-ivory">{name}</span>
+              <span className="text-[10px] text-archive-lead font-mono">{op.charId}</span>
             </div>
             <StarRating level={rarity} />
           </div>
           <div className="flex items-center gap-2 mt-1">
             {professionName && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">{professionName}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">{professionName}</span>
             )}
-            {elementName && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">{elementName}</span>}
+            {elementName && <span className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">{elementName}</span>}
             {tags.length > 0 && tags.map((t, i) => (
-              <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-[#2A2A32] text-[#5A5A62]">{maps?.battleTags[t] || t}</span>
+              <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-archive-border text-archive-lead">{maps?.battleTags[t] || t}</span>
             ))}
-            <span className="text-[10px] text-[#5A5A62]">
+            <span className="text-[10px] text-archive-lead">
               {changeCategories.added > 0 && <span className="text-[#26bbfd] mr-1">+{changeCategories.added}</span>}
               {changeCategories.removed > 0 && <span className="text-[#ef4444] mr-1">-{changeCategories.removed}</span>}
               {changeCategories.changed > 0 && <span className="text-[#ffbb03]">~{changeCategories.changed}</span>}
             </span>
           </div>
           {(mainAttrName || subAttrName) && (
-            <div className="flex flex-wrap gap-3 mt-1 text-xs text-[#B0ACA6]">
+            <div className="flex flex-wrap gap-3 mt-1 text-xs text-archive-dust">
               {mainAttrName && <span>主能力 {mainAttrName}</span>}
               {subAttrName && <span>副能力 {subAttrName}</span>}
             </div>
@@ -333,11 +333,11 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
             ))}
           </div>
         </div>
-        <span className={`text-[#5A5A62] text-xs mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}>▼</span>
+        <span className={`text-archive-lead text-xs mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}>▼</span>
       </button>
 
       {expanded && (
-        <div className="border-t border-[#2A2A32] p-3 space-y-3">
+        <div className="border-t border-archive-border p-3 space-y-3">
           {isAdded && addedEntry ? (
             <AddedOperatorDetail charId={op.charId} entry={addedEntry.entry} locale={locale} />
           ) : (
@@ -347,9 +347,9 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
               const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
               const opColor = c.op === 'added' ? '#26bbfd' : c.op === 'removed' ? '#ef4444' : '#ffbb03'
               return (
-                <div key={c.tableName + c.key} className="text-xs border-b border-[#2A2A32]/50 pb-1.5 last:border-0 last:pb-0">
+                <div key={c.tableName + c.key} className="text-xs border-b border-archive-border/50 pb-1.5 last:border-0 last:pb-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-mono text-[10px] text-[#5A5A62]">{c.key}</span>
+                    <span className="font-mono text-[10px] text-archive-lead">{c.key}</span>
                     <span className="font-mono text-[10px] px-1 rounded" style={{ backgroundColor: `${color}18`, color }}>{label}</span>
                     <span className="text-[10px] font-mono" style={{ color: opColor }}>{opLabel}</span>
                   </div>
@@ -379,19 +379,19 @@ function AddedOperatorDetail({ charId, entry, locale }: { charId: string; entry:
 
       {entry?.profileRecord && entry.profileRecord.length > 0 && (
         <details className="group">
-          <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">
             档案记录（{entry.profileRecord.length}）
           </summary>
           <div className="mt-1 space-y-1 max-h-48 overflow-y-auto">
             {entry.profileRecord.map((r: any) => (
-              <div key={r.id} className="px-2 py-1 rounded bg-[#0F0F12]">
+              <div key={r.id} className="px-2 py-1 rounded bg-archive-ink">
                 <div className="flex items-center gap-2">
-                  <div className="text-[10px] text-[#8B8982]">{localeText(r.recordTitle, locale)}</div>
+                  <div className="text-[10px] text-archive-dust">{localeText(r.recordTitle, locale)}</div>
                   {renderUnlockInfo(r.unlockType, r.unlockValue) && (
-                    <span className="text-[9px] text-[#5A5A62]">{renderUnlockInfo(r.unlockType, r.unlockValue)}</span>
+                    <span className="text-[9px] text-archive-lead">{renderUnlockInfo(r.unlockType, r.unlockValue)}</span>
                   )}
                 </div>
-                <div className="text-xs text-[#E8E6E3] mt-0.5 whitespace-pre-wrap line-clamp-3">
+                <div className="text-xs text-archive-ivory mt-0.5 whitespace-pre-wrap line-clamp-3">
                   <RichText text={localeText(r.recordDesc, locale)} />
                 </div>
               </div>
@@ -402,21 +402,21 @@ function AddedOperatorDetail({ charId, entry, locale }: { charId: string; entry:
 
       {entry?.profileVoice && entry.profileVoice.length > 0 && (
         <details className="group">
-          <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">
             语音记录（{entry.profileVoice.length}）
           </summary>
           <div className="mt-1 space-y-1 max-h-48 overflow-y-auto">
             {entry.profileVoice.map((v: any) => (
-              <div key={v.id} className="flex items-start gap-2 px-2 py-1 rounded bg-[#0F0F12]">
-                <span className="text-[10px] text-[#5A5A62] font-mono shrink-0 mt-0.5">#{v.voiceIndex}</span>
+              <div key={v.id} className="flex items-start gap-2 px-2 py-1 rounded bg-archive-ink">
+                <span className="text-[10px] text-archive-lead font-mono shrink-0 mt-0.5">#{v.voiceIndex}</span>
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="text-[10px] text-[#8B8982]">{localeText(v.voiceTitle, locale)}</div>
+                    <div className="text-[10px] text-archive-dust">{localeText(v.voiceTitle, locale)}</div>
                     {renderUnlockInfo(v.unlockType, v.unlockValue) && (
-                      <span className="text-[9px] text-[#5A5A62]">{renderUnlockInfo(v.unlockType, v.unlockValue)}</span>
+                      <span className="text-[9px] text-archive-lead">{renderUnlockInfo(v.unlockType, v.unlockValue)}</span>
                     )}
                   </div>
-                  <div className="text-xs text-[#E8E6E3]"><RichText text={localeText(v.voiceDesc, locale)} /></div>
+                  <div className="text-xs text-archive-ivory"><RichText text={localeText(v.voiceDesc, locale)} /></div>
                 </div>
               </div>
             ))}
@@ -469,19 +469,19 @@ function SkillPreview({ charId, locale }: { charId: string; locale: string }) {
   if (data.length === 0) return null
   return (
     <details className="group" open>
-      <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">技能（{data.length}）</summary>
+      <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">技能（{data.length}）</summary>
       <div className="mt-1 space-y-2">
         {data.map((s, i) => (
-          <div key={i} className="px-2 py-1.5 rounded bg-[#0F0F12]">
+          <div key={i} className="px-2 py-1.5 rounded bg-archive-ink">
             <div className="flex items-center gap-2">
               {s.icon && (
                 <img src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${s.icon}.png`} alt=""
-                  className="w-6 h-6 object-contain bg-[#1A1B23] rounded"
+                  className="w-6 h-6 object-contain bg-archive-file rounded"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
               )}
-              <div className="text-xs text-[#E8E6E3] font-medium">{s.name}</div>
+              <div className="text-xs text-archive-ivory font-medium">{s.name}</div>
             </div>
-            {s.desc && <div className="text-[10px] text-[#B0ACA6] leading-relaxed mt-1"><RichText text={s.desc} /></div>}
+            {s.desc && <div className="text-[10px] text-archive-dust leading-relaxed mt-1"><RichText text={s.desc} /></div>}
           </div>
         ))}
       </div>
@@ -523,20 +523,20 @@ function SpaceshipSkillPreview({ charId, locale }: { charId: string; locale: str
   if (data.length === 0) return null
   return (
     <details className="group" open>
-      <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">基建技能（{data.length}）</summary>
+      <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">基建技能（{data.length}）</summary>
       <div className="mt-1 space-y-2">
         {data.map((s, i) => (
-          <div key={i} className="px-2 py-1.5 rounded bg-[#0F0F12]">
+          <div key={i} className="px-2 py-1.5 rounded bg-archive-ink">
             <div className="flex items-center gap-2">
               {s.icon && (
                 <img src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/${s.icon}.png`} alt=""
-                  className="w-6 h-6 object-contain bg-[#1A1B23] rounded"
+                  className="w-6 h-6 object-contain bg-archive-file rounded"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
               )}
-              <div className="text-xs text-[#E8E6E3] font-medium">{s.name}</div>
-              {s.roomType > 0 && <span className="text-[9px] text-[#5A5A62]">房间{s.roomType}</span>}
+              <div className="text-xs text-archive-ivory font-medium">{s.name}</div>
+              {s.roomType > 0 && <span className="text-[9px] text-archive-lead">房间{s.roomType}</span>}
             </div>
-            {s.desc && <div className="text-[10px] text-[#B0ACA6] leading-relaxed mt-1"><RichText text={s.desc} /></div>}
+            {s.desc && <div className="text-[10px] text-archive-dust leading-relaxed mt-1"><RichText text={s.desc} /></div>}
           </div>
         ))}
       </div>
@@ -559,7 +559,7 @@ function SkillEntry({ entry, op, locale }: { entry: any; op: string; locale: str
   const [i18n, setI18n] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   useEffect(() => { getSkillPatchI18n(locale).then(d => { setI18n(d); setLoading(false) }) }, [locale])
-  if (loading) return <div className="text-[10px] text-[#5A5A62]">加载技能…</div>
+  if (loading) return <div className="text-[10px] text-archive-lead">加载技能…</div>
 
   if (op === 'changed') {
     const e = entry as { changed?: Record<string, any>; newValue?: Record<string, any> }
@@ -573,11 +573,11 @@ function SkillEntry({ entry, op, locale }: { entry: any; op: string; locale: str
       }
       return renderChangeEntry(entry, op, locale, formatter)
     }
-    return <div className="text-[10px] text-[#5A5A62]">无技能变更</div>
+    return <div className="text-[10px] text-archive-lead">无技能变更</div>
   }
 
   const bundle = entry?.SkillPatchDataBundle
-  if (!bundle?.length) return <div className="text-[10px] text-[#5A5A62]">无技能数据</div>
+  if (!bundle?.length) return <div className="text-[10px] text-archive-lead">无技能数据</div>
   const first = bundle[0]
   const name = localeText(first.skillName, locale) || resolveI18n(first.skillName, i18n) || first.skillId || ''
   const desc = localeText(first.description, locale) || resolveI18n(first.description, i18n) || ''
@@ -586,16 +586,16 @@ function SkillEntry({ entry, op, locale }: { entry: any; op: string; locale: str
   const formattedDesc = Object.keys(bb).length > 0 ? formatBlackboard(desc, bb) : desc
   return (
     <div className="text-xs">
-      {name && <div className="text-[#E8E6E3] font-medium mb-1">{name}</div>}
-      {formattedDesc && <div className="text-[#B0ACA6] leading-relaxed"><RichText text={formattedDesc} /></div>}
-      <div className="text-[10px] text-[#5A5A62] mt-1">Lv.{first.level} · {bundle.length} 级</div>
+      {name && <div className="text-archive-ivory font-medium mb-1">{name}</div>}
+      {formattedDesc && <div className="text-archive-dust leading-relaxed"><RichText text={formattedDesc} /></div>}
+      <div className="text-[10px] text-archive-lead mt-1">Lv.{first.level} · {bundle.length} 级</div>
     </div>
   )
 }
 
 function PotentialEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
   if (op === 'changed') return renderChangeEntry(entry, op, locale)
-  return <div className="text-[#8B8982] text-[10px] font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">{renderObj(entry)}</div>
+  return <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">{renderObj(entry)}</div>
 }
 
 function SpaceshipEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
@@ -605,15 +605,15 @@ function SpaceshipEntry({ entry, op, locale }: { entry: any; op: string; locale:
     getCachedData<Record<string, string>>(`I18nDict_${locale}_SpaceshipSkillTable`, () => fetchTableDictAll('SpaceshipSkillTable', locale))
       .then(d => { setI18n(d); setLoading(false) }).catch(() => setLoading(false))
   }, [locale])
-  if (loading) return <div className="text-[10px] text-[#5A5A62]">加载基建技能…</div>
+  if (loading) return <div className="text-[10px] text-archive-lead">加载基建技能…</div>
   if (op === 'changed') return renderChangeEntry(entry, op, locale)
   const name = localeText(entry?.name, locale) || resolveI18n(entry?.name, i18n) || ''
   const desc = localeText(entry?.desc, locale) || resolveI18n(entry?.desc, i18n) || ''
   return (
     <div className="text-xs">
-      {name && <div className="text-[#E8E6E3] font-medium mb-1">{name}</div>}
-      {desc && <div className="text-[#B0ACA6] leading-relaxed"><RichText text={desc} /></div>}
-      {entry.effectType !== undefined && <div className="text-[10px] text-[#5A5A62] mt-1">效果类型 {entry.effectType}</div>}
+      {name && <div className="text-archive-ivory font-medium mb-1">{name}</div>}
+      {desc && <div className="text-archive-dust leading-relaxed"><RichText text={desc} /></div>}
+      {entry.effectType !== undefined && <div className="text-[10px] text-archive-lead mt-1">效果类型 {entry.effectType}</div>}
     </div>
   )
 }
@@ -629,10 +629,10 @@ export default function OperatorChangePanel({ versionName }: Props) {
   if (loading) {
     return (
       <div className="mb-8">
-        <h3 className="text-sm font-medium text-[#E8E6E3] mb-3">干员变动概览</h3>
+        <h3 className="text-sm font-medium text-archive-ivory mb-3">干员变动概览</h3>
         <div className="space-y-2">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-16 rounded border border-[#2A2A32] bg-[#1A1B23] animate-pulse" />
+            <div key={i} className="h-16 rounded border border-archive-border bg-archive-file animate-pulse" />
           ))}
         </div>
       </div>
@@ -649,13 +649,13 @@ export default function OperatorChangePanel({ versionName }: Props) {
   return (
     <div className="mb-8">
       <div className="flex items-baseline justify-between mb-3">
-        <h3 className="text-sm font-medium text-[#E8E6E3]">
+        <h3 className="text-sm font-medium text-archive-ivory">
           干员变动概览
-          <span className="text-xs text-[#5A5A62] font-normal ml-2">
+          <span className="text-xs text-archive-lead font-normal ml-2">
             {operators.length} 名干员 · {totalChanges} 处变动
           </span>
         </h3>
-        <div className="flex gap-2 text-[10px] text-[#5A5A62]">
+        <div className="flex gap-2 text-[10px] text-archive-lead">
           {withAdded > 0 && <span className="text-[#26bbfd]">新增 {withAdded}</span>}
           {withRemoved > 0 && <span className="text-[#ef4444]">移除 {withRemoved}</span>}
           {withChanged > 0 && <span className="text-[#ffbb03]">变更 {withChanged}</span>}

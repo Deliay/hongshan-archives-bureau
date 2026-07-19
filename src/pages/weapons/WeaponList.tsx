@@ -197,13 +197,13 @@ export default function WeaponList() {
     setGroupPageMap({})
   }, [search, typeFilter, rarityFilter, skill1Filter, skill2Filter, skill3PrefixFilter, pageSize, sortField, sortDesc, groupField])
 
-  if (loading) return <div className="text-[#8B8982] text-sm">加载中…</div>
+  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!weapons || weapons.length === 0) return <div className="text-[#8B8982] text-sm">暂无记录</div>
+  if (!weapons || weapons.length === 0) return <div className="text-archive-dust text-sm">暂无记录</div>
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-[#E8E6E3] mb-4">武器档案</h2>
+      <h2 className="font-display text-xl font-bold text-archive-ivory mb-4">武器档案</h2>
 
       <div className="flex flex-col gap-2 mb-4">
         <div className="flex gap-2">
@@ -212,12 +212,12 @@ export default function WeaponList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索武器名称或 ID…"
-            className="flex-1 px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] placeholder:text-[#5A5A62] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="flex-1 px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory placeholder:text-archive-lead focus:outline-none focus:border-archive-gold/40 transition-colors"
           />
           <select
             value={pageSize}
             onChange={(e) => setPageSize(Number(e.target.value))}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             {PAGE_SIZES.map(ps => (
               <option key={ps} value={ps}>{ps === 0 ? '全部' : `${ps} / 页`}</option>
@@ -229,7 +229,7 @@ export default function WeaponList() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">全部类型</option>
             {weaponTypes.map(t => (
@@ -240,7 +240,7 @@ export default function WeaponList() {
           <select
             value={rarityFilter}
             onChange={(e) => setRarityFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">全部稀有度</option>
             {RARITIES.map(r => (
@@ -251,7 +251,7 @@ export default function WeaponList() {
           <select
             value={skill1Filter}
             onChange={(e) => setSkill1Filter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">技能一</option>
             {skill1Options.map(s => (
@@ -262,7 +262,7 @@ export default function WeaponList() {
           <select
             value={skill2Filter}
             onChange={(e) => setSkill2Filter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">技能二</option>
             {skill2Options.map(s => (
@@ -273,7 +273,7 @@ export default function WeaponList() {
           <select
             value={skill3PrefixFilter}
             onChange={(e) => setSkill3PrefixFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">技能三前缀</option>
             {skill3PrefixOptions.map(s => (
@@ -284,7 +284,7 @@ export default function WeaponList() {
           <select
             value={sortField}
             onChange={(e) => setSortField(e.target.value as SortField)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="rarity">稀有度</option>
             <option value="weaponType">武器类型</option>
@@ -293,17 +293,17 @@ export default function WeaponList() {
           <button
             type="button"
             onClick={() => setSortDesc(v => !v)}
-            className={`px-2 py-1.5 text-sm rounded border transition-colors ${sortField ? 'border-[#C9A96E]/40 text-[#E8E6E3] hover:border-[#C9A96E]' : 'border-[#2A2A32] text-[#5A5A62] cursor-not-allowed'}`}
+            className={`px-2 py-1.5 text-sm rounded border transition-colors ${sortField ? 'border-archive-gold/40 text-archive-ivory hover:border-archive-gold' : 'border-archive-border text-archive-lead cursor-not-allowed'}`}
           >
             {sortDesc ? '↓ 倒序' : '↑ 正序'}
           </button>
 
-          <div className="w-px bg-[#2A2A32]" />
+          <div className="w-px bg-archive-border" />
 
           <select
             value={groupField}
             onChange={(e) => setGroupField(e.target.value as GroupField)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">不分組</option>
             <option value="weaponType">按武器类型分组</option>
@@ -320,9 +320,9 @@ export default function WeaponList() {
             const groupPaged = pageSize > 0 ? groupItems.slice(gp * pageSize, (gp + 1) * pageSize) : groupItems
             return (
               <section key={key}>
-                <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#2A2A32]">
-                  <h3 className="text-sm font-medium text-[#C9A96E]">{typeName}</h3>
-                  <span className="text-[10px] text-[#5A5A62]">{groupItems.length} 件</span>
+                <div className="flex items-center gap-2 mb-2 pb-1 border-b border-archive-border">
+                  <h3 className="text-sm font-medium text-archive-gold">{typeName}</h3>
+                  <span className="text-[10px] text-archive-lead">{groupItems.length} 件</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {groupPaged.map(w => (
@@ -333,11 +333,11 @@ export default function WeaponList() {
                   <div className="flex items-center justify-center gap-3 mt-3">
                     <button type="button" onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.max(0, gp - 1) }))}
                       disabled={gp === 0}
-                      className="px-2 py-1 text-xs rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors">上一页</button>
-                    <span className="text-xs text-[#8B8982]">{gp + 1} / {groupTotalPages}</span>
+                      className="px-2 py-1 text-xs rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors">上一页</button>
+                    <span className="text-xs text-archive-dust">{gp + 1} / {groupTotalPages}</span>
                     <button type="button" onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.min(groupTotalPages - 1, gp + 1) }))}
                       disabled={gp >= groupTotalPages - 1}
-                      className="px-2 py-1 text-xs rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors">下一页</button>
+                      className="px-2 py-1 text-xs rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors">下一页</button>
                   </div>
                 )}
               </section>
@@ -353,16 +353,16 @@ export default function WeaponList() {
           </div>
 
           {filtered.length === 0 && (
-            <p className="text-sm text-[#5A5A62] mt-4">未找到匹配武器</p>
+            <p className="text-sm text-archive-lead mt-4">未找到匹配武器</p>
           )}
 
           {pageSize > 0 && totalPages > 1 && (
             <div className="flex items-center justify-center gap-3 mt-6">
               <button type="button" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                className="px-3 py-1 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors">上一页</button>
-              <span className="text-sm text-[#8B8982]">{page + 1} / {totalPages}</span>
+                className="px-3 py-1 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors">上一页</button>
+              <span className="text-sm text-archive-dust">{page + 1} / {totalPages}</span>
               <button type="button" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                className="px-3 py-1 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors">下一页</button>
+                className="px-3 py-1 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors">下一页</button>
             </div>
           )}
         </>
@@ -376,23 +376,23 @@ function WeaponCard({ weapon, skillNameMap }: { weapon: import('../../lib/types'
   return (
     <Link
       to={`/archive/weapons/${weapon.id}`}
-      className="flex gap-3 p-2 rounded border border-[#2A2A32] bg-[#1A1B23] hover:border-[#C9A96E]/40 transition-colors"
+      className="flex gap-3 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors"
     >
       <div className="flex flex-col items-center gap-1 shrink-0">
         <img
           src={getItemIconUrl(weapon.iconId)}
           alt=""
-          className="w-12 h-12 object-cover bg-[#2A2A32]"
+          className="w-12 h-12 object-cover bg-archive-border"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
         <div className="w-10 h-0.5 rounded-full" style={{ backgroundColor: RARITY_COLORS[weapon.rarity] || '#a0a0a0' }} />
-        <span className="text-[11px] text-[#E8E6E3] text-center leading-tight line-clamp-2">{weapon.name}</span>
-        <span className="text-[9px] text-[#5A5A62]">{weapon.type}</span>
+        <span className="text-[11px] text-archive-ivory text-center leading-tight line-clamp-2">{weapon.name}</span>
+        <span className="text-[9px] text-archive-lead">{weapon.type}</span>
       </div>
       {skillNames.length > 0 && (
         <div className="flex flex-col gap-1 justify-center">
           {skillNames.slice(0, 3).map((sn, i) => (
-            <span key={i} className="text-xs text-[#8B8982] leading-tight">{sn}</span>
+            <span key={i} className="text-xs text-archive-dust leading-tight">{sn}</span>
           ))}
         </div>
       )}

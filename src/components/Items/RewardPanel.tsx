@@ -44,11 +44,11 @@ export default function RewardPanel({ rewardIds, rewardTable }: RewardPanelProps
 
   return (
     <div>
-      <div className="text-[10px] text-[#8B8982] uppercase tracking-wide mb-1">包含内容</div>
+      <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">包含内容</div>
       <div className="space-y-2">
         {fixed.length > 0 && (
           <div>
-            <div className="text-[10px] text-[#E8E6E3] mb-1">固定奖励</div>
+            <div className="text-[10px] text-archive-ivory mb-1">固定奖励</div>
             <div className="flex flex-wrap gap-1.5">
               {fixed.map(item => (
                 <ItemPanel key={item.id} itemId={item.id} amount={item.count} className="min-w-[80px]" />
@@ -57,11 +57,11 @@ export default function RewardPanel({ rewardIds, rewardTable }: RewardPanelProps
           </div>
         )}
         {fixed.length > 0 && prob.length > 0 && (
-          <div className="h-px bg-[#2A2A32]" />
+          <div className="h-px bg-archive-border" />
         )}
         {prob.length > 0 && (
           <div>
-            <div className="text-[10px] text-[#E8E6E3] mb-1">随机奖励</div>
+            <div className="text-[10px] text-archive-ivory mb-1">随机奖励</div>
             <div className="flex flex-wrap gap-1.5">
               {prob.map(item => (
                 <ItemPanel key={item.id} itemId={item.id} amount={item.count} className="min-w-[80px]" />
