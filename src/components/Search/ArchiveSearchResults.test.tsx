@@ -94,6 +94,8 @@ function makeResult(overrides: Partial<{
   }
 }
 
+import type { SearchResult } from '../../lib/types'
+
 describe('ArchiveSearchResults', () => {
   const defaultProps = {
     query: 'test',
@@ -315,5 +317,33 @@ describe('ArchiveSearchResults', () => {
       />,
     )
     expect(screen.getByText('TestChar')).toBeTruthy()
+  })
+
+  it('renders ownerEntity for alias table results', () => {
+    const results: SearchResult[] = [
+      {
+        table: 'CharGrowthTable',
+        path: '$.chr_0001.skillGroupMap',
+        id: '2001',
+        text: 'skill group data',
+        entityKey: 'chr_0001',
+        ownerEntity: {
+          type: 'operator',
+          id: 'chr_0001',
+          name: 'OwnerChar',
+          route: '/archive/operators/chr_0001',
+          rarity: 5,
+        },
+      },
+    ]
+    renderWithRouter(
+      <ArchiveSearchResults
+        {...defaultProps}
+        results={results}
+        entities={{}}
+        total={1}
+      />,
+    )
+    expect(screen.getByText('OwnerChar')).toBeTruthy()
   })
 })

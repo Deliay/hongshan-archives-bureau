@@ -1,5 +1,5 @@
 export function formatBlackboard(format: string, blackboards: Record<string, number>): string {
-  const pattern = /\{(.*?)(:.*?)?\}/g
+  const pattern = /([+-]?)\{(.*?)(:.*?)?\}/g
   let result = ''
   let lastIndex = 0
   let argIndex = 0
@@ -7,10 +7,15 @@ export function formatBlackboard(format: string, blackboards: Record<string, num
   for (;;) {
     const match = pattern.exec(format)
     if (!match) break
-    const expr = match[1]
-    const fmt = match[2] || ''
+    const prefix = match[1]
+    const expr = match[2]
+    const fmt = match[3] || ''
     result += format.slice(lastIndex, match.index)
-    result += `{${argIndex}${fmt}}`
+    if (prefix === '+') {
+      result += `<color=#26bbfd>+{${argIndex}${fmt}}</color>`
+    } else {
+      result += `${prefix}{${argIndex}${fmt}}`
+    }
     lastIndex = match.index + match[0].length
     args.push(String(evalExpression(expr, blackboards)))
     argIndex++

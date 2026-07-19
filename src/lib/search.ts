@@ -1,7 +1,7 @@
 import { fetchI18nSearch, fetchI18nText, fetchTableAll, fetchTableDictAll } from './api'
 import { getCachedData } from './cache'
 import { resolveI18n, ASSET_BASE } from './adapter'
-import type { SearchResult, SearchEntity } from './types'
+import type { SearchResult, SearchEntity, TalentNodeRef } from './types'
 
 export function escapeRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -11,6 +11,11 @@ export function extractEntityKey(_table: string, path: string): string | null {
   const parts = path.split('.')
   if (parts.length < 2) return null
   return parts[1]
+}
+
+export function extractPatchIndex(path: string): number | undefined {
+  const match = path.match(/SkillPatchDataBundle\[(\d+)\]/)
+  return match ? Number(match[1]) : undefined
 }
 
 export const SEARCH_ENTITY_ALIAS_TABLES: Record<string, string> = {
@@ -114,6 +119,54 @@ export async function buildSkillOwnerIndex(locale: string): Promise<Record<strin
     })())
   }
   return skillOwnerIndexCaches.get(locale)!
+}
+
+const abilityOwnerIndexCaches = new Map<string, Promise<Record<string, string>>>()
+
+export async function buildAbilityOwnerIndex(locale: string): Promise<Record<string, string>> {
+  if (!abilityOwnerIndexCaches.has(locale)) {
+    abilityOwnerIndexCaches.set(locale, (async () => {
+      const raw = await getCachedData<Record<string, any>>('EnemyTemplateDisplayInfoTable', () => fetchTableAll('EnemyTemplateDisplayInfoTable'))
+      const index: Record<string, string> = {}
+      for (const [, v] of Object.entries<any>(raw)) {
+        const templateId = v.templateId ?? v.$key ?? ''
+        for (const abilityId of v.abilityDescIds ?? []) {
+          if (!index[abilityId]) index[abilityId] = templateId
+        }
+      }
+      return index
+    })())
+  }
+  return abilityOwnerIndexCaches.get(locale)!
+}
+
+const talentNodeIndexCaches = new Map<string, Promise<Record<string, TalentNodeRef>>>()
+
+export async function buildTalentNodeIndex(locale: string): Promise<Record<string, TalentNodeRef>> {
+  if (!talentNodeIndexCaches.has(locale)) {
+    talentNodeIndexCaches.set(locale, (async () => {
+      const growthRaw = await getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable'))
+      const index: Record<string, TalentNodeRef> = {}
+      for (const [, v] of Object.entries<any>(growthRaw)) {
+        const charId = v.charId ?? v.$key ?? ''
+        for (const [nodeId, node] of Object.entries<any>(v.talentNodeMap ?? {})) {
+          if (node.nodeType !== 4) continue
+          const psi = node.passiveSkillNodeInfo ?? {}
+          if (!psi.talentEffectId) continue
+          index[psi.talentEffectId] = {
+            charId,
+            nodeId,
+            nameRef: psi.name,
+            iconId: psi.iconId ?? '',
+            level: psi.level ?? 0,
+            breakStage: psi.breakStage ?? 0,
+          }
+        }
+      }
+      return index
+    })())
+  }
+  return talentNodeIndexCaches.get(locale)!
 }
 
 const talentOwnerIndexCaches = new Map<string, Promise<Record<string, string>>>()
@@ -262,9 +315,10 @@ export async function enrichResults(
     entities[table] = await entry.buildMap(locale)
   }))
 
-  // Indirect association tables (SkillPatchTable, PotentialTalentEffectTable)
+  // Indirect association tables
   const skillIds = results.filter(r => r.table === 'SkillPatchTable').map(r => r.entityKey).filter(Boolean) as string[]
   const talentIds = results.filter(r => r.table === 'PotentialTalentEffectTable').map(r => r.entityKey).filter(Boolean) as string[]
+  const abilityIds = results.filter(r => r.table === 'EnemyAbilityDescTable').map(r => r.entityKey).filter(Boolean) as string[]
 
   if (skillIds.length > 0) {
     const skillIndex = await buildSkillOwnerIndex(locale)
@@ -298,9 +352,29 @@ export async function enrichResults(
     }
   }
 
+  if (abilityIds.length > 0) {
+    const abilityIndex = await buildAbilityOwnerIndex(locale)
+    const enemyMap = entities['EnemyTemplateDisplayInfoTable'] ?? await buildEnemyEntityMap(locale)
+    entities['EnemyTemplateDisplayInfoTable'] = enemyMap
+
+    for (const id of abilityIds) {
+      const templateId = abilityIndex[id]
+      if (!templateId) continue
+      indirectOwners[id] = enemyMap[templateId]
+    }
+  }
+
   for (const r of enriched) {
-    if (r.table === 'SkillPatchTable' || r.table === 'PotentialTalentEffectTable') {
+    if (r.table === 'SkillPatchTable' || r.table === 'PotentialTalentEffectTable' || r.table === 'EnemyAbilityDescTable') {
       r.ownerEntity = indirectOwners[r.entityKey ?? '']
+    }
+  }
+
+  // Alias tables: attach ownerEntity from the target entity table
+  for (const r of enriched) {
+    const target = SEARCH_ENTITY_ALIAS_TABLES[r.table] ?? r.table
+    if (r.table !== target && r.entityKey && entities[target]) {
+      r.ownerEntity = entities[target][r.entityKey]
     }
   }
 

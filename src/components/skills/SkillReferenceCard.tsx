@@ -21,6 +21,7 @@ interface SkillReferenceCardProps {
   skillId: string
   showLevelSlider?: boolean
   defaultLevel?: number
+  defaultPatchIndex?: number
   className?: string
 }
 
@@ -32,6 +33,7 @@ export default function SkillReferenceCard({
   skillId,
   showLevelSlider = false,
   defaultLevel,
+  defaultPatchIndex,
   className,
 }: SkillReferenceCardProps) {
   const { locale } = useLocale()
@@ -90,7 +92,7 @@ export default function SkillReferenceCard({
 
         if (parsed.length > 0) {
           const sorted = [...parsed].sort((a, b) => a.level - b.level)
-          const target = defaultLevel ?? sorted[sorted.length - 1].level
+          const target = defaultLevel ?? (defaultPatchIndex !== undefined ? bundle[defaultPatchIndex]?.level : undefined) ?? sorted[sorted.length - 1].level
           const found = sorted.find(p => p.level === target)
           setLevel(found ? found.level : sorted[sorted.length - 1].level)
         }
@@ -100,7 +102,7 @@ export default function SkillReferenceCard({
     }
     load()
     return () => { cancelled = true }
-  }, [skillId, locale, defaultLevel])
+  }, [skillId, locale, defaultLevel, defaultPatchIndex])
 
   if (patches.length === 0 || level === null) return null
 
