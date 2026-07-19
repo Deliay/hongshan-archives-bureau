@@ -5,7 +5,7 @@ type: Permanent
 
 # 前端开发规范
 
-本文档定义《宏山档案馆》前端开发的技术选型、代码组织、样式与交互规范。详细富文本规则与 UI 陷阱参见 `references/` 目录。
+本文档定义《宏山档案局》前端开发的技术选型、代码组织、样式与交互规范。详细富文本规则与 UI 陷阱参见 `references/` 目录。
 
 ## 技术栈
 
@@ -60,17 +60,19 @@ src/
 
 | 用途 | 色值 |
 |------|------|
-| 页面背景 | `#0F0F12` |
-| 卡片背景 | `#1A1B23` |
-| 边框 | `#2A2A32` |
-| 主文字 | `#E8E6E3` |
-| 次要文字 | `#8B8982` |
-| 弱提示 | `#5A5A62` |
-| 强调色 | `#C9A96E` |
+| 页面背景 | `archive-ink` | `#0A0A0D` |
+| 卡片/面板背景 | `archive-file` | `#13141A` |
+| 边框 | `archive-border` | `#2A2B35` |
+| 主文字 | `archive-ivory` | `#E8E6E3` |
+| 次要文字 | `archive-dust` | `#8B8982` |
+| 弱提示 | `archive-lead` | `#5A5A62` |
+| 强调色 | `archive-gold` | `#B89A6A` |
+| 印章红 | `archive-seal` | `#9E3A3A` |
+| 青铜绿 | `archive-bronze` | `#5A7A6A` |
 
-- 卡片统一使用圆角、细边框、hover 时边框变为强调色透明 40%。
+- 卡片统一使用圆角、细边框、hover 时边框变为 `archive-gold/40`。
 - 响应式断点使用 Tailwind 默认断点：`sm`、`md`、`lg`。
-- 卡片网格在桌面端 4 列、平板 2–3 列、手机 1 列。
+- 卡片网格根据页面密度选择列数；首页卷宗索引为 `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`，列表页通常为 `grid-cols-2 sm:grid-cols-3 md:grid-cols-4`。
 
 ## 状态管理
 
@@ -81,8 +83,8 @@ src/
 
 ## 交互规范
 
-- 卡片整体可点击跳转，内部子链接使用 `stopPropagation` 避免冲突。
-- 滑动条统一使用 `accent-[#C9A96E]`。
+- **禁止**在 `<Link>`（渲染为 `<a>`）内部再嵌套 `<Link>` 或 `<a>`；HTML 标准不允许 `<a>` 嵌套 `<a>`，React 会报 `validateDOMNesting` / hydration 错误。正确做法：外层卡片使用 `<div>`，标题/主操作区使用一个 `<Link>`，内部子入口使用独立的 `<Link>`，彼此为兄弟关系而非父子关系。
+- 滑动条统一使用 `accent-archive-gold`。
 - 下拉框与输入框统一深色背景 + 细边框，focus 时边框变强调色。
 - 图片加载失败提供占位 fallback。
 

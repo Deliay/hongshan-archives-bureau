@@ -320,14 +320,14 @@ export const MODULE_CODES: Record<string, string> = {
 
 ## 验收标准
 
-- [ ] `npm run build` 通过，无 TypeScript 错误
-- [ ] `npm run lint` 通过，无 lint 错误
-- [ ] `npm run test` 通过
-- [ ] 全站无「宏山档案馆」或单独「馆」字残留
-- [ ] 桌面端与移动端各页面布局正常，无元素重叠或截断
-- [ ] 所有可点击元素 hover/focus 状态可见
-- [ ] 图片加载失败时显示档案局默认占位
-- [ ] 旧用户可沿用原有操作路径访问任意页面
+- [x] `npm run build` 通过，无 TypeScript 错误
+- [x] `npm run lint` 通过，无 lint 错误（26 个既有警告，0 errors）
+- [x] `npm run test` 通过
+- [x] 全站无「宏山档案馆」或单独「馆」字残留
+- [x] 桌面端与移动端各页面布局正常，无元素重叠或截断
+- [x] 所有可点击元素 hover/focus 状态可见
+- [x] 图片加载失败时显示档案局默认占位
+- [x] 旧用户可沿用原有操作路径访问任意页面
 
 ## 风险与回滚
 
@@ -349,3 +349,16 @@ export const MODULE_CODES: Record<string, string> = {
 - [[engineering-spec|工程架构规范]]
 - [UI 常见陷阱参考](../references/ui-pitfalls.md)
 - [富文本规范参考](../references/rich-text-spec.md)
+
+
+## 上线记录
+
+- **上线日期**: 2026-07-19
+- **合并 PR**: #3
+- **合并分支**: `feat/archive-bureau-redesign` → `main`
+- **实际验证**:
+  - `npm run build`: ✅
+  - `npm run lint`: ✅ 0 errors（26 个既有警告）
+  - `npm run test`: ✅ 38 passed
+  - Playwright E2E: ✅ 44 passed
+- **后续注意**: `RaceList` 与 `FactionList` 曾因 `<Link>` 嵌套导致 `<a>` 嵌套 `<a>`，已按「外层 `<div>` + 独立 `<Link>`」方案修复。新增页面若出现类似卡片嵌套子链接场景，应遵循同一模式。

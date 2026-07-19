@@ -9,11 +9,34 @@ type: Permanent
 
 ## 卡片作为链接与嵌套子链接
 
-卡片整体需可点击跳转至详情页，同时内部可能包含跳转到其他实体的子链接。实现方式：
+卡片整体需可点击跳转至详情页，同时内部可能包含跳转到其他实体的子链接。HTML 标准禁止 `<a>` 嵌套 `<a>`，React 在开发模式下会抛出 `validateDOMNesting` 警告，严重时导致 hydration 错误。
 
-- 卡片外层用 `<Link>` 包裹
-- 子链接容器添加 `onClick={(e) => e.stopPropagation()}`
-- 为 a11y 补充 `onKeyDown` 与 `role="none"`
+正确做法：
+
+- 卡片外层使用 `<div>`（或 `<article>`、`<section>` 等语义化块级元素），不渲染为 `<a>`
+- 卡片的标题/主区域使用一个 `<Link>`（`<a>`）
+- 内部子链接使用独立的 `<Link>`（`<a>`），与主链接为兄弟关系而非父子关系
+- 不要依赖 `stopPropagation` 来“解决”嵌套 `<a>`，那只是掩盖事件冒泡，无法解决非法 DOM 结构
+
+错误示例：
+
+```tsx
+<Link to="/races/race-01">           {/* 外层 <a> */}
+  <h3>种族名称</h3>
+  <Link to="/operators/op-01">成员</Link>  {/* 内层 <a>，非法！ */}
+</Link>
+```
+
+正确示例：
+
+```tsx
+<div>
+  <Link to="/races/race-01">
+    <h3>种族名称</h3>
+  </Link>
+  <Link to="/operators/op-01">成员</Link>
+</div>
+```
 
 ## 超链接 Tooltip 定位
 
@@ -42,11 +65,13 @@ type: Permanent
 
 ## 响应式网格
 
-列表页卡片网格统一使用：
+列表页与首页卡片网格应根据信息密度选择列数：
 
-- 桌面端：`grid-cols-4`
-- 平板：`md:grid-cols-3` / `sm:grid-cols-2`
-- 手机：`grid-cols-1`
+- **首页卷宗索引**：`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
+- **列表页卡片**：`grid-cols-2 sm:grid-cols-3 md:grid-cols-4`
+- **手机端**：统一 `grid-cols-1`
+
+避免在所有页面强制 4 列，防止首页卡片内容稀疏或详情页关联卡片过密。
 
 ## 相关文档
 
