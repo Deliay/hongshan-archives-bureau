@@ -10,13 +10,12 @@ const variantClasses: Record<BadgeVariant, string> = {
   ghost: 'bg-transparent text-archive-lead',
 }
 
-interface BadgeProps {
+interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode
   variant?: BadgeVariant
-  className?: string
 }
 
-export function Badge({ children, variant = 'default', className }: BadgeProps) {
+export function Badge({ children, variant = 'default', className, ...props }: BadgeProps) {
   return (
     <span
       className={cn(
@@ -24,6 +23,7 @@ export function Badge({ children, variant = 'default', className }: BadgeProps) 
         variantClasses[variant],
         className
       )}
+      {...props}
     >
       {children}
     </span>

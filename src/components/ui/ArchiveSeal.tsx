@@ -1,9 +1,8 @@
-interface ArchiveSealProps {
-  className?: string
+interface ArchiveSealProps extends React.SVGProps<SVGSVGElement> {
   size?: number
 }
 
-export function ArchiveSeal({ className, size = 48 }: ArchiveSealProps) {
+export function ArchiveSeal({ className, size = 48, ...props }: ArchiveSealProps) {
   return (
     <svg
       width={size}
@@ -12,6 +11,7 @@ export function ArchiveSeal({ className, size = 48 }: ArchiveSealProps) {
       fill="none"
       className={className}
       aria-label="宏山档案局徽章"
+      {...props}
     >
       <circle cx="24" cy="24" r="22" stroke="#B89A6A" strokeWidth="1.5" />
       <circle cx="24" cy="24" r="17" stroke="#9E3A3A" strokeWidth="1" />

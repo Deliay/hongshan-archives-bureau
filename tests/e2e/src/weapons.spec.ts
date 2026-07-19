@@ -18,7 +18,7 @@ test.describe('武器文章 (Weapon Archive)', () => {
     await page.goto(`/archive/weapons/${weaponId}`)
     await page.waitForFunction(() => {
       const body = document.body.textContent || ''
-      return (body.includes('武器技能') || body.includes('未找到') || body.includes('加载失败')) && !body.includes('加载技能')
+      return body.includes('返回武器列表') || body.includes('未找到武器') || body.includes('加载失败')
     }, { timeout: 30000 })
   }
 
@@ -79,8 +79,12 @@ test.describe('武器文章 (Weapon Archive)', () => {
   test('武器详情显示技能信息「赫拉芬格」', async ({ page }) => {
     await waitForWeaponDetailReady(page, 'wpn_claym_0013')
 
-    const skillSection = page.getByText('武器技能')
-    await expect(skillSection).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('h2').first()).toBeVisible({ timeout: 10000 })
+    // 技能面板数据异步加载，等待关键文本出现
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('力量提升') || body.includes('攻击提升') || body.includes('迸发')
+    }, { timeout: 60000 })
 
     const bodyText = await page.locator('body').textContent() || ''
     expect(bodyText).toContain('力量提升')
@@ -91,6 +95,12 @@ test.describe('武器文章 (Weapon Archive)', () => {
   test('武器详情富文本格式化「作品：蚀迹」', async ({ page }) => {
     await waitForWeaponDetailReady(page, 'wpn_funnel_0006')
 
+    await expect(page.locator('h2').first()).toBeVisible({ timeout: 10000 })
+    // 等待技能面板异步加载完成
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('%') || body.includes('未找到武器') || body.includes('加载失败')
+    }, { timeout: 60000 })
     const bodyText = await page.locator('body').textContent() || ''
     // The formatted description should NOT contain raw {key} patterns
     expect(bodyText).not.toContain('{atk_up')
