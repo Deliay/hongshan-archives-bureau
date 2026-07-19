@@ -255,12 +255,12 @@ const handleKeyDown = (e: React.KeyboardEvent) => {
     to={`/archive/search?keyword=${encodeURIComponent(data.name)}`}
     className="text-xs text-archive-gold hover:text-archive-ivory transition-colors"
   >
-    {t('race.searchMore')}
+    {t('search.searchMore')}
   </Link>
 </div>
 ```
 
-新增 i18n key：`race.searchMore`、`faction.searchMore`。
+新增 i18n key：`search.searchMore`（文案「搜索更多」），在种族/阵营详情页复用。
 
 ## 5. 数据模型
 
