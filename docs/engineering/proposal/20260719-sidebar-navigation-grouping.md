@@ -6,7 +6,7 @@ type: Fleeting
 # 左侧导航栏分组优化技术方案
 
 **对应产品文档**: [[20260719-sidebar-navigation-grouping|左侧导航栏分组优化]]
-**技术方案版本**: v0.1（草案待 Review）
+**技术方案版本**: v1.0
 **创建日期**: 2026-07-19
 **作者**: 前端工程
 
@@ -198,13 +198,15 @@ Sidebar 的 `<nav>` 区域由单层循环改为双层循环：外层遍历分组
 | 入口 hover 态 | `hover:text-archive-ivory hover:bg-archive-file` |
 | 入口激活态 | `text-archive-gold bg-archive-gold/10` |
 
-为增强档案索引感，分组标签可考虑以下变体（择一）：
+为增强档案索引感，分组标签采用纯文本 uppercase 风格：
 
-- **方案 A（推荐）**：纯文本标签，使用 `uppercase` 与字间距营造索引感；
-- **方案 B**：标签前添加极细竖线装饰 `border-l border-archive-lead pl-2`；
-- **方案 C**：标签使用等宽字体 `font-mono`。
+```tsx
+<div className="px-3 py-1 text-xs font-medium tracking-wider text-archive-lead uppercase">
+  {group.label}
+</div>
+```
 
-> 待 Review 确认：建议采用方案 A，最简洁且与当前视觉风格一致。
+该方案不引入装饰线或图标，与当前档案局克制、简洁的视觉风格一致。
 
 ### 4.4 删除旧逻辑
 
@@ -272,10 +274,10 @@ Sidebar 的 `<nav>` 区域由单层循环改为双层循环：外层遍历分组
 
 回滚策略：本次改动仅涉及 `Sidebar.tsx` 的导航数据结构与渲染，若出现问题可直接回滚该文件或还原 `NAV_ITEMS`。
 
-## 待确认问题
+## 设计确认
 
-1. **敌人图鉴归属**：产品文档默认新增「威胁档案」分组，技术方案已按此实现。如 Review 后改为方案 B/C，仅需调整 `NAV_GROUPS` 中 enemies 的位置或移除分组。
-2. **分组标签样式**：采用纯文本 uppercase（方案 A），或需添加竖线/等宽字体装饰？
+- **敌人图鉴归属**：已确认新增「威胁档案」分组。
+- **分组标签样式**：已确认采用纯文本 uppercase 风格。
 
 ## 相关文档
 
