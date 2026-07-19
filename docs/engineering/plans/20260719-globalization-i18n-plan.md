@@ -104,8 +104,8 @@ const messages: Record<string, Record<string, string>> = {
 }
 
 function translate(locale: string, key: string, vars?: Record<string, string | number>): string {
-  const dict = messages[locale] ?? messages.CN
-  let text = dict[key] ?? messages.CN[key] ?? key
+  const dict = messages[locale] ?? messages.EN
+  let text = dict[key] ?? messages.EN[key] ?? messages.CN[key] ?? key
   if (vars) {
     text = text.replace(/\{\{(\w+)\}\}/g, (_, name) => String(vars[name] ?? ''))
   }
@@ -1257,7 +1257,11 @@ describe('i18n translate', () => {
     expect(translate('EN', 'nav.operators')).toBe('Operators')
   })
 
-  it('falls back to CN when key missing in target locale', () => {
+  it('falls back to EN when key missing in target locale', () => {
+    expect(translate('JP', 'nav.operators')).toBe('Operators')
+  })
+
+  it('falls back to CN when key missing in both target and EN', () => {
     expect(translate('EN', 'site.name')).toBe('宏山档案局')
   })
 
@@ -1574,7 +1578,7 @@ test('切换语言后导航与筛选器文案更新', async ({ page }) => {
 
 - [ ] `src/` 中无新增硬编码中文静态文案（测试文件中的中文断言除外）。
 - [ ] 切换 `CN / TC / EN / JP / KR / RU` 后，导航、筛选器、按钮、提示即时刷新。
-- [ ] 翻译缺失时按 `目标语言 → 简中 → key` 回退，不空白、不报错。
+- [ ] 翻译缺失时按 `目标语言 → 英语 → 简中 → key` 回退，不空白、不报错。
 - [ ] `npm run build` 通过，无 TypeScript 错误。
 - [ ] `npm run lint` 通过，无新增错误。
 - [ ] `npm run test` 通过。
