@@ -1,3 +1,5 @@
+const POSITIVE_VALUE_COLOR = '#26bbfd'
+
 export function formatBlackboard(format: string, blackboards: Record<string, number>): string {
   const pattern = /([+-]?)\{(.*?)(:.*?)?\}/g
   let result = ''
@@ -12,7 +14,7 @@ export function formatBlackboard(format: string, blackboards: Record<string, num
     const fmt = match[3] || ''
     result += format.slice(lastIndex, match.index)
     if (prefix === '+') {
-      result += `<color=#26bbfd>+{${argIndex}${fmt}}</color>`
+      result += `<color=${POSITIVE_VALUE_COLOR}>+{${argIndex}${fmt}}</color>`
     } else {
       result += `${prefix}{${argIndex}${fmt}}`
     }

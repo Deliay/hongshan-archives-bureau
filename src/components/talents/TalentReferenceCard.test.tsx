@@ -46,8 +46,14 @@ const mockPotentialTalentEffectTable: Record<string, any> = {
 
 vi.mock('../../lib/cache', () => ({
   getCachedData: vi.fn((key: string) => {
+    if (key === 'I18nDict_CN_CharGrowthTable') {
+      return Promise.resolve({ '101': 'Test Talent' })
+    }
+    if (key === 'I18nDict_CN_PotentialTalentEffectTable') {
+      return Promise.resolve({ '201': '+{atk_up:0%} 攻击力' })
+    }
     if (key.startsWith('I18nDict_')) {
-      return Promise.resolve({ '101': 'Test Talent', '201': '+{atk_up:0%} 攻击力' })
+      return Promise.resolve({})
     }
     if (key === 'PotentialTalentEffectTable') {
       return Promise.resolve(mockPotentialTalentEffectTable)

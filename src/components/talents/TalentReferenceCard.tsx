@@ -38,9 +38,10 @@ export default function TalentReferenceCard({ talentEffectId, className }: Talen
         }
         setTalentNode(node)
 
-        const [talentRaw, talentI18n] = await Promise.all([
+        const [talentRaw, talentI18n, charI18n] = await Promise.all([
           getCachedData<Record<string, any>>('PotentialTalentEffectTable', () => fetchTableAll('PotentialTalentEffectTable')),
           getTableI18nDict('PotentialTalentEffectTable', locale),
+          getTableI18nDict('CharGrowthTable', locale),
         ])
         if (cancelled) return
 
@@ -59,7 +60,7 @@ export default function TalentReferenceCard({ talentEffectId, className }: Talen
         setDescription(descFromGlobal ? formatBlackboard(descFromGlobal, blackboards) : '')
 
         const nameId = node.nameRef?.id
-        const nameFromDict = nameId != null ? talentI18n[String(nameId)] : ''
+        const nameFromDict = nameId != null ? charI18n[String(nameId)] : ''
         const nameFromGlobal = nameFromDict || (nameId != null ? await fetchI18nText(locale, String(nameId)) : '')
         if (!cancelled) setName(nameFromGlobal || '')
         setLoading(false)
