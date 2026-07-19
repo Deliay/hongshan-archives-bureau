@@ -286,10 +286,11 @@ export interface SearchResult {
   id: string
   text: string
   entityKey: string | null
+  ownerEntity?: SearchEntity
 }
 
 export interface SearchEntity {
-  type: 'weapon' | 'operator' | 'item' | 'enemy'
+  type: 'weapon' | 'operator' | 'item' | 'enemy' | 'skill'
   id: string
   name: string
   route: string
@@ -299,6 +300,7 @@ export interface SearchEntity {
   displayType?: number
   subInfo?: string
   tags?: string[]
+  skillId?: string
 }
 
 export interface UseArchiveSearchResult {

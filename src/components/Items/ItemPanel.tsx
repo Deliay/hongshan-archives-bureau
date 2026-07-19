@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
@@ -30,6 +31,7 @@ interface ItemPanelProps {
   iconClassName?: string
   name?: string
   rarity?: number
+  href?: string
 }
 
 export default function ItemPanel({
@@ -42,6 +44,7 @@ export default function ItemPanel({
   iconClassName,
   name: resolvedName,
   rarity: resolvedRarity,
+  href,
 }: ItemPanelProps) {
   const { locale } = useLocale()
   const [itemData, setItemData] = useState<any>(null)
@@ -64,6 +67,30 @@ export default function ItemPanel({
   const name = resolvedName ?? (itemData?.name ? (i18nMap?.[String(itemData.name.id)] || itemData.name.text || itemId) : itemId)
   const rarity: number = resolvedRarity ?? itemData?.rarity ?? 1
 
+  const panelContent = (
+    <>
+      <ItemIcon itemId={itemId} className={iconClassName ?? 'w-12 h-12'} />
+      {showAmount && amount !== undefined && (
+        <span className="text-[10px] text-archive-dust font-mono">{toCountString(amount)}</span>
+      )}
+      <div className="w-full h-0.5 rounded-full" style={{ backgroundColor: RARITY_COLORS[rarity] || '#a0a0a0' }} />
+      {showName && (
+        <span className="text-[10px] text-archive-ivory text-center leading-tight line-clamp-2">{name}</span>
+      )}
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link
+        to={href}
+        className={`flex flex-col items-center gap-1 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors text-left ${className ?? ''}`}
+      >
+        {panelContent}
+      </Link>
+    )
+  }
+
   return (
     <>
       <button
@@ -75,14 +102,7 @@ export default function ItemPanel({
         }}
         className={`flex flex-col items-center gap-1 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors text-left ${showTips && !DISABLED_TIP_ITEMS.has(itemId) ? 'cursor-pointer' : 'cursor-default'} ${className ?? ''}`}
       >
-        <ItemIcon itemId={itemId} className={iconClassName ?? 'w-12 h-12'} />
-        {showAmount && amount !== undefined && (
-          <span className="text-[10px] text-archive-dust font-mono">{toCountString(amount)}</span>
-        )}
-        <div className="w-full h-0.5 rounded-full" style={{ backgroundColor: RARITY_COLORS[rarity] || '#a0a0a0' }} />
-        {showName && (
-          <span className="text-[10px] text-archive-ivory text-center leading-tight line-clamp-2">{name}</span>
-        )}
+        {panelContent}
       </button>
 
       {showTooltip && (

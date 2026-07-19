@@ -9,10 +9,6 @@ function getEnemyIconUrl(templateId: string): string {
   return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/monstericonbig/${templateId}.png`
 }
 
-function getItemIconUrl(iconId: string): string {
-  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${iconId}.png`
-}
-
 function getCharPortraitUrl(charId: string): string {
   return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${charId}.png`
 }
@@ -27,22 +23,15 @@ interface ReferenceCardProps {
 
 function WeaponReferenceCard({ entity }: ReferenceCardProps) {
   return (
-    <Link
-      to={entity.route}
-      className="flex items-center gap-2 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors min-w-0"
-    >
-      <img
-        src={getItemIconUrl(entity.icon ?? entity.id)}
-        alt=""
-        className="w-10 h-10 object-cover rounded bg-archive-border shrink-0"
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-      />
-      <div className="min-w-0 flex-1">
-        <div className="text-xs text-archive-ivory truncate">{entity.name}</div>
-        {entity.subInfo && <div className="text-[10px] text-archive-lead truncate">{entity.subInfo}</div>}
-        {entity.rarity !== undefined && <Rarity level={entity.rarity} />}
-      </div>
-    </Link>
+    <ItemPanel
+      itemId={entity.id}
+      name={entity.name}
+      rarity={entity.rarity ?? 1}
+      showTips={false}
+      showName
+      href={entity.route}
+      className="w-auto items-start"
+    />
   )
 }
 

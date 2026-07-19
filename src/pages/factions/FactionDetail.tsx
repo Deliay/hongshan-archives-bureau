@@ -49,7 +49,17 @@ export default function FactionDetail() {
       </div>
 
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-archive-dust mb-2">{t('faction.relatedRecords')}</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-archive-dust">{t('faction.relatedRecords')}</h3>
+          {data.name && (
+            <Link
+              to={`/archive/search?keyword=${encodeURIComponent(data.name)}`}
+              className="text-xs text-archive-gold hover:text-archive-ivory transition-colors"
+            >
+              {t('search.searchMore')}
+            </Link>
+          )}
+        </div>
         <ArchiveSearchResults
           query={data.name}
           results={results}

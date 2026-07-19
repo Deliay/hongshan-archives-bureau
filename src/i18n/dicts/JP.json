@@ -313,6 +313,7 @@
     "relatedRecords": "関連記録",
     "hint": "キーワードを入力し、Enter キーで検索",
     "prev": "前へ",
-    "next": "次へ"
+    "next": "次へ",
+    "searchMore": "さらに検索"
   }
 }

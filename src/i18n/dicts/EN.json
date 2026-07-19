@@ -313,6 +313,7 @@
     "relatedRecords": "Related Records",
     "hint": "Enter keywords and press Enter to search",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "searchMore": "Search More"
   }
 }

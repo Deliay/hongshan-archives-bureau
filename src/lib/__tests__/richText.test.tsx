@@ -76,6 +76,15 @@ describe('RichText', () => {
       const marked = container.querySelector('span[style*="background"]')
       expect(marked).toBeTruthy()
     })
+
+    it('forces dark text color to override original light color', () => {
+      const { container } = render(<RichText text="<mark=#B89A6A><color=#FFFF00>yellow text</></>" />)
+      const marked = container.querySelector('span[style*="background"]')
+      expect(marked).toBeTruthy()
+      const style = marked!.getAttribute('style') || ''
+      expect(style).toContain('color:')
+      expect(style).toContain('rgb(10, 10, 13)')
+    })
   })
 
   describe('<b> tag', () => {

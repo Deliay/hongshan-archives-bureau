@@ -65,4 +65,19 @@ test.describe('档案搜索 (Archive Search)', () => {
       page.getByText('CharacterTable').or(page.getByText('WeaponBasicTable')).first()
     ).toBeVisible({ timeout: 10000 })
   })
+
+  test('URL keyword query 自动搜索', async ({ page }) => {
+    await page.goto('/archive/search?keyword=the', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByText('找到')).toBeVisible({ timeout: 20000 })
+  })
+
+  test('输入关键词后 URL 更新为 keyword query', async ({ page }) => {
+    await page.goto('/archive/search', { waitUntil: 'domcontentloaded' })
+    await page.waitForSelector('h2')
+    const input = page.getByPlaceholder('搜索档案关键词…')
+    await input.fill('the')
+    await input.press('Enter')
+    await page.waitForTimeout(1000)
+    expect(page.url()).toContain('keyword=the')
+  })
 })

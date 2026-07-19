@@ -191,6 +191,51 @@ describe('ArchiveSearchResults', () => {
     expect((nextBtn as HTMLButtonElement).disabled).toBe(true)
   })
 
+  it('calls window.scrollTo when page changes', () => {
+    const scrollToSpy = vi.fn()
+    window.scrollTo = scrollToSpy
+    const results = Array.from({ length: 30 }).map((_, i) =>
+      makeResult({ id: `${i}`, text: `text ${i}` }),
+    )
+    const { rerender } = renderWithRouter(
+      <ArchiveSearchResults
+        {...defaultProps}
+        results={results}
+        total={60}
+        pageSize={30}
+        page={0}
+      />,
+    )
+    expect(scrollToSpy).not.toHaveBeenCalled()
+
+    rerender(
+      <MemoryRouter>
+        <ArchiveSearchResults
+          {...defaultProps}
+          results={results}
+          total={60}
+          pageSize={30}
+          page={1}
+        />
+      </MemoryRouter>,
+    )
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
+  })
+
+  it('renders SkillReferenceCard for SkillPatchTable results', () => {
+    const results = [
+      makeResult({ table: 'SkillPatchTable', entityKey: 'skill_001' }),
+    ]
+    renderWithRouter(
+      <ArchiveSearchResults
+        {...defaultProps}
+        results={results}
+        total={1}
+      />,
+    )
+    expect(screen.getByText('SkillPatchTable')).toBeTruthy()
+  })
+
   it('renders entity card when entity exists', () => {
     const results = [
       makeResult({ entityKey: 'chr_0001' }),

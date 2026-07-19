@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { escapeRegex, extractEntityKey } from '../search'
+import { escapeRegex, extractEntityKey, SEARCH_ENTITY_ALIAS_TABLES } from '../search'
+
+describe('SEARCH_ENTITY_ALIAS_TABLES', () => {
+  it('maps CharGrowthTable to CharacterTable', () => {
+    expect(SEARCH_ENTITY_ALIAS_TABLES.CharGrowthTable).toBe('CharacterTable')
+  })
+
+  it('maps CharacterTagDesTable to CharacterTable', () => {
+    expect(SEARCH_ENTITY_ALIAS_TABLES.CharacterTagDesTable).toBe('CharacterTable')
+  })
+})
 
 describe('escapeRegex', () => {
   it('escapes special regex characters', () => {
@@ -42,6 +52,14 @@ describe('extractEntityKey', () => {
 
   it('returns second segment for two-segment path', () => {
     expect(extractEntityKey('TestTable', '$.name')).toBe('name')
+  })
+
+  it('extracts charId from CharGrowthTable path', () => {
+    expect(extractEntityKey('CharGrowthTable', '$.chr_0005_chen.skillGroupMap')).toBe('chr_0005_chen')
+  })
+
+  it('extracts charId from CharacterTagDesTable path', () => {
+    expect(extractEntityKey('CharacterTagDesTable', '$.chr_0005_chen.tagDesc')).toBe('chr_0005_chen')
   })
 
   it('returns null for empty path', () => {

@@ -13,6 +13,11 @@ export function extractEntityKey(_table: string, path: string): string | null {
   return parts[1]
 }
 
+export const SEARCH_ENTITY_ALIAS_TABLES: Record<string, string> = {
+  CharGrowthTable: 'CharacterTable',
+  CharacterTagDesTable: 'CharacterTable',
+}
+
 export interface SearchArchiveOptions {
   excludeTables?: string[]
   pageSize?: number
@@ -57,6 +62,69 @@ export const SEARCH_ENTITY_TABLES: Record<string, {
   },
 }
 
+async function buildOperatorEntityMap(locale: string): Promise<Record<string, SearchEntity>> {
+  const [raw, i18nMap] = await Promise.all([
+    getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
+    getTableI18nDict('CharacterTable', locale),
+  ])
+  const map: Record<string, SearchEntity> = {}
+  for (const [, v] of Object.entries<any>(raw)) {
+    const id = v.charId ?? v.$key ?? ''
+    map[id] = {
+      type: 'operator',
+      id,
+      name: resolveI18n(v.name, i18nMap) || id,
+      route: `/archive/operators/${id}`,
+      portrait: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${id}.png`,
+      rarity: v.rarity ?? 0,
+    }
+  }
+  return map
+}
+
+async function buildSkillOwnerIndex(_locale: string): Promise<Record<string, { type: 'operator' | 'weapon'; id: string }>> {
+  const [growthRaw, weaponRaw] = await Promise.all([
+    getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')),
+    getCachedData<Record<string, any>>('WeaponBasicTable', () => fetchTableAll('WeaponBasicTable')),
+  ])
+
+  const index: Record<string, { type: 'operator' | 'weapon'; id: string }> = {}
+
+  for (const [, v] of Object.entries<any>(growthRaw)) {
+    const charId = v.charId ?? v.$key ?? ''
+    for (const group of Object.values<any>(v.skillGroupMap ?? {})) {
+      for (const skillId of group.skillIdList ?? []) {
+        if (!index[skillId]) index[skillId] = { type: 'operator', id: charId }
+      }
+    }
+  }
+
+  for (const [, v] of Object.entries<any>(weaponRaw)) {
+    const weaponId = v.weaponId ?? v.$key ?? ''
+    for (const skillId of v.weaponSkillList ?? []) {
+      if (!index[skillId]) index[skillId] = { type: 'weapon', id: weaponId }
+    }
+  }
+
+  return index
+}
+
+async function buildTalentEffectOwnerIndex(_locale: string): Promise<Record<string, string>> {
+  const growthRaw = await getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable'))
+  const index: Record<string, string> = {}
+
+  for (const [, v] of Object.entries<any>(growthRaw)) {
+    const charId = v.charId ?? v.$key ?? ''
+    for (const node of Object.values<any>(v.talentNodeMap ?? {})) {
+      if (node.nodeType === 4 && node.passiveSkillNodeInfo?.talentEffectId) {
+        index[node.passiveSkillNodeInfo.talentEffectId] = charId
+      }
+    }
+  }
+
+  return index
+}
+
 async function buildWeaponEntityMap(locale: string): Promise<Record<string, SearchEntity>> {
   const [raw, i18nMap, itemRaw, itemI18n] = await Promise.all([
     getCachedData<Record<string, any>>('WeaponBasicTable', () => fetchTableAll('WeaponBasicTable')),
@@ -77,26 +145,6 @@ async function buildWeaponEntityMap(locale: string): Promise<Record<string, Sear
       icon: item?.iconId ?? id,
       rarity: v.rarity ?? 0,
       subInfo: `${v.weaponType ?? ''}`,
-    }
-  }
-  return map
-}
-
-async function buildOperatorEntityMap(locale: string): Promise<Record<string, SearchEntity>> {
-  const [raw, i18nMap] = await Promise.all([
-    getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
-    getTableI18nDict('CharacterTable', locale),
-  ])
-  const map: Record<string, SearchEntity> = {}
-  for (const [, v] of Object.entries<any>(raw)) {
-    const id = v.charId ?? v.$key ?? ''
-    map[id] = {
-      type: 'operator',
-      id,
-      name: resolveI18n(v.name, i18nMap) || id,
-      route: `/archive/operators/${id}`,
-      portrait: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${id}.png`,
-      rarity: v.rarity ?? 0,
     }
   }
   return map
@@ -183,18 +231,58 @@ export async function enrichResults(
     entityKey: r.entityKey,
   }))
 
-  const tablesNeeded = new Set<string>()
+  const entities: Record<string, Record<string, SearchEntity>> = {}
+  const indirectOwners: Record<string, SearchEntity | undefined> = {}
+
+  // Direct entity tables + alias tables
+  const directTables = new Set<string>()
   for (const r of results) {
-    if (r.entityKey && SEARCH_ENTITY_TABLES[r.table]) {
-      tablesNeeded.add(r.table)
+    const targetTable = SEARCH_ENTITY_ALIAS_TABLES[r.table] ?? r.table
+    if (r.entityKey && SEARCH_ENTITY_TABLES[targetTable]) {
+      directTables.add(targetTable)
     }
   }
 
-  const entities: Record<string, Record<string, SearchEntity>> = {}
-  await Promise.all(Array.from(tablesNeeded).map(async (table) => {
+  await Promise.all(Array.from(directTables).map(async (table) => {
     const entry = SEARCH_ENTITY_TABLES[table]
     entities[table] = await entry.buildMap(locale)
   }))
+
+  // Indirect association tables (SkillPatchTable, PotentialTalentEffectTable)
+  const skillIds = results.filter(r => r.table === 'SkillPatchTable').map(r => r.entityKey).filter(Boolean) as string[]
+  const talentIds = results.filter(r => r.table === 'PotentialTalentEffectTable').map(r => r.entityKey).filter(Boolean) as string[]
+
+  if (skillIds.length > 0) {
+    const skillIndex = await buildSkillOwnerIndex(locale)
+    const operatorMap = entities['CharacterTable'] ?? await buildOperatorEntityMap(locale)
+    const weaponMap = entities['WeaponBasicTable'] ?? await buildWeaponEntityMap(locale)
+    entities['CharacterTable'] = operatorMap
+    entities['WeaponBasicTable'] = weaponMap
+
+    for (const id of skillIds) {
+      const owner = skillIndex[id]
+      if (!owner) continue
+      indirectOwners[id] = owner.type === 'operator' ? operatorMap[owner.id] : weaponMap[owner.id]
+    }
+  }
+
+  if (talentIds.length > 0) {
+    const talentIndex = await buildTalentEffectOwnerIndex(locale)
+    const operatorMap = entities['CharacterTable'] ?? await buildOperatorEntityMap(locale)
+    entities['CharacterTable'] = operatorMap
+
+    for (const id of talentIds) {
+      const charId = talentIndex[id]
+      if (!charId) continue
+      indirectOwners[id] = operatorMap[charId]
+    }
+  }
+
+  for (const r of enriched) {
+    if (r.table === 'SkillPatchTable' || r.table === 'PotentialTalentEffectTable') {
+      r.ownerEntity = indirectOwners[r.entityKey ?? '']
+    }
+  }
 
   return { enriched, entities }
 }

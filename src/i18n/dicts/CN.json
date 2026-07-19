@@ -313,6 +313,7 @@
     "relatedRecords": "相关记载",
     "hint": "输入关键词后按 Enter 开始搜索",
     "prev": "上一页",
-    "next": "下一页"
+    "next": "下一页",
+    "searchMore": "搜索更多"
   }
 }

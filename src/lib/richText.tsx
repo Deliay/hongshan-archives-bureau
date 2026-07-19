@@ -222,7 +222,7 @@ function buildTree(segments: RawSegment[]): TreeNode {
 function wrapTag(tagName: string, attrs: Record<string, string>, children: ReactNode): ReactNode {
   switch (tagName) {
     case 'color': return <span style={{ color: attrs.color }}>{children}</span>
-    case 'mark': return <span style={{ backgroundColor: attrs.mark }}>{children}</span>
+    case 'mark': return <span style={{ backgroundColor: attrs.mark, color: '#0A0A0D' }}>{children}</span>
     case 'b': return <b>{children}</b>
     case 'align': return <span>{children}</span>
     case 'comment': return <span style={{ color: 'var(--color-archive-lead)', fontSize: '0.75rem' }}>{children}</span>
