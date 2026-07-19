@@ -42,6 +42,7 @@ function useModuleGroups() {
       label: t('nav.chronicle'),
       desc: t('nav.chronicleDesc'),
       modules: [
+        { label: t('nav.search'), path: '/archive/search', desc: t('nav.searchDesc') },
         { label: t('nav.story'), path: '/archive/story', desc: t('nav.storyDesc') },
         { label: t('nav.updates'), path: '/archive/updates', desc: t('nav.updatesDesc') },
       ],

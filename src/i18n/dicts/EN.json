@@ -32,7 +32,9 @@
     "areasDesc": "Regional distribution and exploration",
     "storyDesc": "Narrative archive",
     "updates": "Update Logs",
-    "updatesDesc": "Inter-version data changes"
+    "updatesDesc": "Inter-version data changes",
+    "search": "Archive Search",
+    "searchDesc": "Cross-table keyword search"
   },
   "common": {
     "sort": "Sort",
@@ -300,5 +302,17 @@
     "physicalResistScalar": "Physical resistance scalar",
     "abilities": "Abilities ({{count}})",
     "unchanged": "Unchanged"
+  },
+  "search": {
+    "title": "Archive Search",
+    "placeholder": "Search archive keywords…",
+    "searchButton": "Search",
+    "noResults": "No related records found",
+    "resultCount": "Found {{count}} related records",
+    "source": "Source",
+    "relatedRecords": "Related Records",
+    "hint": "Enter keywords and press Enter to search",
+    "prev": "Previous",
+    "next": "Next"
   }
 }

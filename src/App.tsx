@@ -20,6 +20,7 @@ import EquipmentOverview from './pages/equipment/EquipmentOverview'
 import ItemList from './pages/items/ItemList'
 import FactoryOverview from './pages/factory/FactoryOverview'
 import StoryOverview from './pages/story/StoryOverview'
+import ArchiveSearch from './pages/search/ArchiveSearch'
 import UpdateHome from './pages/updates/UpdateHome'
 import UpdateSummary from './pages/updates/UpdateSummary'
 import UpdateTableDiff from './pages/updates/UpdateTableDiff'
@@ -50,6 +51,7 @@ function AppRoutes() {
             <Route path="items" element={<ItemList />} />
             <Route path="factory" element={<FactoryOverview />} />
             <Route path="story" element={<StoryOverview />} />
+            <Route path="search" element={<ArchiveSearch />} />
             <Route path="updates" element={<UpdateHome />} />
             <Route path="updates/:versionName" element={<UpdateSummary />} />
             <Route path="updates/:versionName/:tableFile" element={<UpdateTableDiff />} />

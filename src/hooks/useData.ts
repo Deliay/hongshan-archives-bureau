@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember } from '../lib/types'
+import { searchArchive, enrichResults } from '../lib/search'
+import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
@@ -917,4 +919,76 @@ export function useFactionDetail(factionId: string): UseDataResult<FactionEntry>
 
     return { ...faction, texts: texts.filter(t => t.text) }
   }, [locale, factionId])
+}
+
+export function useArchiveSearch(
+  query: string,
+  options: SearchArchiveOptions = {},
+): UseArchiveSearchResult {
+  const { locale } = useLocale()
+  const pageSize = options.pageSize ?? 30
+  const [page, setPage] = useState(0)
+  const [allResults, setAllResults] = useState<LightweightResult[]>([])
+  const [pageResults, setPageResults] = useState<SearchResult[]>([])
+  const [entities, setEntities] = useState<Record<string, Record<string, SearchEntity>>>({})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const optionsKey = useMemo(() => JSON.stringify(options), [options])
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    setPage(0)
+    try {
+      const optionsVal = JSON.parse(optionsKey) as SearchArchiveOptions
+      const lightweight = await searchArchive(query, locale, optionsVal)
+      setAllResults(lightweight)
+      setEntities({})
+    } catch (e) {
+      setError((e as Error).message)
+      setAllResults([])
+      setPageResults([])
+    } finally {
+      setLoading(false)
+    }
+  }, [query, locale, optionsKey])
+
+  // Enrich current page results whenever page or allResults changes
+  useEffect(() => {
+    if (allResults.length === 0) {
+      setPageResults([])
+      return
+    }
+    let cancelled = false
+    const start = page * pageSize
+    const slice = allResults.slice(start, start + pageSize)
+
+    enrichResults(slice, locale).then(({ enriched, entities: newEntities }) => {
+      if (cancelled) return
+      setPageResults(enriched)
+      setEntities(prev => {
+        const merged = { ...prev }
+        for (const [table, map] of Object.entries(newEntities)) {
+          merged[table] = { ...merged[table], ...map }
+        }
+        return merged
+      })
+    })
+
+    return () => { cancelled = true }
+  }, [allResults, page, pageSize, locale])
+
+  useEffect(() => { if (query.trim()) load() }, [load, query])
+
+  return {
+    results: pageResults,
+    entities,
+    total: allResults.length,
+    page,
+    pageSize,
+    loading,
+    error,
+    setPage,
+    refetch: load,
+  }
 }

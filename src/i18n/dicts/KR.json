@@ -32,7 +32,9 @@
     "areasDesc": "지역 분포 및 탐사",
     "storyDesc": "서사 자료 아카이브",
     "updates": "업데이트 로그",
-    "updatesDesc": "버전 간 데이터 변경"
+    "updatesDesc": "버전 간 데이터 변경",
+    "search": "아카이브 검색",
+    "searchDesc": "크로스 테이블 키워드 검색"
   },
   "common": {
     "sort": "정렬",
@@ -300,5 +302,17 @@
     "physicalResistScalar": "물리 저항 스칼라",
     "abilities": "능력（{{count}}）",
     "unchanged": "기존"
+  },
+  "search": {
+    "title": "아카이브 검색",
+    "placeholder": "아카이브 키워드 검색…",
+    "searchButton": "검색",
+    "noResults": "관련 기록을 찾을 수 없습니다",
+    "resultCount": "{{count}}개의 관련 기록을 찾았습니다",
+    "source": "출처",
+    "relatedRecords": "관련 기록",
+    "hint": "키워드를 입력하고 Enter 키를 눌러 검색",
+    "prev": "이전",
+    "next": "다음"
   }
 }

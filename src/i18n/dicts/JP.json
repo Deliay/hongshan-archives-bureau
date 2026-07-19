@@ -32,7 +32,9 @@
     "areasDesc": "地域分布と探索",
     "storyDesc": "叙事資料アーカイブ",
     "updates": "更新ログ",
-    "updatesDesc": "バージョン間のデータ変更"
+    "updatesDesc": "バージョン間のデータ変更",
+    "search": "アーカイブ検索",
+    "searchDesc": "クロステーブルキーワード検索"
   },
   "common": {
     "sort": "並び順",
@@ -300,5 +302,17 @@
     "physicalResistScalar": "物理耐性スカラー",
     "abilities": "能力（{{count}}）",
     "unchanged": "既存"
+  },
+  "search": {
+    "title": "アーカイブ検索",
+    "placeholder": "アーカイブのキーワードを検索…",
+    "searchButton": "検索",
+    "noResults": "関連記録が見つかりません",
+    "resultCount": "{{count}} 件の関連記録が見つかりました",
+    "source": "出典",
+    "relatedRecords": "関連記録",
+    "hint": "キーワードを入力し、Enter キーで検索",
+    "prev": "前へ",
+    "next": "次へ"
   }
 }
