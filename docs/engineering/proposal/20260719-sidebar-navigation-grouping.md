@@ -1,6 +1,6 @@
 ---
 description: 左侧导航栏分组优化技术方案：改造 Sidebar 数据结构、分组渲染与样式
-type: Fleeting
+type: Permanent
 ---
 
 # 左侧导航栏分组优化技术方案
@@ -253,9 +253,10 @@ Sidebar 的 `<nav>` 区域由单层循环改为双层循环：外层遍历分组
 
 ### 5.2 E2E 测试
 
-更新或新增 `tests/e2e/navigation.spec.ts`：
+更新或新增 `tests/e2e/navigation.spec.ts` 与 `tests/e2e/archive-home.spec.ts`：
 
-- 桌面端：侧边栏展示「人事档案」「物资档案」「地理档案」「威胁档案」「大事记」分组；
+- 桌面端：侧边栏展示「人事档案」「威胁档案」「物资档案」「地理档案」「大事记」分组；
+- 档案局首页按相同分组展示模块入口；
 - 点击分组内入口跳转至正确路径；
 - 当前页面所属入口高亮；
 - 移动端：抽屉中分组展示正常，点击入口后抽屉关闭。
@@ -281,7 +282,7 @@ Sidebar 的 `<nav>` 区域由单层循环改为双层循环：外层遍历分组
 | 用户不习惯干员档案与子入口平级 | 认知成本 | 产品已确认分组方案，子入口归入「人事档案」下 |
 | 分组标签样式与现有视觉冲突 | 审美不一致 | 采用现有 archive-lead 色，保持克制 |
 
-回滚策略：本次改动仅涉及 `Sidebar.tsx` 的导航数据结构与渲染，若出现问题可直接回滚该文件或还原 `NAV_ITEMS`。
+回滚策略：本次改动涉及 `Sidebar.tsx` 与 `ArchiveHome.tsx` 的数据结构与渲染，若出现问题可直接回滚相关文件或还原 `NAV_ITEMS`/`MODULES`。
 
 ## 设计确认
 
@@ -294,6 +295,17 @@ Sidebar 的 `<nav>` 区域由单层循环改为双层循环：外层遍历分组
 - `npm run test`: ✅ 42 passed
 - `npm run build`: ✅
 - Playwright E2E: ✅ 44 passed
+
+## 上线记录
+
+- **上线日期**: 2026-07-19
+- **合并 PR**: #5
+- **合并分支**: `prd/sidebar-navigation-grouping` → `main`
+- **主要变更**:
+  - `src/components/Layout/Sidebar.tsx`：扁平 `NAV_ITEMS` → 分组 `NAV_GROUPS`
+  - `src/routes/ArchiveHome.tsx`：模块平铺 → 分组卡片
+  - `src/components/Layout/Sidebar.test.tsx`：新增 Sidebar 单元测试
+  - `tests/e2e/src/archive-home.spec.ts`：更新首页分组断言
 
 ## 相关文档
 
