@@ -1,6 +1,6 @@
 ---
 description: 宏山档案局界面国际化完善实现方案
-type: Fleeting
+type: Permanent
 ---
 
 # 宏山档案局界面国际化完善实现方案
@@ -9,8 +9,11 @@ type: Fleeting
 **对应技术方案**: [[20260719-globalization-i18n|宏山档案局界面国际化完善技术方案]]
 **实现方案版本**: v1.0
 **创建日期**: 2026-07-19
+**状态**: 已实现
 **作者**: 前端工程
-**开发分支**: `feat/i18n-globalization`
+**开发分支**: `feat/i18n-globalization`（已合并到 main，PR #7）
+
+> 最终 key 列表、命名约定与字典生成用法已沉淀为 [国际化规范](../references/i18n-spec.md)。
 
 ## 1. 概述
 
@@ -29,10 +32,9 @@ type: Fleeting
 
 | 文件路径 | 说明 |
 |----------|------|
-| `src/i18n/index.ts` | I18nProvider、useI18n、t 函数、flatten；由生成脚本根据 API 语言列表自动维护 import |
+| `src/i18n/index.tsx` | I18nProvider、useI18n、t 函数、flatten；由生成脚本根据 API 语言列表自动维护 import |
 | `src/i18n/dicts/{locale}.json` | 各语言翻译字典，由 `scripts/generate-i18n-dicts.ts` 根据 `GET /i18n` 返回的可用 locale 列表自动生成 |
 | `scripts/generate-i18n-dicts.ts` | 字典生成脚本：调用 `/i18n` 与 `/i18n/{locale}/{id}`，输出 `src/i18n/dicts/` 与 `src/i18n/index.ts` |
-| `src/i18n/source/custom.json`（可选） | 站点自定义译文源文件，按 locale 组织，供生成脚本合并 |
 
 ### 2.2 修改文件
 
@@ -1617,13 +1619,13 @@ test('切换语言后导航与筛选器文案更新', async ({ page }) => {
 
 ## 11. 验收标准
 
-- [ ] `src/` 中无新增硬编码中文静态文案（测试文件中的中文断言除外）。
-- [ ] 切换 `/i18n` 返回的任意 locale 后，导航、筛选器、按钮、提示即时刷新。
-- [ ] 翻译缺失时按 `目标语言 → 英语 → 简中 → key` 回退，不空白、不报错。
-- [ ] `npm run build` 通过，无 TypeScript 错误。
-- [ ] `npm run lint` 通过，无新增错误。
-- [ ] `npm run test` 通过。
-- [ ] E2E 新增语言切换用例通过。
+- [x] `src/` 中无新增硬编码中文静态文案（测试文件中的中文断言除外）。
+- [x] 切换 `/i18n` 返回的任意 locale 后，导航、筛选器、按钮、提示即时刷新。
+- [x] 翻译缺失时按 `目标语言 → 英语 → 简中 → key` 回退，不空白、不报错。
+- [x] `npm run build` 通过，无 TypeScript 错误。
+- [x] `npm run lint` 通过，无新增错误。
+- [x] `npm run test` 通过。
+- [ ] E2E 新增语言切换用例通过（尚未实现，可后续迭代）。
 
 ## 12. 风险与回滚
 
@@ -1641,6 +1643,7 @@ test('切换语言后导航与筛选器文案更新', async ({ page }) => {
 
 - [[20260719-globalization-i18n|宏山档案局界面国际化完善方案]]
 - [[20260719-globalization-i18n|宏山档案局界面国际化完善技术方案]]
+- [国际化规范](../references/i18n-spec.md)
 - [[common-rules|通用开发规范]]
 - [[frontend-spec|前端开发规范]]
 - [[engineering-spec|工程架构规范]]
