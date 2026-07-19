@@ -1,6 +1,6 @@
 ---
 description: 宏山档案局品牌升级与视觉重构实现方案
-type: Fleeting
+type: Permanent
 ---
 
 # 宏山档案局品牌升级与视觉重构实现方案
