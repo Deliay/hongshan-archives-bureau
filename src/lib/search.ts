@@ -84,7 +84,7 @@ async function buildOperatorEntityMap(locale: string): Promise<Record<string, Se
 
 const skillOwnerIndexCaches = new Map<string, Promise<Record<string, { type: 'operator' | 'weapon'; id: string }>>>()
 
-async function buildSkillOwnerIndex(locale: string): Promise<Record<string, { type: 'operator' | 'weapon'; id: string }>> {
+export async function buildSkillOwnerIndex(locale: string): Promise<Record<string, { type: 'operator' | 'weapon'; id: string }>> {
   if (!skillOwnerIndexCaches.has(locale)) {
     skillOwnerIndexCaches.set(locale, (async () => {
       const [growthRaw, weaponRaw] = await Promise.all([
@@ -118,7 +118,7 @@ async function buildSkillOwnerIndex(locale: string): Promise<Record<string, { ty
 
 const talentOwnerIndexCaches = new Map<string, Promise<Record<string, string>>>()
 
-async function buildTalentEffectOwnerIndex(locale: string): Promise<Record<string, string>> {
+export async function buildTalentEffectOwnerIndex(locale: string): Promise<Record<string, string>> {
   if (!talentOwnerIndexCaches.has(locale)) {
     talentOwnerIndexCaches.set(locale, (async () => {
       const growthRaw = await getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable'))

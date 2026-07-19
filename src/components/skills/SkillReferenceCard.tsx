@@ -94,8 +94,8 @@ export default function SkillReferenceCard({
           const found = sorted.find(p => p.level === target)
           setLevel(found ? found.level : sorted[sorted.length - 1].level)
         }
-      } catch (err) {
-        console.error('SkillReferenceCard load error', err)
+      } catch {
+        // 加载失败时静默降级，组件返回 null
       }
     }
     load()
