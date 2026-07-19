@@ -24,18 +24,20 @@ export default function RaceList() {
 
       <div className="flex flex-col gap-4">
         {nonEmpty.map((race) => (
-          <Link
+          <div
             key={race.id}
-            to={`/archive/races/${race.id}`}
-            className="block rounded border border-archive-border bg-archive-file p-4
+            className="rounded border border-archive-border bg-archive-file p-4
                        hover:border-archive-gold/40 transition-all duration-200 group"
           >
-            <div className="flex items-baseline gap-2 mb-3">
+            <Link
+              to={`/archive/races/${race.id}`}
+              className="flex items-baseline gap-2 mb-3"
+            >
               <h3 className="text-base font-medium text-archive-ivory group-hover:text-archive-gold transition-colors">{race.name}</h3>
               <span className="text-xs text-archive-lead">{race.members.length} 人</span>
-            </div>
+            </Link>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter') e.stopPropagation() }} role="none">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {race.members.map((m) => (
                 <Link
                   key={m.id}
@@ -59,7 +61,7 @@ export default function RaceList() {
                 </Link>
               ))}
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </div>

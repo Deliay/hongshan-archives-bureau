@@ -6,7 +6,7 @@ interface PageSkeletonProps {
 
 export function PageSkeleton({ lines = 6 }: PageSkeletonProps) {
   return (
-    <div className="space-y-4 animate-fade-in-up">
+    <div className="space-y-4 animate-fade-in-up" data-testid="skeleton">
       <Skeleton className="h-8 w-48" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-3/4" />
