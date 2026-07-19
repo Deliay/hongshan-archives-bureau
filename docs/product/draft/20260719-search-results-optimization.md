@@ -92,11 +92,12 @@ type: Fleeting
 
 #### 功能点 3：SkillPatchTable 技能组件与归属关联
 
-- **描述**: 新增公共技能展示组件 `SkillReferenceCard`。当命中表为 `SkillPatchTable` 时，通过反向索引查找该 `skillId` 属于哪位干员（`CharGrowthTable`）或哪件武器（`WeaponBasicTable`），并同时展示技能组件与所属干员/武器参考 Card。
-- **用户价值**: 技能文本命中后可直接识别技能名称、所属实体，减少跨表跳转成本。
+- **描述**: 从现有武器详情页/干员详情页的技能展示逻辑中提取公共技能组件 `SkillReferenceCard`。当命中表为 `SkillPatchTable` 时，通过反向索引查找该 `skillId` 属于哪位干员（`CharGrowthTable`）或哪件武器（`WeaponBasicTable`），并同时展示技能组件与所属干员/武器参考 Card。在搜索场景下，`SkillReferenceCard` 展示等级滑动条，默认选中 Lv.9。
+- **用户价值**: 技能文本命中后可直接识别技能名称、所属实体，并能在搜索结果内预览不同等级效果，减少跨表跳转成本。
 - **验收标准**:
-  - [ ] 新增可复用的技能展示组件，包含技能图标、名称、等级/描述摘要。
+  - [ ] 从现有页面提取可复用的技能展示组件 `SkillReferenceCard`，包含技能图标、名称、等级滑动条与描述。
   - [ ] 命中 `SkillPatchTable` 时找到并展示所属干员或武器 Card。
+  - [ ] 搜索场景下技能组件默认展示 Lv.9，用户可通过滑动条切换等级。
   - [ ] 若同时属于干员与武器（理论上不会），优先展示干员。
   - [ ] 若找不到归属，仅展示技能组件本身。
 

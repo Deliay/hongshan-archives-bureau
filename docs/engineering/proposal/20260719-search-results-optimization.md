@@ -169,21 +169,23 @@ sequenceDiagram
 
 ### 4.4 技能展示组件
 
-新增 `SkillReferenceCard`：
+从现有 `WeaponSkillPanel` 与干员详情页 `SkillGroupCard` 中提取公共技能展示逻辑，新增 `SkillReferenceCard`：
 
-- 接收 `skillId: string`。
-- 拉取 `SkillPatchTable` 与该表 i18n 字典。
-- 展示技能图标、名称、等级 1 描述（或命中等级）。
+- 接收 `skillId: string`、`showLevelSlider?: boolean`、`defaultLevel?: number`。
+- 拉取 `SkillPatchTable` 与该表 i18n 字典（缺失时回退到全局 i18n）。
+- 展示技能图标、名称、当前等级描述，以及可选的等级滑动条。
 - 组件本身不处理归属；归属 Card 由 `EntityReferenceCard` 根据反向索引额外渲染。
 
 在 `ArchiveSearchResults.tsx` 中，当 `result.table === 'SkillPatchTable'` 时：
 
 ```tsx
 <div className="flex flex-col gap-2">
-  <SkillReferenceCard skillId={result.entityKey} />
+  <SkillReferenceCard skillId={result.entityKey} showLevelSlider defaultLevel={9} />
   {entity && <EntityReferenceCard entity={entity} />}
 </div>
 ```
+
+`WeaponSkillPanel` 改造为 `SkillReferenceCard` 的调用方（或薄封装），保持武器详情页现有行为不变。
 
 ### 4.5 高亮颜色覆盖（`src/lib/richText.tsx`）
 
@@ -318,9 +320,12 @@ src/
     Search/
       ArchiveSearchResults.tsx      # 翻页滚动
       EntityCards.tsx               # 武器复用 ItemPanel、技能组件
-      SkillReferenceCard.tsx        # 新增公共技能组件
     Items/
       ItemPanel.tsx                 # 支持 href
+    skills/
+      SkillReferenceCard.tsx        # 新增公共技能组件（从 WeaponSkillPanel 等提取）
+    Weapons/
+      WeaponSkillPanel.tsx          # 改造为 SkillReferenceCard 调用方
   lib/
     search.ts                       # 反向索引、别名表
     richText.tsx                    # mark 颜色覆盖
