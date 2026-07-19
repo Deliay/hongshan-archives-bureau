@@ -1,7 +1,7 @@
 export default function Footer() {
   return (
-    <footer className="border-t border-[#2A2A32] mt-16 py-6 text-center text-xs text-[#5A5A62]">
-      <p>宏山档案馆 — 明日方舟终末地资料集成</p>
+    <footer className="border-t border-archive-border mt-16 py-6 text-center text-xs text-archive-lead">
+      <p className="text-archive-dust">宏山档案局 · 塔卫二官方档案管理与调阅系统</p>
       <p className="mt-1">数据来源：天师数据库 API · 管理员记录</p>
     </footer>
   )
