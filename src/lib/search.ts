@@ -18,37 +18,16 @@ export interface SearchArchiveOptions {
   pageSize?: number
 }
 
-export interface SearchArchiveRawResult {
-  allResults: SearchResult[]
-  entities: Record<string, Record<string, SearchEntity>>
+export interface LightweightResult {
+  table: string
+  path: string
+  id: string
+  entityKey: string | null
 }
 
 function getTableI18nDict(table: string, locale: string): Promise<Record<string, string>> {
   const cacheKey = `I18nDict_${locale}_${table}`
   return getCachedData<Record<string, string>>(cacheKey, () => fetchTableDictAll(table, locale))
-}
-
-async function buildEntityMaps(results: SearchResult[], locale: string): Promise<Record<string, Record<string, SearchEntity>>> {
-  const entities: Record<string, Record<string, SearchEntity>> = {}
-  const tablesNeeded = new Set<string>()
-
-  for (const r of results) {
-    if (r.entityKey && SEARCH_ENTITY_TABLES[r.table]) {
-      tablesNeeded.add(r.table)
-    }
-  }
-
-  const loaders: Promise<void>[] = []
-  for (const table of tablesNeeded) {
-    loaders.push((async () => {
-      const entry = SEARCH_ENTITY_TABLES[table]
-      const map = await entry.buildMap(locale)
-      entities[table] = map
-    })())
-  }
-  await Promise.all(loaders)
-
-  return entities
 }
 
 export const SEARCH_ENTITY_TABLES: Record<string, {
@@ -156,37 +135,66 @@ async function buildEnemyEntityMap(locale: string): Promise<Record<string, Searc
       id,
       name: resolveI18n(v.name ?? v.enemyName, i18nMap) || id,
       route: `/archive/enemies/${id}`,
-      rarity: v.displayType ?? 0,
+      displayType: v.displayType ?? 0,
       tags: (v.tags ?? []).map((t: any) => t.tagId ?? t),
     }
   }
   return map
 }
 
+// Lightweight search — returns raw matches without fetching texts or entity maps
 export async function searchArchive(
   query: string,
-  locale: string,
+  _locale: string,
   options: SearchArchiveOptions = {},
-): Promise<SearchArchiveRawResult> {
+): Promise<LightweightResult[]> {
   const { excludeTables = [] } = options
   const trimmed = query.trim()
-  if (!trimmed) return { allResults: [], entities: {} }
+  if (!trimmed) return []
 
   const raw = await fetchI18nSearch(escapeRegex(trimmed))
   const filtered = raw.filter(r => !excludeTables.includes(r.Table))
 
-  const texts = await Promise.all(
-    filtered.map(r => fetchI18nText(locale, String(r.Id))),
-  )
-
-  const allResults: SearchResult[] = filtered.map((r, i) => ({
+  return filtered.map(r => ({
     table: r.Table,
     path: r.Path,
     id: String(r.Id),
-    text: texts[i],
     entityKey: extractEntityKey(r.Table, r.Path),
   }))
+}
 
-  const entities = await buildEntityMaps(allResults, locale)
-  return { allResults, entities }
+// Enrich a set of results with texts and entity maps (call only for current page)
+export async function enrichResults(
+  results: LightweightResult[],
+  locale: string,
+): Promise<{
+  enriched: SearchResult[]
+  entities: Record<string, Record<string, SearchEntity>>
+}> {
+  const texts = await Promise.all(
+    results.map(r => fetchI18nText(locale, r.id)),
+  )
+
+  const enriched: SearchResult[] = results.map((r, i) => ({
+    table: r.table,
+    path: r.path,
+    id: r.id,
+    text: texts[i],
+    entityKey: r.entityKey,
+  }))
+
+  const tablesNeeded = new Set<string>()
+  for (const r of results) {
+    if (r.entityKey && SEARCH_ENTITY_TABLES[r.table]) {
+      tablesNeeded.add(r.table)
+    }
+  }
+
+  const entities: Record<string, Record<string, SearchEntity>> = {}
+  await Promise.all(Array.from(tablesNeeded).map(async (table) => {
+    const entry = SEARCH_ENTITY_TABLES[table]
+    entities[table] = await entry.buildMap(locale)
+  }))
+
+  return { enriched, entities }
 }

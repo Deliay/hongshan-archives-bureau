@@ -33,8 +33,8 @@
     "storyDesc": "叙事資料アーカイブ",
     "updates": "更新ログ",
     "updatesDesc": "バージョン間のデータ変更",
-    "search": "档案搜索",
-    "searchDesc": "跨表关键词检索"
+    "search": "アーカイブ検索",
+    "searchDesc": "クロステーブルキーワード検索"
   },
   "common": {
     "sort": "並び順",
@@ -304,14 +304,15 @@
     "unchanged": "既存"
   },
   "search": {
-    "title": "档案搜索",
-    "placeholder": "搜索档案关键词…",
-    "searchButton": "搜索",
-    "noResults": "未找到相关记载",
-    "resultCount": "找到 {{count}} 条相关记载",
-    "source": "来源",
-    "relatedRecords": "相关记载",
-    "prev": "上一页",
-    "next": "下一页"
+    "title": "アーカイブ検索",
+    "placeholder": "アーカイブのキーワードを検索…",
+    "searchButton": "検索",
+    "noResults": "関連記録が見つかりません",
+    "resultCount": "{{count}} 件の関連記録が見つかりました",
+    "source": "出典",
+    "relatedRecords": "関連記録",
+    "hint": "キーワードを入力し、Enter キーで検索",
+    "prev": "前へ",
+    "next": "次へ"
   }
 }

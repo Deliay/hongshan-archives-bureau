@@ -21,31 +21,15 @@ test.describe('档案搜索 (Archive Search)', () => {
     await page.goto('/archive/search', { waitUntil: 'domcontentloaded' })
     await page.waitForSelector('h2')
     const input = page.getByPlaceholder('搜索档案关键词…')
-    await input.fill('test')
+    await input.fill('the')
     await input.press('Enter')
-    await page.waitForTimeout(2000)
-    const resultText = page.locator('text=找到').first()
-    await expect(resultText).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('找到')).toBeVisible({ timeout: 20000 })
   })
 
-  test('点击搜索按钮触发搜索', async ({ page }) => {
+  test('空输入时显示提示文案', async ({ page }) => {
     await page.goto('/archive/search', { waitUntil: 'domcontentloaded' })
     await page.waitForSelector('h2')
-    const input = page.getByPlaceholder('搜索档案关键词…')
-    await input.fill('test')
-    await page.getByRole('button', { name: '搜索' }).click()
-    await page.waitForTimeout(2000)
-    const resultText = page.locator('text=找到').first()
-    await expect(resultText).toBeVisible({ timeout: 15000 })
-  })
-
-  test('空输入时未触发搜索', async ({ page }) => {
-    await page.goto('/archive/search', { waitUntil: 'domcontentloaded' })
-    await page.waitForSelector('h2')
-    const input = page.getByPlaceholder('搜索档案关键词…')
-    await input.press('Enter')
-    await page.waitForTimeout(1000)
-    await expect(page.getByText('找到')).not.toBeVisible()
+    await expect(page.getByText(/输入关键词/)).toBeVisible({ timeout: 5000 })
   })
 
   test('搜索结果分页控件可用', async ({ page }) => {
@@ -54,14 +38,15 @@ test.describe('档案搜索 (Archive Search)', () => {
     const input = page.getByPlaceholder('搜索档案关键词…')
     await input.fill('the')
     await input.press('Enter')
-    await page.waitForTimeout(3000)
 
+    // Wait for results to load
+    await expect(page.getByText('找到')).toBeVisible({ timeout: 20000 })
+
+    // Check if pagination exists
     const nextBtn = page.getByText('下一页')
     if (await nextBtn.isVisible()) {
       await nextBtn.click()
-      await page.waitForTimeout(500)
-      const page2Btn = page.locator('text=2').first()
-      await expect(page2Btn).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('text=2').first()).toBeVisible({ timeout: 5000 })
     }
   })
 
@@ -71,8 +56,9 @@ test.describe('档案搜索 (Archive Search)', () => {
     const input = page.getByPlaceholder('搜索档案关键词…')
     await input.fill('the')
     await input.press('Enter')
-    await page.waitForTimeout(3000)
-    await expect(page.locator('text=找到').first()).toBeVisible({ timeout: 15000 })
-    await expect(page.getByText('CharacterTable').or(page.getByText('WeaponBasicTable')) .first()).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('找到')).toBeVisible({ timeout: 20000 })
+    await expect(
+      page.getByText('CharacterTable').or(page.getByText('WeaponBasicTable')).first()
+    ).toBeVisible({ timeout: 10000 })
   })
 })

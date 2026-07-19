@@ -14,6 +14,33 @@ function highlightText(text: string, term: string): string {
 }
 
 const LOADING_ROWS = 5
+const MAX_VISIBLE_PAGES = 7
+
+function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
+  if (total <= MAX_VISIBLE_PAGES) {
+    return Array.from({ length: total }, (_, i) => i)
+  }
+  const pages: (number | 'ellipsis')[] = []
+  const half = Math.floor(MAX_VISIBLE_PAGES / 2)
+  let start = Math.max(0, current - half)
+  let end = Math.min(total - 1, current + half)
+  if (current - half <= 0) {
+    end = MAX_VISIBLE_PAGES - 1
+  }
+  if (current + half >= total - 1) {
+    start = total - MAX_VISIBLE_PAGES
+  }
+  if (start > 0) {
+    pages.push(0, 'ellipsis')
+  }
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  if (end < total - 1) {
+    pages.push('ellipsis', total - 1)
+  }
+  return pages
+}
 
 function LoadingSkeleton() {
   return (
@@ -97,7 +124,7 @@ export default function ArchiveSearchResults({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 mt-4">
+        <div className="flex items-center justify-center gap-1 mt-4">
           <button
             type="button"
             disabled={page === 0}
@@ -106,20 +133,24 @@ export default function ArchiveSearchResults({
           >
             {t('search.prev')}
           </button>
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => onPageChange(i)}
-              className={`px-2 py-1 text-xs rounded transition-colors ${
-                i === page
-                  ? 'text-archive-gold bg-archive-gold/10 border border-archive-gold/30'
-                  : 'text-archive-dust border border-transparent hover:text-archive-ivory'
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
+          {getPageRange(page, totalPages).map((item) =>
+            item === 'ellipsis' ? (
+              <span key={`ellipsis-${Math.random()}`} className="px-1 text-archive-lead text-xs">…</span>
+            ) : (
+              <button
+                key={item}
+                type="button"
+                onClick={() => onPageChange(item)}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  item === page
+                    ? 'text-archive-gold bg-archive-gold/10 border border-archive-gold/30'
+                    : 'text-archive-dust border border-transparent hover:text-archive-ivory'
+                }`}
+              >
+                {item + 1}
+              </button>
+            ),
+          )}
           <button
             type="button"
             disabled={page >= totalPages - 1}

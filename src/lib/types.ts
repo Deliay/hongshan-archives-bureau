@@ -296,6 +296,7 @@ export interface SearchEntity {
   icon?: string
   portrait?: string
   rarity?: number
+  displayType?: number
   subInfo?: string
   tags?: string[]
 }

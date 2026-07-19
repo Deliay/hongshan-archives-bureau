@@ -311,6 +311,7 @@
     "resultCount": "找到 {{count}} 条相关记载",
     "source": "来源",
     "relatedRecords": "相关记载",
+    "hint": "输入关键词后按 Enter 开始搜索",
     "prev": "上一页",
     "next": "下一页"
   }

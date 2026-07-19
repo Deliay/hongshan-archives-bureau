@@ -118,5 +118,7 @@ export function EntityReferenceCard({ entity, loading }: { entity?: SearchEntity
       return <ItemReferenceCard entity={entity} />
     case 'enemy':
       return <EnemyReferenceCard entity={entity} />
+    default:
+      return null
   }
 }

@@ -22,35 +22,34 @@ export default function ArchiveSearch() {
         <Badge variant="ghost" className="font-mono">{MODULE_CODES.search}</Badge>
       </div>
 
-      <div className="relative mb-4">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={t('search.placeholder')}
-          className="w-full px-4 py-2.5 rounded border border-archive-border bg-archive-file text-sm text-archive-ivory placeholder-archive-lead focus:outline-none focus:border-archive-gold/50 transition-colors"
-        />
-        <button
-          type="button"
-          onClick={() => setQuery(input)}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 text-xs rounded bg-archive-gold/10 text-archive-gold border border-archive-gold/30 hover:bg-archive-gold/20 transition-colors"
-        >
-          {t('search.searchButton')}
-        </button>
-      </div>
-
-      <ArchiveSearchResults
-        query={query}
-        results={results}
-        entities={entities}
-        total={total}
-        page={page}
-        pageSize={pageSize}
-        loading={loading}
-        error={error}
-        onPageChange={setPage}
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={t('search.placeholder')}
+        className="w-full px-4 py-2.5 rounded border border-archive-border bg-archive-file text-sm text-archive-ivory placeholder-archive-lead focus:outline-none focus:border-archive-gold/50 transition-colors mb-4"
       />
+
+      {!query && !loading && !error && (
+        <div className="text-archive-dust text-sm p-4 text-center">
+          {t('search.hint')}
+        </div>
+      )}
+
+      {query && (
+        <ArchiveSearchResults
+          query={query}
+          results={results}
+          entities={entities}
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          loading={loading}
+          error={error}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   )
 }
