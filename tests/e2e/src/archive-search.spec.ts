@@ -37,16 +37,20 @@ test.describe('档案搜索 (Archive Search)', () => {
     await page.waitForSelector('h2')
     const input = page.getByPlaceholder('搜索档案关键词…')
     await input.fill('the')
+    const responsePromise = page.waitForResponse(resp =>
+      resp.url().includes('/i18n/search/all/') && resp.ok(),
+    )
     await input.press('Enter')
-
-    // Wait for results to load
+    await responsePromise
     await expect(page.getByText('找到')).toBeVisible({ timeout: 20000 })
 
-    // Check if pagination exists
-    const nextBtn = page.getByText('下一页')
-    if (await nextBtn.isVisible()) {
+    // If 2+ pages exist, verify clicking next changes page
+    const nextBtn = page.getByRole('button', { name: '下一页' })
+    if (await nextBtn.isVisible().catch(() => false) && !await nextBtn.isDisabled().catch(() => true)) {
+      const page1Btn = page.locator('text=1').first()
       await nextBtn.click()
-      await expect(page.locator('text=2').first()).toBeVisible({ timeout: 5000 })
+      // After clicking next, page 1 should no longer be the active page
+      await expect(page1Btn).not.toHaveClass(/bg-archive-gold/, { timeout: 5000 })
     }
   })
 

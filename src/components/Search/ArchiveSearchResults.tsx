@@ -133,24 +133,29 @@ export default function ArchiveSearchResults({
           >
             {t('search.prev')}
           </button>
-          {getPageRange(page, totalPages).map((item) =>
-            item === 'ellipsis' ? (
-              <span key={`ellipsis-${Math.random()}`} className="px-1 text-archive-lead text-xs">…</span>
-            ) : (
-              <button
-                key={item}
-                type="button"
-                onClick={() => onPageChange(item)}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  item === page
-                    ? 'text-archive-gold bg-archive-gold/10 border border-archive-gold/30'
-                    : 'text-archive-dust border border-transparent hover:text-archive-ivory'
-                }`}
-              >
-                {item + 1}
-              </button>
-            ),
-          )}
+          {(() => {
+            let ellipsisCount = 0
+            return getPageRange(page, totalPages).map((item) => {
+              if (item === 'ellipsis') {
+                ellipsisCount++
+                return <span key={`ellipsis-${ellipsisCount}`} className="px-1 text-archive-lead text-xs">…</span>
+              }
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => onPageChange(item)}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    item === page
+                      ? 'text-archive-gold bg-archive-gold/10 border border-archive-gold/30'
+                      : 'text-archive-dust border border-transparent hover:text-archive-ivory'
+                  }`}
+                >
+                  {item + 1}
+                </button>
+              )
+            })
+          })()}
           <button
             type="button"
             disabled={page >= totalPages - 1}

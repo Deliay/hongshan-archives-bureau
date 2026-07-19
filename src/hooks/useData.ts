@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
@@ -933,18 +933,17 @@ export function useArchiveSearch(
   const [entities, setEntities] = useState<Record<string, Record<string, SearchEntity>>>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const entitiesRef = useRef(entities)
-  entitiesRef.current = entities
+  const optionsKey = useMemo(() => JSON.stringify(options), [options])
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     setPage(0)
     try {
-      const lightweight = await searchArchive(query, locale, options)
+      const optionsVal = JSON.parse(optionsKey) as SearchArchiveOptions
+      const lightweight = await searchArchive(query, locale, optionsVal)
       setAllResults(lightweight)
       setEntities({})
-      entitiesRef.current = {}
     } catch (e) {
       setError((e as Error).message)
       setAllResults([])
@@ -952,7 +951,7 @@ export function useArchiveSearch(
     } finally {
       setLoading(false)
     }
-  }, [query, locale, JSON.stringify(options)])
+  }, [query, locale, optionsKey])
 
   // Enrich current page results whenever page or allResults changes
   useEffect(() => {
