@@ -108,24 +108,24 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
     >
       <div
         ref={overlayRef}
-        className="max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto rounded border border-[#2A2A32] bg-[#1A1B23] shadow-2xl"
+        className="max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto rounded border border-archive-border bg-archive-file shadow-2xl"
         role="dialog"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={() => {}}
       >
-        <div className="sticky top-0 bg-[#1A1B23] border-b border-[#2A2A32] px-4 py-3 flex items-center justify-between">
+        <div className="sticky top-0 bg-archive-file border-b border-archive-border px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ItemIcon itemId={itemId} className="w-10 h-10" />
             <div>
-              <h3 className="text-sm font-medium text-[#E8E6E3]">{name}</h3>
+              <h3 className="text-sm font-medium text-archive-ivory">{name}</h3>
               <div className="h-0.5 w-full rounded-full mt-1" style={{ backgroundColor: RARITY_COLORS[rarity] || '#a0a0a0', width: `${rarity * 12}px` }} />
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-[#5A5A62] hover:text-[#E8E6E3] transition-colors text-lg leading-none px-1"
+            className="text-archive-lead hover:text-archive-ivory transition-colors text-lg leading-none px-1"
           >
             ✕
           </button>
@@ -133,9 +133,9 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
 
         <div className="p-4 space-y-3">
           {fullBottle && (
-            <div className="flex items-center gap-2 p-2 rounded bg-[#0F0F12] border border-[#2A2A32]">
+            <div className="flex items-center gap-2 p-2 rounded bg-archive-ink border border-archive-border">
               <ItemIcon itemId={fullBottle.liquidId} className="w-8 h-8" />
-              <span className="text-xs text-[#8B8982]">
+              <span className="text-xs text-archive-dust">
                 已装盛 {fullBottle.liquidCapacity} 单位
               </span>
             </div>
@@ -143,8 +143,8 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
 
           {desc && (
             <div>
-              <div className="text-[10px] text-[#8B8982] uppercase tracking-wide mb-1">物品效果</div>
-              <div className="text-xs text-[#E8E6E3] leading-relaxed">
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">物品效果</div>
+              <div className="text-xs text-archive-ivory leading-relaxed">
                 <RichText text={desc} />
               </div>
             </div>
@@ -152,8 +152,8 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
 
           {decoDesc && (
             <div>
-              <div className="text-[10px] text-[#8B8982] uppercase tracking-wide mb-1">物品描述</div>
-              <div className="text-xs text-[#8B8982] italic leading-relaxed">
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">物品描述</div>
+              <div className="text-xs text-archive-dust italic leading-relaxed">
                 <RichText text={decoDesc} />
               </div>
             </div>
@@ -161,21 +161,21 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
 
           {noObtainHint && (
             <div>
-              <div className="text-[10px] text-[#8B8982] uppercase tracking-wide mb-1">制作方式</div>
-              <div className="text-xs text-[#5A5A62] leading-relaxed">{noObtainHint}</div>
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">制作方式</div>
+              <div className="text-xs text-archive-lead leading-relaxed">{noObtainHint}</div>
             </div>
           )}
 
           {obtainWayIds.length > 0 && Object.keys(obtainWayMap).length > 0 && (
             <div>
-              <div className="text-[10px] text-[#8B8982] uppercase tracking-wide mb-1">获取方式</div>
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">获取方式</div>
               <ul className="space-y-1">
                 {obtainWayIds.map((wayId) => {
                   const way = obtainWayMap[wayId]
                   if (!way) return null
                   const wayDesc = resolveI18n(way.desc, jumpI18nMap ?? undefined)
                   return (
-                    <li key={wayId} className="flex items-center gap-2 text-xs text-[#E8E6E3]">
+                    <li key={wayId} className="flex items-center gap-2 text-xs text-archive-ivory">
                       {way.iconId && (
                         <img
                           src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemtips/${way.iconId}.png`}
@@ -198,12 +198,12 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
 
           {itemData && Number(itemData.type) === ITEM_TYPE.Weapon && (
             <div>
-              <div className="text-[10px] text-[#8B8982] uppercase tracking-wide mb-1">武器技能</div>
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">武器技能</div>
               <WeaponSkillPanel weaponId={itemId} />
             </div>
           )}
 
-          <div className="text-[10px] text-[#5A5A62] font-mono pt-1 border-t border-[#2A2A32]">
+          <div className="text-[10px] text-archive-lead font-mono pt-1 border-t border-archive-border">
             {itemId}
           </div>
         </div>

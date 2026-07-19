@@ -1,3 +1,6 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { PageSkeleton } from '../../components/ui/PageSkeleton'
 import { useState, useMemo, useEffect } from 'react'
 import { useItems } from '../../hooks/useData'
 import { getCachedData } from '../../lib/cache'
@@ -184,13 +187,16 @@ export default function ItemList() {
     setGroupPageMap({})
   }, [search, typeFilter, rarityFilter, showingTypeFilter, valuableTabFilter, pageSize, sortField, sortDesc, groupField])
 
-  if (loading) return <div className="text-[#8B8982] text-sm">加载中…</div>
+  if (loading) return <PageSkeleton />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!items || items.length === 0) return <div className="text-[#8B8982] text-sm">暂无记录</div>
+  if (!items || items.length === 0) return <div className="text-archive-dust text-sm">暂无记录</div>
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-[#E8E6E3] mb-4">道具材料</h2>
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="font-display text-xl font-bold text-archive-ivory">道具材料</h2>
+        <Badge variant="ghost" className="font-mono">{MODULE_CODES.items}</Badge>
+      </div>
 
       <div className="flex flex-col gap-2 mb-4">
         <div className="flex gap-2">
@@ -199,12 +205,12 @@ export default function ItemList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索道具名称或 ID…"
-            className="flex-1 px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] placeholder:text-[#5A5A62] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="flex-1 px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory placeholder:text-archive-lead focus:outline-none focus:border-archive-gold/40 transition-colors"
           />
           <select
             value={pageSize}
             onChange={(e) => setPageSize(Number(e.target.value))}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             {PAGE_SIZES.map(ps => (
               <option key={ps} value={ps}>{ps === 0 ? '全部' : `${ps} / 页`}</option>
@@ -216,7 +222,7 @@ export default function ItemList() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">全部类型</option>
             {typeOptions.map(t => (
@@ -227,7 +233,7 @@ export default function ItemList() {
           <select
             value={rarityFilter}
             onChange={(e) => setRarityFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">全部稀有度</option>
             {RARITIES.map(r => (
@@ -238,7 +244,7 @@ export default function ItemList() {
           <select
             value={showingTypeFilter}
             onChange={(e) => setShowingTypeFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">全部显示类型</option>
             {showingTypeOptions.map(s => (
@@ -249,7 +255,7 @@ export default function ItemList() {
           <select
             value={valuableTabFilter}
             onChange={(e) => setValuableTabFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">全部贵重标签</option>
             {valuableTabOptions.map(v => (
@@ -262,7 +268,7 @@ export default function ItemList() {
           <select
             value={sortField}
             onChange={(e) => setSortField(e.target.value as SortField)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">默认排序</option>
             <option value="showingType">显示类型</option>
@@ -273,18 +279,18 @@ export default function ItemList() {
           <button
             type="button"
             onClick={() => setSortDesc(v => !v)}
-            className={`px-2 py-1.5 text-sm rounded border transition-colors ${sortField ? 'border-[#C9A96E]/40 text-[#E8E6E3] hover:border-[#C9A96E]' : 'border-[#2A2A32] text-[#5A5A62] cursor-not-allowed'}`}
+            className={`px-2 py-1.5 text-sm rounded border transition-colors ${sortField ? 'border-archive-gold/40 text-archive-ivory hover:border-archive-gold' : 'border-archive-border text-archive-lead cursor-not-allowed'}`}
             disabled={!sortField}
           >
             {sortDesc ? '↓ 倒序' : '↑ 正序'}
           </button>
 
-          <div className="w-px bg-[#2A2A32]" />
+          <div className="w-px bg-archive-border" />
 
           <select
             value={groupField}
             onChange={(e) => setGroupField(e.target.value as GroupField)}
-            className="px-3 py-1.5 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] focus:outline-none focus:border-[#C9A96E]/40 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             <option value="">不分組</option>
             <option value="showingType">按显示类型分组</option>
@@ -304,10 +310,10 @@ export default function ItemList() {
             const groupPaged = pageSize > 0 ? groupItems.slice(gp * pageSize, (gp + 1) * pageSize) : groupItems
             return (
               <section key={key}>
-                <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#2A2A32]">
+                <div className="flex items-center gap-2 mb-2 pb-1 border-b border-archive-border">
                   {icon && <img src={icon} alt="" className="w-5 h-5 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
-                  <h3 className="text-sm font-medium text-[#C9A96E]">{label}</h3>
-                  <span className="text-[10px] text-[#5A5A62]">{groupItems.length} 件</span>
+                  <h3 className="text-sm font-medium text-archive-gold">{label}</h3>
+                  <span className="text-[10px] text-archive-lead">{groupItems.length} 件</span>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                   {groupPaged.map(item => (
@@ -320,16 +326,16 @@ export default function ItemList() {
                       type="button"
                       disabled={gp === 0}
                       onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.max(0, gp - 1) }))}
-                      className="px-2 py-1 text-xs rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors"
+                      className="px-2 py-1 text-xs rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors"
                     >
                       上一页
                     </button>
-                    <span className="text-xs text-[#8B8982]">{gp + 1} / {groupTotalPages}</span>
+                    <span className="text-xs text-archive-dust">{gp + 1} / {groupTotalPages}</span>
                     <button
                       type="button"
                       disabled={gp >= groupTotalPages - 1}
                       onClick={() => setGroupPageMap(m => ({ ...m, [key]: Math.min(groupTotalPages - 1, gp + 1) }))}
-                      className="px-2 py-1 text-xs rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors"
+                      className="px-2 py-1 text-xs rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors"
                     >
                       下一页
                     </button>
@@ -348,7 +354,7 @@ export default function ItemList() {
           </div>
 
           {filtered.length === 0 && (
-            <p className="text-sm text-[#5A5A62] mt-4">未找到匹配道具</p>
+            <p className="text-sm text-archive-lead mt-4">未找到匹配道具</p>
           )}
 
           {pageSize > 0 && totalPages > 1 && (
@@ -357,18 +363,18 @@ export default function ItemList() {
                 type="button"
                 disabled={page === 0}
                 onClick={() => setPage(p => Math.max(0, p - 1))}
-                className="px-3 py-1 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors"
+                className="px-3 py-1 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors"
               >
                 上一页
               </button>
-              <span className="text-sm text-[#8B8982]">
+              <span className="text-sm text-archive-dust">
                 {page + 1} / {totalPages}
               </span>
               <button
                 type="button"
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                className="px-3 py-1 text-sm rounded border border-[#2A2A32] bg-[#1A1B23] text-[#E8E6E3] disabled:text-[#5A5A62] disabled:cursor-not-allowed hover:border-[#C9A96E]/40 transition-colors"
+                className="px-3 py-1 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory disabled:text-archive-lead disabled:cursor-not-allowed hover:border-archive-gold/40 transition-colors"
               >
                 下一页
               </button>

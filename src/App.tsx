@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LocaleProvider } from './lib/locale'
 import ArchiveLayout from './components/Layout/ArchiveLayout'
 import LandingPage from './routes/Landing'
+import ArchiveHome from './routes/ArchiveHome'
 import OperatorList from './pages/operators/OperatorList'
 import OperatorDetail from './pages/operators/OperatorDetail'
 import WeaponList from './pages/weapons/WeaponList'
@@ -30,7 +31,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/archive" element={<ArchiveLayout />}>
-          <Route index element={<Navigate to="operators" replace />} />
+          <Route index element={<ArchiveHome />} />
           <Route path="operators" element={<OperatorList />} />
           <Route path="operators/:id" element={<OperatorDetail />} />
           <Route path="weapons" element={<WeaponList />} />

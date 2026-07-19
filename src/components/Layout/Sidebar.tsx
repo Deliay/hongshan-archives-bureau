@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useLocale } from '../../lib/locale'
 import { useI18nLocales } from '../../hooks/useData'
+import { ArchiveSeal } from '../ui/ArchiveSeal'
 
 type NavItem = {
   label: string
@@ -52,7 +53,7 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="fixed top-3 left-3 z-50 md:hidden p-2 rounded border border-[#2A2A32] bg-[#0F0F12] text-[#E8E6E3]"
+        className="fixed top-3 left-3 z-50 md:hidden p-2 rounded border border-archive-border bg-archive-ink text-archive-ivory"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           {open ? (
@@ -63,10 +64,11 @@ export default function Sidebar() {
         </svg>
       </button>
 
-      <aside className={`fixed top-0 left-0 z-40 h-full w-56 bg-[#0F0F12] border-r border-[#2A2A32] flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-        <div className="p-4 border-b border-[#2A2A32]">
-          <Link to="/archive" className="text-[#C9A96E] font-bold text-lg tracking-wider">
-            宏山档案馆
+      <aside className={`fixed top-0 left-0 z-40 h-full w-60 bg-archive-ink border-r border-archive-border flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+        <div className="p-4 border-b border-archive-border">
+          <Link to="/archive" className="flex items-center gap-3 text-archive-gold">
+            <ArchiveSeal size={36} />
+            <span className="font-display font-bold text-lg tracking-wider">宏山档案局</span>
           </Link>
         </div>
 
@@ -82,8 +84,8 @@ export default function Sidebar() {
                     onClick={() => setOpen(false)}
                     className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors ${
                       groupActive
-                        ? 'text-[#C9A96E] bg-[#C9A96E]/10'
-                        : 'text-[#8B8982] hover:text-[#E8E6E3] hover:bg-[#1A1B23]'
+                        ? 'text-archive-gold bg-archive-gold/10'
+                        : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-file'
                     }`}
                   >
                     {item.label}
@@ -98,8 +100,8 @@ export default function Sidebar() {
                           onClick={() => setOpen(false)}
                           className={`flex items-center gap-2.5 px-3 py-1.5 rounded text-sm transition-colors ${
                             active
-                              ? 'text-[#C9A96E] bg-[#C9A96E]/10'
-                              : 'text-[#8B8982] hover:text-[#E8E6E3] hover:bg-[#1A1B23]'
+                              ? 'text-archive-gold bg-archive-gold/10'
+                              : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-file'
                           }`}
                         >
                           {child.label}
@@ -118,8 +120,8 @@ export default function Sidebar() {
                 onClick={() => setOpen(false)}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors ${
                   active
-                    ? 'text-[#C9A96E] bg-[#C9A96E]/10'
-                    : 'text-[#8B8982] hover:text-[#E8E6E3] hover:bg-[#1A1B23]'
+                    ? 'text-archive-gold bg-archive-gold/10'
+                    : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-file'
                 }`}
               >
                 {item.label}
@@ -128,16 +130,16 @@ export default function Sidebar() {
           })}
         </nav>
 
-        <div className="p-3 border-t border-[#2A2A32] relative">
+        <div className="p-3 border-t border-archive-border relative">
           <button
             type="button"
             onClick={() => setLocaleOpen(v => !v)}
-            className="w-full px-3 py-1.5 rounded text-sm text-[#8B8982] hover:text-[#E8E6E3] border border-[#2A2A32] hover:border-[#5A5A62] transition-colors text-left"
+            className="w-full px-3 py-1.5 rounded text-sm text-archive-dust hover:text-archive-ivory border border-archive-border hover:border-archive-lead transition-colors text-left"
           >
             {LOCALE_LABELS[locale] || locale}
           </button>
           {localeOpen && locales && (
-            <div className="absolute bottom-full left-3 right-3 mb-1 py-1 rounded border border-[#2A2A32] bg-[#1A1B23] shadow-lg">
+            <div className="absolute bottom-full left-3 right-3 mb-1 py-1 rounded border border-archive-border bg-archive-file shadow-lg">
               {locales.map((l) => (
                 <button
                   type="button"
@@ -145,8 +147,8 @@ export default function Sidebar() {
                   onClick={() => { setLocale(l); setLocaleOpen(false) }}
                   className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                     l === locale
-                      ? 'text-[#C9A96E] bg-[#C9A96E]/10'
-                      : 'text-[#8B8982] hover:text-[#E8E6E3] hover:bg-[#2A2A32]'
+                      ? 'text-archive-gold bg-archive-gold/10'
+                      : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-border'
                   }`}
                 >
                   {LOCALE_LABELS[l] || l}

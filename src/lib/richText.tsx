@@ -225,7 +225,7 @@ function wrapTag(tagName: string, attrs: Record<string, string>, children: React
     case 'mark': return <span style={{ backgroundColor: attrs.mark }}>{children}</span>
     case 'b': return <b>{children}</b>
     case 'align': return <span>{children}</span>
-    case 'comment': return <span style={{ color: '#5A5A62', fontSize: '0.75rem' }}>{children}</span>
+    case 'comment': return <span style={{ color: 'var(--color-archive-lead)', fontSize: '0.75rem' }}>{children}</span>
     default: return <span>{children}</span>
   }
 }
@@ -276,7 +276,7 @@ function HyperlinkTag({ tag, children, showTips }: { tag: string; children: Reac
   return (
     <>
       <button type="button" ref={ref}
-        className="inline text-[#C9A96E] underline cursor-pointer hover:text-[#d4b87a] transition-colors bg-transparent border-0 p-0 font-inherit"
+        className="inline text-archive-gold underline cursor-pointer hover:text-[#d4b87a] transition-colors bg-transparent border-0 p-0 font-inherit"
         onClick={handleClick}>{children}</button>
       {realShow && <HyperlinkTooltip tag={tag} anchorRef={ref} onClose={handleClose} />}
     </>
@@ -334,12 +334,12 @@ function HyperlinkTooltip({ tag, anchorRef, onClose }: { tag: string; anchorRef:
 
   if (!data) return null
   return (
-    <div ref={tooltipRef} className="fixed z-50 p-3 rounded border border-[#2A2A32] bg-[#1A1B23] shadow-lg max-w-xs"
+    <div ref={tooltipRef} className="fixed z-50 p-3 rounded border border-archive-border bg-archive-file shadow-lg max-w-xs"
       style={{ top: pos.top, left: pos.left, visibility: pos.top === 0 && pos.left === 0 ? 'hidden' : 'visible' }}>
       {data.iconPath && <img src={getUISprite(data.iconPath)} alt="" className="w-6 h-6 mb-1" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
-      {data.name && <div className="text-xs text-[#C9A96E] font-medium mb-1"><RichText text={data.name} /></div>}
-      {data.desc && <div className="text-xs text-[#E8E6E3] leading-relaxed"><RichText text={data.desc} /></div>}
-      <div className="text-[10px] text-[#5A5A62] mt-1 font-mono truncate">{tag}</div>
+      {data.name && <div className="text-xs text-archive-gold font-medium mb-1"><RichText text={data.name} /></div>}
+      {data.desc && <div className="text-xs text-archive-ivory leading-relaxed"><RichText text={data.desc} /></div>}
+      <div className="text-[10px] text-archive-lead mt-1 font-mono truncate">{tag}</div>
     </div>
   )
 }

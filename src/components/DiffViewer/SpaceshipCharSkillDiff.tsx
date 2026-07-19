@@ -16,14 +16,14 @@ export default function SpaceshipCharSkillDiff({ diff }: TableDiffComponentProps
     ] as const
   ).filter((t) => t.count > 0)
 
-  if (!hasChanges) return <p className="text-sm text-[#5A5A62]">无变更</p>
+  if (!hasChanges) return <p className="text-sm text-archive-lead">无变更</p>
 
   return (
     <div>
-      <div className="flex gap-1 mb-4 border-b border-[#2A2A32]">
+      <div className="flex gap-1 mb-4 border-b border-archive-border">
         {tabs.map((t) => (
           <button type="button" key={t.id} onClick={() => setTab(t.id)}
-            className={`px-3 py-2 text-sm border-b-2 transition-colors ${tab === t.id ? 'border-[#C9A96E] text-[#C9A96E]' : 'border-transparent text-[#8B8982] hover:text-[#E8E6E3]'}`}
+            className={`px-3 py-2 text-sm border-b-2 transition-colors ${tab === t.id ? 'border-archive-gold text-archive-gold' : 'border-transparent text-archive-dust hover:text-archive-ivory'}`}
           >{t.label}（{t.count}）</button>
         ))}
       </div>
@@ -37,16 +37,16 @@ export default function SpaceshipCharSkillDiff({ diff }: TableDiffComponentProps
 
 function MappingList({ entries }: { entries: Record<string, any> }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-[#5A5A62]">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
   return (
     <div className="space-y-1">
       {keys.map((id) => {
         const e = entries[id]
         return (
-          <div key={id} className="flex items-center gap-3 px-3 py-2 rounded border border-[#2A2A32] bg-[#1A1B23] text-xs">
-            <span className="text-[#E8E6E3] font-mono">{id}</span>
-            <span className="text-[#5A5A62]">→</span>
-            <span className="text-[#8B8982] font-mono">{(e.skillIds || e.skills || []).join(', ') || JSON.stringify(e).slice(0, 60)}</span>
+          <div key={id} className="flex items-center gap-3 px-3 py-2 rounded border border-archive-border bg-archive-file text-xs">
+            <span className="text-archive-ivory font-mono">{id}</span>
+            <span className="text-archive-lead">→</span>
+            <span className="text-archive-dust font-mono">{(e.skillIds || e.skills || []).join(', ') || JSON.stringify(e).slice(0, 60)}</span>
           </div>
         )
       })}
@@ -56,24 +56,24 @@ function MappingList({ entries }: { entries: Record<string, any> }) {
 
 function ChangedList({ entries }: { entries: Record<string, any> }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-[#5A5A62]">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
   return (
     <div className="space-y-1">
       {keys.map((id) => {
         const e = entries[id]
         return (
-          <details key={id} className="border border-[#2A2A32] rounded bg-[#1A1B23]">
-            <summary className="px-3 py-2 text-sm text-[#E8E6E3] cursor-pointer hover:text-[#C9A96E] transition-colors font-mono">
+          <details key={id} className="border border-archive-border rounded bg-archive-file">
+            <summary className="px-3 py-2 text-sm text-archive-ivory cursor-pointer hover:text-archive-gold transition-colors font-mono">
               {id}
             </summary>
-            <div className="px-3 pb-3 border-t border-[#2A2A32]">
+            <div className="px-3 pb-3 border-t border-archive-border">
               <div className="mt-2 space-y-1">
                 {Object.entries(e.changed).map(([path, change]: [string, any]) => (
-                  <div key={path} className="text-xs border-b border-[#2A2A32]/50 pb-1">
-                    <div className="text-[#8B8982] font-mono mb-0.5">{path}</div>
+                  <div key={path} className="text-xs border-b border-archive-border/50 pb-1">
+                    <div className="text-archive-dust font-mono mb-0.5">{path}</div>
                     <div className="flex gap-3">
-                      <span className="text-[#ef4444]">旧 {JSON.stringify(change.oldValue ?? change.oldText)}</span>
-                      <span className="text-[#26bbfd]">新 {JSON.stringify(change.newValue ?? change.newText)}</span>
+                      <span className="text-[archive-seal]">旧 {JSON.stringify(change.oldValue ?? change.oldText)}</span>
+                      <span className="text-[archive-bronze]">新 {JSON.stringify(change.newValue ?? change.newText)}</span>
                     </div>
                   </div>
                 ))}

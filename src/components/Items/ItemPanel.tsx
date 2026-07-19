@@ -73,15 +73,15 @@ export default function ItemPanel({
             setShowTooltip((v) => !v)
           }
         }}
-        className={`flex flex-col items-center gap-1 p-2 rounded border border-[#2A2A32] bg-[#1A1B23] hover:border-[#C9A96E]/40 transition-colors text-left ${showTips && !DISABLED_TIP_ITEMS.has(itemId) ? 'cursor-pointer' : 'cursor-default'} ${className ?? ''}`}
+        className={`flex flex-col items-center gap-1 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors text-left ${showTips && !DISABLED_TIP_ITEMS.has(itemId) ? 'cursor-pointer' : 'cursor-default'} ${className ?? ''}`}
       >
         <ItemIcon itemId={itemId} className={iconClassName ?? 'w-12 h-12'} />
         {showAmount && amount !== undefined && (
-          <span className="text-[10px] text-[#8B8982] font-mono">{toCountString(amount)}</span>
+          <span className="text-[10px] text-archive-dust font-mono">{toCountString(amount)}</span>
         )}
         <div className="w-full h-0.5 rounded-full" style={{ backgroundColor: RARITY_COLORS[rarity] || '#a0a0a0' }} />
         {showName && (
-          <span className="text-[10px] text-[#E8E6E3] text-center leading-tight line-clamp-2">{name}</span>
+          <span className="text-[10px] text-archive-ivory text-center leading-tight line-clamp-2">{name}</span>
         )}
       </button>
 

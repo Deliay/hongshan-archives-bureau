@@ -48,14 +48,14 @@ export default function ItemIcon({ itemId, className, imgClassName, liquidClassN
     return () => { cancelled = true }
   }, [itemId])
 
-  if (!iconId) return <div className={`bg-[#2A2A32] animate-pulse ${className ?? 'w-12 h-12'}`} />
+  if (!iconId) return <div className={`bg-archive-border animate-pulse ${className ?? 'w-12 h-12'}`} />
 
   return (
     <div className={`relative ${className ?? 'w-12 h-12'}`}>
       <img
         src={getItemIconUrl(iconId)}
         alt=""
-        className={`w-full h-full object-cover bg-[#2A2A32] ${imgClassName ?? ''}`}
+        className={`w-full h-full object-cover bg-archive-border ${imgClassName ?? ''}`}
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
       />
       {liquidId && (

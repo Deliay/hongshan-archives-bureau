@@ -36,7 +36,7 @@ export default function DiffViewer({ diff, renderKey }: DiffViewerProps) {
 
   return (
     <div>
-      <div className="flex gap-1 mb-4 border-b border-[#2A2A32]">
+      <div className="flex gap-1 mb-4 border-b border-archive-border">
         {tabs.map((t) => (
           <button
             type="button"
@@ -44,8 +44,8 @@ export default function DiffViewer({ diff, renderKey }: DiffViewerProps) {
             onClick={() => setTab(t.id)}
             className={`px-3 py-2 text-sm border-b-2 transition-colors ${
               tab === t.id
-                ? 'border-[#C9A96E] text-[#C9A96E]'
-                : 'border-transparent text-[#8B8982] hover:text-[#E8E6E3]'
+                ? 'border-archive-gold text-archive-gold'
+                : 'border-transparent text-archive-dust hover:text-archive-ivory'
             }`}
           >
             {t.label}（{t.count}）
@@ -66,7 +66,7 @@ function EntryList({ entries, empty, renderKey }: {
   renderKey?: (key: string, entry: any) => string
 }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-[#5A5A62]">{empty}</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{empty}</p>
 
   return (
     <div className="space-y-3">
@@ -74,12 +74,12 @@ function EntryList({ entries, empty, renderKey }: {
         const entry = entries[key]
         const label = renderKey ? renderKey(key, entry) : key
         return (
-          <details key={key} className="group border border-[#2A2A32] rounded bg-[#1A1B23]">
-            <summary className="px-3 py-2 text-sm text-[#E8E6E3] cursor-pointer hover:text-[#C9A96E] transition-colors font-mono truncate">
+          <details key={key} className="group border border-archive-border rounded bg-archive-file">
+            <summary className="px-3 py-2 text-sm text-archive-ivory cursor-pointer hover:text-archive-gold transition-colors font-mono truncate">
               {label}
             </summary>
-            <div className="px-3 pb-3 border-t border-[#2A2A32] overflow-x-auto">
-              <pre className="text-xs text-[#8B8982] mt-2 leading-relaxed whitespace-pre-wrap">
+            <div className="px-3 pb-3 border-t border-archive-border overflow-x-auto">
+              <pre className="text-xs text-archive-dust mt-2 leading-relaxed whitespace-pre-wrap">
                 {formatJSON(entry, '')}
               </pre>
             </div>
@@ -95,7 +95,7 @@ function ChangedEntryList({ entries, renderKey }: {
   renderKey?: (key: string, entry: ChangedEntry) => string
 }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-[#5A5A62]">无变更条目</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">无变更条目</p>
 
   return (
     <div className="space-y-3">
@@ -103,11 +103,11 @@ function ChangedEntryList({ entries, renderKey }: {
         const entry = entries[key]
         const label = renderKey ? renderKey(key, entry) : key
         return (
-          <details key={key} className="group border border-[#2A2A32] rounded bg-[#1A1B23]">
-            <summary className="px-3 py-2 text-sm text-[#E8E6E3] cursor-pointer hover:text-[#C9A96E] transition-colors font-mono truncate">
+          <details key={key} className="group border border-archive-border rounded bg-archive-file">
+            <summary className="px-3 py-2 text-sm text-archive-ivory cursor-pointer hover:text-archive-gold transition-colors font-mono truncate">
               {label}
             </summary>
-            <div className="px-3 pb-3 border-t border-[#2A2A32]">
+            <div className="px-3 pb-3 border-t border-archive-border">
               <div className="mt-2 space-y-1">
                 {Object.entries(entry.changed).map(([path, change]) => (
                   <FieldChangeRow key={path} path={path} change={change} />
@@ -123,28 +123,28 @@ function ChangedEntryList({ entries, renderKey }: {
 
 function FieldChangeRow({ path, change }: { path: string; change: FieldChange }) {
   return (
-    <div className="text-xs border-b border-[#2A2A32]/50 pb-1 last:border-0">
-      <div className="text-[#8B8982] font-mono mb-0.5">{path}</div>
+    <div className="text-xs border-b border-archive-border/50 pb-1 last:border-0">
+      <div className="text-archive-dust font-mono mb-0.5">{path}</div>
       {change.type === 'value' ? (
         <div className="flex items-start gap-4">
           <div className="flex-1 min-w-0">
-            <span className="text-[#ef4444]">旧</span>
-            <span className="ml-1 text-[#E8E6E3] whitespace-pre-wrap break-all">{formatValue(change.oldValue)}</span>
+            <span className="text-[archive-seal]">旧</span>
+            <span className="ml-1 text-archive-ivory whitespace-pre-wrap break-all">{formatValue(change.oldValue)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[#26bbfd]">新</span>
-            <span className="ml-1 text-[#E8E6E3] whitespace-pre-wrap break-all">{formatValue(change.newValue)}</span>
+            <span className="text-[archive-bronze]">新</span>
+            <span className="ml-1 text-archive-ivory whitespace-pre-wrap break-all">{formatValue(change.newValue)}</span>
           </div>
         </div>
       ) : (
-        <div className="text-[#E8E6E3]">
+        <div className="text-archive-ivory">
           {Object.entries(change.changedLocales).map(([locale, { oldText, newText }]) => (
             <div key={locale} className="mb-1 last:mb-0">
-              <span className="text-[#C9A96E] font-mono">{LOCALE_LABELS[locale] || locale}</span>
-              <span className="mx-1 text-[#5A5A62]">旧</span>
-              <span className="text-[#ef4444]">{oldText || '（空）'}</span>
-              <span className="mx-1 text-[#5A5A62]">→</span>
-              <span className="text-[#26bbfd]">{newText || '（空）'}</span>
+              <span className="text-archive-gold font-mono">{LOCALE_LABELS[locale] || locale}</span>
+              <span className="mx-1 text-archive-lead">旧</span>
+              <span className="text-[archive-seal]">{oldText || '（空）'}</span>
+              <span className="mx-1 text-archive-lead">→</span>
+              <span className="text-[archive-bronze]">{newText || '（空）'}</span>
             </div>
           ))}
         </div>

@@ -7,7 +7,7 @@ import type { TableDiffComponentProps } from './registry'
 import { RichTextDiff } from './RichTextDiff'
 import type { FieldChange, ChangedEntry } from '../../lib/types-diff'
 
-const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
+const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
 
 interface LookupMaps {
   professions: Record<number, { name: string; icon: string }>
@@ -92,12 +92,12 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
   ).filter((t) => t.count > 0)
 
   if (!maps) {
-    return <div className="text-sm text-[#5A5A62]">加载对照表…</div>
+    return <div className="text-sm text-archive-lead">加载对照表…</div>
   }
 
   return (
     <div>
-      <div className="flex gap-1 mb-4 border-b border-[#2A2A32]">
+      <div className="flex gap-1 mb-4 border-b border-archive-border">
         {tabs.map((t) => (
           <button
             type="button"
@@ -105,8 +105,8 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
             onClick={() => setTab(t.id)}
             className={`px-3 py-2 text-sm border-b-2 transition-colors ${
               tab === t.id
-                ? 'border-[#C9A96E] text-[#C9A96E]'
-                : 'border-transparent text-[#8B8982] hover:text-[#E8E6E3]'
+                ? 'border-archive-gold text-archive-gold'
+                : 'border-transparent text-archive-dust hover:text-archive-ivory'
             }`}
           >
             {t.label}（{t.count}）
@@ -123,7 +123,7 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
 
 function EntryCards({ entries, maps }: { entries: Record<string, any>; maps: LookupMaps }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-[#5A5A62]">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
   return (
     <div className="space-y-2">
       {keys.map((key) => (
@@ -135,7 +135,7 @@ function EntryCards({ entries, maps }: { entries: Record<string, any>; maps: Loo
 
 function ChangedCards({ entries, maps, locale }: { entries: Record<string, ChangedEntry>; maps: LookupMaps; locale: string }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-[#5A5A62]">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
   return (
     <div className="space-y-3">
       {keys.map((key) => {
@@ -156,32 +156,32 @@ function ChangedCards({ entries, maps, locale }: { entries: Record<string, Chang
         }
 
         return (
-          <details key={key} className="group border border-[#2A2A32] rounded bg-[#1A1B23]">
-            <summary className="px-3 py-2 cursor-pointer hover:text-[#C9A96E] transition-colors">
-              <span className="font-mono text-sm text-[#E8E6E3]">{key}</span>
-              <span className="ml-2 text-sm text-[#8B8982]">「{resolveEntryName(e.newValue, locale, maps.i18n) || key}」</span>
+          <details key={key} className="group border border-archive-border rounded bg-archive-file">
+            <summary className="px-3 py-2 cursor-pointer hover:text-archive-gold transition-colors">
+              <span className="font-mono text-sm text-archive-ivory">{key}</span>
+              <span className="ml-2 text-sm text-archive-dust">「{resolveEntryName(e.newValue, locale, maps.i18n) || key}」</span>
             </summary>
-            <div className="px-3 pb-3 border-t border-[#2A2A32]">
+            <div className="px-3 pb-3 border-t border-archive-border">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                <div className="border border-[#2A2A32] rounded">
-                  <div className="text-xs text-[#ef4444] px-2 py-1 border-b border-[#2A2A32] font-medium">旧版本</div>
+                <div className="border border-archive-border rounded">
+                  <div className="text-xs text-[archive-seal] px-2 py-1 border-b border-archive-border font-medium">旧版本</div>
                   <OpCard charId={key} entry={e.oldValue} maps={maps} compact />
                 </div>
-                <div className="border border-[#2A2A32] rounded">
-                  <div className="text-xs text-[#26bbfd] px-2 py-1 border-b border-[#2A2A32] font-medium">新版本</div>
+                <div className="border border-archive-border rounded">
+                  <div className="text-xs text-[archive-bronze] px-2 py-1 border-b border-archive-border font-medium">新版本</div>
                   <OpCard charId={key} entry={e.newValue} maps={maps} compact />
                 </div>
               </div>
               <div className="mt-3 space-y-1">
-                <div className="text-xs text-[#8B8982] mb-1 font-medium">变更字段</div>
+                <div className="text-xs text-archive-dust mb-1 font-medium">变更字段</div>
                 {Array.from(voiceGroups.values()).map(({ index, changes }) => {
                   const voice = e.newValue?.profileVoice?.[Number(index)]
                   const title = resolveFieldText(voice?.voiceTitle, maps.locale, maps.i18n) || `语音${index}`
                   const desc = resolveFieldText(voice?.voiceDesc, maps.locale, maps.i18n)
                   return (
                     <div key={index} className="mb-2">
-                      <div className="text-xs text-[#C9A96E] font-medium mb-1">#{index} {title}</div>
-                      {desc && <div className="text-[10px] text-[#8B8982] mb-1">{desc}</div>}
+                      <div className="text-xs text-archive-gold font-medium mb-1">#{index} {title}</div>
+                      {desc && <div className="text-[10px] text-archive-dust mb-1">{desc}</div>}
                       {changes.map(([path, change]) => (
                         <FieldDiff key={path} path={path} change={change} maps={maps} entry={e.newValue} />
                       ))}
@@ -216,7 +216,7 @@ function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; 
   return (
     <div className="p-3">
       <div className="flex gap-3">
-        <div className="w-14 h-14 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0">
+        <div className="w-14 h-14 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
           <img src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${charId}.png`}
             alt="" className="w-full h-full object-cover"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
@@ -224,21 +224,21 @@ function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <div className="text-sm font-medium text-[#E8E6E3]">{name}</div>
-              <div className="text-xs text-[#5A5A62] font-mono mt-0.5">{charId}</div>
+              <div className="text-sm font-medium text-archive-ivory">{name}</div>
+              <div className="text-xs text-archive-lead font-mono mt-0.5">{charId}</div>
             </div>
             <StarRating level={rarity} />
           </div>
           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-            {prof && <span className="text-xs px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">{prof.name}</span>}
-            {elem && <span className="text-xs px-1.5 py-0.5 rounded bg-[#2A2A32]" style={{ color: elem.color }}>{elem.name}</span>}
-            {mainAttr && <span className="text-xs text-[#8B8982]">主{mainAttr.name}</span>}
-            {subAttr && <span className="text-xs text-[#8B8982]">副{subAttr.name}</span>}
+            {prof && <span className="text-xs px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">{prof.name}</span>}
+            {elem && <span className="text-xs px-1.5 py-0.5 rounded bg-archive-border" style={{ color: elem.color }}>{elem.name}</span>}
+            {mainAttr && <span className="text-xs text-archive-dust">主{mainAttr.name}</span>}
+            {subAttr && <span className="text-xs text-archive-dust">副{subAttr.name}</span>}
           </div>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {tags.map((t: string) => (
-                <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#5A5A62]">
+                <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-lead">
                   {maps.battleTags[t] || t}
                 </span>
               ))}
@@ -248,21 +248,21 @@ function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; 
       </div>
 
       {!compact && (
-        <div className="mt-3 space-y-2 border-t border-[#2A2A32] pt-2">
+        <div className="mt-3 space-y-2 border-t border-archive-border pt-2">
           <Section title="档案记录" items={entry?.profileRecord} renderItem={(r: any) => (
             <div>
-              <div className="text-[#8B8982] text-[10px]">{resolveFieldText(r.recordTitle, maps.locale, maps.i18n)}</div>
-              <div className="text-[#E8E6E3] text-xs mt-0.5 whitespace-pre-wrap line-clamp-3">
+              <div className="text-archive-dust text-[10px]">{resolveFieldText(r.recordTitle, maps.locale, maps.i18n)}</div>
+              <div className="text-archive-ivory text-xs mt-0.5 whitespace-pre-wrap line-clamp-3">
                 {resolveFieldText(r.recordDesc, maps.locale, maps.i18n)}
               </div>
             </div>
           )} itemKey={(r: any) => r.id || r.recordID} />
           <Section title="语音" items={entry?.profileVoice} renderItem={(v: any) => (
             <div className="flex items-start gap-2">
-              <span className="text-[10px] text-[#5A5A62] font-mono shrink-0 mt-0.5">#{v.voiceIndex}</span>
+              <span className="text-[10px] text-archive-lead font-mono shrink-0 mt-0.5">#{v.voiceIndex}</span>
               <div>
-                <div className="text-[#8B8982] text-[10px]">{resolveFieldText(v.voiceTitle, maps.locale, maps.i18n)}</div>
-                <div className="text-[#E8E6E3] text-xs">{resolveFieldText(v.voiceDesc, maps.locale, maps.i18n)}</div>
+                <div className="text-archive-dust text-[10px]">{resolveFieldText(v.voiceTitle, maps.locale, maps.i18n)}</div>
+                <div className="text-archive-ivory text-xs">{resolveFieldText(v.voiceDesc, maps.locale, maps.i18n)}</div>
               </div>
             </div>
           )} itemKey={(v: any) => v.id || v.voiceIndex} />
@@ -281,12 +281,12 @@ function Section({ title, items, renderItem, itemKey }: { title: string; items: 
   if (!items || items.length === 0) return null
   return (
     <details className="group">
-      <summary className="text-xs text-[#8B8982] cursor-pointer hover:text-[#C9A96E] transition-colors">
+      <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">
         {title}（{items.length}）
       </summary>
       <div className="mt-1 space-y-1 max-h-48 overflow-y-auto">
         {items.map((item, i) => (
-          <div key={itemKey ? itemKey(item) : i} className="px-2 py-1 rounded bg-[#0F0F12]">
+          <div key={itemKey ? itemKey(item) : i} className="px-2 py-1 rounded bg-archive-ink">
             {renderItem(item)}
           </div>
         ))}
@@ -325,24 +325,24 @@ function FieldDiff({ path, change, maps, entry }: { path: string; change: FieldC
     return formatFieldValue(v, maps)
   }
   return (
-    <div className="text-xs border-b border-[#2A2A32]/50 pb-1.5 last:border-0">
-      <div className="text-[#8B8982] font-mono mb-0.5">{path}</div>
+    <div className="text-xs border-b border-archive-border/50 pb-1.5 last:border-0">
+      <div className="text-archive-dust font-mono mb-0.5">{path}</div>
       {change.type === 'value' ? (
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <span className="text-[#ef4444]">旧 </span>
-            <span className="text-[#E8E6E3]">{format(change.oldValue)}</span>
+            <span className="text-[archive-seal]">旧 </span>
+            <span className="text-archive-ivory">{format(change.oldValue)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[#26bbfd]">新 </span>
-            <span className="text-[#E8E6E3]">{format(change.newValue)}</span>
+            <span className="text-[archive-bronze]">新 </span>
+            <span className="text-archive-ivory">{format(change.newValue)}</span>
           </div>
         </div>
       ) : (
         <div className="space-y-1">
           {Object.entries(change.changedLocales).map(([loc, { oldText, newText }]) => (
             <div key={loc}>
-              <span className="text-[#C9A96E] font-mono text-[10px]">{LOCALE_LABELS[loc] || loc}</span>
+              <span className="text-archive-gold font-mono text-[10px]">{LOCALE_LABELS[loc] || loc}</span>
               <RichTextDiff oldText={oldText || ''} newText={newText || ''} />
             </div>
           ))}

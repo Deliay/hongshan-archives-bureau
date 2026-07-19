@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useOperator, useWeapon, useRaces, useFactions, useEnemies } from '../../hooks/useData'
+import { Badge } from '../ui/Badge'
 
 const LIST_LABEL: Record<string, string> = {
   operators: '干员档案',
@@ -17,29 +18,29 @@ const LIST_LABEL: Record<string, string> = {
 function RaceName({ id }: { id: string }) {
   const { data: races } = useRaces()
   const race = races?.find(r => r.id === id)
-  return <span className="text-[#E8E6E3]">{race?.name || id}</span>
+  return <span className="text-archive-ivory">{race?.name || id}</span>
 }
 
 function FactionName({ id }: { id: string }) {
   const { data: factions } = useFactions()
   const faction = factions?.find(f => f.id === id)
-  return <span className="text-[#E8E6E3]">{faction?.name || id}</span>
+  return <span className="text-archive-ivory">{faction?.name || id}</span>
 }
 
 function EnemyName({ id }: { id: string }) {
   const { data: enemies } = useEnemies()
   const enemy = enemies?.find(e => e.id === id)
-  return <span className="text-[#E8E6E3]">{enemy?.name || id}</span>
+  return <span className="text-archive-ivory">{enemy?.name || id}</span>
 }
 
 function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
   const { data: op } = useOperator(id)
   const { data: wpn } = useWeapon(id)
   if (listKey === 'operators') {
-    return <span className="text-[#E8E6E3]">{op?.name || id}</span>
+    return <span className="text-archive-ivory">{op?.name || id}</span>
   }
   if (listKey === 'weapons') {
-    return <span className="text-[#E8E6E3]">{wpn?.name || id}</span>
+    return <span className="text-archive-ivory">{wpn?.name || id}</span>
   }
   if (listKey === 'races') {
     return <RaceName id={id} />
@@ -50,7 +51,7 @@ function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
   if (listKey === 'enemies') {
     return <EnemyName id={id} />
   }
-  return <span className="text-[#E8E6E3]">{id}</span>
+  return <span className="text-archive-ivory">{id}</span>
 }
 
 export default function Breadcrumb() {
@@ -63,21 +64,21 @@ export default function Breadcrumb() {
   const detailId = segments[2]
 
   return (
-    <nav className="text-sm text-[#8B8982] mb-4">
-      <Link to="/archive" className="hover:text-[#C9A96E] transition-colors">档案馆</Link>
+    <nav className="text-sm text-archive-dust mb-4 flex items-center flex-wrap gap-1">
+      <Link to="/archive" className="hover:text-archive-gold transition-colors">档案局</Link>
       {segments.length >= 2 && (
         <>
-          <span className="mx-2">/</span>
+          <span className="mx-1 text-archive-lead">›</span>
           {segments.length === 2 ? (
-            <span className="text-[#E8E6E3]">{LIST_LABEL[listKey] ?? listKey}</span>
+            <Badge variant="ghost">{LIST_LABEL[listKey] ?? listKey}</Badge>
           ) : (
-            <Link to={`/archive/${listKey}`} className="hover:text-[#C9A96E] transition-colors">{LIST_LABEL[listKey] ?? listKey}</Link>
+            <Link to={`/archive/${listKey}`} className="hover:text-archive-gold transition-colors">{LIST_LABEL[listKey] ?? listKey}</Link>
           )}
         </>
       )}
       {segments.length >= 3 && (
         <>
-          <span className="mx-2">/</span>
+          <span className="mx-1 text-archive-lead">›</span>
           <DetailLabel listKey={listKey} id={detailId} />
         </>
       )}

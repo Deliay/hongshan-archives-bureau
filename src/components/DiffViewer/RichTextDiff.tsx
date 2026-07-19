@@ -44,12 +44,12 @@ export function RichTextDiff({ oldText, newText, formatter }: Props) {
     <span className="inline text-[10px] leading-relaxed">
       {prefix && <RichText text={apply(prefix)} />}
       {oldMid && (
-        <span className="line-through decoration-1" style={{ backgroundColor: '#451a1a' }}>
+        <span className="line-through decoration-1" style={{ backgroundColor: '#3A1A1A' }}>
           <RichText text={apply(oldMid)} />
         </span>
       )}
       {newMid && (
-        <span style={{ backgroundColor: '#14321e' }}>
+        <span style={{ backgroundColor: '#1A2A22' }}>
           <RichText text={apply(newMid)} />
         </span>
       )}

@@ -1,3 +1,6 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { Skeleton } from '../../components/ui/Skeleton'
 import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useOperatorDetail } from '../../hooks/useData'
@@ -40,9 +43,9 @@ export default function OperatorDetail() {
     [talentNodeMap],
   )
 
-  if (loading) return <div className="text-[#8B8982] text-sm">加载中…</div>
+  if (loading) return <Skeleton className="h-32 w-full" />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!detail) return <div className="text-[#8B8982] text-sm">干员档案未找到</div>
+  if (!detail) return <div className="text-archive-dust text-sm">干员档案未找到</div>
 
   const { op, wpnRecommend } = detail
 
@@ -50,16 +53,19 @@ export default function OperatorDetail() {
     <div className="max-w-3xl space-y-6">
       {/* 基础信息 */}
       <div className="flex items-start gap-4">
-        <div className="w-20 h-20 rounded border border-[#2A2A32] bg-[#1A1B23] overflow-hidden shrink-0">
+        <div className="w-20 h-20 rounded border border-archive-border bg-archive-file overflow-hidden shrink-0">
           {op.portrait ? (
             <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-2xl text-[#5A5A62]">?</span>
+            <span className="text-2xl text-archive-lead">?</span>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-bold text-[#E8E6E3]">{op.name}</h2>
-          <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-[#8B8982]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="font-display text-xl font-bold text-archive-ivory">{op.name}</h2>
+            <Badge variant="ghost" className="font-mono">{MODULE_CODES.operators}</Badge>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-archive-dust">
             <img src={op.professionIcon} alt="" className="w-4 h-4" />
             <span>{op.profession}</span>
             <span>·</span>
@@ -70,21 +76,21 @@ export default function OperatorDetail() {
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
             {op.tags.map((tag, i) => (
-              <span key={i} className="text-xs px-2 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">{tag}</span>
+              <span key={i} className="text-xs px-2 py-0.5 rounded bg-archive-border text-archive-dust">{tag}</span>
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
             {op.mainAttr.icon && (
-              <div className="flex items-center gap-1.5 text-[#B0ACA6]">
+              <div className="flex items-center gap-1.5 text-archive-dust">
                 <img src={op.mainAttr.icon} alt="" className="w-4 h-4" />
-                <span className="text-[#C9A96E]">主能力</span>
+                <span className="text-archive-gold">主能力</span>
                 <span>{op.mainAttr.name}</span>
               </div>
             )}
             {op.subAttr.icon && (
-              <div className="flex items-center gap-1.5 text-[#B0ACA6]">
+              <div className="flex items-center gap-1.5 text-archive-dust">
                 <img src={op.subAttr.icon} alt="" className="w-4 h-4" />
-                <span className="text-[#C9A96E]">副能力</span>
+                <span className="text-archive-gold">副能力</span>
                 <span>{op.subAttr.name}</span>
               </div>
             )}
@@ -94,9 +100,9 @@ export default function OperatorDetail() {
 
       {/* 技能 */}
       <section>
-        <h3 className="text-sm font-medium text-[#C9A96E] mb-3">技能</h3>
+        <h3 className="text-sm font-medium text-archive-gold mb-3">技能</h3>
         {detail.skillGroups.length === 0 ? (
-          <p className="text-sm text-[#5A5A62]">暂无技能数据</p>
+          <p className="text-sm text-archive-lead">暂无技能数据</p>
         ) : (
           <div className="space-y-3">
             {[...detail.skillGroups].sort((a, b) => {
@@ -116,10 +122,10 @@ export default function OperatorDetail() {
       {/* 干员天赋 */}
       {talentNodes.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">干员天赋</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">干员天赋</h3>
           <div className="space-y-3">
             {talentNodes.map((node) => (
-              <div key={node.nodeId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+              <div key={node.nodeId} className="p-3 rounded border border-archive-border bg-archive-file">
                 <div className="flex items-center gap-2 mb-1">
                   {(() => {
                     let iconUrl = ''
@@ -136,10 +142,10 @@ export default function OperatorDetail() {
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                     )
                   })()}
-                  <span className="text-sm font-medium text-[#E8E6E3]">{node.name}</span>
-                  <span className="text-xs text-[#C9A96E]">Lv.{node.level}</span>
+                  <span className="text-sm font-medium text-archive-ivory">{node.name}</span>
+                  <span className="text-xs text-archive-gold">Lv.{node.level}</span>
                 </div>
-                <p className="text-xs text-[#8B8982] mb-2"><RichText text={node.description} /></p>
+                <p className="text-xs text-archive-dust mb-2"><RichText text={node.description} /></p>
                 {node.requiredItem.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {node.requiredItem.map((item) => (
@@ -156,12 +162,12 @@ export default function OperatorDetail() {
       {/* 后勤技能 */}
       {detail.factorySkills.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">后勤技能</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">后勤技能</h3>
           <div className="space-y-3">
             {detail.factorySkills.map((fs) => (
-              <div key={fs.skillId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+              <div key={fs.skillId} className="p-3 rounded border border-archive-border bg-archive-file">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0 flex items-center justify-center">
                     {fs.icon ? (
                       <img
                         src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/${fs.icon}.png`}
@@ -170,17 +176,17 @@ export default function OperatorDetail() {
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                       />
                     ) : (
-                      <span className="text-xs text-[#5A5A62]">?</span>
+                      <span className="text-xs text-archive-lead">?</span>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-[#E8E6E3]">{fs.name || fs.skillId}</div>
-                    <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-[#5A5A62]">
+                    <div className="text-sm font-medium text-archive-ivory">{fs.name || fs.skillId}</div>
+                    <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-archive-lead">
                       {fs.roomType > 0 && <span>房间 {fs.roomType}</span>}
                       <span>Lv.{fs.level}</span>
                     </div>
                     {fs.desc && (
-                      <div className="text-xs text-[#B0ACA6] leading-relaxed mt-1"><RichText text={fs.desc} /></div>
+                      <div className="text-xs text-archive-dust leading-relaxed mt-1"><RichText text={fs.desc} /></div>
                     )}
                   </div>
                 </div>
@@ -193,14 +199,14 @@ export default function OperatorDetail() {
       {/* 精英化 */}
       {breakNodes.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">精英化</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">精英化</h3>
           <div className="space-y-3">
             {breakNodes.map((node) => (
-              <div key={node.nodeId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+              <div key={node.nodeId} className="p-3 rounded border border-archive-border bg-archive-file">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-[#E8E6E3]">{node.name}</span>
+                  <span className="text-sm font-medium text-archive-ivory">{node.name}</span>
                 </div>
-                <p className="text-xs text-[#8B8982] mb-2"><RichText text={node.description} /></p>
+                <p className="text-xs text-archive-dust mb-2"><RichText text={node.description} /></p>
                 {node.requiredItem.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {node.requiredItem.map((item) => (
@@ -217,12 +223,12 @@ export default function OperatorDetail() {
       {/* 能力值提升 */}
       {attrNodes.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">能力值提升</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">能力值提升</h3>
           <div className="space-y-3">
             {attrNodes.map((node) => (
-              <div key={node.nodeId} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+              <div key={node.nodeId} className="p-3 rounded border border-archive-border bg-archive-file">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-[#E8E6E3]">{node.name || `突破节点`}</span>
+                  <span className="text-sm font-medium text-archive-ivory">{node.name || `突破节点`}</span>
                 </div>
                 {node.requiredItem.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
@@ -240,11 +246,11 @@ export default function OperatorDetail() {
       {/* 装备适配 */}
       {wpnRecommend && (
         <section>
-          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">装备适配</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">装备适配</h3>
           <div className="space-y-4">
             {wpnRecommend.weaponIds1.length > 0 && (
               <div>
-                <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">推荐武器·第一组</h4>
+                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">推荐武器·第一组</h4>
                 <div className="flex flex-wrap gap-2">
                   {wpnRecommend.weaponIds1.map((wid) => (
                     <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
@@ -254,7 +260,7 @@ export default function OperatorDetail() {
             )}
             {wpnRecommend.weaponIds2.length > 0 && (
               <div>
-                <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">推荐武器·第二组</h4>
+                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">推荐武器·第二组</h4>
                 <div className="flex flex-wrap gap-2">
                   {wpnRecommend.weaponIds2.map((wid) => (
                     <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
@@ -264,7 +270,7 @@ export default function OperatorDetail() {
             )}
             {wpnRecommend.weaponIds3.length > 0 && (
               <div>
-                <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">推荐武器·第三组</h4>
+                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">推荐武器·第三组</h4>
                 <div className="flex flex-wrap gap-2">
                   {wpnRecommend.weaponIds3.map((wid) => (
                     <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
@@ -274,12 +280,12 @@ export default function OperatorDetail() {
             )}
             {equipBreakNodes.length > 0 && (
               <div className="mt-4">
-                <h4 className="text-xs text-[#C9A96E] mb-2 tracking-wider">装备突破</h4>
+                <h4 className="text-xs text-archive-gold mb-2 tracking-wider">装备突破</h4>
                 <div className="space-y-2">
                   {equipBreakNodes.map((node) => (
-                    <div key={node.nodeId} className="p-2 rounded border border-[#2A2A32] bg-[#1A1B23]">
-                      <span className="text-xs text-[#E8E6E3]">{node.name}</span>
-                      <p className="text-xs text-[#8B8982]"><RichText text={node.description} /></p>
+                    <div key={node.nodeId} className="p-2 rounded border border-archive-border bg-archive-file">
+                      <span className="text-xs text-archive-ivory">{node.name}</span>
+                      <p className="text-xs text-archive-dust"><RichText text={node.description} /></p>
                     </div>
                   ))}
                 </div>
@@ -292,10 +298,10 @@ export default function OperatorDetail() {
       {/* 档案记录 */}
       {op.profileRecords.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">档案记录</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">档案记录</h3>
           <div className="space-y-3">
             {op.profileRecords.map((record, i) => (
-              <p key={i} className="text-sm text-[#B0ACA6] leading-relaxed"><RichText text={record} /></p>
+              <p key={i} className="text-sm text-archive-dust leading-relaxed"><RichText text={record} /></p>
             ))}
           </div>
         </section>
@@ -304,12 +310,12 @@ export default function OperatorDetail() {
       {/* 语音记录 */}
       {op.voiceLines.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-[#C9A96E] mb-3">语音记录</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">语音记录</h3>
           <div className="space-y-2">
             {op.voiceLines.slice(0, 10).map((vl, i) => (
-              <div key={i} className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
-                <p className="text-xs text-[#5A5A62] mb-1">{vl.title || `语音 ${i + 1}`}</p>
-                <p className="text-sm text-[#B0ACA6]"><RichText text={vl.text} /></p>
+              <div key={i} className="p-3 rounded border border-archive-border bg-archive-file">
+                <p className="text-xs text-archive-lead mb-1">{vl.title || `语音 ${i + 1}`}</p>
+                <p className="text-sm text-archive-dust"><RichText text={vl.text} /></p>
               </div>
             ))}
           </div>
@@ -371,9 +377,9 @@ function SkillFormColumn({
   condDescInactive?: string
 }) {
   return (
-    <div className="flex-1 min-w-0 p-2.5 rounded border border-[#2A2A32] bg-[#0F0F12]">
+    <div className="flex-1 min-w-0 p-2.5 rounded border border-archive-border bg-archive-ink">
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded border border-[#2A2A32] bg-[#1A1B23] overflow-hidden shrink-0 flex items-center justify-center">
+        <div className="w-8 h-8 rounded border border-archive-border bg-archive-file overflow-hidden shrink-0 flex items-center justify-center">
           {icon ? (
             <img
               src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${icon}.png`}
@@ -382,16 +388,16 @@ function SkillFormColumn({
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             />
           ) : (
-            <span className="text-xs text-[#5A5A62]">?</span>
+            <span className="text-xs text-archive-lead">?</span>
           )}
         </div>
         <div className="min-w-0">
-          <div className="text-xs font-medium text-[#E8E6E3] truncate leading-tight">{name}</div>
+          <div className="text-xs font-medium text-archive-ivory truncate leading-tight">{name}</div>
           {condDesc && (
-            <div className="text-[10px] text-[#8B8982] leading-tight mt-0.5">
+            <div className="text-[10px] text-archive-dust leading-tight mt-0.5">
               <RichText text={condDesc} />
               {condDescInactive && (
-                <div className="text-[#5A5A62] mt-0.5">
+                <div className="text-archive-lead mt-0.5">
                   <RichText text={condDescInactive} />
                 </div>
               )}
@@ -403,7 +409,7 @@ function SkillFormColumn({
       {patches.length > 0 && (() => {
         const p = patches[0]
         return (
-          <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#5A5A62] mb-2">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] text-archive-lead mb-2">
             {p.costType !== undefined && p.costValue > 0 && (
               <span>SP {p.costValue}</span>
             )}
@@ -415,7 +421,7 @@ function SkillFormColumn({
       })()}
 
       {postDescText && (
-        <div className="text-xs text-[#B0ACA6] leading-relaxed mt-1.5 border-t border-[#2A2A32] pt-1.5">
+        <div className="text-xs text-archive-dust leading-relaxed mt-1.5 border-t border-archive-border pt-1.5">
           <RichText text={postDescText} />
         </div>
       )}
@@ -427,7 +433,7 @@ function SkillFormColumn({
         return (
           <div className="flex flex-wrap gap-1 mt-2">
             {allSubDescs.map((s, i) => (
-              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
+              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
                 {s.name?.text || s.name?.id || ''}: {s.desc}
               </span>
             ))}
@@ -520,16 +526,16 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
   }, [cond2?.descInactive, condBB2, singleBlackboards, isDual])
 
   return (
-    <div className="p-3 rounded border border-[#2A2A32] bg-[#1A1B23]">
+    <div className="p-3 rounded border border-archive-border bg-archive-file">
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#C9A96E]/20 text-[#C9A96E] font-mono">{typeName}</span>
-        <span className="text-sm font-medium text-[#E8E6E3] truncate">{groupName || group.skillGroupId}</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-archive-gold/20 text-archive-gold font-mono">{typeName}</span>
+        <span className="text-sm font-medium text-archive-ivory truncate">{groupName || group.skillGroupId}</span>
       </div>
 
       {isDual ? (
         <>
           {mainDescText && (
-            <div className="text-xs text-[#B0ACA6] leading-relaxed mb-3">
+            <div className="text-xs text-archive-dust leading-relaxed mb-3">
               <RichText text={mainDescText} />
             </div>
           )}
@@ -556,7 +562,7 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
         </>
       ) : (
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded border border-[#2A2A32] bg-[#0F0F12] overflow-hidden shrink-0 flex items-center justify-center">
+          <div className="w-10 h-10 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0 flex items-center justify-center">
             {group.icon ? (
               <img
                 src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/skillicon/${group.icon}.png`}
@@ -565,14 +571,14 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
             ) : (
-              <span className="text-xs text-[#5A5A62]">?</span>
+              <span className="text-xs text-archive-lead">?</span>
             )}
           </div>
           <div className="min-w-0 flex-1">
             {singlePatches.length > 0 && (() => {
               const p = singlePatches[0]
               return (
-                <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#5A5A62] mt-1">
+                <div className="flex flex-wrap items-center gap-2 text-[10px] text-archive-lead mt-1">
                   {p.costType !== undefined && p.costValue > 0 && (
                     <span>SP {p.costValue}</span>
                   )}
@@ -580,13 +586,13 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
                     <span>CD {p.coolDown}s</span>
                   )}
                   <span>Lv.{level}</span>
-                  {level === 12 && <span className="text-[10px] text-[#C9A96E]">M3</span>}
+                  {level === 12 && <span className="text-[10px] text-archive-gold">M3</span>}
                 </div>
               )
             })()}
 
             {mainDescText && (
-              <div className="text-xs text-[#B0ACA6] leading-relaxed mt-2">
+              <div className="text-xs text-archive-dust leading-relaxed mt-2">
                 <RichText text={mainDescText} />
               </div>
             )}
@@ -597,7 +603,7 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
               return (
                 <div className="flex flex-wrap gap-1 mt-2">
                   {allSubDescs.map((s, i) => (
-                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A32] text-[#8B8982]">
+                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
                       {s.name?.text || s.name?.id || ''}: {s.desc}
                     </span>
                   ))}
@@ -609,16 +615,16 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
       )}
 
       <div className="flex items-center gap-1 mt-3">
-        <span className="text-[10px] text-[#5A5A62]">等级</span>
+        <span className="text-[10px] text-archive-lead">等级</span>
         <input
           type="range"
           min={1}
           max={12}
           value={level}
           onChange={(e) => setLevel(Number(e.target.value))}
-          className="flex-1 h-1 accent-[#C9A96E]"
+          className="flex-1 h-1 accent-archive-gold"
         />
-        <span className="text-[10px] text-[#C9A96E] font-mono w-6 text-right">
+        <span className="text-[10px] text-archive-gold font-mono w-6 text-right">
           {level}
         </span>
       </div>
