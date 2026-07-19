@@ -66,7 +66,7 @@ export default function ArchiveHome() {
               </h3>
               <p className="text-sm text-archive-lead mt-1">{group.desc}</p>
             </div>
-            <div className="mt-auto pt-3 border-t border-archive-border space-y-2">
+            <div className="mt-4 pt-3 border-t border-archive-border space-y-2">
               {group.modules.map((m) => (
                 <Link
                   key={m.path}
