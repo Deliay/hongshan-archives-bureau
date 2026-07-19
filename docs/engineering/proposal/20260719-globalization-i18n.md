@@ -226,7 +226,26 @@ sequenceDiagram
 
 ### 4.6 翻译来源与构建方式
 
-#### 4.6.1 官方 i18n 检索
+#### 4.6.1 语言列表来源
+
+前端翻译字典**必须基于 API 返回的可用语言列表生成**，不可在代码中写死支持语言。具体流程：
+
+1. 构建或更新字典时，先调用 `GET /i18n` 获取服务器支持的 locale 列表（如 `["CN","TC","EN","JP","KR","RU",...]`）。
+2. 以该列表作为「需要生成字典的目标语言集合」。
+3. 对集合中的每个 locale，调用 `/i18n/{locale}/{id}` 检索官方翻译，并结合站点自定义译文生成 `src/i18n/dicts/{locale}.json`。
+4. 运行时使用同一 `fetchI18nLocales()` 获取可用语言，确保 Sidebar 语言切换菜单与字典文件完全对应。
+
+```mermaid
+flowchart TD
+    A[调用 GET /i18n] --> B[获取可用 locale 列表]
+    B --> C[遍历每个 locale]
+    C --> D[调用 /i18n/{locale}/{id} 检索官方术语]
+    D --> E[合并站点自定义译文]
+    E --> F[生成 src/i18n/dicts/{locale}.json]
+    F --> G[构建时静态导入所有字典]
+```
+
+#### 4.6.2 官方 i18n 检索
 
 通过远端 `/i18n/{locale}/{id}` 获取游戏官方翻译，将高频术语整理进前端字典。已检索到的部分关键 ID 如下：
 
@@ -251,31 +270,42 @@ sequenceDiagram
 | `operator.skill` | `LUA_CHAR_INFO_BASIC_SKILL_TITLE` (-1627707113686409986) | 技能 | Skill |
 | `weapon.rarity` | `LUA_EQUIP_FILTER_GROUP_TITLE_RARITY` (-863081527829739477) | 品质 | Quality |
 
-#### 4.6.2 站点自定义翻译
+#### 4.6.3 站点自定义翻译
 
 对于档案局自创概念（如「人事档案」「物资档案」「大事记」「档案局总览」），无法从游戏官方 i18n 中直接匹配，需在产品设计阶段给出各语言译文并写入字典。建议遵循以下原则：
 
 - 优先使用官方已覆盖的基础词（如 Operators、Weapons、Materials、Enemies）。
 - 组合词参考官方风格，如「人事档案」→ EN: Personnel Files，JP: 人事記録。
 - 保留中文作为最终回退。
+- 站点自定义译文应维护在一个与 API 语言列表对应的源文件中（如 `src/i18n/source/custom.json` 或脚本配置），生成字典时按 locale 自动分发到各 `dicts/{locale}.json`。
 
 ### 4.7 字典加载策略
 
-为保持构建产物可控，不采用运行时动态 `import()`。所有语言字典在构建时静态导入并合并为一个对象：
+为保持构建产物可控，不采用运行时动态 `import()`。所有语言字典在构建时静态导入并合并为一个对象。
+
+字典文件由构建脚本根据 API `/i18n` 返回的语言列表自动生成，因此 `src/i18n/index.ts` 中的 `import` 与 `messages` 映射也应由生成脚本同步更新：
 
 ```ts
+// 本文件由 scripts/generate-i18n-dicts.ts 根据 API /i18n 自动生成
+// 请勿手动修改 import 列表
 import CN from './dicts/CN.json'
+import TC from './dicts/TC.json'
 import EN from './dicts/EN.json'
-// ...
+import JP from './dicts/JP.json'
+import KR from './dicts/KR.json'
+import RU from './dicts/RU.json'
 
 const messages: Record<string, Record<string, string>> = {
   CN: flatten(CN),
+  TC: flatten(TC),
   EN: flatten(EN),
-  // ...
+  JP: flatten(JP),
+  KR: flatten(KR),
+  RU: flatten(RU),
 }
 ```
 
-`flatten` 将嵌套 JSON 展开为点分 key，便于 `t('operator.title')` 直接取值。
+`flatten` 将嵌套 JSON 展开为点分 key，便于 `t('operator.title')` 直接取值。若 API 新增 locale（如 `DE`、`FR`），只需重新运行生成脚本即可自动新增对应的字典文件与 import，无需手动改动源码。
 
 ### 4.8 硬编码替换策略
 
@@ -290,19 +320,27 @@ const messages: Record<string, Record<string, string>> = {
 
 ## 数据与接口
 
-- 可用语言列表：继续使用 `fetchI18nLocales()` → `GET /i18n`。
-- 官方 i18n 检索：仅在构建字典时使用 `GET /i18n/{locale}/{id}`，不进入运行时。
-- 运行时无新增 API 调用。
+- **可用语言列表**：继续使用 `fetchI18nLocales()` → `GET /i18n`。该接口同时决定：
+  1. 运行时 Sidebar 语言切换菜单显示哪些选项；
+  2. 构建时/更新字典时需要为哪些 locale 生成 `src/i18n/dicts/{locale}.json`。
+- **官方 i18n 检索**：在生成字典时使用 `GET /i18n/{locale}/{id}`，不进入运行时。
+- **运行时无新增 API 调用**。
 
 ## 实现计划
 
 ### 第一阶段：基础设施
 
 1. 创建 `src/i18n/` 目录。
-2. 实现 `flatten` 工具与类型定义。
-3. 创建 `CN.json` 作为基准字典，覆盖所有已识别的硬编码文案。
-4. 实现 `I18nProvider` 与 `useI18n`。
-5. 在 `App.tsx` 中集成 `I18nProvider`。
+2. 新增脚本 `scripts/generate-i18n-dicts.ts`（或 `.js`），其流程为：
+   - 调用 `GET /i18n` 获取可用 locale 列表；
+   - 读取源文件（官方 i18n ID 映射 + 站点自定义译文）；
+   - 对每个 locale 调用 `/i18n/{locale}/{id}` 获取官方翻译；
+   - 生成 `src/i18n/dicts/{locale}.json`；
+   - 同步生成/更新 `src/i18n/index.ts` 中的 import 与 `messages` 映射。
+3. 实现 `flatten` 工具与类型定义。
+4. 运行生成脚本，创建所有 API 可用语言的字典文件。
+5. 实现 `I18nProvider` 与 `useI18n`。
+6. 在 `App.tsx` 中集成 `I18nProvider`。
 
 ### 第二阶段：核心页面替换
 

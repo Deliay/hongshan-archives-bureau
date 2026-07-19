@@ -29,13 +29,10 @@ type: Fleeting
 
 | 文件路径 | 说明 |
 |----------|------|
-| `src/i18n/index.ts` | I18nProvider、useI18n、t 函数、flatten |
-| `src/i18n/dicts/CN.json` | 简中翻译字典 |
-| `src/i18n/dicts/TC.json` | 繁中翻译字典 |
-| `src/i18n/dicts/EN.json` | 英语翻译字典 |
-| `src/i18n/dicts/JP.json` | 日语翻译字典 |
-| `src/i18n/dicts/KR.json` | 韩语翻译字典 |
-| `src/i18n/dicts/RU.json` | 俄语翻译字典 |
+| `src/i18n/index.ts` | I18nProvider、useI18n、t 函数、flatten；由生成脚本根据 API 语言列表自动维护 import |
+| `src/i18n/dicts/{locale}.json` | 各语言翻译字典，由 `scripts/generate-i18n-dicts.ts` 根据 `GET /i18n` 返回的可用 locale 列表自动生成 |
+| `scripts/generate-i18n-dicts.ts` | 字典生成脚本：调用 `/i18n` 与 `/i18n/{locale}/{id}`，输出 `src/i18n/dicts/` 与 `src/i18n/index.ts` |
+| `src/i18n/source/custom.json`（可选） | 站点自定义译文源文件，按 locale 组织，供生成脚本合并 |
 
 ### 2.2 修改文件
 
@@ -72,7 +69,10 @@ type: Fleeting
 
 ### 3.1 `src/i18n/index.ts`
 
+> **重要**：本文件中的 `import` 列表与 `messages` 映射由 `scripts/generate-i18n-dicts.ts` 根据 `GET /i18n` 返回的可用 locale 列表自动生成，不应手动维护。以下示例假设 API 当前返回 `CN/TC/EN/JP/KR/RU`。
+
 ```ts
+// 本文件由 scripts/generate-i18n-dicts.ts 自动生成，请勿手动修改 import 列表
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import CN from './dicts/CN.json'
 import TC from './dicts/TC.json'
@@ -135,9 +135,137 @@ export function useI18n(): I18nContextValue {
 }
 ```
 
+### 3.1.1 字典生成脚本 `scripts/generate-i18n-dicts.ts`
+
+```ts
+import fs from 'node:fs/promises'
+import path from 'node:path'
+
+const API_BASE = 'https://endfield-assets.fffdan.com'
+const OUT_DIR = path.resolve(__dirname, '../src/i18n/dicts')
+const INDEX_FILE = path.resolve(__dirname, '../src/i18n/index.ts')
+
+// 官方 i18n ID 映射：key -> 官方 i18n ID
+const OFFICIAL_IDS: Record<string, string> = {
+  'nav.operators': '4587871773125153579',
+  'nav.weapons': '-5172571920525154197',
+  'nav.items': '-6832531754290229270',
+  'nav.equipment': '-2258509209715706807',
+  'nav.enemies': '8742258141975205570',
+  'nav.story': '-2992892562572048332',
+  'common.sort': '-5741249201421562043',
+  'common.filter': '-1121143716786680081',
+  'common.back': '4109135557850577026',
+  'common.cancel': '-7995171946680413439',
+  'common.loading': '-8683146888103394046',
+  'common.loadFailed': '-708947455973234252',
+  'common.all': '-6709500628147796913',
+  'common.search': '1813795696135907930',
+  'common.noResult': '-547783542302619085',
+  'operator.race': '-4169092580478466908',
+  'operator.skill': '-1627707113686409986',
+  'weapon.rarity': '-863081527829739477',
+  // ... 其他官方 key
+}
+
+// 站点自定义译文源：key -> locale -> text
+const CUSTOM: Record<string, Record<string, string>> = {
+  'site.name': {
+    CN: '宏山档案局',
+    TC: '宏山檔案局',
+    EN: 'Hongshan Archives Bureau',
+    JP: '宏山檔案局',
+    KR: '홍산 아카이브국',
+    RU: 'Архивное бюро Хуншань',
+  },
+  // ... 其他自定义 key
+}
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Failed to fetch ${url}`)
+  return res.json() as Promise<T>
+}
+
+async function fetchText(url: string): Promise<string> {
+  const res = await fetch(url)
+  if (!res.ok) return ''
+  return res.text()
+}
+
+async function main() {
+  const locales = await fetchJson<string[]>(`${API_BASE}/i18n`)
+  console.log('API available locales:', locales)
+
+  await fs.mkdir(OUT_DIR, { recursive: true })
+
+  const dicts: Record<string, Record<string, string>> = {}
+  for (const locale of locales) {
+    dicts[locale] = {}
+  }
+
+  for (const [key, id] of Object.entries(OFFICIAL_IDS)) {
+    for (const locale of locales) {
+      const text = await fetchText(`${API_BASE}/i18n/${locale}/${id}`)
+      if (text) {
+        dicts[locale][key] = text
+      }
+    }
+  }
+
+  for (const [key, translations] of Object.entries(CUSTOM)) {
+    for (const locale of locales) {
+      if (translations[locale]) {
+        dicts[locale][key] = translations[locale]
+      }
+    }
+  }
+
+  // 写 JSON 文件
+  for (const [locale, flatDict] of Object.entries(dicts)) {
+    const nested = unflatten(flatDict)
+    await fs.writeFile(
+      path.join(OUT_DIR, `${locale}.json`),
+      JSON.stringify(nested, null, 2) + '\n',
+    )
+  }
+
+  // 生成 index.ts
+  const imports = locales.map((l) => `import ${l} from './dicts/${l}.json'`).join('\n')
+  const messages = locales.map((l) => `  ${l}: flatten(${l}),`).join('\n')
+  const indexContent = `// 本文件由 scripts/generate-i18n-dicts.ts 根据 API /i18n 自动生成\n// 请勿手动修改 import 列表\n${imports}\n\nconst messages: Record<string, Record<string, string>> = {\n${messages}\n}\n`
+  // ... 后续写入 INDEX_FILE
+  console.log('Generated dicts for:', locales)
+}
+
+function unflatten(flat: Record<string, string>): Record<string, unknown> {
+  const root: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(flat)) {
+    const parts = key.split('.')
+    let current: any = root
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!current[parts[i]]) current[parts[i]] = {}
+      current = current[parts[i]]
+    }
+    current[parts[parts.length - 1]] = value
+  }
+  return root
+}
+
+main().catch(console.error)
+```
+
+运行方式：
+
+```bash
+npx tsx scripts/generate-i18n-dicts.ts
+```
+
+脚本输出后，应通过 `npm run build` 验证 `src/i18n/index.ts` 中无未使用的 import 或缺失的语言映射。
+
 ### 3.2 翻译字典结构
 
-所有字典采用统一的嵌套 JSON 结构，`flatten` 后展开为点分 key。以 `CN.json` 为例：
+所有字典采用统一的嵌套 JSON 结构，`flatten` 后展开为点分 key。字典文件由 `scripts/generate-i18n-dicts.ts` 根据 `GET /i18n` 返回的可用 locale 列表自动生成，**不应手动创建或删除**。以 `CN.json` 为例：
 
 ```json
 {
@@ -215,7 +343,7 @@ export function useI18n(): I18nContextValue {
 }
 ```
 
-其他语言字典结构完全一致，仅 value 不同。完整字典见第 9 节。
+其他语言字典结构完全一致，仅 value 不同。完整 key 列表见第 9 节，但实际存在的语言文件完全由 API `/i18n` 决定。
 
 ### 3.3 `src/App.tsx`
 
@@ -1175,7 +1303,7 @@ test('切换语言后导航与筛选器文案更新', async ({ page }) => {
 
 ### 9.1 字典 key 总表
 
-下表列出所有需要翻译的 key 及其在 CN 中的值。其他语言字典按相同 key 填充对应译文。
+下表列出所有需要翻译的 key 及其在 CN 中的值。其他语言字典由 `scripts/generate-i18n-dicts.ts` 根据 `GET /i18n` 返回的 locale 列表，按相同 key 填充对应译文。若 API 新增了 locale（如 `DE`、`FR`），重新运行脚本即可自动产出对应字典，无需手动枚举。
 
 | key | CN 译文 | 来源 |
 |-----|---------|------|
@@ -1388,16 +1516,24 @@ test('切换语言后导航与筛选器文案更新', async ({ page }) => {
 | `update.removed` | 移除 | 移除 | Removed | 削除 | 제거 | Удалено |
 | `update.changed` | 变更 | 變更 | Changed | 変更 | 변경 | Изменено |
 
-完整翻译字典在实现时通过脚本或人工填充到各语言 JSON 文件中。官方 i18n 来源的 key 优先使用 `/i18n/{locale}/{id}` 返回的文本；站点自定义 key 的译文由产品设计确定。
+完整翻译字典由 `scripts/generate-i18n-dicts.ts` 自动生成：
+
+1. 脚本首先调用 `GET /i18n` 获取服务器当前支持的 locale 列表；
+2. 对 `OFFICIAL_IDS` 中的每个 key，调用 `/i18n/{locale}/{id}` 获取各语言官方译文；
+3. 对 `CUSTOM` 中的站点自定义 key，按 locale 合并人工维护的译文；
+4. 最终输出 `src/i18n/dicts/{locale}.json`。
+
+因此，**不应直接手动编辑 `dicts/*.json`**；若需修正某个 key 的译文，应修改 `CUSTOM` 源数据并重新运行生成脚本。
 
 ## 10. 实现顺序
 
 ### 阶段一：基础设施（第 1 轮提交）
 
-1. 新增 `src/i18n/index.ts`。
-2. 新增 `src/i18n/dicts/*.json`，至少先完成 `CN.json` 与 `EN.json`。
-3. 修改 `src/lib/locale.tsx`，增加 localStorage 持久化。
-4. 修改 `src/App.tsx`，接入 `I18nProvider`。
+1. 新增 `scripts/generate-i18n-dicts.ts`，调用 `GET /i18n` 获取可用 locale 列表，并生成对应字典文件。
+2. 运行生成脚本，产出 `src/i18n/dicts/{locale}.json`（locale 列表来自 API）。
+3. 新增 `src/i18n/index.ts`，由生成脚本自动维护 import 列表。
+4. 修改 `src/lib/locale.tsx`，增加 localStorage 持久化。
+5. 修改 `src/App.tsx`，接入 `I18nProvider`。
 
 ### 阶段二：全局布局（第 2 轮提交）
 
