@@ -77,7 +77,7 @@ test.describe('档案搜索 (Archive Search)', () => {
     const input = page.getByPlaceholder('搜索档案关键词…')
     await input.fill('the')
     await input.press('Enter')
-    await page.waitForTimeout(1000)
+    await page.waitForURL('/archive/search?keyword=the')
     expect(page.url()).toContain('keyword=the')
   })
 })

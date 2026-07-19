@@ -94,8 +94,8 @@ export default function SkillReferenceCard({
           const found = sorted.find(p => p.level === target)
           setLevel(found ? found.level : sorted[sorted.length - 1].level)
         }
-      } catch {
-        // Gracefully handle errors
+      } catch (err) {
+        console.error('SkillReferenceCard load error', err)
       }
     }
     load()

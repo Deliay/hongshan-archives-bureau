@@ -192,8 +192,7 @@ describe('ArchiveSearchResults', () => {
   })
 
   it('calls window.scrollTo when page changes', () => {
-    const scrollToSpy = vi.fn()
-    window.scrollTo = scrollToSpy
+    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
     const results = Array.from({ length: 30 }).map((_, i) =>
       makeResult({ id: `${i}`, text: `text ${i}` }),
     )
@@ -220,6 +219,7 @@ describe('ArchiveSearchResults', () => {
       </MemoryRouter>,
     )
     expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
+    scrollToSpy.mockRestore()
   })
 
   it('renders SkillReferenceCard for SkillPatchTable results', () => {

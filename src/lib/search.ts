@@ -82,47 +82,61 @@ async function buildOperatorEntityMap(locale: string): Promise<Record<string, Se
   return map
 }
 
-async function buildSkillOwnerIndex(_locale: string): Promise<Record<string, { type: 'operator' | 'weapon'; id: string }>> {
-  const [growthRaw, weaponRaw] = await Promise.all([
-    getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')),
-    getCachedData<Record<string, any>>('WeaponBasicTable', () => fetchTableAll('WeaponBasicTable')),
-  ])
+const skillOwnerIndexCaches = new Map<string, Promise<Record<string, { type: 'operator' | 'weapon'; id: string }>>>()
 
-  const index: Record<string, { type: 'operator' | 'weapon'; id: string }> = {}
+async function buildSkillOwnerIndex(locale: string): Promise<Record<string, { type: 'operator' | 'weapon'; id: string }>> {
+  if (!skillOwnerIndexCaches.has(locale)) {
+    skillOwnerIndexCaches.set(locale, (async () => {
+      const [growthRaw, weaponRaw] = await Promise.all([
+        getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')),
+        getCachedData<Record<string, any>>('WeaponBasicTable', () => fetchTableAll('WeaponBasicTable')),
+      ])
 
-  for (const [, v] of Object.entries<any>(growthRaw)) {
-    const charId = v.charId ?? v.$key ?? ''
-    for (const group of Object.values<any>(v.skillGroupMap ?? {})) {
-      for (const skillId of group.skillIdList ?? []) {
-        if (!index[skillId]) index[skillId] = { type: 'operator', id: charId }
+      const index: Record<string, { type: 'operator' | 'weapon'; id: string }> = {}
+
+      for (const [, v] of Object.entries<any>(growthRaw)) {
+        const charId = v.charId ?? v.$key ?? ''
+        for (const group of Object.values<any>(v.skillGroupMap ?? {})) {
+          for (const skillId of group.skillIdList ?? []) {
+            if (!index[skillId]) index[skillId] = { type: 'operator', id: charId }
+          }
+        }
       }
-    }
-  }
 
-  for (const [, v] of Object.entries<any>(weaponRaw)) {
-    const weaponId = v.weaponId ?? v.$key ?? ''
-    for (const skillId of v.weaponSkillList ?? []) {
-      if (!index[skillId]) index[skillId] = { type: 'weapon', id: weaponId }
-    }
-  }
+      for (const [, v] of Object.entries<any>(weaponRaw)) {
+        const weaponId = v.weaponId ?? v.$key ?? ''
+        for (const skillId of v.weaponSkillList ?? []) {
+          if (!index[skillId]) index[skillId] = { type: 'weapon', id: weaponId }
+        }
+      }
 
-  return index
+      return index
+    })())
+  }
+  return skillOwnerIndexCaches.get(locale)!
 }
 
-async function buildTalentEffectOwnerIndex(_locale: string): Promise<Record<string, string>> {
-  const growthRaw = await getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable'))
-  const index: Record<string, string> = {}
+const talentOwnerIndexCaches = new Map<string, Promise<Record<string, string>>>()
 
-  for (const [, v] of Object.entries<any>(growthRaw)) {
-    const charId = v.charId ?? v.$key ?? ''
-    for (const node of Object.values<any>(v.talentNodeMap ?? {})) {
-      if (node.nodeType === 4 && node.passiveSkillNodeInfo?.talentEffectId) {
-        index[node.passiveSkillNodeInfo.talentEffectId] = charId
+async function buildTalentEffectOwnerIndex(locale: string): Promise<Record<string, string>> {
+  if (!talentOwnerIndexCaches.has(locale)) {
+    talentOwnerIndexCaches.set(locale, (async () => {
+      const growthRaw = await getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable'))
+      const index: Record<string, string> = {}
+
+      for (const [, v] of Object.entries<any>(growthRaw)) {
+        const charId = v.charId ?? v.$key ?? ''
+        for (const node of Object.values<any>(v.talentNodeMap ?? {})) {
+          if (node.nodeType === 4 && node.passiveSkillNodeInfo?.talentEffectId) {
+            index[node.passiveSkillNodeInfo.talentEffectId] = charId
+          }
+        }
       }
-    }
-  }
 
-  return index
+      return index
+    })())
+  }
+  return talentOwnerIndexCaches.get(locale)!
 }
 
 async function buildWeaponEntityMap(locale: string): Promise<Record<string, SearchEntity>> {
@@ -254,15 +268,21 @@ export async function enrichResults(
 
   if (skillIds.length > 0) {
     const skillIndex = await buildSkillOwnerIndex(locale)
-    const operatorMap = entities['CharacterTable'] ?? await buildOperatorEntityMap(locale)
-    const weaponMap = entities['WeaponBasicTable'] ?? await buildWeaponEntityMap(locale)
-    entities['CharacterTable'] = operatorMap
-    entities['WeaponBasicTable'] = weaponMap
+    const ownersToResolve = skillIds.map(id => skillIndex[id]).filter(Boolean)
+    const needOperator = ownersToResolve.some(o => o!.type === 'operator')
+    const needWeapon = ownersToResolve.some(o => o!.type === 'weapon')
+
+    const [operatorMap, weaponMap] = await Promise.all([
+      needOperator ? (entities['CharacterTable'] ?? await buildOperatorEntityMap(locale)) : Promise.resolve(undefined),
+      needWeapon ? (entities['WeaponBasicTable'] ?? await buildWeaponEntityMap(locale)) : Promise.resolve(undefined),
+    ])
+    if (operatorMap) entities['CharacterTable'] = operatorMap
+    if (weaponMap) entities['WeaponBasicTable'] = weaponMap
 
     for (const id of skillIds) {
       const owner = skillIndex[id]
       if (!owner) continue
-      indirectOwners[id] = owner.type === 'operator' ? operatorMap[owner.id] : weaponMap[owner.id]
+      indirectOwners[id] = owner.type === 'operator' ? operatorMap![owner.id] : weaponMap![owner.id]
     }
   }
 

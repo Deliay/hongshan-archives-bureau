@@ -290,7 +290,7 @@ export interface SearchResult {
 }
 
 export interface SearchEntity {
-  type: 'weapon' | 'operator' | 'item' | 'enemy' | 'skill'
+  type: 'weapon' | 'operator' | 'item' | 'enemy'
   id: string
   name: string
   route: string
@@ -300,7 +300,6 @@ export interface SearchEntity {
   displayType?: number
   subInfo?: string
   tags?: string[]
-  skillId?: string
 }
 
 export interface UseArchiveSearchResult {

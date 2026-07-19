@@ -29,7 +29,6 @@ export default function ArchiveSearch() {
     } else {
       setSearchParams({})
     }
-    setQuery(trimmed)
   }
 
   return (
