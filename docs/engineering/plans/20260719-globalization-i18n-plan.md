@@ -427,10 +427,13 @@ export function useLocale(): LocaleContextValue {
 
 ### 4.1 `src/components/Layout/Sidebar.tsx`
 
-将 `NAV_GROUPS` 改为函数，接收 `t` 后返回带 key 的数组；渲染时用 `t()` 取值。
+将 `NAV_GROUPS` 改为函数，接收 `t` 后返回带 key 的数组；渲染时用 `t()` 取值。语言切换按钮增加语言图标。
 
 ```tsx
 import { useI18n } from '../../../i18n'
+import { ASSET_BASE } from '../../../lib/adapter'
+
+const LANGUAGE_ICON_URL = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/settings/icon_settings_language.png`
 
 function useNavGroups() {
   const { t } = useI18n()
@@ -470,13 +473,51 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
+
       {/* 语言切换 */}
+      <div className="p-3 border-t border-archive-border relative">
+        <button
+          type="button"
+          onClick={() => setLocaleOpen(v => !v)}
+          className="w-full px-3 py-1.5 rounded text-sm text-archive-dust hover:text-archive-ivory border border-archive-border hover:border-archive-lead transition-colors text-left flex items-center gap-2"
+        >
+          <img
+            src={LANGUAGE_ICON_URL}
+            alt=""
+            className="w-4 h-4 object-contain opacity-70"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+          {LOCALE_LABELS[locale] || locale}
+        </button>
+        {localeOpen && locales && (
+          <div className="absolute bottom-full left-3 right-3 mb-1 py-1 rounded border border-archive-border bg-archive-file shadow-lg">
+            {locales.map((l) => (
+              <button
+                type="button"
+                key={l}
+                onClick={() => { setLocale(l); setLocaleOpen(false) }}
+                className={`w-full px-3 py-1.5 text-sm text-left transition-colors flex items-center gap-2 ${
+                  l === locale
+                    ? 'text-archive-gold bg-archive-gold/10'
+                    : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-border'
+                }`}
+              >
+                <span className="w-4" />
+                {LOCALE_LABELS[l] || l}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </aside>
   )
 }
 ```
 
-`LOCALE_LABELS` 保留，因为它们是语言自描述标签（如「English」），不需要翻译。
+说明：
+- `LANGUAGE_ICON_URL` 使用 `ASSET_BASE`（`https://endfield-assets.fffdan.com/vfs/Bundle/file`）拼接，该资源实际通过 `vfs/Bundle/file` 分发。
+- 图标加载失败时自动隐藏，不破坏布局。
+- `LOCALE_LABELS` 保留，因为它们是语言自描述标签（如「English」），不需要翻译。
 
 ### 4.2 `src/components/Layout/Breadcrumb.tsx`
 
