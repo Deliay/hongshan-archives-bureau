@@ -1,5 +1,7 @@
 import { PlaceholderPage } from '../../components/Layout/PlaceholderPage'
+import { useI18n } from '../../i18n'
 
 export default function GeographyList() {
-  return <PlaceholderPage title="地区地理" code="HSA-GEO" />
+  const { t } = useI18n()
+  return <PlaceholderPage title={t('nav.areas')} code="HSA-GEO" />
 }

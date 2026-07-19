@@ -1,18 +1,24 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useI18n } from '../../i18n'
 import { useOperator, useWeapon, useRaces, useFactions, useEnemies } from '../../hooks/useData'
 import { Badge } from '../ui/Badge'
 
-const LIST_LABEL: Record<string, string> = {
-  operators: '干员档案',
-  weapons: '武器档案',
-  races: '干员种族',
-  factions: '干员阵营',
-  geography: '地区地理',
-  enemies: '敌人图鉴',
-  equipment: '装备系统',
-  items: '道具材料',
-  factory: '工厂系统',
-  story: '剧情记录',
+function useListLabel(): Record<string, string> {
+  const { t } = useI18n()
+  return {
+    operators: t('nav.operators'),
+    weapons: t('nav.weapons'),
+    races: t('nav.races'),
+    factions: t('nav.factions'),
+    geography: t('nav.areas'),
+    enemies: t('nav.enemies'),
+    equipment: t('nav.equipment'),
+    items: t('nav.items'),
+    factory: t('nav.factory'),
+    story: t('nav.story'),
+    updates: t('nav.updates'),
+    professions: t('profession.title'),
+  }
 }
 
 function RaceName({ id }: { id: string }) {
@@ -56,6 +62,8 @@ function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
 
 export default function Breadcrumb() {
   const { pathname } = useLocation()
+  const { t } = useI18n()
+  const listLabel = useListLabel()
   const segments = pathname.split('/').filter(Boolean)
 
   if (segments.length === 0) return null
@@ -65,14 +73,14 @@ export default function Breadcrumb() {
 
   return (
     <nav className="text-sm text-archive-dust mb-4 flex items-center flex-wrap gap-1">
-      <Link to="/archive" className="hover:text-archive-gold transition-colors">档案局</Link>
+      <Link to="/archive" className="hover:text-archive-gold transition-colors">{t('nav.archive')}</Link>
       {segments.length >= 2 && (
         <>
           <span className="mx-1 text-archive-lead">›</span>
           {segments.length === 2 ? (
-            <Badge variant="ghost">{LIST_LABEL[listKey] ?? listKey}</Badge>
+            <Badge variant="ghost">{listLabel[listKey] ?? listKey}</Badge>
           ) : (
-            <Link to={`/archive/${listKey}`} className="hover:text-archive-gold transition-colors">{LIST_LABEL[listKey] ?? listKey}</Link>
+            <Link to={`/archive/${listKey}`} className="hover:text-archive-gold transition-colors">{listLabel[listKey] ?? listKey}</Link>
           )}
         </>
       )}

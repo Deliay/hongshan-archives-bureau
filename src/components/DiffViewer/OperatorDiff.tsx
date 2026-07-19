@@ -3,13 +3,9 @@ import { useLocale } from '../../lib/locale'
 import { ASSET_BASE } from '../../lib/adapter'
 import type { TableDiffComponentProps } from './registry'
 import type { FieldChange, ChangedEntry } from '../../lib/types-diff'
+import { useI18n, translate } from '../../i18n'
 
 const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
-
-const PROFESSION_NAMES: Record<number, string> = {
-  1: '先锋', 2: '近卫', 3: '重装', 4: '狙击',
-  5: '术士', 6: '辅助', 7: '特种', 8: '医疗',
-}
 
 function localeText(obj: unknown, locale: string): string {
   if (!obj || typeof obj !== 'object') return String(obj ?? '')
@@ -17,16 +13,17 @@ function localeText(obj: unknown, locale: string): string {
   return dict[locale] || dict.CN || ''
 }
 
-function StarRating({ level }: { level: number }) {
+function StarRating({ level, locale }: { level: number; locale: string }) {
   const color = RARITY_COLORS[level] || '#6b7280'
   return (
-    <span className="inline-flex gap-0.5" title={`稀有度 ${level}`} style={{ color }}>
+    <span className="inline-flex gap-0.5" title={translate(locale, 'operator.rarityLevel', { level })} style={{ color }}>
       {'✦'.repeat(level)}
     </span>
   )
 }
 
 export default function OperatorDiff({ diff }: TableDiffComponentProps) {
+  const { locale, t } = useI18n()
   const [tab, setTab] = useState<'added' | 'removed' | 'changed'>(
     diff.stats.changed > 0 ? 'changed' : diff.stats.added > 0 ? 'added' : 'removed',
   )
@@ -34,9 +31,9 @@ export default function OperatorDiff({ diff }: TableDiffComponentProps) {
 
   const tabs = (
     [
-      { id: 'added' as const, label: '新增干员', count: stats.added },
-      { id: 'removed' as const, label: '移除干员', count: stats.removed },
-      { id: 'changed' as const, label: '变更干员', count: stats.changed },
+      { id: 'added' as const, label: t('diff.addedOperators'), count: stats.added },
+      { id: 'removed' as const, label: t('diff.removedOperators'), count: stats.removed },
+      { id: 'changed' as const, label: t('diff.changedOperators'), count: stats.changed },
     ] as const
   ).filter((t) => t.count > 0)
 
@@ -59,16 +56,16 @@ export default function OperatorDiff({ diff }: TableDiffComponentProps) {
         ))}
       </div>
 
-      {tab === 'added' && <AddedRemovedList entries={entries.added} />}
-      {tab === 'removed' && <AddedRemovedList entries={entries.removed} />}
-      {tab === 'changed' && <ChangedList entries={entries.changed} />}
+      {tab === 'added' && <AddedRemovedList entries={entries.added} locale={locale} />}
+      {tab === 'removed' && <AddedRemovedList entries={entries.removed} locale={locale} />}
+      {tab === 'changed' && <ChangedList entries={entries.changed} locale={locale} />}
     </div>
   )
 }
 
-function AddedRemovedList({ entries }: { entries: Record<string, any> }) {
+function AddedRemovedList({ entries, locale }: { entries: Record<string, any>; locale: string }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{translate(locale, 'common.empty')}</p>
 
   return (
     <div className="space-y-3">
@@ -79,9 +76,9 @@ function AddedRemovedList({ entries }: { entries: Record<string, any> }) {
   )
 }
 
-function ChangedList({ entries }: { entries: Record<string, ChangedEntry> }) {
+function ChangedList({ entries, locale }: { entries: Record<string, ChangedEntry>; locale: string }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{translate(locale, 'common.empty')}</p>
 
   return (
     <div className="space-y-3">
@@ -95,18 +92,18 @@ function ChangedList({ entries }: { entries: Record<string, ChangedEntry> }) {
             <div className="px-3 pb-3 border-t border-archive-border">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 <div className="border border-archive-border rounded">
-                  <div className="text-xs text-[archive-seal] px-2 py-1 border-b border-archive-border font-medium">旧版本</div>
+                  <div className="text-xs text-[archive-seal] px-2 py-1 border-b border-archive-border font-medium">{translate(locale, 'diff.oldVersion')}</div>
                   <OperatorCard charId={key} entry={e.oldValue} compact />
                 </div>
                 <div className="border border-archive-border rounded">
-                  <div className="text-xs text-[archive-bronze] px-2 py-1 border-b border-archive-border font-medium">新版本</div>
+                  <div className="text-xs text-[archive-bronze] px-2 py-1 border-b border-archive-border font-medium">{translate(locale, 'diff.newVersion')}</div>
                   <OperatorCard charId={key} entry={e.newValue} compact />
                 </div>
               </div>
               <div className="mt-3 space-y-1">
-                <div className="text-xs text-archive-dust mb-1 font-medium">变更字段</div>
+                <div className="text-xs text-archive-dust mb-1 font-medium">{translate(locale, 'diff.changedFields')}</div>
                 {Object.entries(e.changed).map(([path, change]) => (
-                  <FieldDiff key={path} path={path} change={change} />
+                  <FieldDiff key={path} path={path} change={change} locale={locale} />
                 ))}
               </div>
             </div>
@@ -132,7 +129,7 @@ function ChangedHeader({ charId, oldVal, newVal }: { charId: string; oldVal: any
       }
       {oldRarity !== newRarity && (
         <span className="ml-2 text-xs">
-          <StarRating level={oldRarity} /> → <StarRating level={newRarity} />
+          <StarRating level={oldRarity} locale={locale} /> → <StarRating level={newRarity} locale={locale} />
         </span>
       )}
     </span>
@@ -168,13 +165,13 @@ function OperatorCard({ charId, entry, compact }: { charId: string; entry: any; 
               <div className="text-xs text-archive-lead font-mono mt-0.5">{charId}</div>
             </div>
             <div className="text-right shrink-0">
-              <StarRating level={rarity} />
+              <StarRating level={rarity} locale={locale} />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
             {profession !== undefined && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
-                {PROFESSION_NAMES[profession] || `职业${profession}`}
+                {translate(locale, `profession.${profession}`) || `${translate(locale, 'common.unknown')} ${profession}`}
               </span>
             )}
             {charTypeId && (
@@ -183,10 +180,10 @@ function OperatorCard({ charId, entry, compact }: { charId: string; entry: any; 
               </span>
             )}
             {mainAttr > 0 && (
-              <span className="text-xs text-archive-dust">主{mainAttr}</span>
+              <span className="text-xs text-archive-dust">{translate(locale, 'operator.mainAttr')} {mainAttr}</span>
             )}
             {subAttr > 0 && (
-              <span className="text-xs text-archive-dust">副{subAttr}</span>
+              <span className="text-xs text-archive-dust">{translate(locale, 'operator.subAttr')} {subAttr}</span>
             )}
           </div>
           {tags.length > 0 && (
@@ -201,7 +198,7 @@ function OperatorCard({ charId, entry, compact }: { charId: string; entry: any; 
 
       {!compact && (
         <div className="mt-3 space-y-2 border-t border-archive-border pt-2">
-          <Section title="档案记录" items={entry?.profileRecord} renderItem={(r: any) => (
+          <Section title={translate(locale, 'operator.profileRecords')} items={entry?.profileRecord} renderItem={(r: any) => (
             <div>
               <div className="text-archive-dust text-[10px]">{localeText(r.recordTitle, locale)}</div>
               <div className="text-archive-ivory text-xs mt-0.5 whitespace-pre-wrap line-clamp-3">
@@ -209,7 +206,7 @@ function OperatorCard({ charId, entry, compact }: { charId: string; entry: any; 
               </div>
             </div>
           )} itemKey={(r: any) => r.id || r.recordID} />
-          <Section title='语音' items={entry?.profileVoice} renderItem={(v: any) => (
+          <Section title={translate(locale, 'operator.voiceRecords')} items={entry?.profileVoice} renderItem={(v: any) => (
             <div className="flex items-start gap-2">
               <span className="text-[10px] text-archive-lead font-mono shrink-0 mt-0.5">#{v.voiceIndex}</span>
               <div>
@@ -242,19 +239,18 @@ function Section({ title, items, renderItem, itemKey }: { title: string; items: 
   )
 }
 
-function FieldDiff({ path, change }: { path: string; change: FieldChange }) {
-  const { locale } = useLocale()
+function FieldDiff({ path, change, locale }: { path: string; change: FieldChange; locale: string }) {
   return (
     <div className="text-xs border-b border-archive-border/50 pb-1.5 last:border-0">
       <div className="text-archive-dust font-mono mb-0.5">{path}</div>
       {change.type === 'value' ? (
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <span className="text-[archive-seal]">旧 </span>
+            <span className="text-[archive-seal]">{translate(locale, 'diff.old')} </span>
             <span className="text-archive-ivory">{formatFieldValue(change.oldValue, locale)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[archive-bronze]">新 </span>
+            <span className="text-[archive-bronze]">{translate(locale, 'diff.new')} </span>
             <span className="text-archive-ivory">{formatFieldValue(change.newValue, locale)}</span>
           </div>
         </div>
@@ -263,10 +259,10 @@ function FieldDiff({ path, change }: { path: string; change: FieldChange }) {
           {Object.entries(change.changedLocales).map(([loc, { oldText, newText }]) => (
             <div key={loc} className="mb-0.5 last:mb-0">
               <span className="text-archive-gold font-mono">{loc}</span>
-              <span className="mx-1 text-archive-lead">旧</span>
-              <span className="text-[archive-seal]">{oldText || '（空）'}</span>
+              <span className="mx-1 text-archive-lead">{translate(locale, 'diff.old')}</span>
+              <span className="text-[archive-seal]">{oldText || translate(locale, 'diff.empty')}</span>
               <span className="mx-1 text-archive-lead">→</span>
-              <span className="text-[archive-bronze]">{newText || '（空）'}</span>
+              <span className="text-[archive-bronze]">{newText || translate(locale, 'diff.empty')}</span>
             </div>
           ))}
         </div>
@@ -276,7 +272,7 @@ function FieldDiff({ path, change }: { path: string; change: FieldChange }) {
 }
 
 function formatFieldValue(v: unknown, locale: string): string {
-  if (v === undefined || v === null) return '（空）'
+  if (v === undefined || v === null) return translate(locale, 'diff.empty')
   if (typeof v === 'object' && !Array.isArray(v)) {
     const text = localeText(v, locale)
     if (text) return text

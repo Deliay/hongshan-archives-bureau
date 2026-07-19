@@ -5,6 +5,7 @@ import OperatorChangePanel from '../../components/DiffViewer/OperatorChangePanel
 import WeaponChangePanel from '../../components/DiffViewer/WeaponChangePanel'
 import EnemyChangePanel from '../../components/DiffViewer/EnemyChangePanel'
 import ItemChangePanel from '../../components/DiffViewer/ItemChangePanel'
+import { useI18n } from '../../i18n'
 
 function sumTableStats(
   fn: (s: { added: number; removed: number; changed: number }) => number,
@@ -31,15 +32,16 @@ function DiffBadge({ label, count, color }: { label: string; count: number; colo
 
 export default function UpdateSummary() {
   const { versionName } = useParams<{ versionName: string }>()
+  const { t } = useI18n()
   const folder = useFolderManifest(versionName ?? '')
   const [maxTables, setMaxTables] = useState(50)
 
-  if (!versionName) return <div className="text-red-400 text-sm">缺少版本参数</div>
+  if (!versionName) return <div className="text-red-400 text-sm">{t('common.missingParam')}</div>
 
   if (!folder) {
     return (
       <div>
-        <p className="text-archive-dust text-sm mb-4">正在加载版本信息…</p>
+        <p className="text-archive-dust text-sm mb-4">{t('update.loadingVersion')}</p>
         <div className="space-y-2">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
             <div key={i} className="h-10 rounded border border-archive-border bg-archive-file animate-pulse" />
@@ -100,11 +102,13 @@ function SummaryContent({
     return [...rest, ...pinned].slice(0, maxTables)
   }, [tableStats, maxTables])
 
+  const { t } = useI18n()
+
   return (
     <div>
       <div className="mb-6">
         <Link to="/archive/updates" className="text-sm text-archive-dust hover:text-archive-gold transition-colors">
-          ← 返回版本列表
+          ← {t('update.backToList')}
         </Link>
         <h2 className="text-xl font-bold text-archive-ivory mt-2 mb-1 font-mono break-all">
           {versionName.replace(/__/g, '  →  ')}
@@ -115,9 +119,9 @@ function SummaryContent({
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-6">
-        <StatCard label="新增" value={totalAdded} color="#26bbfd" />
-        <StatCard label="移除" value={totalRemoved} color="#ef4444" />
-        <StatCard label="变更" value={totalChanged} color="#ffbb03" />
+        <StatCard label={t('update.added')} value={totalAdded} color="#26bbfd" />
+        <StatCard label={t('update.removed')} value={totalRemoved} color="#ef4444" />
+        <StatCard label={t('update.changed')} value={totalChanged} color="#ffbb03" />
       </div>
 
       <OperatorChangePanel versionName={versionName} />
@@ -129,7 +133,7 @@ function SummaryContent({
       <ItemChangePanel versionName={versionName} />
 
       <h3 className="text-sm font-medium text-archive-ivory mb-3">
-        变更表一览（{tables.length} 个表）
+        {t('update.tableList', { count: tables.length })}
       </h3>
       <div className="space-y-1">
         {tables.map(([file, stats]) => (
@@ -154,7 +158,7 @@ function SummaryContent({
           onClick={() => setMaxTables(Infinity)}
           className="mt-3 text-sm text-archive-gold hover:text-[#d4b87a] transition-colors"
         >
-          显示全部 {tables.length} 个表
+          {t('update.showAll', { count: tables.length })}
         </button>
       )}
     </div>

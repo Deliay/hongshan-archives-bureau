@@ -5,6 +5,7 @@ import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
 import { useLocale } from '../../lib/locale'
 import type { TableDiffComponentProps } from './registry'
 import { RichTextDiff } from './RichTextDiff'
+import { useI18n, translate } from '../../i18n'
 import type { FieldChange, ChangedEntry } from '../../lib/types-diff'
 
 const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
@@ -19,6 +20,7 @@ interface LookupMaps {
 }
 
 export default function CharacterDiff({ diff }: TableDiffComponentProps) {
+  const { t } = useI18n()
   const diffLocale = diff.locale || 'CN'
   const { locale: globalLocale } = useLocale()
   const [maps, setMaps] = useState<LookupMaps | null>(null)
@@ -45,7 +47,7 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
       for (const [, v] of Object.entries<any>(profRaw)) {
         const id = Number(v.profession ?? v.$key ?? 0)
         professions[id] = {
-          name: resolveI18n(v.name, profI18n) || `职业${id}`,
+          name: resolveI18n(v.name, profI18n) || `${translate(globalLocale, 'common.unknown')} ${id}`,
           icon: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charprofessionicon/${v.iconId}.png`,
         }
       }
@@ -70,7 +72,7 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
         const configItem = attrShowVal[k]?.list?.[0]
         const nameId = String(configItem?.name?.id ?? '')
         attributes[attrType] = {
-          name: (nameId && attrI18n[nameId]) || v.iconName?.replace('icon_attribute_', '') || `属性${k}`,
+          name: (nameId && attrI18n[nameId]) || v.iconName?.replace('icon_attribute_', '') || `${translate(globalLocale, 'common.unknown')} ${k}`,
           icon: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/attributeicon/${v.iconName}.png`,
         }
       }
@@ -85,14 +87,14 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
 
   const tabs = (
     [
-      { id: 'added' as const, label: '新增干员', count: stats.added },
-      { id: 'removed' as const, label: '移除干员', count: stats.removed },
-      { id: 'changed' as const, label: '变更干员', count: stats.changed },
+      { id: 'added' as const, label: t('diff.addedOperators'), count: stats.added },
+      { id: 'removed' as const, label: t('diff.removedOperators'), count: stats.removed },
+      { id: 'changed' as const, label: t('diff.changedOperators'), count: stats.changed },
     ] as const
   ).filter((t) => t.count > 0)
 
   if (!maps) {
-    return <div className="text-sm text-archive-lead">加载对照表…</div>
+    return <div className="text-sm text-archive-lead">{t('diff.loadingLookup')}</div>
   }
 
   return (
@@ -123,7 +125,7 @@ export default function CharacterDiff({ diff }: TableDiffComponentProps) {
 
 function EntryCards({ entries, maps }: { entries: Record<string, any>; maps: LookupMaps }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{translate(maps.locale, 'common.empty')}</p>
   return (
     <div className="space-y-2">
       {keys.map((key) => (
@@ -135,7 +137,7 @@ function EntryCards({ entries, maps }: { entries: Record<string, any>; maps: Loo
 
 function ChangedCards({ entries, maps, locale }: { entries: Record<string, ChangedEntry>; maps: LookupMaps; locale: string }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-archive-lead">无</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{translate(maps.locale, 'common.empty')}</p>
   return (
     <div className="space-y-3">
       {keys.map((key) => {
@@ -164,19 +166,19 @@ function ChangedCards({ entries, maps, locale }: { entries: Record<string, Chang
             <div className="px-3 pb-3 border-t border-archive-border">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 <div className="border border-archive-border rounded">
-                  <div className="text-xs text-[archive-seal] px-2 py-1 border-b border-archive-border font-medium">旧版本</div>
+                  <div className="text-xs text-[archive-seal] px-2 py-1 border-b border-archive-border font-medium">{translate(maps.locale, 'diff.oldVersion')}</div>
                   <OpCard charId={key} entry={e.oldValue} maps={maps} compact />
                 </div>
                 <div className="border border-archive-border rounded">
-                  <div className="text-xs text-[archive-bronze] px-2 py-1 border-b border-archive-border font-medium">新版本</div>
+                  <div className="text-xs text-[archive-bronze] px-2 py-1 border-b border-archive-border font-medium">{translate(maps.locale, 'diff.newVersion')}</div>
                   <OpCard charId={key} entry={e.newValue} maps={maps} compact />
                 </div>
               </div>
               <div className="mt-3 space-y-1">
-                <div className="text-xs text-archive-dust mb-1 font-medium">变更字段</div>
+                <div className="text-xs text-archive-dust mb-1 font-medium">{translate(maps.locale, 'diff.changedFields')}</div>
                 {Array.from(voiceGroups.values()).map(({ index, changes }) => {
                   const voice = e.newValue?.profileVoice?.[Number(index)]
-                  const title = resolveFieldText(voice?.voiceTitle, maps.locale, maps.i18n) || `语音${index}`
+                  const title = resolveFieldText(voice?.voiceTitle, maps.locale, maps.i18n) || `${translate(maps.locale, 'common.unknown')} ${index}`
                   const desc = resolveFieldText(voice?.voiceDesc, maps.locale, maps.i18n)
                   return (
                     <div key={index} className="mb-2">
@@ -232,8 +234,8 @@ function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; 
           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             {prof && <span className="text-xs px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">{prof.name}</span>}
             {elem && <span className="text-xs px-1.5 py-0.5 rounded bg-archive-border" style={{ color: elem.color }}>{elem.name}</span>}
-            {mainAttr && <span className="text-xs text-archive-dust">主{mainAttr.name}</span>}
-            {subAttr && <span className="text-xs text-archive-dust">副{subAttr.name}</span>}
+            {mainAttr && <span className="text-xs text-archive-dust">{translate(maps.locale, 'operator.mainAttr')} {mainAttr.name}</span>}
+            {subAttr && <span className="text-xs text-archive-dust">{translate(maps.locale, 'operator.subAttr')} {subAttr.name}</span>}
           </div>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
@@ -249,7 +251,7 @@ function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; 
 
       {!compact && (
         <div className="mt-3 space-y-2 border-t border-archive-border pt-2">
-          <Section title="档案记录" items={entry?.profileRecord} renderItem={(r: any) => (
+          <Section title={translate(maps.locale, 'operator.profileRecords')} items={entry?.profileRecord} renderItem={(r: any) => (
             <div>
               <div className="text-archive-dust text-[10px]">{resolveFieldText(r.recordTitle, maps.locale, maps.i18n)}</div>
               <div className="text-archive-ivory text-xs mt-0.5 whitespace-pre-wrap line-clamp-3">
@@ -257,7 +259,7 @@ function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; 
               </div>
             </div>
           )} itemKey={(r: any) => r.id || r.recordID} />
-          <Section title="语音" items={entry?.profileVoice} renderItem={(v: any) => (
+          <Section title={translate(maps.locale, 'operator.voiceRecords')} items={entry?.profileVoice} renderItem={(v: any) => (
             <div className="flex items-start gap-2">
               <span className="text-[10px] text-archive-lead font-mono shrink-0 mt-0.5">#{v.voiceIndex}</span>
               <div>
@@ -295,10 +297,10 @@ function Section({ title, items, renderItem, itemKey }: { title: string; items: 
   )
 }
 
-function renderUnlockInfo(unlockType: number, unlockValue: number): string {
-  if (unlockType === 0) return '初始解锁'
-  if (unlockType === 2) return `精英阶段 ${unlockValue}`
-  if (unlockType === 4) return `信赖值 ${unlockValue}`
+function renderUnlockInfo(unlockType: number, unlockValue: number, locale: string): string {
+  if (unlockType === 0) return translate(locale, 'operator.unlock.initial')
+  if (unlockType === 2) return translate(locale, 'operator.unlock.elite', { level: unlockValue })
+  if (unlockType === 4) return translate(locale, 'operator.unlock.trust', { value: unlockValue })
   return ''
 }
 
@@ -313,14 +315,14 @@ function findRelatedUnlockType(path: string, entry: any): number {
 function FieldDiff({ path, change, maps, entry }: { path: string; change: FieldChange; maps: LookupMaps; entry?: any }) {
   const format = (v: unknown) => {
     if (typeof v === 'number' && path.endsWith('unlockType')) {
-      if (v === 0) return '初始解锁'
-      if (v === 2) return '精英阶段'
-      if (v === 4) return '信赖值'
+      if (v === 0) return translate(maps.locale, 'operator.unlock.initial')
+      if (v === 2) return translate(maps.locale, 'operator.unlock.elite', { level: v })
+      if (v === 4) return translate(maps.locale, 'operator.unlock.trust', { value: v })
       return ''
     }
     if (typeof v === 'number' && path.endsWith('unlockValue')) {
       const unlockType = findRelatedUnlockType(path, entry)
-      return renderUnlockInfo(unlockType, v) || formatFieldValue(v, maps)
+      return renderUnlockInfo(unlockType, v, maps.locale) || formatFieldValue(v, maps)
     }
     return formatFieldValue(v, maps)
   }
@@ -330,11 +332,11 @@ function FieldDiff({ path, change, maps, entry }: { path: string; change: FieldC
       {change.type === 'value' ? (
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <span className="text-[archive-seal]">旧 </span>
+            <span className="text-[archive-seal]">{translate(maps.locale, 'diff.old')} </span>
             <span className="text-archive-ivory">{format(change.oldValue)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[archive-bronze]">新 </span>
+            <span className="text-[archive-bronze]">{translate(maps.locale, 'diff.new')} </span>
             <span className="text-archive-ivory">{format(change.newValue)}</span>
           </div>
         </div>
@@ -360,7 +362,7 @@ const LOCALE_LABELS: Record<string, string> = {
 }
 
 function formatFieldValue(v: unknown, maps: LookupMaps): string {
-  if (v === undefined || v === null) return '（空）'
+  if (v === undefined || v === null) return translate(maps.locale, 'diff.empty')
   if (typeof v === 'object' && !Array.isArray(v)) {
     const resolved = resolveFieldText(v, maps.locale, maps.i18n)
     if (resolved) return resolved

@@ -8,6 +8,7 @@ import type { ItemChange } from '../../hooks/useItemAggregatedDiff'
 import type { ChangedEntry } from '../../lib/types-diff'
 import { RichText } from '../../lib/richText'
 import { RichTextDiff } from './RichTextDiff'
+import { useI18n, translate } from '../../i18n'
 
 const RARITY_COLORS: Record<number, string> = {
   0: '#6b7280',
@@ -45,11 +46,11 @@ function ChangeBadge({ label, color, count }: { label: string; color: string; co
   )
 }
 
-function renderObj(obj: any, indent = ''): string {
-  if (obj === null || obj === undefined) return indent + '（空）'
+function renderObj(obj: any, locale: string, indent = ''): string {
+  if (obj === null || obj === undefined) return `${indent}${translate(locale, 'diff.empty')}`
   if (Array.isArray(obj)) {
     if (obj.length === 0) return indent + '[]'
-    return obj.map((_v, i) => `${indent}[${i}]: ${renderObj(_v, indent + '  ')}`).join('\n')
+    return obj.map((_v, i) => `${indent}[${i}]: ${renderObj(_v, locale, indent + '  ')}`).join('\n')
   }
   if (typeof obj === 'object') {
     const text = 'text' in obj ? (obj.text || '') : ''
@@ -60,16 +61,16 @@ function renderObj(obj: any, indent = ''): string {
     return keys.map(k => {
       const v = obj[k]
       if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0) {
-        return `${indent}${k}:\n${renderObj(v, indent + '  ')}`
+        return `${indent}${k}:\n${renderObj(v, locale, indent + '  ')}`
       }
-      return `${indent}${k}: ${renderObj(v, '')}`.trim()
+      return `${indent}${k}: ${renderObj(v, locale, '')}`.trim()
     }).join('\n')
   }
   return String(obj)
 }
 
 function formatDiffValue(v: unknown, locale: string): string {
-  if (v === undefined || v === null) return '（空）'
+  if (v === undefined || v === null) return translate(locale, 'diff.empty')
   if (typeof v === 'object' && !Array.isArray(v)) {
     const text = localeText(v, locale)
     if (text) return `"${text}"`
@@ -95,8 +96,8 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
                 <div key={path} className="text-[10px]">
                   <span className="text-archive-lead font-mono">{path}</span>
                   <div className="flex gap-3 mt-0.5">
-                    <span className="text-[archive-seal]">旧 {formatDiffValue(change.oldValue, locale)}</span>
-                    <span className="text-[archive-bronze]">新 {formatDiffValue(change.newValue, locale)}</span>
+                    <span className="text-[archive-seal]">{translate(locale, 'diff.old')} {formatDiffValue(change.oldValue, locale)}</span>
+                    <span className="text-[archive-bronze]">{translate(locale, 'diff.new')} {formatDiffValue(change.newValue, locale)}</span>
                   </div>
                 </div>
               )
@@ -121,12 +122,13 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
         </div>
       )
     }
-    return <div className="text-archive-dust text-[10px]">无详细变更信息</div>
+    return <div className="text-archive-dust text-[10px]">{translate(locale, 'diff.noDetail')}</div>
   }
-  return <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry)}</div>
+  return <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry, locale)}</div>
 }
 
 function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
+  const { t } = useI18n()
   const [expanded, setExpanded] = useState(false)
   const isAdded = item.changes.some(c => c.op === 'added' && c.tableName === 'ItemTable')
   const [typeMap, setTypeMap] = useState<Record<number, string>>({})
@@ -145,7 +147,7 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
           .then(i18n => {
             const map: Record<number, string> = {}
             for (const [key, entry] of Object.entries(raw as Record<string, any>)) {
-              map[Number(key)] = resolveI18n(entry.name, i18n) || entry.name?.text || `类型${key}`
+              map[Number(key)] = resolveI18n(entry.name, i18n) || entry.name?.text || `${translate(locale, 'common.unknown')} ${key}`
             }
             setTypeMap(map)
           }).catch(() => {})
@@ -211,7 +213,7 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <div className="truncate flex items-center gap-1.5">
-              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[archive-bronze] text-white font-bold shrink-0">新增</span>}
+              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[archive-bronze] text-white font-bold shrink-0">{t('update.added')}</span>}
               <span className="text-sm font-medium text-archive-ivory">{name}</span>
               <span className="text-[10px] text-archive-lead font-mono">{item.itemId}</span>
             </div>
@@ -247,7 +249,7 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
             item.changes.map((c) => {
               const label = c.tableName
               const color = TABLE_COLORS[c.tableName] || '#8B8982'
-              const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
+              const opLabel = c.op === 'added' ? t('update.added') : c.op === 'removed' ? t('update.removed') : t('update.changed')
               const opColor = c.op === 'added' ? '#5A7A6A' : c.op === 'removed' ? '#9E3A3A' : '#B89A6A'
               return (
                 <div key={c.tableName + c.key} className="text-xs border-b border-archive-border/50 pb-1.5 last:border-0 last:pb-0">
@@ -370,14 +372,14 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
 
   return (
     <div className="px-2 py-1 rounded bg-archive-ink">
-      <div className="text-[10px] text-archive-dust mb-1">获取方式</div>
+      <div className="text-[10px] text-archive-dust mb-1">{translate(locale, 'item.obtainWay')}</div>
       {obtainWayKeys.length > 0 && !hasChanges ? (
-        <div className="text-[10px] text-archive-lead">数组长度变更（{oldValue.length} → {newValue.length}）</div>
+        <div className="text-[10px] text-archive-lead">{translate(locale, 'diff.arrayLengthChanged', { old: oldValue.length, new: newValue.length })}</div>
       ) : (
         <div className="space-y-1">
           {removed.length > 0 && (
             <div>
-              <div className="text-[10px] text-[archive-seal] mb-0.5">移除</div>
+              <div className="text-[10px] text-[archive-seal] mb-0.5">{translate(locale, 'update.removed')}</div>
               <div className="flex flex-wrap gap-1">
                 {removed.map(wid => (
                   <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-[archive-seal] line-through">
@@ -389,7 +391,7 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
           )}
           {added.length > 0 && (
             <div>
-              <div className="text-[10px] text-[archive-bronze] mb-0.5">新增</div>
+              <div className="text-[10px] text-[archive-bronze] mb-0.5">{translate(locale, 'update.added')}</div>
               <div className="flex flex-wrap gap-1">
                 {added.map(wid => (
                   <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-bronze/10 text-[archive-bronze]">
@@ -401,7 +403,7 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
           )}
           {unchanged.length > 0 && (
             <div>
-              <div className="text-[10px] text-archive-dust mb-0.5">已存在</div>
+              <div className="text-[10px] text-archive-dust mb-0.5">{translate(locale, 'diff.unchanged')}</div>
               <div className="flex flex-wrap gap-1">
                 {unchanged.map(wid => (
                   <span key={wid} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
@@ -418,6 +420,7 @@ function ObtainWayEntry({ entry, locale }: { entry: any; locale: string }) {
 }
 
 function AddedItemDetail({ itemId, itemEntry, locale: _locale }: { itemId: string; itemEntry: any; locale: string }) {
+  const { t } = useI18n()
   const [obtainWays, setObtainWays] = useState<{ wayId: string; desc: string }[]>([])
   const [systemJumpI18n, setSystemJumpI18n] = useState<Record<string, string>>({})
 
@@ -454,7 +457,7 @@ function AddedItemDetail({ itemId, itemEntry, locale: _locale }: { itemId: strin
     <div className="space-y-3">
       {itemEntry?.decoDesc && (
         <details className="group">
-          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">物品描述</summary>
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{t('item.description')}</summary>
           <div className="mt-1 text-xs text-archive-ivory leading-relaxed whitespace-pre-wrap">
             <RichText text={localeText(itemEntry.decoDesc, _locale) || ''} />
           </div>
@@ -462,7 +465,7 @@ function AddedItemDetail({ itemId, itemEntry, locale: _locale }: { itemId: strin
       )}
       {itemEntry?.desc && (
         <details className="group">
-          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">道具说明</summary>
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{t('item.explain')}</summary>
           <div className="mt-1 text-xs text-archive-ivory leading-relaxed whitespace-pre-wrap">
             <RichText text={localeText(itemEntry.desc, _locale) || ''} />
           </div>
@@ -470,7 +473,7 @@ function AddedItemDetail({ itemId, itemEntry, locale: _locale }: { itemId: strin
       )}
       {obtainWays.length > 0 && (
         <details className="group" open>
-          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">获取方式（{obtainWays.length}）</summary>
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{t('item.obtainWay')}（{obtainWays.length}）</summary>
           <div className="mt-1 space-y-1">
             {obtainWays.map((w) => (
               <div key={w.wayId} className="px-2 py-1 rounded bg-archive-ink">
@@ -482,24 +485,24 @@ function AddedItemDetail({ itemId, itemEntry, locale: _locale }: { itemId: strin
         </details>
       )}
       <details className="group" open>
-        <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">基本信息</summary>
+        <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{t('common.basicInfo')}</summary>
         <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs px-2">
-          <dt className="text-archive-lead">物品 ID</dt>
+          <dt className="text-archive-lead">{t('item.id')}</dt>
           <dd className="text-archive-ivory font-mono">{itemId}</dd>
-          <dt className="text-archive-lead">稀有度</dt>
+          <dt className="text-archive-lead">{t('item.rarity')}</dt>
           <dd className="text-archive-ivory">{itemEntry?.rarity ?? '-'}</dd>
-          <dt className="text-archive-lead">类型</dt>
+          <dt className="text-archive-lead">{t('item.type')}</dt>
           <dd className="text-archive-ivory">{itemEntry?.type ?? '-'}</dd>
           {itemEntry?.maxStackCount != null && <>
-            <dt className="text-archive-lead">最大堆叠</dt>
+            <dt className="text-archive-lead">{t('item.maxStack')}</dt>
             <dd className="text-archive-ivory">{itemEntry.maxStackCount}</dd>
           </>}
           {itemEntry?.maxBackpackStackCount != null && <>
-            <dt className="text-archive-lead">背包堆叠</dt>
+            <dt className="text-archive-lead">{t('item.backpackStack')}</dt>
             <dd className="text-archive-ivory">{itemEntry.maxBackpackStackCount}</dd>
           </>}
           {outcomeItemIds.length > 0 && <>
-            <dt className="text-archive-lead">产出物品</dt>
+            <dt className="text-archive-lead">{t('item.outcomeItems')}</dt>
             <dd className="text-archive-ivory font-mono text-[10px]">{outcomeItemIds.join(', ')}</dd>
           </>}
         </dl>
@@ -514,12 +517,13 @@ interface Props {
 
 export default function ItemChangePanel({ versionName }: Props) {
   const { locale } = useLocale()
+  const { t } = useI18n()
   const { data: items, loading, error } = useItemAggregatedDiff(versionName)
 
   if (loading) {
     return (
       <div className="mb-8">
-        <h3 className="text-sm font-medium text-archive-ivory mb-3">物品变动概览</h3>
+        <h3 className="text-sm font-medium text-archive-ivory mb-3">{t('diff.itemOverview')}</h3>
         <div className="space-y-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-16 rounded border border-archive-border bg-archive-file animate-pulse" />
@@ -540,15 +544,15 @@ export default function ItemChangePanel({ versionName }: Props) {
     <div className="mb-8">
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="text-sm font-medium text-archive-ivory">
-          物品变动概览
+          {t('diff.itemOverview')}
           <span className="text-xs text-archive-lead font-normal ml-2">
-            {items.length} 件物品 · {totalChanges} 处变动
+            {t('diff.itemCount', { count: items.length, changes: totalChanges })}
           </span>
         </h3>
         <div className="flex gap-2 text-[10px] text-archive-lead">
-          {withAdded > 0 && <span className="text-[archive-bronze]">新增 {withAdded}</span>}
-          {withRemoved > 0 && <span className="text-[archive-seal]">移除 {withRemoved}</span>}
-          {withChanged > 0 && <span className="text-[archive-gold]">变更 {withChanged}</span>}
+          {withAdded > 0 && <span className="text-[archive-bronze]">{t('update.added')} {withAdded}</span>}
+          {withRemoved > 0 && <span className="text-[archive-seal]">{t('update.removed')} {withRemoved}</span>}
+          {withChanged > 0 && <span className="text-[archive-gold]">{t('update.changed')} {withChanged}</span>}
         </div>
       </div>
 

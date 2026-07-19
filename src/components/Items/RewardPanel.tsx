@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import ItemPanel from './ItemPanel'
+import { useI18n } from '../../i18n'
 
 interface ItemBundle {
   id: string
@@ -20,6 +21,7 @@ function rollup(bundles: ItemBundle[]): ItemBundle[] {
 }
 
 export default function RewardPanel({ rewardIds, rewardTable }: RewardPanelProps) {
+  const { t } = useI18n()
   const { fixed, prob } = useMemo(() => {
     const fixedBundles: ItemBundle[] = []
     const probBundles: ItemBundle[] = []
@@ -44,11 +46,11 @@ export default function RewardPanel({ rewardIds, rewardTable }: RewardPanelProps
 
   return (
     <div>
-      <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">包含内容</div>
+      <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('reward.contains')}</div>
       <div className="space-y-2">
         {fixed.length > 0 && (
           <div>
-            <div className="text-[10px] text-archive-ivory mb-1">固定奖励</div>
+            <div className="text-[10px] text-archive-ivory mb-1">{t('reward.fixed')}</div>
             <div className="flex flex-wrap gap-1.5">
               {fixed.map(item => (
                 <ItemPanel key={item.id} itemId={item.id} amount={item.count} className="min-w-[80px]" />
@@ -61,7 +63,7 @@ export default function RewardPanel({ rewardIds, rewardTable }: RewardPanelProps
         )}
         {prob.length > 0 && (
           <div>
-            <div className="text-[10px] text-archive-ivory mb-1">随机奖励</div>
+            <div className="text-[10px] text-archive-ivory mb-1">{t('reward.random')}</div>
             <div className="flex flex-wrap gap-1.5">
               {prob.map(item => (
                 <ItemPanel key={item.id} itemId={item.id} amount={item.count} className="min-w-[80px]" />

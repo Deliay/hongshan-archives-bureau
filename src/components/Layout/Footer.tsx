@@ -1,8 +1,11 @@
+import { useI18n } from '../../i18n'
+
 export default function Footer() {
+  const { t } = useI18n()
   return (
     <footer className="border-t border-archive-border mt-16 py-6 text-center text-xs text-archive-lead">
-      <p className="text-archive-dust">宏山档案局 · 塔卫二官方档案管理与调阅系统</p>
-      <p className="mt-1">数据来源：天师数据库 API · 管理员记录</p>
+      <p className="text-archive-dust">{t('site.footer')}</p>
+      <p className="mt-1">{t('site.dataSource')}</p>
     </footer>
   )
 }

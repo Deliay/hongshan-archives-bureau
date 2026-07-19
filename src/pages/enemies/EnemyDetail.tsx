@@ -10,6 +10,7 @@ import { useLocale } from '../../lib/locale'
 import { ASSET_BASE, resolveI18n, adaptEnemy } from '../../lib/adapter'
 import { RichText } from '../../lib/richText'
 import Rarity from '../../components/Rarity'
+import { useI18n } from '../../i18n'
 import type { Enemy } from '../../lib/types'
 
 const ENEMY_STARS: Record<number, number> = { 0: 1, 1: 3, 2: 6, 3: 4, 4: 5 }
@@ -29,6 +30,7 @@ function applyModifiers(value: number, attrType: number, modifiers: any[] | unde
 export default function EnemyDetail() {
   const { id } = useParams<{ id: string }>()
   const { locale } = useLocale()
+  const { t } = useI18n()
   const { data: enemies, loading } = useEnemies()
 
   const [typeNameMap, setTypeNameMap] = useState<Record<number, string>>({})
@@ -148,7 +150,7 @@ export default function EnemyDetail() {
 
   if (loading || !enemy) {
     if (loading) return <Skeleton className="h-32 w-full" />
-    return <div className="text-archive-dust text-sm">未找到敌人</div>
+    return <div className="text-archive-dust text-sm">{t('common.notFound', { name: t('enemy.title') })}</div>
   }
 
   const stars = ENEMY_STARS[enemy.displayType] ?? 1
@@ -157,16 +159,16 @@ export default function EnemyDetail() {
   const currentLevelAttrs = levelAttrs[attrLevel - 1]?.attrs ?? []
   const fixedAttrs = attrTemplate?.levelIndependentAttributes?.attrs ?? []
   const resistMap: Record<string, string> = {
-    physicalDmgResistScalar: '物理',
-    fireDmgResistScalar: '灼热',
-    crystDmgResistScalar: '寒冷',
-    pulseDmgResistScalar: '电磁',
-    naturalDmgResistScalar: '自然',
+    physicalDmgResistScalar: t('enemy.physical'),
+    fireDmgResistScalar: t('enemy.fire'),
+    crystDmgResistScalar: t('enemy.cryst'),
+    pulseDmgResistScalar: t('enemy.pulse'),
+    naturalDmgResistScalar: t('enemy.natural'),
   }
 
   return (
     <div className="max-w-2xl space-y-4">
-      <div><Link to="/archive/enemies" className="text-xs text-archive-lead hover:text-archive-gold transition-colors">&larr; 返回敌人图鉴</Link></div>
+      <div><Link to="/archive/enemies" className="text-xs text-archive-lead hover:text-archive-gold transition-colors">&larr; {t('common.backToList', { list: t('enemy.title') })}</Link></div>
 
       <div className="flex items-start gap-4">
         <img src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/monstericonbig/${enemy.templateId}.png`} alt=""
@@ -179,7 +181,7 @@ export default function EnemyDetail() {
           </div>
           {enemy.nickname && <p className="text-sm text-archive-dust mt-0.5">{enemy.nickname}</p>}
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-archive-lead">{typeNameMap[enemy.displayType] || `类型${enemy.displayType}`}</span>
+            <span className="text-xs text-archive-lead">{typeNameMap[enemy.displayType] || `${t('common.unknown')} ${enemy.displayType}`}</span>
             <Rarity level={stars} />
             {enemy.wikiGroup && <span className="text-xs text-archive-lead">· {enemy.wikiGroup}</span>}
           </div>
@@ -195,14 +197,14 @@ export default function EnemyDetail() {
 
       {enemy.description && (
         <div className="p-3 rounded border border-archive-border bg-archive-file">
-          <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">描述</div>
+          <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('enemy.description')}</div>
           <div className="text-xs text-archive-ivory leading-relaxed"><RichText text={enemy.description} /></div>
         </div>
       )}
 
       {enemy.distributionIds.length > 0 && Object.keys(distNameMap).length > 0 && (
         <div className="p-3 rounded border border-archive-border bg-archive-file">
-          <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1.5">分布区域</div>
+          <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1.5">{t('enemy.distribution')}</div>
           <div className="flex flex-wrap gap-1.5">
             {enemy.distributionIds.map(did => (
               <span key={did} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
@@ -215,7 +217,7 @@ export default function EnemyDetail() {
 
       {!extraLoading && abilities.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-archive-gold mb-2">技能</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-2">{t('enemy.skill')}</h3>
           <div className="space-y-2">
             {abilities.map((ab, i) => (
               <div key={i} className="p-3 rounded border border-archive-border bg-archive-file">
@@ -230,9 +232,9 @@ export default function EnemyDetail() {
           {!extraLoading && attrTemplate && levelAttrs.length > 0 && (
         <div className="p-3 rounded border border-archive-border bg-archive-file">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-sm font-medium text-archive-gold">属性（等级 {attrLevel}）</h3>
+            <h3 className="text-sm font-medium text-archive-gold">{t('enemy.attrs', { level: attrLevel })}</h3>
             {modifiers[enemy.id]?.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#3A2A1A] text-archive-gold">已修正</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#3A2A1A] text-archive-gold">{t('enemy.fixed')}</span>
             )}
           </div>
           <input type="range" min={1} max={maxLevel} value={attrLevel}
@@ -243,7 +245,7 @@ export default function EnemyDetail() {
               const val = applyModifiers(attr.attrValue, attr.attrType, modifiers[enemy.id])
               return (
               <div key={attr.attrType} className="flex justify-between text-xs">
-                <span className="text-archive-lead">{attrNameMap[attr.attrType] || `属性${attr.attrType}`}</span>
+                <span className="text-archive-lead">{attrNameMap[attr.attrType] || `${t('common.unknown')} ${attr.attrType}`}</span>
                 <span className="text-archive-ivory font-mono">{attr.attrType >= 80 && attr.attrType <= 85 ? `${(attr.attrValue * 100).toFixed(0)}%` : val.toLocaleString()}</span>
               </div>
               )
@@ -252,10 +254,10 @@ export default function EnemyDetail() {
 
           {modifiers[enemy.id]?.length > 0 && (
             <div className="mt-3 pt-3 border-t border-archive-border">
-              <div className="text-[10px] text-archive-lead mb-1">属性修正</div>
+              <div className="text-[10px] text-archive-lead mb-1">{t('enemy.fixedAttrs')}</div>
               <div className="space-y-1">
                 {modifiers[enemy.id].map((m: any, i: number) => {
-                  const name = attrNameMap[m.attrType] || `属性${m.attrType}`
+                  const name = attrNameMap[m.attrType] || `${t('common.unknown')} ${m.attrType}`
                   const mult = (1 + m.attrValue)
                   const pct = (m.attrValue * 100).toFixed(0)
                   return (
@@ -271,11 +273,11 @@ export default function EnemyDetail() {
 
           {fixedAttrs.length > 0 && (
             <>
-              <div className="text-[10px] text-archive-lead mt-3 mb-1">固定属性</div>
+              <div className="text-[10px] text-archive-lead mt-3 mb-1">{t('enemy.fixedAttrs')}</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {fixedAttrs.map((attr: any) => (
                   <div key={attr.attrType} className="flex justify-between text-xs">
-                    <span className="text-archive-lead">{attrNameMap[attr.attrType] || `属性${attr.attrType}`}</span>
+                    <span className="text-archive-lead">{attrNameMap[attr.attrType] || `${t('common.unknown')} ${attr.attrType}`}</span>
                     <span className="text-archive-ivory font-mono">{attr.attrValue}</span>
                   </div>
                 ))}
@@ -285,7 +287,7 @@ export default function EnemyDetail() {
 
           {attrTemplate.physicalDmgResistScalar !== undefined && (
             <div className="mt-3 pt-3 border-t border-archive-border">
-              <div className="text-[10px] text-archive-lead mb-1">抗性</div>
+              <div className="text-[10px] text-archive-lead mb-1">{t('enemy.resist')}</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {Object.entries(resistMap).map(([key, label]) => {
                   const val = attrTemplate[key]
@@ -304,12 +306,12 @@ export default function EnemyDetail() {
 
           {attrTemplate.maxResilience !== undefined && (
             <div className="mt-3 pt-3 border-t border-archive-border">
-              <div className="text-[10px] text-archive-lead mb-1">韧性</div>
+              <div className="text-[10px] text-archive-lead mb-1">{t('enemy.resilience')}</div>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex justify-between"><span className="text-archive-lead">最大值</span><span className="text-archive-ivory font-mono">{attrTemplate.maxResilience}</span></div>
-                <div className="flex justify-between"><span className="text-archive-lead">受伤减少</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceDecreaseWhenHurt}</span></div>
-                <div className="flex justify-between"><span className="text-archive-lead">回复量/秒</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceRecover}</span></div>
-                <div className="flex justify-between"><span className="text-archive-lead">回复间隔</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceRecoverInterval}s</span></div>
+                <div className="flex justify-between"><span className="text-archive-lead">{t('enemy.maxResilience')}</span><span className="text-archive-ivory font-mono">{attrTemplate.maxResilience}</span></div>
+                <div className="flex justify-between"><span className="text-archive-lead">{t('enemy.resilienceDecreaseWhenHurt')}</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceDecreaseWhenHurt}</span></div>
+                <div className="flex justify-between"><span className="text-archive-lead">{t('enemy.resilienceRecover')}</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceRecover}</span></div>
+                <div className="flex justify-between"><span className="text-archive-lead">{t('enemy.resilienceRecoverInterval')}</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceRecoverInterval}s</span></div>
               </div>
             </div>
           )}
@@ -318,7 +320,7 @@ export default function EnemyDetail() {
 
       {variants.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-archive-gold mb-2">变体（{variants.length}）</h3>
+          <h3 className="text-sm font-medium text-archive-gold mb-2">{t('enemy.variants', { count: variants.length })}</h3>
           <div className="space-y-3">
             {variants.map(v => {
               const vl = variantLevels[v.id] ?? maxLevel
@@ -338,9 +340,9 @@ export default function EnemyDetail() {
                   {!extraLoading && attrTemplate && levelAttrs.length > 0 && (
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-archive-lead">属性（等级 {vl}）</span>
+                        <span className="text-[10px] text-archive-lead">{t('enemy.attrs', { level: vl })}</span>
                         {modifiers[v.id]?.length > 0 && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#3A2A1A] text-archive-gold">已修正</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#3A2A1A] text-archive-gold">{t('enemy.fixed')}</span>
                         )}
                       </div>
                       <input type="range" min={1} max={maxLevel} value={vl}
@@ -351,7 +353,7 @@ export default function EnemyDetail() {
                           const val = applyModifiers(attr.attrValue, attr.attrType, modifiers[v.id])
                           return (
                           <div key={attr.attrType} className="flex justify-between text-xs">
-                            <span className="text-archive-lead">{attrNameMap[attr.attrType] || `属性${attr.attrType}`}</span>
+                            <span className="text-archive-lead">{attrNameMap[attr.attrType] || `${t('common.unknown')} ${attr.attrType}`}</span>
                             <span className="text-archive-ivory font-mono">{attr.attrType >= 80 && attr.attrType <= 85 ? `${(attr.attrValue * 100).toFixed(0)}%` : val.toLocaleString()}</span>
                           </div>
                           )
@@ -359,10 +361,10 @@ export default function EnemyDetail() {
                       </div>
                       {modifiers[v.id]?.length > 0 && (
                         <div className="mt-2 pt-2 border-t border-archive-border">
-                          <div className="text-[10px] text-archive-lead mb-1">属性修正</div>
+                          <div className="text-[10px] text-archive-lead mb-1">{t('enemy.fixedAttrs')}</div>
                           <div className="space-y-1">
                             {modifiers[v.id].map((m: any, i: number) => {
-                              const name = attrNameMap[m.attrType] || `属性${m.attrType}`
+                              const name = attrNameMap[m.attrType] || `${t('common.unknown')} ${m.attrType}`
                               const mult = (1 + m.attrValue)
                               const pct = (m.attrValue * 100).toFixed(0)
                               return (
@@ -378,11 +380,11 @@ export default function EnemyDetail() {
 
                       {fixedAttrs.length > 0 && (
                         <>
-                          <div className="text-[10px] text-archive-lead mt-2 mb-1">固定属性</div>
+                          <div className="text-[10px] text-archive-lead mt-2 mb-1">{t('enemy.fixedAttrs')}</div>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {fixedAttrs.map((attr: any) => (
                               <div key={attr.attrType} className="flex justify-between text-xs">
-                                <span className="text-archive-lead">{attrNameMap[attr.attrType] || `属性${attr.attrType}`}</span>
+                                <span className="text-archive-lead">{attrNameMap[attr.attrType] || `${t('common.unknown')} ${attr.attrType}`}</span>
                                 <span className="text-archive-ivory font-mono">{attr.attrValue}</span>
                               </div>
                             ))}
@@ -391,7 +393,7 @@ export default function EnemyDetail() {
                       )}
                       {attrTemplate.physicalDmgResistScalar !== undefined && (
                         <div className="mt-2 pt-2 border-t border-archive-border">
-                          <div className="text-[10px] text-archive-lead mb-1">抗性</div>
+                          <div className="text-[10px] text-archive-lead mb-1">{t('enemy.resist')}</div>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {Object.entries(resistMap).map(([key, label]) => {
                               const val = attrTemplate[key]
@@ -409,12 +411,12 @@ export default function EnemyDetail() {
                       )}
                       {attrTemplate.maxResilience !== undefined && (
                         <div className="mt-2 pt-2 border-t border-archive-border">
-                          <div className="text-[10px] text-archive-lead mb-1">韧性</div>
+                          <div className="text-[10px] text-archive-lead mb-1">{t('enemy.resilience')}</div>
                           <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="flex justify-between"><span className="text-archive-lead">最大值</span><span className="text-archive-ivory font-mono">{attrTemplate.maxResilience}</span></div>
-                            <div className="flex justify-between"><span className="text-archive-lead">受伤减少</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceDecreaseWhenHurt}</span></div>
-                            <div className="flex justify-between"><span className="text-archive-lead">回复量/秒</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceRecover}</span></div>
-                            <div className="flex justify-between"><span className="text-archive-lead">回复间隔</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceRecoverInterval}s</span></div>
+                            <div className="flex justify-between"><span className="text-archive-lead">{t('enemy.maxResilience')}</span><span className="text-archive-ivory font-mono">{attrTemplate.maxResilience}</span></div>
+                            <div className="flex justify-between"><span className="text-archive-lead">{t('enemy.resilienceDecreaseWhenHurt')}</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceDecreaseWhenHurt}</span></div>
+                            <div className="flex justify-between"><span className="text-archive-lead">{t('enemy.resilienceRecover')}</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceRecover}</span></div>
+                            <div className="flex justify-between"><span className="text-archive-lead">{t('enemy.resilienceRecoverInterval')}</span><span className="text-archive-ivory font-mono">{attrTemplate.resilienceRecoverInterval}s</span></div>
                           </div>
                         </div>
                       )}
@@ -429,14 +431,14 @@ export default function EnemyDetail() {
 
       {!extraLoading && (
         <div className="p-3 rounded border border-archive-border bg-archive-file">
-          <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">基本信息</div>
+          <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('enemy.basicInfo')}</div>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-            <dt className="text-archive-lead">ID</dt>
+            <dt className="text-archive-lead">{t('enemy.id')}</dt>
             <dd className="text-archive-ivory font-mono">{enemy.id}</dd>
-            <dt className="text-archive-lead">模板 ID</dt>
+            <dt className="text-archive-lead">{t('enemy.templateId')}</dt>
             <dd className="text-archive-ivory font-mono text-[10px]">{enemy.templateId}</dd>
-            {enemy.enemyId && <><dt className="text-archive-lead">敌人 ID</dt><dd className="text-archive-ivory font-mono text-[10px]">{enemy.enemyId}</dd></>}
-            {attrTemplate && <><dt className="text-archive-lead">最大等级</dt><dd className="text-archive-ivory">{maxLevel}</dd></>}
+            {enemy.enemyId && <><dt className="text-archive-lead">{t('enemy.enemyId')}</dt><dd className="text-archive-ivory font-mono text-[10px]">{enemy.enemyId}</dd></>}
+            {attrTemplate && <><dt className="text-archive-lead">{t('enemy.maxLevel')}</dt><dd className="text-archive-ivory">{maxLevel}</dd></>}
           </dl>
         </div>
       )}

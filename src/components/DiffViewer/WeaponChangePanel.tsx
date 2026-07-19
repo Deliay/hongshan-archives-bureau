@@ -9,6 +9,7 @@ import type { ChangedEntry } from '../../lib/types-diff'
 import { RichText } from '../../lib/richText'
 import { formatBlackboard } from '../../lib/formatText'
 import { RichTextDiff } from './RichTextDiff'
+import { useI18n, translate } from '../../i18n'
 
 const RARITY_COLORS: Record<number, string> = {
   3: '#26BBFD',
@@ -45,11 +46,11 @@ function ChangeBadge({ label, color, count }: { label: string; color: string; co
   )
 }
 
-function renderObj(obj: any, indent = ''): string {
-  if (obj === null || obj === undefined) return indent + '（空）'
+function renderObj(obj: any, locale: string, indent = ''): string {
+  if (obj === null || obj === undefined) return `${indent}${translate(locale, 'diff.empty')}`
   if (Array.isArray(obj)) {
     if (obj.length === 0) return indent + '[]'
-    return obj.map((_v, i) => `${indent}[${i}]: ${renderObj(_v, indent + '  ')}`).join('\n')
+    return obj.map((_v, i) => `${indent}[${i}]: ${renderObj(_v, locale, indent + '  ')}`).join('\n')
   }
   if (typeof obj === 'object') {
     const text = 'text' in obj ? (obj.text || '') : ''
@@ -60,16 +61,16 @@ function renderObj(obj: any, indent = ''): string {
     return keys.map(k => {
       const v = obj[k]
       if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0) {
-        return `${indent}${k}:\n${renderObj(v, indent + '  ')}`
+        return `${indent}${k}:\n${renderObj(v, locale, indent + '  ')}`
       }
-      return `${indent}${k}: ${renderObj(v, '')}`.trim()
+      return `${indent}${k}: ${renderObj(v, locale, '')}`.trim()
     }).join('\n')
   }
   return String(obj)
 }
 
 function formatDiffValue(v: unknown, locale: string): string {
-  if (v === undefined || v === null) return '（空）'
+  if (v === undefined || v === null) return translate(locale, 'diff.empty')
   if (typeof v === 'object' && !Array.isArray(v)) {
     const text = localeText(v, locale)
     if (text) return `"${text}"`
@@ -95,8 +96,8 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
                 <div key={path} className="text-[10px]">
                   <span className="text-archive-lead font-mono">{path}</span>
                   <div className="flex gap-3 mt-0.5">
-                    <span className="text-[archive-seal]">旧 {formatDiffValue(change.oldValue, locale)}</span>
-                    <span className="text-[archive-bronze]">新 {formatDiffValue(change.newValue, locale)}</span>
+                    <span className="text-[archive-seal]">{translate(locale, 'diff.old')} {formatDiffValue(change.oldValue, locale)}</span>
+                    <span className="text-[archive-bronze]">{translate(locale, 'diff.new')} {formatDiffValue(change.newValue, locale)}</span>
                   </div>
                 </div>
               )
@@ -121,12 +122,13 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
         </div>
       )
     }
-    return <div className="text-archive-dust text-[10px]">无详细变更信息</div>
+    return <div className="text-archive-dust text-[10px]">{translate(locale, 'diff.noDetail')}</div>
   }
-  return <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry)}</div>
+  return <div className="text-archive-dust text-[10px] font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">{renderObj(entry, locale)}</div>
 }
 
 function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
+  const { t } = useI18n()
   const [expanded, setExpanded] = useState(false)
   const isAdded = wp.changes.some(c => c.op === 'added' && c.tableName === 'WeaponBasicTable')
   const [weaponTypeMap, setWeaponTypeMap] = useState<Record<number, string>>({})
@@ -150,7 +152,7 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
               const key = `LUA_WEAPON_TYPE_${i}`
               const entry = raw[key]
               if (entry) {
-                map[i] = resolveI18n(entry, i18n) || entry.text || `类型${i}`
+                map[i] = resolveI18n(entry, i18n) || entry.text || `${translate(locale, 'common.unknown')} ${i}`
               }
             }
             setWeaponTypeMap(map)
@@ -234,7 +236,7 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <div className="truncate flex items-center gap-1.5">
-              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[archive-bronze] text-white font-bold shrink-0">新增</span>}
+              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[archive-bronze] text-white font-bold shrink-0">{t('update.added')}</span>}
               <span className="text-sm font-medium text-archive-ivory">{name}</span>
               <span className="text-[10px] text-archive-lead font-mono">{wp.weaponId}</span>
             </div>
@@ -270,7 +272,7 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
             wp.changes.map((c) => {
               const label = c.tableName
               const color = TABLE_COLORS[c.tableName] || '#8B8982'
-              const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
+              const opLabel = c.op === 'added' ? t('update.added') : c.op === 'removed' ? t('update.removed') : t('update.changed')
               const opColor = c.op === 'added' ? '#5A7A6A' : c.op === 'removed' ? '#9E3A3A' : '#B89A6A'
               return (
                 <div key={c.tableName + c.key} className="text-xs border-b border-archive-border/50 pb-1.5 last:border-0 last:pb-0">
@@ -308,10 +310,11 @@ async function getSkillI18n(locale: string): Promise<Record<string, string>> {
 }
 
 function WeaponSkillEntry({ entry, op, locale }: { entry: any; op: string; locale: string }) {
+  const { t } = useI18n()
   const [i18n, setI18n] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   useEffect(() => { getSkillI18n(locale).then(d => { setI18n(d); setLoading(false) }) }, [locale])
-  if (loading) return <div className="text-[10px] text-archive-lead">加载技能…</div>
+  if (loading) return <div className="text-[10px] text-archive-lead">{translate(locale, 'diff.loadingSkill')}</div>
 
   if (op === 'changed') {
     const e = entry as { changed?: Record<string, any>; newValue?: Record<string, any> }
@@ -325,11 +328,11 @@ function WeaponSkillEntry({ entry, op, locale }: { entry: any; op: string; local
       }
       return renderChangeEntry(entry, op, locale, formatter)
     }
-    return <div className="text-[10px] text-archive-lead">无技能变更</div>
+    return <div className="text-[10px] text-archive-lead">{translate(locale, 'diff.noSkillChange')}</div>
   }
 
   const bundle = entry?.SkillPatchDataBundle
-  if (!bundle?.length) return <div className="text-[10px] text-archive-lead">无技能数据</div>
+  if (!bundle?.length) return <div className="text-[10px] text-archive-lead">{translate(locale, 'diff.noSkillData')}</div>
   const first = bundle[0]
   const name = localeText(first.skillName, locale) || resolveI18n(first.skillName, i18n) || first.skillId || ''
   const desc = localeText(first.description, locale) || resolveI18n(first.description, i18n) || ''
@@ -340,18 +343,19 @@ function WeaponSkillEntry({ entry, op, locale }: { entry: any; op: string; local
     <div className="text-xs">
       {name && <div className="text-archive-ivory font-medium mb-1">{name}</div>}
       {formattedDesc && <div className="text-archive-dust leading-relaxed"><RichText text={formattedDesc} /></div>}
-      <div className="text-[10px] text-archive-lead mt-1">Lv.{first.level} · {bundle.length} 级</div>
+      <div className="text-[10px] text-archive-lead mt-1">{t('common.level', { level: first.level })} · {t('diff.levelCount', { count: bundle.length })}</div>
     </div>
   )
 }
 
 function AddedWeaponDetail({ weaponId, basicEntry, itemEntry, locale: _locale }: { weaponId: string; basicEntry: any; itemEntry: any; locale: string }) {
+  const { t } = useI18n()
   return (
     <div className="space-y-3">
       <WeaponSkillPreview weaponId={weaponId} />
       {itemEntry?.decoDesc && (
         <details className="group">
-          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">物品描述</summary>
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{t('item.description')}</summary>
           <div className="mt-1 text-xs text-archive-ivory leading-relaxed whitespace-pre-wrap">
             <RichText text={localeText(itemEntry.decoDesc, _locale) || ''} />
           </div>
@@ -359,7 +363,7 @@ function AddedWeaponDetail({ weaponId, basicEntry, itemEntry, locale: _locale }:
       )}
       {itemEntry?.desc && (
         <details className="group">
-          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">道具说明</summary>
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{t('item.explain')}</summary>
           <div className="mt-1 text-xs text-archive-ivory leading-relaxed whitespace-pre-wrap">
             <RichText text={localeText(itemEntry.desc, _locale) || ''} />
           </div>
@@ -367,7 +371,7 @@ function AddedWeaponDetail({ weaponId, basicEntry, itemEntry, locale: _locale }:
       )}
       {basicEntry?.weaponDesc && (
         <details className="group">
-          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">武器说明</summary>
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{t('weapon.weaponDesc')}</summary>
           <div className="mt-1 text-xs text-archive-ivory leading-relaxed whitespace-pre-wrap">
             <RichText text={localeText(basicEntry.weaponDesc, _locale) || ''} />
           </div>
@@ -375,26 +379,26 @@ function AddedWeaponDetail({ weaponId, basicEntry, itemEntry, locale: _locale }:
       )}
       {basicEntry && (
         <details className="group" open>
-          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">基本信息</summary>
+          <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{t('common.basicInfo')}</summary>
           <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs px-2">
-            <dt className="text-archive-lead">武器 ID</dt>
+            <dt className="text-archive-lead">{t('weapon.weaponId')}</dt>
             <dd className="text-archive-ivory font-mono">{weaponId}</dd>
-            <dt className="text-archive-lead">最大等级</dt>
+            <dt className="text-archive-lead">{t('weapon.maxLevel')}</dt>
             <dd className="text-archive-ivory">{basicEntry.maxLv ?? '-'}</dd>
             {basicEntry.breakthroughTemplateId && <>
-              <dt className="text-archive-lead">突破模板</dt>
+              <dt className="text-archive-lead">{t('weapon.breakTemplate')}</dt>
               <dd className="text-archive-ivory font-mono text-[10px]">{basicEntry.breakthroughTemplateId}</dd>
             </>}
             {basicEntry.levelTemplateId && <>
-              <dt className="text-archive-lead">升级模板</dt>
+              <dt className="text-archive-lead">{t('weapon.levelTemplate')}</dt>
               <dd className="text-archive-ivory font-mono text-[10px]">{basicEntry.levelTemplateId}</dd>
             </>}
             {basicEntry.talentTemplateId && <>
-              <dt className="text-archive-lead">天赋模板</dt>
+              <dt className="text-archive-lead">{t('weapon.talentTemplate')}</dt>
               <dd className="text-archive-ivory font-mono text-[10px]">{basicEntry.talentTemplateId}</dd>
             </>}
             {basicEntry.weaponSkillList?.length > 0 && <>
-              <dt className="text-archive-lead">技能 ID</dt>
+              <dt className="text-archive-lead">{t('diff.skillId')}</dt>
               <dd className="text-archive-ivory font-mono text-[10px]">{basicEntry.weaponSkillList.join(', ')}</dd>
             </>}
           </dl>
@@ -406,6 +410,7 @@ function AddedWeaponDetail({ weaponId, basicEntry, itemEntry, locale: _locale }:
 
 function WeaponSkillPreview({ weaponId }: { weaponId: string }) {
   const { locale } = useLocale()
+  const { t } = useI18n()
   const [data, setData] = useState<{ skillId: string; name: string; desc: string }[]>([])
   useEffect(() => {
     let cancelled = false
@@ -443,7 +448,7 @@ function WeaponSkillPreview({ weaponId }: { weaponId: string }) {
   if (data.length === 0) return null
   return (
     <details className="group" open>
-      <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">技能（{data.length}）</summary>
+      <summary className="text-xs text-archive-dust cursor-pointer hover:text-archive-gold transition-colors">{t('operator.skill')}（{data.length}）</summary>
       <div className="mt-1 space-y-2">
         {data.map((s, i) => (
           <div key={i} className="px-2 py-1.5 rounded bg-archive-ink">
@@ -462,12 +467,13 @@ interface Props {
 
 export default function WeaponChangePanel({ versionName }: Props) {
   const { locale } = useLocale()
+  const { t } = useI18n()
   const { data: weapons, loading, error } = useWeaponAggregatedDiff(versionName)
 
   if (loading) {
     return (
       <div className="mb-8">
-        <h3 className="text-sm font-medium text-archive-ivory mb-3">武器变动概览</h3>
+        <h3 className="text-sm font-medium text-archive-ivory mb-3">{t('diff.weaponOverview')}</h3>
         <div className="space-y-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-16 rounded border border-archive-border bg-archive-file animate-pulse" />
@@ -488,15 +494,15 @@ export default function WeaponChangePanel({ versionName }: Props) {
     <div className="mb-8">
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="text-sm font-medium text-archive-ivory">
-          武器变动概览
+          {t('diff.weaponOverview')}
           <span className="text-xs text-archive-lead font-normal ml-2">
-            {weapons.length} 件武器 · {totalChanges} 处变动
+            {t('diff.weaponCount', { count: weapons.length, changes: totalChanges })}
           </span>
         </h3>
         <div className="flex gap-2 text-[10px] text-archive-lead">
-          {withAdded > 0 && <span className="text-[archive-bronze]">新增 {withAdded}</span>}
-          {withRemoved > 0 && <span className="text-[archive-seal]">移除 {withRemoved}</span>}
-          {withChanged > 0 && <span className="text-[archive-gold]">变更 {withChanged}</span>}
+          {withAdded > 0 && <span className="text-[archive-bronze]">{t('update.added')} {withAdded}</span>}
+          {withRemoved > 0 && <span className="text-[archive-seal]">{t('update.removed')} {withRemoved}</span>}
+          {withChanged > 0 && <span className="text-[archive-gold]">{t('update.changed')} {withChanged}</span>}
         </div>
       </div>
 

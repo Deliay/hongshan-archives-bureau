@@ -4,18 +4,20 @@ import { PageSkeleton } from '../../components/ui/PageSkeleton'
 import { useFactions } from '../../hooks/useData'
 import { Link } from 'react-router-dom'
 import Rarity from '../../components/Rarity'
+import { useI18n } from '../../i18n'
 
 export default function FactionList() {
+  const { t } = useI18n()
   const { data: factions, loading, error } = useFactions()
 
   if (loading) return <PageSkeleton />
-  if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
-  if (!factions || factions.length === 0) return <div className="text-archive-dust text-sm">暂无记录</div>
+  if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
+  if (!factions || factions.length === 0) return <div className="text-archive-dust text-sm">{t('common.empty')}</div>
 
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <h2 className="font-display text-xl font-bold text-archive-ivory">势力阵营</h2>
+        <h2 className="font-display text-xl font-bold text-archive-ivory">{t('faction.title')}</h2>
         <Badge variant="ghost" className="font-mono">{MODULE_CODES.factions}</Badge>
       </div>
 
@@ -34,7 +36,7 @@ export default function FactionList() {
                 {faction.engName && (
                   <span className="text-xs text-archive-lead">{faction.engName}</span>
                 )}
-                <span className="text-xs text-archive-lead">{faction.members.length} 人</span>
+                <span className="text-xs text-archive-lead">{t('common.countPeople', { count: faction.members.length })}</span>
             </Link>
 
             {faction.members.length > 0 && (

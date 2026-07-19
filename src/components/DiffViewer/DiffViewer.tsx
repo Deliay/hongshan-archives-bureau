@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n, translate } from '../../i18n'
 import type { FieldChange, ChangedEntry, TableDiff } from '../../lib/types-diff'
 
 const LOCALE_CODES = new Set(['CN', 'EN', 'JP', 'KR', 'RU', 'BR', 'DE', 'FR', 'ID', 'IT', 'MX', 'TC', 'TH', 'VN'])
@@ -23,14 +24,15 @@ interface DiffViewerProps {
 }
 
 export default function DiffViewer({ diff, renderKey }: DiffViewerProps) {
+  const { locale, t } = useI18n()
   const [tab, setTab] = useState<'added' | 'removed' | 'changed'>('changed')
   const { stats, entries } = diff
 
   const tabs = (
     [
-      { id: 'added' as const, label: '新增', count: stats.added },
-      { id: 'removed' as const, label: '移除', count: stats.removed },
-      { id: 'changed' as const, label: '变更', count: stats.changed },
+      { id: 'added' as const, label: t('update.added'), count: stats.added },
+      { id: 'removed' as const, label: t('update.removed'), count: stats.removed },
+      { id: 'changed' as const, label: t('update.changed'), count: stats.changed },
     ] as const
   ).filter((t) => t.count > 0)
 
@@ -53,9 +55,9 @@ export default function DiffViewer({ diff, renderKey }: DiffViewerProps) {
         ))}
       </div>
 
-      {tab === 'added' && <EntryList entries={entries.added} empty="无新增条目" renderKey={renderKey} />}
-      {tab === 'removed' && <EntryList entries={entries.removed} empty="无移除条目" renderKey={renderKey} />}
-      {tab === 'changed' && <ChangedEntryList entries={entries.changed} renderKey={renderKey} />}
+      {tab === 'added' && <EntryList entries={entries.added} empty={t('diff.noAddedEntries')} renderKey={renderKey} />}
+      {tab === 'removed' && <EntryList entries={entries.removed} empty={t('diff.noRemovedEntries')} renderKey={renderKey} />}
+      {tab === 'changed' && <ChangedEntryList entries={entries.changed} renderKey={renderKey} locale={locale} />}
     </div>
   )
 }
@@ -90,12 +92,13 @@ function EntryList({ entries, empty, renderKey }: {
   )
 }
 
-function ChangedEntryList({ entries, renderKey }: {
+function ChangedEntryList({ entries, renderKey, locale }: {
   entries: Record<string, ChangedEntry>
   renderKey?: (key: string, entry: ChangedEntry) => string
+  locale: string
 }) {
   const keys = Object.keys(entries)
-  if (keys.length === 0) return <p className="text-sm text-archive-lead">无变更条目</p>
+  if (keys.length === 0) return <p className="text-sm text-archive-lead">{translate(locale, 'diff.noChangedEntries')}</p>
 
   return (
     <div className="space-y-3">
@@ -110,7 +113,7 @@ function ChangedEntryList({ entries, renderKey }: {
             <div className="px-3 pb-3 border-t border-archive-border">
               <div className="mt-2 space-y-1">
                 {Object.entries(entry.changed).map(([path, change]) => (
-                  <FieldChangeRow key={path} path={path} change={change} />
+                  <FieldChangeRow key={path} path={path} change={change} locale={locale} />
                 ))}
               </div>
             </div>
@@ -121,19 +124,19 @@ function ChangedEntryList({ entries, renderKey }: {
   )
 }
 
-function FieldChangeRow({ path, change }: { path: string; change: FieldChange }) {
+function FieldChangeRow({ path, change, locale }: { path: string; change: FieldChange; locale: string }) {
   return (
     <div className="text-xs border-b border-archive-border/50 pb-1 last:border-0">
       <div className="text-archive-dust font-mono mb-0.5">{path}</div>
       {change.type === 'value' ? (
         <div className="flex items-start gap-4">
           <div className="flex-1 min-w-0">
-            <span className="text-[archive-seal]">旧</span>
-            <span className="ml-1 text-archive-ivory whitespace-pre-wrap break-all">{formatValue(change.oldValue)}</span>
+            <span className="text-[archive-seal]">{translate(locale, 'diff.old')}</span>
+            <span className="ml-1 text-archive-ivory whitespace-pre-wrap break-all">{formatValue(locale, change.oldValue)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[archive-bronze]">新</span>
-            <span className="ml-1 text-archive-ivory whitespace-pre-wrap break-all">{formatValue(change.newValue)}</span>
+            <span className="text-[archive-bronze]">{translate(locale, 'diff.new')}</span>
+            <span className="ml-1 text-archive-ivory whitespace-pre-wrap break-all">{formatValue(locale, change.newValue)}</span>
           </div>
         </div>
       ) : (
@@ -141,10 +144,10 @@ function FieldChangeRow({ path, change }: { path: string; change: FieldChange })
           {Object.entries(change.changedLocales).map(([locale, { oldText, newText }]) => (
             <div key={locale} className="mb-1 last:mb-0">
               <span className="text-archive-gold font-mono">{LOCALE_LABELS[locale] || locale}</span>
-              <span className="mx-1 text-archive-lead">旧</span>
-              <span className="text-[archive-seal]">{oldText || '（空）'}</span>
+              <span className="mx-1 text-archive-lead">{translate(locale, 'diff.old')}</span>
+              <span className="text-[archive-seal]">{oldText || translate(locale, 'diff.empty')}</span>
               <span className="mx-1 text-archive-lead">→</span>
-              <span className="text-[archive-bronze]">{newText || '（空）'}</span>
+              <span className="text-[archive-bronze]">{newText || translate(locale, 'diff.empty')}</span>
             </div>
           ))}
         </div>
@@ -153,8 +156,8 @@ function FieldChangeRow({ path, change }: { path: string; change: FieldChange })
   )
 }
 
-function formatValue(v: unknown): string {
-  if (v === undefined || v === null) return '（空）'
+function formatValue(locale: string, v: unknown): string {
+  if (v === undefined || v === null) return translate(locale, 'diff.empty')
   if (typeof v === 'string') return v
   return JSON.stringify(v, null, 0)
 }

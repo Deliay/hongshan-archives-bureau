@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
+import { useI18n } from '../../i18n'
 import { RichText } from '../../lib/richText'
 import ItemIcon from './ItemIcon'
 import { resolveI18n, ASSET_BASE } from '../../lib/adapter'
@@ -25,6 +26,7 @@ interface ItemTooltipOverlayProps {
 
 export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverlayProps) {
   const { locale } = useLocale()
+  const { t } = useI18n()
   const [itemData, setItemData] = useState<any>(null)
   const [i18nMap, setI18nMap] = useState<Record<string, string> | null>(null)
   const [fullBottle, setFullBottle] = useState<{ liquidId: string; liquidCapacity: number } | null>(null)
@@ -136,14 +138,14 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
             <div className="flex items-center gap-2 p-2 rounded bg-archive-ink border border-archive-border">
               <ItemIcon itemId={fullBottle.liquidId} className="w-8 h-8" />
               <span className="text-xs text-archive-dust">
-                已装盛 {fullBottle.liquidCapacity} 单位
+                {t('item.fullBottle', { capacity: fullBottle.liquidCapacity })}
               </span>
             </div>
           )}
 
           {desc && (
             <div>
-              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">物品效果</div>
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('item.effect')}</div>
               <div className="text-xs text-archive-ivory leading-relaxed">
                 <RichText text={desc} />
               </div>
@@ -152,7 +154,7 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
 
           {decoDesc && (
             <div>
-              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">物品描述</div>
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('item.description')}</div>
               <div className="text-xs text-archive-dust italic leading-relaxed">
                 <RichText text={decoDesc} />
               </div>
@@ -161,14 +163,14 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
 
           {noObtainHint && (
             <div>
-              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">制作方式</div>
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('item.craftMethod')}</div>
               <div className="text-xs text-archive-lead leading-relaxed">{noObtainHint}</div>
             </div>
           )}
 
           {obtainWayIds.length > 0 && Object.keys(obtainWayMap).length > 0 && (
             <div>
-              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">获取方式</div>
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('item.obtainWay')}</div>
               <ul className="space-y-1">
                 {obtainWayIds.map((wayId) => {
                   const way = obtainWayMap[wayId]
@@ -198,7 +200,7 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
 
           {itemData && Number(itemData.type) === ITEM_TYPE.Weapon && (
             <div>
-              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">武器技能</div>
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('item.weaponSkill')}</div>
               <WeaponSkillPanel weaponId={itemId} />
             </div>
           )}
