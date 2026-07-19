@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import ArchiveSearchResults from './ArchiveSearchResults'
@@ -12,11 +12,64 @@ vi.mock('../../i18n', () => ({
         'search.resultCount': `找到 ${vars?.count ?? 0} 条相关记载`,
         'search.prev': '上一页',
         'search.next': '下一页',
+        'common.level': `Lv. ${vars?.level ?? 0}`,
       }
       return map[key] ?? key
     },
   }),
 }))
+
+const mockSkillPatchData = {
+  skill_001: {
+    SkillPatchDataBundle: [
+      {
+        level: 1,
+        skillName: { id: 1 },
+        description: { id: 2 },
+        iconId: 'icon_01',
+        blackboard: [],
+      },
+      {
+        level: 9,
+        skillName: { id: 1 },
+        description: { id: 2 },
+        iconId: 'icon_01',
+        blackboard: [],
+      },
+    ],
+  },
+}
+
+vi.mock('../../lib/locale', () => ({
+  useLocale: () => ({ locale: 'CN', setLocale: vi.fn() }),
+}))
+
+vi.mock('../../lib/cache', () => ({
+  getCachedData: vi.fn((key: string) => {
+    if (key === 'SkillPatchTable') {
+      return Promise.resolve(mockSkillPatchData)
+    }
+    if (key.startsWith('I18nDict_')) {
+      return Promise.resolve({})
+    }
+    return Promise.resolve({})
+  }),
+}))
+
+vi.mock('../../lib/api', () => ({
+  fetchTableAll: vi.fn(() => Promise.resolve({})),
+  fetchTableDictAll: vi.fn(() => Promise.resolve({})),
+  fetchI18nText: vi.fn((_locale: string, id: string) => {
+    const texts: Record<string, string> = {
+      '1': 'Test Skill Name',
+      '2': 'Test Skill Description',
+    }
+    return Promise.resolve(texts[id] ?? '')
+  }),
+  fetchI18nSearch: vi.fn(() => Promise.resolve([])),
+}))
+
+
 
 afterEach(cleanup)
 
@@ -189,6 +242,53 @@ describe('ArchiveSearchResults', () => {
     )
     const nextBtn = screen.getByRole('button', { name: '下一页' })
     expect((nextBtn as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('calls window.scrollTo when page changes', () => {
+    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    const results = Array.from({ length: 30 }).map((_, i) =>
+      makeResult({ id: `${i}`, text: `text ${i}` }),
+    )
+    const { rerender } = renderWithRouter(
+      <ArchiveSearchResults
+        {...defaultProps}
+        results={results}
+        total={60}
+        pageSize={30}
+        page={0}
+      />,
+    )
+    expect(scrollToSpy).not.toHaveBeenCalled()
+
+    rerender(
+      <MemoryRouter>
+        <ArchiveSearchResults
+          {...defaultProps}
+          results={results}
+          total={60}
+          pageSize={30}
+          page={1}
+        />
+      </MemoryRouter>,
+    )
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
+    scrollToSpy.mockRestore()
+  })
+
+  it('renders SkillReferenceCard for SkillPatchTable results', async () => {
+    const results = [
+      makeResult({ table: 'SkillPatchTable', entityKey: 'skill_001' }),
+    ]
+    renderWithRouter(
+      <ArchiveSearchResults
+        {...defaultProps}
+        results={results}
+        total={1}
+      />,
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Test Skill Name')).toBeTruthy()
+    })
   })
 
   it('renders entity card when entity exists', () => {

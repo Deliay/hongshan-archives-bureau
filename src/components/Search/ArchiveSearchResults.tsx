@@ -1,7 +1,9 @@
+import { useEffect, useRef } from 'react'
 import type { SearchResult, SearchEntity } from '../../lib/types'
 import { escapeRegex } from '../../lib/search'
 import { RichText } from '../../lib/richText'
 import { EntityReferenceCard } from './EntityCards'
+import SkillReferenceCard from '../skills/SkillReferenceCard'
 import { Skeleton } from '../ui/Skeleton'
 import { useI18n } from '../../i18n'
 
@@ -83,6 +85,15 @@ export default function ArchiveSearchResults({
 }: ArchiveSearchResultsProps) {
   const { t } = useI18n()
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const initialPageRef = useRef(true)
+
+  useEffect(() => {
+    if (initialPageRef.current) {
+      initialPageRef.current = false
+      return
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [page])
 
   if (loading) return <LoadingSkeleton />
 
@@ -111,13 +122,17 @@ export default function ArchiveSearchResults({
       <div className="flex flex-col gap-3">
         {results.map((r, i) => {
           const entity = r.entityKey ? entities[r.table]?.[r.entityKey] : undefined
+          const ownerEntity = r.ownerEntity
           return (
             <div key={`${r.id}-${i}`} className="rounded border border-archive-border bg-archive-file p-3">
               <div className="text-[10px] text-archive-lead mb-1">{r.table}</div>
               <div className="text-sm text-archive-ivory leading-relaxed mb-2">
                 <RichText text={highlightText(r.text, query)} />
               </div>
-              {entity && <EntityReferenceCard entity={entity} />}
+              {r.table === 'SkillPatchTable' && r.entityKey && (
+                <SkillReferenceCard skillId={r.entityKey} showLevelSlider defaultLevel={9} className="mb-2" />
+              )}
+              {(entity || ownerEntity) && <EntityReferenceCard entity={ownerEntity ?? entity} />}
             </div>
           )
         })}

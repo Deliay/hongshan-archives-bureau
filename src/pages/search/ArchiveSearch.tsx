@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
@@ -7,12 +8,27 @@ import ArchiveSearchResults from '../../components/Search/ArchiveSearchResults'
 
 export default function ArchiveSearch() {
   const { t } = useI18n()
-  const [input, setInput] = useState('')
-  const [query, setQuery] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const keywordParam = searchParams.get('keyword') ?? ''
+  const [input, setInput] = useState(keywordParam)
+  const [query, setQuery] = useState(keywordParam)
+
+  useEffect(() => {
+    const kw = searchParams.get('keyword') ?? ''
+    setInput(kw)
+    setQuery(kw)
+  }, [searchParams])
+
   const { results, entities, total, page, pageSize, loading, error, setPage } = useArchiveSearch(query)
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') setQuery(input)
+    if (e.key !== 'Enter') return
+    const trimmed = input.trim()
+    if (trimmed) {
+      setSearchParams({ keyword: trimmed })
+    } else {
+      setSearchParams({})
+    }
   }
 
   return (

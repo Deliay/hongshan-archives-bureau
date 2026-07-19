@@ -286,6 +286,7 @@ export interface SearchResult {
   id: string
   text: string
   entityKey: string | null
+  ownerEntity?: SearchEntity
 }
 
 export interface SearchEntity {
