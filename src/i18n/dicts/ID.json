@@ -32,7 +32,9 @@
     "areasDesc": "Regional distribution and exploration",
     "storyDesc": "Narrative archive",
     "updates": "Update Logs",
-    "updatesDesc": "Inter-version data changes"
+    "updatesDesc": "Inter-version data changes",
+    "search": "档案搜索",
+    "searchDesc": "跨表关键词检索"
   },
   "common": {
     "sort": "Urutkan",
@@ -300,5 +302,16 @@
     "physicalResistScalar": "Physical resistance scalar",
     "abilities": "Abilities ({{count}})",
     "unchanged": "Unchanged"
+  },
+  "search": {
+    "title": "档案搜索",
+    "placeholder": "搜索档案关键词…",
+    "searchButton": "搜索",
+    "noResults": "未找到相关记载",
+    "resultCount": "找到 {{count}} 条相关记载",
+    "source": "来源",
+    "relatedRecords": "相关记载",
+    "prev": "上一页",
+    "next": "下一页"
   }
 }

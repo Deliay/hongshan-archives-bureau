@@ -1,33 +1,29 @@
 import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
 import { Skeleton } from '../../components/ui/Skeleton'
-import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useFactionDetail } from '../../hooks/useData'
+import { useFactionDetail, useArchiveSearch } from '../../hooks/useData'
 import Rarity from '../../components/Rarity'
-import { RichText } from '../../lib/richText'
 import { useI18n } from '../../i18n'
-
-const HIGHLIGHT_COLOR = '#B89A6A'
-
-function highlightName(text: string, name: string): string {
-  if (!name) return text
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return text.replace(new RegExp(escaped, 'g'), `<mark=${HIGHLIGHT_COLOR}>${name}</mark>`)
-}
+import ArchiveSearchResults from '../../components/Search/ArchiveSearchResults'
 
 export default function FactionDetail() {
   const { factionId } = useParams<{ factionId: string }>()
   const { t } = useI18n()
   const { data, loading, error } = useFactionDetail(factionId ?? '')
 
-  const highlighted = useMemo(() => {
-    if (!data) return []
-    return data.texts.map(t => ({
-      ...t,
-      html: highlightName(t.text, data.name),
-    }))
-  }, [data])
+  const {
+    results,
+    entities,
+    total,
+    page,
+    pageSize,
+    loading: searchLoading,
+    error: searchError,
+    setPage,
+  } = useArchiveSearch(data?.name ?? '', {
+    excludeTables: ['TagDataTable', 'BlocDataTable', 'CharacterTagTable'],
+  })
 
   if (loading) return <Skeleton className="h-32 w-full" />
   if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
@@ -52,21 +48,21 @@ export default function FactionDetail() {
         <span className="text-xs text-archive-lead">{t('common.countPeople', { count: data.members.length })}</span>
       </div>
 
-      {highlighted.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-archive-dust mb-2">{t('faction.relatedRecords')}</h3>
-          <div className="flex flex-col gap-3">
-            {highlighted.map((t) => (
-              <div key={`${t.source}-${t.text.slice(0, 20)}`} className="rounded border border-archive-border bg-archive-file p-3">
-                <div className="text-[10px] text-archive-lead mb-1">{t.source}</div>
-                <div className="text-sm text-archive-ivory leading-relaxed">
-                  <RichText text={t.html} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-archive-dust mb-2">{t('faction.relatedRecords')}</h3>
+        <ArchiveSearchResults
+          query={data.name}
+          results={results}
+          entities={entities}
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          loading={searchLoading}
+          error={searchError}
+          emptyMessage={t('search.noResults')}
+          onPageChange={setPage}
+        />
+      </div>
 
       <h3 className="text-sm font-medium text-archive-dust mb-2">{t('faction.members')}</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">

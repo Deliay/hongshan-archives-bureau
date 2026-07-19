@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember } from '../lib/types'
+import { searchArchive } from '../lib/search'
+import type { SearchArchiveOptions } from '../lib/search'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult } from '../lib/types'
+import type { SearchArchiveRawResult } from '../lib/search'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
@@ -917,4 +920,47 @@ export function useFactionDetail(factionId: string): UseDataResult<FactionEntry>
 
     return { ...faction, texts: texts.filter(t => t.text) }
   }, [locale, factionId])
+}
+
+export function useArchiveSearch(
+  query: string,
+  options: SearchArchiveOptions = {},
+): UseArchiveSearchResult {
+  const { locale } = useLocale()
+  const pageSize = options.pageSize ?? 30
+  const [page, setPage] = useState(0)
+  const [result, setResult] = useState<SearchArchiveRawResult>({ allResults: [], entities: {} })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await searchArchive(query, locale, options)
+      setResult(data)
+      setPage(0)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }, [query, locale, JSON.stringify(options)])
+
+  useEffect(() => { if (query.trim()) load() }, [load])
+
+  const start = page * pageSize
+  const results = result.allResults.slice(start, start + pageSize)
+
+  return {
+    results,
+    entities: result.entities,
+    total: result.allResults.length,
+    page,
+    pageSize,
+    loading,
+    error,
+    setPage,
+    refetch: load,
+  }
 }

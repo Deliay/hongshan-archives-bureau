@@ -53,6 +53,7 @@ function useNavGroups(): NavGroup[] {
     {
       label: t('nav.chronicle'),
       items: [
+        { label: t('nav.search'), path: '/archive/search' },
         { label: t('nav.story'), path: '/archive/story' },
         { label: t('nav.updates'), path: '/archive/updates' },
       ],

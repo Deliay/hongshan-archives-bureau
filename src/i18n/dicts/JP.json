@@ -32,7 +32,9 @@
     "areasDesc": "地域分布と探索",
     "storyDesc": "叙事資料アーカイブ",
     "updates": "更新ログ",
-    "updatesDesc": "バージョン間のデータ変更"
+    "updatesDesc": "バージョン間のデータ変更",
+    "search": "档案搜索",
+    "searchDesc": "跨表关键词检索"
   },
   "common": {
     "sort": "並び順",
@@ -300,5 +302,16 @@
     "physicalResistScalar": "物理耐性スカラー",
     "abilities": "能力（{{count}}）",
     "unchanged": "既存"
+  },
+  "search": {
+    "title": "档案搜索",
+    "placeholder": "搜索档案关键词…",
+    "searchButton": "搜索",
+    "noResults": "未找到相关记载",
+    "resultCount": "找到 {{count}} 条相关记载",
+    "source": "来源",
+    "relatedRecords": "相关记载",
+    "prev": "上一页",
+    "next": "下一页"
   }
 }

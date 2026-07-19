@@ -9,6 +9,7 @@ export const MODULE_CODES: Record<string, string> = {
   geography: 'HSA-GEO',
   equipment: 'HSA-EQP',
   factory: 'HSA-FAC',
+  search: 'HSA-SRC',
   story: 'HSA-STY',
   updates: 'HSA-UPD',
 }

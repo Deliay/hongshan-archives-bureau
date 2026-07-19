@@ -32,7 +32,9 @@
     "areasDesc": "지역 분포 및 탐사",
     "storyDesc": "서사 자료 아카이브",
     "updates": "업데이트 로그",
-    "updatesDesc": "버전 간 데이터 변경"
+    "updatesDesc": "버전 간 데이터 변경",
+    "search": "档案搜索",
+    "searchDesc": "跨表关键词检索"
   },
   "common": {
     "sort": "정렬",
@@ -300,5 +302,16 @@
     "physicalResistScalar": "물리 저항 스칼라",
     "abilities": "능력（{{count}}）",
     "unchanged": "기존"
+  },
+  "search": {
+    "title": "档案搜索",
+    "placeholder": "搜索档案关键词…",
+    "searchButton": "搜索",
+    "noResults": "未找到相关记载",
+    "resultCount": "找到 {{count}} 条相关记载",
+    "source": "来源",
+    "relatedRecords": "相关记载",
+    "prev": "上一页",
+    "next": "下一页"
   }
 }

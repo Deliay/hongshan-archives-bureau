@@ -280,6 +280,38 @@ export interface Building {
   description: string
 }
 
+export interface SearchResult {
+  table: string
+  path: string
+  id: string
+  text: string
+  entityKey: string | null
+}
+
+export interface SearchEntity {
+  type: 'weapon' | 'operator' | 'item' | 'enemy'
+  id: string
+  name: string
+  route: string
+  icon?: string
+  portrait?: string
+  rarity?: number
+  subInfo?: string
+  tags?: string[]
+}
+
+export interface UseArchiveSearchResult {
+  results: SearchResult[]
+  entities: Record<string, Record<string, SearchEntity>>
+  total: number
+  page: number
+  pageSize: number
+  loading: boolean
+  error: string | null
+  setPage: (page: number) => void
+  refetch: () => void
+}
+
 export interface Recipe {
   id: string
   inputs: { itemId: string; amount: number }[]
