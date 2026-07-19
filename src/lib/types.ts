@@ -296,6 +296,7 @@ export interface SearchResult {
   text: string
   entityKey: string | null
   ownerEntity?: SearchEntity
+  skillGroupName?: string
 }
 
 export interface SearchEntity {

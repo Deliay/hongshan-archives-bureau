@@ -13,6 +13,10 @@ export function extractEntityKey(_table: string, path: string): string | null {
   return parts[1]
 }
 
+export function stripHubVariant(id: string): string {
+  return id.replace(/_(hdg|hbg|hcg)\d+_/, '_')
+}
+
 export function extractPatchIndex(path: string): number | undefined {
   const match = path.match(/SkillPatchDataBundle\[(\d+)\]/)
   return match ? Number(match[1]) : undefined
@@ -119,6 +123,28 @@ export async function buildSkillOwnerIndex(locale: string): Promise<Record<strin
     })())
   }
   return skillOwnerIndexCaches.get(locale)!
+}
+
+const skillGroupIndexCaches = new Map<string, Promise<Record<string, { groupId: string; nameId: string; charId: string }>>>()
+
+export async function buildSkillGroupIndex(locale: string): Promise<Record<string, { groupId: string; nameId: string; charId: string }>> {
+  if (!skillGroupIndexCaches.has(locale)) {
+    skillGroupIndexCaches.set(locale, (async () => {
+      const growthRaw = await getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable'))
+      const index: Record<string, { groupId: string; nameId: string; charId: string }> = {}
+      for (const [, v] of Object.entries<any>(growthRaw)) {
+        const charId = v.charId ?? v.$key ?? ''
+        for (const [groupId, group] of Object.entries<any>(v.skillGroupMap ?? {})) {
+          const nameId = String(group.name?.id ?? '')
+          for (const skillId of group.skillIdList ?? []) {
+            if (!index[skillId]) index[skillId] = { groupId, nameId, charId }
+          }
+        }
+      }
+      return index
+    })())
+  }
+  return skillGroupIndexCaches.get(locale)!
 }
 
 const abilityOwnerIndexCaches = new Map<string, Promise<Record<string, string>>>()
@@ -358,9 +384,36 @@ export async function enrichResults(
     entities['EnemyTemplateDisplayInfoTable'] = enemyMap
 
     for (const id of abilityIds) {
-      const templateId = abilityIndex[id]
+      // Try exact match first, then strip hub variant (e.g. _hdg016_) for abilityDescId match
+      const normalizedId = stripHubVariant(id)
+      const templateId = abilityIndex[id] ?? abilityIndex[normalizedId]
       if (!templateId) continue
       indirectOwners[id] = enemyMap[templateId]
+    }
+  }
+
+  if (skillIds.length > 0) {
+    const groupIndex = await buildSkillGroupIndex(locale)
+    const groupNameIds = new Set<string>()
+    const skillGroupMap: Record<string, string> = {}
+    for (const id of skillIds) {
+      const entry = groupIndex[id]
+      if (entry?.nameId) {
+        groupNameIds.add(entry.nameId)
+        skillGroupMap[id] = entry.nameId
+      }
+    }
+    if (groupNameIds.size > 0) {
+      const texts = await Promise.all(
+        Array.from(groupNameIds).map(async (nid) => ({ id: nid, text: await fetchI18nText(locale, nid) }))
+      )
+      const textMap = Object.fromEntries(texts.filter(t => t.text).map(t => [t.id, t.text]))
+      for (const r of enriched) {
+        if (r.table === 'SkillPatchTable' && r.entityKey) {
+          const nameId = skillGroupMap[r.entityKey]
+          if (nameId) r.skillGroupName = textMap[nameId]
+        }
+      }
     }
   }
 

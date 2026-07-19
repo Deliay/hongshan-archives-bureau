@@ -6,6 +6,12 @@ import { ASSET_BASE } from '../../lib/adapter'
 import { RichText } from '../../lib/richText'
 import { formatBlackboard } from '../../lib/formatText'
 import { useI18n } from '../../i18n'
+import SubDescList from './SubDescList'
+
+interface SubDescEntry {
+  name: string
+  value: string
+}
 
 interface SkillLevelData {
   level: number
@@ -15,6 +21,7 @@ interface SkillLevelData {
   descriptionId: string
   iconId: string
   blackboard: Record<string, number>
+  subDescs: SubDescEntry[]
 }
 
 interface SkillReferenceCardProps {
@@ -23,6 +30,7 @@ interface SkillReferenceCardProps {
   defaultLevel?: number
   defaultPatchIndex?: number
   className?: string
+  skillGroupName?: string
 }
 
 async function getTableI18nDict(table: string, locale: string): Promise<Record<string, string>> {
@@ -35,6 +43,7 @@ export default function SkillReferenceCard({
   defaultLevel,
   defaultPatchIndex,
   className,
+  skillGroupName,
 }: SkillReferenceCardProps) {
   const { locale } = useLocale()
   const { t } = useI18n()
@@ -65,6 +74,10 @@ export default function SkillReferenceCard({
         const parsed = bundle.map((p: any) => {
           const bb: Record<string, number> = {}
           for (const b of (p.blackboard ?? [])) bb[b.key] = b.value ?? 0
+          const subDescs: SubDescEntry[] = (p.subDescDataList ?? []).map((sd: any) => ({
+            name: tryResolve(sd.name?.id),
+            value: String(sd.desc ?? ''),
+          }))
           return {
             level: p.level,
             skillName: tryResolve(p.skillName?.id),
@@ -73,6 +86,7 @@ export default function SkillReferenceCard({
             descriptionId: String(p.description?.id ?? ''),
             iconId: p.iconId ?? '',
             blackboard: bb,
+            subDescs,
           }
         })
 
@@ -82,8 +96,8 @@ export default function SkillReferenceCard({
           )
           const globalMap = Object.fromEntries(globalTexts.filter(t => t.text).map(t => [t.id, t.text]))
           for (const p of parsed) {
-            if (!p.skillName && p.skillNameId) p.skillName = globalMap[p.skillNameId] || p.skillNameId
-            if (!p.description && p.descriptionId) p.description = globalMap[p.descriptionId] || p.descriptionId
+            if (!p.skillName && p.skillNameId && p.skillNameId !== '0') p.skillName = globalMap[p.skillNameId] || p.skillNameId
+            if (!p.description && p.descriptionId && p.descriptionId !== '0') p.description = globalMap[p.descriptionId] || p.descriptionId
           }
         }
 
@@ -92,7 +106,7 @@ export default function SkillReferenceCard({
 
         if (parsed.length > 0) {
           const sorted = [...parsed].sort((a, b) => a.level - b.level)
-          const target = defaultLevel ?? (defaultPatchIndex !== undefined ? bundle[defaultPatchIndex]?.level : undefined) ?? sorted[sorted.length - 1].level
+          const target = (defaultPatchIndex !== undefined ? bundle[defaultPatchIndex]?.level : undefined) ?? defaultLevel ?? sorted[sorted.length - 1].level
           const found = sorted.find(p => p.level === target)
           setLevel(found ? found.level : sorted[sorted.length - 1].level)
         }
@@ -120,7 +134,7 @@ export default function SkillReferenceCard({
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         )}
-        <span className="text-xs font-medium text-archive-ivory">{current.skillName || skillId}</span>
+        <span className="text-xs font-medium text-archive-ivory">{current.skillName || skillGroupName || skillId}</span>
         <span className="text-[10px] text-archive-lead font-mono ml-auto">{t('common.level', { level: current.level })}</span>
       </div>
       {current.description && (
@@ -128,6 +142,7 @@ export default function SkillReferenceCard({
           <RichText text={formatBlackboard(current.description, current.blackboard)} />
         </div>
       )}
+      <SubDescList entries={current.subDescs} />
       {showLevelSlider && sorted.length > 1 && (
         <div className="mt-2">
           <input

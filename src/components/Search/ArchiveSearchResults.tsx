@@ -138,6 +138,7 @@ export default function ArchiveSearchResults({
                   showLevelSlider
                   defaultLevel={defaultSkillLevel}
                   defaultPatchIndex={extractPatchIndex(r.path)}
+                  skillGroupName={r.skillGroupName}
                   className="mb-2"
                 />
               )}
