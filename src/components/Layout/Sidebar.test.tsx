@@ -10,9 +10,9 @@ vi.mock('../../hooks/useData', () => ({
 
 const NAV_GROUPS = [
   { label: '人事档案', items: ['干员档案', '干员种族', '干员阵营'] },
+  { label: '威胁档案', items: ['敌人图鉴'] },
   { label: '物资档案', items: ['道具材料', '武器档案', '装备系统', '工厂系统'] },
   { label: '地理档案', items: ['地区地理'] },
-  { label: '威胁档案', items: ['敌人图鉴'] },
   { label: '大事记', items: ['剧情记录', '更新日志'] },
 ]
 

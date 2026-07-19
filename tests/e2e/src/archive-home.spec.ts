@@ -6,16 +6,16 @@ const MODULE_GROUPS = [
     modules: ['干员档案', '干员种族', '干员阵营'],
   },
   {
+    label: '威胁档案',
+    modules: ['敌人图鉴'],
+  },
+  {
     label: '物资档案',
     modules: ['道具材料', '武器档案', '装备系统', '工厂系统'],
   },
   {
     label: '地理档案',
     modules: ['地区地理'],
-  },
-  {
-    label: '威胁档案',
-    modules: ['敌人图鉴'],
   },
   {
     label: '大事记',

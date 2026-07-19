@@ -16,6 +16,13 @@ const MODULE_GROUPS: {
     ],
   },
   {
+    label: '威胁档案',
+    desc: '敌对生物与武装情报',
+    modules: [
+      { label: '敌人图鉴', path: '/archive/enemies', desc: '敌对生物与武装' },
+    ],
+  },
+  {
     label: '物资档案',
     desc: '道具、武器、装备与生产',
     modules: [
@@ -30,13 +37,6 @@ const MODULE_GROUPS: {
     desc: '塔卫二区域与探索',
     modules: [
       { label: '地区地理', path: '/archive/geography', desc: '地域分布与探索' },
-    ],
-  },
-  {
-    label: '威胁档案',
-    desc: '敌对生物与武装情报',
-    modules: [
-      { label: '敌人图鉴', path: '/archive/enemies', desc: '敌对生物与武装' },
     ],
   },
   {

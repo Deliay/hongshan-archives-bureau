@@ -108,6 +108,12 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: '威胁档案',
+    items: [
+      { label: '敌人图鉴', path: '/archive/enemies' },
+    ],
+  },
+  {
     label: '物资档案',
     items: [
       { label: '道具材料', path: '/archive/items' },
@@ -120,12 +126,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: '地理档案',
     items: [
       { label: '地区地理', path: '/archive/geography' },
-    ],
-  },
-  {
-    label: '威胁档案',
-    items: [
-      { label: '敌人图鉴', path: '/archive/enemies' },
     ],
   },
   {
@@ -263,7 +263,7 @@ Sidebar 的 `<nav>` 区域由单层循环改为双层循环：外层遍历分组
 ## 验收标准
 
 - [ ] `Sidebar.tsx` 使用 `NAV_GROUPS` 分组结构，无 `NavItem.children` 遗留逻辑；
-- [ ] 侧边栏展示 5 个分组：人事档案、物资档案、地理档案、威胁档案、大事记；
+- [ ] 侧边栏展示 5 个分组：人事档案、威胁档案、物资档案、地理档案、大事记；
 - [ ] `ArchiveHome.tsx` 按相同 5 个分组展示模块入口；
 - [ ] 每个分组内入口与产品文档一致；
 - [ ] 分组标签不可点击、不可聚焦、无 hover 反馈；

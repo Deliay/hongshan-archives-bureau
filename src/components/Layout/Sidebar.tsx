@@ -24,6 +24,12 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: '威胁档案',
+    items: [
+      { label: '敌人图鉴', path: '/archive/enemies' },
+    ],
+  },
+  {
     label: '物资档案',
     items: [
       { label: '道具材料', path: '/archive/items' },
@@ -36,12 +42,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: '地理档案',
     items: [
       { label: '地区地理', path: '/archive/geography' },
-    ],
-  },
-  {
-    label: '威胁档案',
-    items: [
-      { label: '敌人图鉴', path: '/archive/enemies' },
     ],
   },
   {
