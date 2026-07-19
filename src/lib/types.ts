@@ -280,6 +280,15 @@ export interface Building {
   description: string
 }
 
+export interface TalentNodeRef {
+  charId: string
+  nodeId: string
+  nameRef: { id?: number | string; text?: string }
+  iconId: string
+  level: number
+  breakStage: number
+}
+
 export interface SearchResult {
   table: string
   path: string
@@ -287,6 +296,7 @@ export interface SearchResult {
   text: string
   entityKey: string | null
   ownerEntity?: SearchEntity
+  skillGroupName?: string
 }
 
 export interface SearchEntity {

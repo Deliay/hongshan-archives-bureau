@@ -3,15 +3,15 @@ import { test, expect } from '@playwright/test'
 const MODULE_GROUPS = [
   {
     label: '人事档案',
-    modules: ['干员档案', '干员种族', '干员阵营'],
+    modules: ['干员', '干员种族', '干员阵营'],
   },
   {
     label: '威胁档案',
-    modules: ['敌人图鉴'],
+    modules: ['威胁图鉴'],
   },
   {
     label: '物资档案',
-    modules: ['道具材料', '武器档案', '装备系统', '工厂系统'],
+    modules: ['道具材料', '武器图鉴', '装备图鉴', '工厂系统'],
   },
   {
     label: '地理档案',
@@ -19,7 +19,7 @@ const MODULE_GROUPS = [
   },
   {
     label: '大事记',
-    modules: ['剧情记录', '更新日志'],
+    modules: ['档案搜索', '教学记录', '更新日志'],
   },
 ]
 
@@ -50,7 +50,7 @@ test.describe('档案馆首页 (Archive Home)', () => {
   })
 
   test('点击模块链接导航到对应页面', async ({ page }) => {
-    await page.getByRole('main').getByRole('link', { name: '干员档案' }).click()
+    await page.getByRole('main').getByRole('link', { name: '干员 可操作角色一览' }).click()
     await page.waitForURL('/archive/operators')
   })
 

@@ -447,7 +447,7 @@ function SkillFormColumn({
 }
 
 function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatchMap: Record<string, SkillPatchData[]> }) {
-  const [level, setLevel] = useState(12)
+  const [level, setLevel] = useState(13)
   const { locale } = useLocale()
   const { t } = useI18n()
 
@@ -589,7 +589,7 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
                     <span>CD {p.coolDown}s</span>
                   )}
                   <span>Lv.{level}</span>
-                  {level === 12 && <span className="text-[10px] text-archive-gold">M3</span>}
+                  {level === 13 && <span className="text-[10px] text-archive-gold">M3</span>}
                 </div>
               )
             })()}
@@ -622,7 +622,7 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
         <input
           type="range"
           min={1}
-          max={12}
+          max={13}
           value={level}
           onChange={(e) => setLevel(Number(e.target.value))}
           className="flex-1 h-1 accent-archive-gold"

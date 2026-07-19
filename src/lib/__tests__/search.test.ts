@@ -33,6 +33,17 @@ const mockWeaponBasicTable: Record<string, any> = {
   },
 }
 
+const mockEnemyTemplateDisplayInfoTable: Record<string, any> = {
+  ene_titan_001: {
+    templateId: 'ene_titan_001',
+    abilityDescIds: ['eny_0007_mimicw_ability_1', 'eny_0007_stomp_ability_2'],
+  },
+  ene_golem_001: {
+    templateId: 'ene_golem_001',
+    abilityDescIds: ['eny_0007_rock_ability_1'],
+  },
+}
+
 vi.mock('../cache', () => ({
   getCachedData: vi.fn((key: string) => {
     if (key === 'CharGrowthTable') {
@@ -41,11 +52,14 @@ vi.mock('../cache', () => ({
     if (key === 'WeaponBasicTable') {
       return Promise.resolve(mockWeaponBasicTable)
     }
+    if (key === 'EnemyTemplateDisplayInfoTable') {
+      return Promise.resolve(mockEnemyTemplateDisplayInfoTable)
+    }
     return Promise.resolve({})
   }),
 }))
 
-import { escapeRegex, extractEntityKey, SEARCH_ENTITY_ALIAS_TABLES, buildSkillOwnerIndex, buildTalentEffectOwnerIndex } from '../search'
+import { escapeRegex, extractEntityKey, extractPatchIndex, SEARCH_ENTITY_ALIAS_TABLES, buildSkillOwnerIndex, buildTalentEffectOwnerIndex, buildAbilityOwnerIndex, buildTalentNodeIndex } from '../search'
 
 describe('SEARCH_ENTITY_ALIAS_TABLES', () => {
   it('maps CharGrowthTable to CharacterTable', () => {
@@ -109,6 +123,46 @@ describe('escapeRegex', () => {
 
   it('handles numbers and spaces', () => {
     expect(escapeRegex('abc 123')).toBe('abc 123')
+  })
+})
+
+describe('buildAbilityOwnerIndex', () => {
+  it('maps abilityId to templateId', async () => {
+    const index = await buildAbilityOwnerIndex('CN')
+    expect(index['eny_0007_mimicw_ability_1']).toBe('ene_titan_001')
+    expect(index['eny_0007_stomp_ability_2']).toBe('ene_titan_001')
+    expect(index['eny_0007_rock_ability_1']).toBe('ene_golem_001')
+  })
+
+  it('returns undefined for unknown abilityId', async () => {
+    const index = await buildAbilityOwnerIndex('CN')
+    expect(index['unknown_ability']).toBeUndefined()
+  })
+})
+
+describe('buildTalentNodeIndex', () => {
+  it('maps talentEffectId to node info for nodeType 4', async () => {
+    const index = await buildTalentNodeIndex('CN')
+    expect(index['talent_eff_001']).toBeDefined()
+    expect(index['talent_eff_001'].charId).toBe('chr_0001')
+    expect(index['talent_eff_001'].nodeId).toBe('talent_1')
+  })
+
+  it('ignores talent nodes with nodeType !== 4', async () => {
+    const index = await buildTalentNodeIndex('CN')
+    expect(index['talent_eff_002']).toBeUndefined()
+  })
+})
+
+describe('extractPatchIndex', () => {
+  it('extracts patch index from SkillPatchDataBundle path', () => {
+    expect(extractPatchIndex('$.skill_001.SkillPatchDataBundle[2].description')).toBe(2)
+    expect(extractPatchIndex('$.skill_001.SkillPatchDataBundle[5].subDescDataList[1].desc')).toBe(5)
+  })
+
+  it('returns undefined when no patch index found', () => {
+    expect(extractPatchIndex('$.skill_001.skillName')).toBeUndefined()
+    expect(extractPatchIndex('')).toBeUndefined()
   })
 })
 

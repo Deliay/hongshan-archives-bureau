@@ -11,7 +11,7 @@ test.describe('干员档案 (Operator Archive)', () => {
     // 模拟用户真实操作：先进入首页，再点击侧边栏“干员档案”
     await context.addInitScript(() => localStorage.setItem('hs_visited', 'true'))
     await page.goto('/archive')
-    await page.getByRole('complementary').getByRole('link', { name: '干员档案' }).click()
+    await page.getByRole('complementary').getByRole('link', { name: '干员', exact: true }).click()
     await page.waitForURL('/archive/operators')
 
     // 先看到加载骨架

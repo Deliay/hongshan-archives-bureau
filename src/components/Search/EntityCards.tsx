@@ -30,7 +30,8 @@ function WeaponReferenceCard({ entity }: ReferenceCardProps) {
       showTips={false}
       showName
       href={entity.route}
-      className="w-auto items-start"
+      className="w-24 items-start"
+      iconClassName="w-12 h-12"
     />
   )
 }

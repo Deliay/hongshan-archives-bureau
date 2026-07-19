@@ -8,7 +8,7 @@ test.describe('导航与全局布局 (Navigation & Layout)', () => {
   })
 
   test('侧边栏导航链接可点击跳转', async ({ page }) => {
-    await page.getByRole('complementary').getByRole('link', { name: '武器档案' }).click()
+    await page.getByRole('complementary').getByRole('link', { name: '武器图鉴' }).click()
     await page.waitForURL('/archive/weapons')
     await expect(page.locator('h2').first()).toHaveText('武器档案', { timeout: 15000 })
   })
