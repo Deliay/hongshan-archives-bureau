@@ -1,6 +1,6 @@
 ---
 description: 宏山档案局界面国际化完善方案
-type: Fleeting
+type: Permanent
 ---
 
 # 宏山档案局界面国际化完善方案
@@ -8,7 +8,11 @@ type: Fleeting
 **功能名称**: 档案局国际化完善
 **PRD 版本**: v1.0
 **创建日期**: 2026-07-19
+**上线日期**: 2026-07-19
+**状态**: 已上线
 **作者**: 产品设计
+
+> 本方案已实现并合入 main。实现细节与 key 列表参见 [[20260719-globalization-i18n-plan|技术实现方案]] 与 [国际化规范](../../engineering/references/i18n-spec.md)。
 
 ## 背景与目标
 

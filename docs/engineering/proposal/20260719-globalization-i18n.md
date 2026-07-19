@@ -1,6 +1,6 @@
 ---
 description: 宏山档案局界面国际化完善技术方案
-type: Fleeting
+type: Permanent
 ---
 
 # 宏山档案局界面国际化完善技术方案
@@ -8,7 +8,10 @@ type: Fleeting
 **对应产品文档**: [[20260719-globalization-i18n|宏山档案局界面国际化完善方案]]
 **技术方案版本**: v1.0
 **创建日期**: 2026-07-19
+**状态**: 已实现
 **作者**: 前端工程
+
+> 实现代码已合入 main（PR #7）。新增 key 与生成脚本用法详见 [国际化规范](./references/i18n-spec.md)。
 
 ## 背景与目标
 
@@ -397,13 +400,13 @@ const messages: Record<string, Record<string, string>> = {
 
 ## 验收标准
 
-- [ ] `npm run build` 通过，无 TypeScript 错误。
-- [ ] `npm run lint` 通过，无新增 lint 错误。
-- [ ] `npm run test` 通过。
-- [ ] 切换 `/i18n` 接口返回的任意 locale 时，导航、筛选器、按钮、提示即时刷新。
-- [ ] 任意 key 在目标语言缺失时，回退至 CN 显示。
-- [ ] 新增硬编码中文扫描脚本并纳入 CI（可选）。
-- [ ] 产品文档与技术方案均通过 Review。
+- [x] `npm run build` 通过，无 TypeScript 错误。
+- [x] `npm run lint` 通过，无新增 lint 错误。
+- [x] `npm run test` 通过。
+- [x] 切换 `/i18n` 接口返回的任意 locale 时，导航、筛选器、按钮、提示即时刷新。
+- [x] 任意 key 在目标语言缺失时，回退至 CN 显示。
+- [ ] 新增硬编码中文扫描脚本并纳入 CI（可选，后续迭代）。
+- [x] 产品文档与技术方案均通过 Review。
 
 ## 风险与回滚
 
@@ -420,6 +423,8 @@ const messages: Record<string, Record<string, string>> = {
 ## 相关文档
 
 - [[20260719-globalization-i18n|宏山档案局界面国际化完善方案]]
+- [[20260719-globalization-i18n-plan|宏山档案局界面国际化实现方案]]
+- [国际化规范](./references/i18n-spec.md)
 - [[common-rules|通用开发规范]]
 - [[frontend-spec|前端开发规范]]
 - [[engineering-spec|工程架构规范]]
