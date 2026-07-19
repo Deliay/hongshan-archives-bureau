@@ -10,12 +10,12 @@ import { RichText } from '../../lib/richText'
 import { formatBlackboard } from '../../lib/formatText'
 import { RichTextDiff } from './RichTextDiff'
 
-const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
+const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
 
 const TABLE_COLORS: Record<string, string> = {
-  CharacterTable: '#26bbfd',
+  CharacterTable: '#5A7A6A',
   CharGrowthTable: '#9452fa',
-  SkillPatchTable: '#ffbb03',
+  SkillPatchTable: '#B89A6A',
   PotentialTalentEffectTable: '#ef5a00',
   SpaceshipSkillTable: '#22c55e',
   SpaceshipCharSkillTable: '#06b6d4',
@@ -120,8 +120,8 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
                   <span className="text-archive-lead font-mono">{path}</span>
                   {context && <span className="ml-2 text-archive-dust">{context}</span>}
                   <div className="flex gap-3 mt-0.5">
-                    <span className="text-[#ef4444]">旧 {formatDiffValue(path, change.oldValue, locale, e.newValue)}</span>
-                    <span className="text-[#26bbfd]">新 {formatDiffValue(path, change.newValue, locale, e.newValue)}</span>
+                    <span className="text-[archive-seal]">旧 {formatDiffValue(path, change.oldValue, locale, e.newValue)}</span>
+                    <span className="text-[archive-bronze]">新 {formatDiffValue(path, change.newValue, locale, e.newValue)}</span>
                   </div>
                 </div>
               )
@@ -286,7 +286,7 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
 
   return (
     <div className={`rounded overflow-hidden transition-colors ${
-      isAdded ? 'border border-[#26bbfd]/40 bg-archive-file' : 'border border-archive-border bg-archive-file'
+      isAdded ? 'border border-[archive-bronze]/40 bg-archive-file' : 'border border-archive-border bg-archive-file'
     }`}>
       <button
         type="button"
@@ -300,7 +300,7 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <div className="truncate flex items-center gap-1.5">
-              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#26bbfd] text-white font-bold shrink-0">新增</span>}
+              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[archive-bronze] text-white font-bold shrink-0">新增</span>}
               <span className="text-sm font-medium text-archive-ivory">{name}</span>
               <span className="text-[10px] text-archive-lead font-mono">{op.charId}</span>
             </div>
@@ -315,9 +315,9 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
               <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-archive-border text-archive-lead">{maps?.battleTags[t] || t}</span>
             ))}
             <span className="text-[10px] text-archive-lead">
-              {changeCategories.added > 0 && <span className="text-[#26bbfd] mr-1">+{changeCategories.added}</span>}
-              {changeCategories.removed > 0 && <span className="text-[#ef4444] mr-1">-{changeCategories.removed}</span>}
-              {changeCategories.changed > 0 && <span className="text-[#ffbb03]">~{changeCategories.changed}</span>}
+              {changeCategories.added > 0 && <span className="text-[archive-bronze] mr-1">+{changeCategories.added}</span>}
+              {changeCategories.removed > 0 && <span className="text-[archive-seal] mr-1">-{changeCategories.removed}</span>}
+              {changeCategories.changed > 0 && <span className="text-[archive-gold]">~{changeCategories.changed}</span>}
             </span>
           </div>
           {(mainAttrName || subAttrName) && (
@@ -345,7 +345,7 @@ function OperatorCard({ op, locale }: { op: OperatorChange; locale: string }) {
               const label = c.tableName
               const color = TABLE_COLORS[c.tableName] || '#8B8982'
               const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
-              const opColor = c.op === 'added' ? '#26bbfd' : c.op === 'removed' ? '#ef4444' : '#ffbb03'
+              const opColor = c.op === 'added' ? '#5A7A6A' : c.op === 'removed' ? '#9E3A3A' : '#B89A6A'
               return (
                 <div key={c.tableName + c.key} className="text-xs border-b border-archive-border/50 pb-1.5 last:border-0 last:pb-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -656,9 +656,9 @@ export default function OperatorChangePanel({ versionName }: Props) {
           </span>
         </h3>
         <div className="flex gap-2 text-[10px] text-archive-lead">
-          {withAdded > 0 && <span className="text-[#26bbfd]">新增 {withAdded}</span>}
-          {withRemoved > 0 && <span className="text-[#ef4444]">移除 {withRemoved}</span>}
-          {withChanged > 0 && <span className="text-[#ffbb03]">变更 {withChanged}</span>}
+          {withAdded > 0 && <span className="text-[archive-bronze]">新增 {withAdded}</span>}
+          {withRemoved > 0 && <span className="text-[archive-seal]">移除 {withRemoved}</span>}
+          {withChanged > 0 && <span className="text-[archive-gold]">变更 {withChanged}</span>}
         </div>
       </div>
 

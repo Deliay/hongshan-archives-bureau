@@ -1,3 +1,4 @@
+import { Skeleton } from '../../components/ui/Skeleton'
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTableDiff } from '../../hooks/useUpdateDiff'
@@ -15,7 +16,7 @@ export default function UpdateTableDiff() {
     return <div className="text-red-400 text-sm">缺少参数</div>
   }
 
-  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
+  if (loading) return <Skeleton className="h-32 w-full" />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
   if (!diff) return <div className="text-archive-dust text-sm">暂无数据</div>
 

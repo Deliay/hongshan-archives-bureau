@@ -12,11 +12,11 @@ import { RichTextDiff } from './RichTextDiff'
 
 const ENEMY_STARS: Record<number, number> = { 0: 1, 1: 3, 2: 6, 3: 4, 4: 5 }
 
-const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
+const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
 
 const TABLE_COLORS: Record<string, string> = {
-  EnemyTemplateDisplayInfoTable: '#26bbfd',
-  EnemyDisplayInfoTable: '#ffbb03',
+  EnemyTemplateDisplayInfoTable: '#5A7A6A',
+  EnemyDisplayInfoTable: '#B89A6A',
   EnemyTable: '#9452fa',
   EnemyAttributeTemplateTable: '#22c55e',
 }
@@ -88,8 +88,8 @@ function renderChangeEntry(entry: any, op: string, locale: string, formatter?: (
                 <div key={path} className="text-[10px]">
                   <span className="text-archive-lead font-mono">{path}</span>
                   <div className="flex gap-3 mt-0.5">
-                    <span className="text-[#ef4444]">旧 {formatDiffValue(change.oldValue, locale)}</span>
-                    <span className="text-[#26bbfd]">新 {formatDiffValue(change.newValue, locale)}</span>
+                    <span className="text-[archive-seal]">旧 {formatDiffValue(change.oldValue, locale)}</span>
+                    <span className="text-[archive-bronze]">新 {formatDiffValue(change.newValue, locale)}</span>
                   </div>
                 </div>
               )
@@ -177,8 +177,8 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
                 <div key={path} className="text-[10px]">
                   <span className="text-archive-lead font-mono">{path}</span>
                   <div className="flex gap-3 mt-0.5">
-                    <span className="text-[#ef4444]">旧 {formatDiffValue(change.oldValue, locale)}</span>
-                    <span className="text-[#26bbfd]">新 {formatDiffValue(change.newValue, locale)}</span>
+                    <span className="text-[archive-seal]">旧 {formatDiffValue(change.oldValue, locale)}</span>
+                    <span className="text-[archive-bronze]">新 {formatDiffValue(change.newValue, locale)}</span>
                   </div>
                 </div>
               )
@@ -208,10 +208,10 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
           <div className="space-y-1">
             {removed.length > 0 && (
               <div>
-                <div className="text-[10px] text-[#ef4444] mb-0.5">移除</div>
+                <div className="text-[10px] text-[archive-seal] mb-0.5">移除</div>
                 <div className="flex flex-wrap gap-1">
                   {removed.map(id => (
-                    <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-[#ef4444] line-through">
+                    <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-[archive-seal] line-through">
                       {areaNames[id] || id}
                     </span>
                   ))}
@@ -220,10 +220,10 @@ function EnemyDisplayInfoEntry({ entry, op, locale }: { entry: any; op: string; 
             )}
             {added.length > 0 && (
               <div>
-                <div className="text-[10px] text-[#26bbfd] mb-0.5">新增</div>
+                <div className="text-[10px] text-[archive-bronze] mb-0.5">新增</div>
                 <div className="flex flex-wrap gap-1">
                   {added.map(id => (
-                    <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#14321e] text-[#26bbfd]">
+                    <span key={id} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-bronze/10 text-[archive-bronze]">
                       {areaNames[id] || id}
                     </span>
                   ))}
@@ -423,7 +423,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
 
   return (
     <div className={`rounded overflow-hidden transition-colors ${
-      isAdded ? 'border border-[#26bbfd]/40 bg-archive-file' : 'border border-archive-border bg-archive-file'
+      isAdded ? 'border border-[archive-bronze]/40 bg-archive-file' : 'border border-archive-border bg-archive-file'
     }`}>
       <button
         type="button"
@@ -439,7 +439,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <div className="truncate flex items-center gap-1.5">
-              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#26bbfd] text-white font-bold shrink-0">新增</span>}
+              {isAdded && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[archive-bronze] text-white font-bold shrink-0">新增</span>}
               <span className="text-sm font-medium text-archive-ivory">{name}</span>
               <span className="text-[10px] text-archive-lead font-mono">{ep.enemyId}</span>
             </div>
@@ -454,9 +454,9 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
               <span key={t} className="text-[9px] px-1 py-0.5 rounded bg-archive-border text-archive-lead">{tagI18n[t] || t}</span>
             ))}
             <span className="text-[10px] text-archive-lead">
-              {changeCategories.added > 0 && <span className="text-[#26bbfd] mr-1">+{changeCategories.added}</span>}
-              {changeCategories.removed > 0 && <span className="text-[#ef4444] mr-1">-{changeCategories.removed}</span>}
-              {changeCategories.changed > 0 && <span className="text-[#ffbb03] mr-1">~{changeCategories.changed}</span>}
+              {changeCategories.added > 0 && <span className="text-[archive-bronze] mr-1">+{changeCategories.added}</span>}
+              {changeCategories.removed > 0 && <span className="text-[archive-seal] mr-1">-{changeCategories.removed}</span>}
+              {changeCategories.changed > 0 && <span className="text-[archive-gold] mr-1">~{changeCategories.changed}</span>}
               {hasVariants && <span className="text-archive-dust">({variantKeys.size} 个变体)</span>}
             </span>
           </div>
@@ -479,7 +479,7 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
               const label = c.tableName
               const color = TABLE_COLORS[c.tableName] || '#8B8982'
               const opLabel = c.op === 'added' ? '新增' : c.op === 'removed' ? '移除' : '变更'
-              const opColor = c.op === 'added' ? '#26bbfd' : c.op === 'removed' ? '#ef4444' : '#ffbb03'
+              const opColor = c.op === 'added' ? '#5A7A6A' : c.op === 'removed' ? '#9E3A3A' : '#B89A6A'
               return (
                 <div key={c.tableName + c.key} className="text-xs border-b border-archive-border/50 pb-1.5 last:border-0 last:pb-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -702,9 +702,9 @@ export default function EnemyChangePanel({ versionName }: Props) {
           </span>
         </h3>
         <div className="flex gap-2 text-[10px] text-archive-lead">
-          {withAdded > 0 && <span className="text-[#26bbfd]">新增 {withAdded}</span>}
-          {withRemoved > 0 && <span className="text-[#ef4444]">移除 {withRemoved}</span>}
-          {withChanged > 0 && <span className="text-[#ffbb03]">变更 {withChanged}</span>}
+          {withAdded > 0 && <span className="text-[archive-bronze]">新增 {withAdded}</span>}
+          {withRemoved > 0 && <span className="text-[archive-seal]">移除 {withRemoved}</span>}
+          {withChanged > 0 && <span className="text-[archive-gold]">变更 {withChanged}</span>}
         </div>
       </div>
 

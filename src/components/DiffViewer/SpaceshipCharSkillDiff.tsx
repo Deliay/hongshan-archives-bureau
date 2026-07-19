@@ -72,8 +72,8 @@ function ChangedList({ entries }: { entries: Record<string, any> }) {
                   <div key={path} className="text-xs border-b border-archive-border/50 pb-1">
                     <div className="text-archive-dust font-mono mb-0.5">{path}</div>
                     <div className="flex gap-3">
-                      <span className="text-[#ef4444]">旧 {JSON.stringify(change.oldValue ?? change.oldText)}</span>
-                      <span className="text-[#26bbfd]">新 {JSON.stringify(change.newValue ?? change.newText)}</span>
+                      <span className="text-[archive-seal]">旧 {JSON.stringify(change.oldValue ?? change.oldText)}</span>
+                      <span className="text-[archive-bronze]">新 {JSON.stringify(change.newValue ?? change.newText)}</span>
                     </div>
                   </div>
                 ))}

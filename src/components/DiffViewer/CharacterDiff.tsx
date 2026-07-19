@@ -7,7 +7,7 @@ import type { TableDiffComponentProps } from './registry'
 import { RichTextDiff } from './RichTextDiff'
 import type { FieldChange, ChangedEntry } from '../../lib/types-diff'
 
-const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
+const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
 
 interface LookupMaps {
   professions: Record<number, { name: string; icon: string }>
@@ -164,11 +164,11 @@ function ChangedCards({ entries, maps, locale }: { entries: Record<string, Chang
             <div className="px-3 pb-3 border-t border-archive-border">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 <div className="border border-archive-border rounded">
-                  <div className="text-xs text-[#ef4444] px-2 py-1 border-b border-archive-border font-medium">旧版本</div>
+                  <div className="text-xs text-[archive-seal] px-2 py-1 border-b border-archive-border font-medium">旧版本</div>
                   <OpCard charId={key} entry={e.oldValue} maps={maps} compact />
                 </div>
                 <div className="border border-archive-border rounded">
-                  <div className="text-xs text-[#26bbfd] px-2 py-1 border-b border-archive-border font-medium">新版本</div>
+                  <div className="text-xs text-[archive-bronze] px-2 py-1 border-b border-archive-border font-medium">新版本</div>
                   <OpCard charId={key} entry={e.newValue} maps={maps} compact />
                 </div>
               </div>
@@ -330,11 +330,11 @@ function FieldDiff({ path, change, maps, entry }: { path: string; change: FieldC
       {change.type === 'value' ? (
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <span className="text-[#ef4444]">旧 </span>
+            <span className="text-[archive-seal]">旧 </span>
             <span className="text-archive-ivory">{format(change.oldValue)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[#26bbfd]">新 </span>
+            <span className="text-[archive-bronze]">新 </span>
             <span className="text-archive-ivory">{format(change.newValue)}</span>
           </div>
         </div>

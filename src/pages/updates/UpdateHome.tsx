@@ -1,16 +1,22 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { PageSkeleton } from '../../components/ui/PageSkeleton'
 import { Link } from 'react-router-dom'
 import { useManifest } from '../../hooks/useUpdateDiff'
 
 export default function UpdateHome() {
   const { data: manifest, loading, error } = useManifest()
 
-  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
+  if (loading) return <PageSkeleton />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
   if (!manifest || manifest.folders.length === 0) return <div className="text-archive-dust text-sm">暂无更新记录</div>
 
   return (
     <div>
-      <h2 className="font-display text-xl font-bold text-archive-ivory mb-4">更新日志</h2>
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="font-display text-xl font-bold text-archive-ivory">更新日志</h2>
+        <Badge variant="ghost" className="font-mono">{MODULE_CODES.updates}</Badge>
+      </div>
       <p className="text-sm text-archive-dust mb-6">
         共 {manifest.folders.length} 个版本对 · 最后一次生成 {manifest.generatedAt}
       </p>

@@ -1,3 +1,6 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { PageSkeleton } from '../../components/ui/PageSkeleton'
 import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useWeapons } from '../../hooks/useData'
@@ -197,13 +200,16 @@ export default function WeaponList() {
     setGroupPageMap({})
   }, [search, typeFilter, rarityFilter, skill1Filter, skill2Filter, skill3PrefixFilter, pageSize, sortField, sortDesc, groupField])
 
-  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
+  if (loading) return <PageSkeleton />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
   if (!weapons || weapons.length === 0) return <div className="text-archive-dust text-sm">暂无记录</div>
 
   return (
     <div>
-      <h2 className="font-display text-xl font-bold text-archive-ivory mb-4">武器档案</h2>
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="font-display text-xl font-bold text-archive-ivory">武器档案</h2>
+        <Badge variant="ghost" className="font-mono">{MODULE_CODES.weapons}</Badge>
+      </div>
 
       <div className="flex flex-col gap-2 mb-4">
         <div className="flex gap-2">

@@ -1,3 +1,6 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { Skeleton } from '../../components/ui/Skeleton'
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useFactionDetail } from '../../hooks/useData'
@@ -24,7 +27,7 @@ export default function FactionDetail() {
     }))
   }, [data])
 
-  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
+  if (loading) return <Skeleton className="h-32 w-full" />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
   if (!data) return <div className="text-archive-dust text-sm">暂无记录</div>
 
@@ -40,6 +43,7 @@ export default function FactionDetail() {
           &lt;
         </Link>
         <h2 className="font-display text-xl font-bold text-archive-ivory">{data.name}</h2>
+        <Badge variant="ghost" className="font-mono">{MODULE_CODES.factions}</Badge>
         {data.engName && (
           <span className="text-sm text-archive-lead">{data.engName}</span>
         )}

@@ -1,3 +1,6 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { Skeleton } from '../../components/ui/Skeleton'
 import { useParams, Link } from 'react-router-dom'
 import { useWeapon } from '../../hooks/useData'
 import { ASSET_BASE } from '../../lib/adapter'
@@ -19,7 +22,7 @@ export default function WeaponDetail() {
   const { id } = useParams<{ id: string }>()
   const { data: weapon, loading, error } = useWeapon(id ?? '')
 
-  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
+  if (loading) return <Skeleton className="h-32 w-full" />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
   if (!weapon) return <div className="text-archive-dust text-sm">未找到武器</div>
 
@@ -37,7 +40,10 @@ export default function WeaponDetail() {
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
         <div className="flex-1 min-w-0">
-          <h2 className="font-display text-xl font-bold text-archive-ivory">{weapon.name}</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="font-display text-xl font-bold text-archive-ivory">{weapon.name}</h2>
+            <Badge variant="ghost" className="font-mono">{MODULE_CODES.weapons}</Badge>
+          </div>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-sm text-archive-dust">{weapon.type}</span>
             <span className="text-xs text-archive-lead">·</span>

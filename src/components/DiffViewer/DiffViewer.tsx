@@ -128,11 +128,11 @@ function FieldChangeRow({ path, change }: { path: string; change: FieldChange })
       {change.type === 'value' ? (
         <div className="flex items-start gap-4">
           <div className="flex-1 min-w-0">
-            <span className="text-[#ef4444]">旧</span>
+            <span className="text-[archive-seal]">旧</span>
             <span className="ml-1 text-archive-ivory whitespace-pre-wrap break-all">{formatValue(change.oldValue)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[#26bbfd]">新</span>
+            <span className="text-[archive-bronze]">新</span>
             <span className="ml-1 text-archive-ivory whitespace-pre-wrap break-all">{formatValue(change.newValue)}</span>
           </div>
         </div>
@@ -142,9 +142,9 @@ function FieldChangeRow({ path, change }: { path: string; change: FieldChange })
             <div key={locale} className="mb-1 last:mb-0">
               <span className="text-archive-gold font-mono">{LOCALE_LABELS[locale] || locale}</span>
               <span className="mx-1 text-archive-lead">旧</span>
-              <span className="text-[#ef4444]">{oldText || '（空）'}</span>
+              <span className="text-[archive-seal]">{oldText || '（空）'}</span>
               <span className="mx-1 text-archive-lead">→</span>
-              <span className="text-[#26bbfd]">{newText || '（空）'}</span>
+              <span className="text-[archive-bronze]">{newText || '（空）'}</span>
             </div>
           ))}
         </div>

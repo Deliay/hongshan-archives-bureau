@@ -1,3 +1,6 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { PageSkeleton } from '../../components/ui/PageSkeleton'
 import { useRaces } from '../../hooks/useData'
 import { Link } from 'react-router-dom'
 import Rarity from '../../components/Rarity'
@@ -5,7 +8,7 @@ import Rarity from '../../components/Rarity'
 export default function RaceList() {
   const { data: races, loading, error } = useRaces()
 
-  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
+  if (loading) return <PageSkeleton />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
   if (!races) return <div className="text-archive-dust text-sm">暂无记录</div>
 
@@ -14,7 +17,10 @@ export default function RaceList() {
 
   return (
     <div>
-      <h2 className="font-display text-xl font-bold text-archive-ivory mb-6">种族一览</h2>
+      <div className="flex items-center gap-3 mb-6">
+        <h2 className="font-display text-xl font-bold text-archive-ivory">种族一览</h2>
+        <Badge variant="ghost" className="font-mono">{MODULE_CODES.races}</Badge>
+      </div>
 
       <div className="flex flex-col gap-4">
         {nonEmpty.map((race) => (

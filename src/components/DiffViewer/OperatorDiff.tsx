@@ -4,7 +4,7 @@ import { ASSET_BASE } from '../../lib/adapter'
 import type { TableDiffComponentProps } from './registry'
 import type { FieldChange, ChangedEntry } from '../../lib/types-diff'
 
-const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
+const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
 
 const PROFESSION_NAMES: Record<number, string> = {
   1: '先锋', 2: '近卫', 3: '重装', 4: '狙击',
@@ -95,11 +95,11 @@ function ChangedList({ entries }: { entries: Record<string, ChangedEntry> }) {
             <div className="px-3 pb-3 border-t border-archive-border">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 <div className="border border-archive-border rounded">
-                  <div className="text-xs text-[#ef4444] px-2 py-1 border-b border-archive-border font-medium">旧版本</div>
+                  <div className="text-xs text-[archive-seal] px-2 py-1 border-b border-archive-border font-medium">旧版本</div>
                   <OperatorCard charId={key} entry={e.oldValue} compact />
                 </div>
                 <div className="border border-archive-border rounded">
-                  <div className="text-xs text-[#26bbfd] px-2 py-1 border-b border-archive-border font-medium">新版本</div>
+                  <div className="text-xs text-[archive-bronze] px-2 py-1 border-b border-archive-border font-medium">新版本</div>
                   <OperatorCard charId={key} entry={e.newValue} compact />
                 </div>
               </div>
@@ -250,11 +250,11 @@ function FieldDiff({ path, change }: { path: string; change: FieldChange }) {
       {change.type === 'value' ? (
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <span className="text-[#ef4444]">旧 </span>
+            <span className="text-[archive-seal]">旧 </span>
             <span className="text-archive-ivory">{formatFieldValue(change.oldValue, locale)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[#26bbfd]">新 </span>
+            <span className="text-[archive-bronze]">新 </span>
             <span className="text-archive-ivory">{formatFieldValue(change.newValue, locale)}</span>
           </div>
         </div>
@@ -264,9 +264,9 @@ function FieldDiff({ path, change }: { path: string; change: FieldChange }) {
             <div key={loc} className="mb-0.5 last:mb-0">
               <span className="text-archive-gold font-mono">{loc}</span>
               <span className="mx-1 text-archive-lead">旧</span>
-              <span className="text-[#ef4444]">{oldText || '（空）'}</span>
+              <span className="text-[archive-seal]">{oldText || '（空）'}</span>
               <span className="mx-1 text-archive-lead">→</span>
-              <span className="text-[#26bbfd]">{newText || '（空）'}</span>
+              <span className="text-[archive-bronze]">{newText || '（空）'}</span>
             </div>
           ))}
         </div>

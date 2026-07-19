@@ -1,3 +1,6 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { Skeleton } from '../../components/ui/Skeleton'
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useEnemies, getEnemyTypeNameMap, getEnemyAttrNameMap } from '../../hooks/useData'
@@ -144,7 +147,7 @@ export default function EnemyDetail() {
   }, [enemy, locale])
 
   if (loading || !enemy) {
-    if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
+    if (loading) return <Skeleton className="h-32 w-full" />
     return <div className="text-archive-dust text-sm">未找到敌人</div>
   }
 
@@ -170,7 +173,10 @@ export default function EnemyDetail() {
           className="w-20 h-20 object-cover bg-archive-border rounded border border-archive-border"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
         <div className="flex-1 min-w-0">
-          <h2 className="font-display text-xl font-bold text-archive-ivory">{enemy.name}</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="font-display text-xl font-bold text-archive-ivory">{enemy.name}</h2>
+            <Badge variant="ghost" className="font-mono">{MODULE_CODES.enemies}</Badge>
+          </div>
           {enemy.nickname && <p className="text-sm text-archive-dust mt-0.5">{enemy.nickname}</p>}
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-archive-lead">{typeNameMap[enemy.displayType] || `类型${enemy.displayType}`}</span>

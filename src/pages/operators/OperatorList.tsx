@@ -1,3 +1,6 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { PageSkeleton } from '../../components/ui/PageSkeleton'
 import { useState, useMemo } from 'react'
 import { useOperators } from '../../hooks/useData'
 import { Link } from 'react-router-dom'
@@ -106,13 +109,16 @@ export default function OperatorList() {
     })
   }, [visible, groupKey])
 
-  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
+  if (loading) return <PageSkeleton />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
   if (!operators || operators.length === 0) return <div className="text-archive-dust text-sm">暂无记录</div>
 
   return (
     <div>
-      <h2 className="font-display text-xl font-bold text-archive-ivory mb-4">干员档案</h2>
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="font-display text-xl font-bold text-archive-ivory">干员档案</h2>
+        <Badge variant="ghost" className="font-mono">{MODULE_CODES.operators}</Badge>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">

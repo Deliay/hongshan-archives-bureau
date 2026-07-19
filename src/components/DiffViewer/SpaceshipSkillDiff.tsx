@@ -106,17 +106,17 @@ function ChangedCards({ entries, locale }: { entries: Record<string, any>; local
                     <div className="text-archive-dust font-mono mb-0.5">{path}</div>
                     {change.type === 'value' ? (
                       <div className="flex gap-3">
-                        <span className="text-[#ef4444]">旧 {JSON.stringify(change.oldValue)}</span>
-                        <span className="text-[#26bbfd]">新 {JSON.stringify(change.newValue)}</span>
+                        <span className="text-[archive-seal]">旧 {JSON.stringify(change.oldValue)}</span>
+                        <span className="text-[archive-bronze]">新 {JSON.stringify(change.newValue)}</span>
                       </div>
                     ) : (
                       Object.entries(change.changedLocales).map(([loc, { oldText, newText }]: [string, any]) => (
                         <div key={loc} className="mb-0.5 last:mb-0">
                           <span className="text-archive-gold font-mono">{loc}</span>
                           <span className="mx-1 text-archive-lead">旧</span>
-                          <span className="text-[#ef4444]">{oldText || '（空）'}</span>
+                          <span className="text-[archive-seal]">{oldText || '（空）'}</span>
                           <span className="mx-1 text-archive-lead">→</span>
-                          <span className="text-[#26bbfd]">{newText || '（空）'}</span>
+                          <span className="text-[archive-bronze]">{newText || '（空）'}</span>
                         </div>
                       ))
                     )}

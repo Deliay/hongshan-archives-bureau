@@ -1,10 +1,15 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
 import { PROFESSION_MAP, ELEMENT_MAP } from '../../data/constants'
 import { Link } from 'react-router-dom'
 
 export default function ProfessionOverview() {
   return (
     <div>
-      <h2 className="font-display text-xl font-bold text-archive-ivory mb-4">职业与属性</h2>
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="font-display text-xl font-bold text-archive-ivory">职业与属性</h2>
+        <Badge variant="ghost" className="font-mono">{MODULE_CODES.professions}</Badge>
+      </div>
 
       <h3 className="text-sm font-medium text-archive-gold mb-2 tracking-wider">职业</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">

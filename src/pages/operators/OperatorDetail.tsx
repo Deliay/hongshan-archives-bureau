@@ -1,3 +1,6 @@
+import { MODULE_CODES } from '../../data/archiveMeta'
+import { Badge } from '../../components/ui/Badge'
+import { Skeleton } from '../../components/ui/Skeleton'
 import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useOperatorDetail } from '../../hooks/useData'
@@ -40,7 +43,7 @@ export default function OperatorDetail() {
     [talentNodeMap],
   )
 
-  if (loading) return <div className="text-archive-dust text-sm">加载中…</div>
+  if (loading) return <Skeleton className="h-32 w-full" />
   if (error) return <div className="text-red-400 text-sm">加载失败：{error}</div>
   if (!detail) return <div className="text-archive-dust text-sm">干员档案未找到</div>
 
@@ -58,7 +61,10 @@ export default function OperatorDetail() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="font-display text-xl font-bold text-archive-ivory">{op.name}</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="font-display text-xl font-bold text-archive-ivory">{op.name}</h2>
+            <Badge variant="ghost" className="font-mono">{MODULE_CODES.operators}</Badge>
+          </div>
           <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-archive-dust">
             <img src={op.professionIcon} alt="" className="w-4 h-4" />
             <span>{op.profession}</span>
