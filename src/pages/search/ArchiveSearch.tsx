@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
+import { SearchSkeleton } from '../../components/ui/SearchSkeleton'
 import { useArchiveSearch } from '../../hooks/useData'
 import ArchiveSearchResults from '../../components/Search/ArchiveSearchResults'
 
@@ -53,7 +54,9 @@ export default function ArchiveSearch() {
         </div>
       )}
 
-      {query && (
+      {loading && query && <SearchSkeleton />}
+
+      {query && !loading && (
         <ArchiveSearchResults
           query={query}
           results={results}

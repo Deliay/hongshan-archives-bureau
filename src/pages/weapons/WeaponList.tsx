@@ -1,6 +1,6 @@
 import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
-import { PageSkeleton } from '../../components/ui/PageSkeleton'
+import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useWeapons } from '../../hooks/useData'
@@ -202,7 +202,7 @@ export default function WeaponList() {
     setGroupPageMap({})
   }, [search, typeFilter, rarityFilter, skill1Filter, skill2Filter, skill3PrefixFilter, pageSize, sortField, sortDesc, groupField])
 
-  if (loading) return <PageSkeleton />
+  if (loading) return <ListSkeleton filters={4} cards={12} />
   if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
   if (!weapons || weapons.length === 0) return <div className="text-archive-dust text-sm">{t('common.empty')}</div>
 

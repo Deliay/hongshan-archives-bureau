@@ -70,7 +70,23 @@
     "level": "Lv. {{level}}",
     "unknown": "Unknown",
     "notFound": "{{name}} not found",
-    "basicInfo": "Basic Information"
+    "basicInfo": "Basic Information",
+    "loadingArchive": "Memuat arsip",
+    "loadingRequestCount": "Memuat {{count}} arsip",
+    "loadingSlow": "Data arsip besar, harap tunggu",
+    "loadingFailed": "Gagal memuat",
+    "loadingRetry": "Coba lagi"
+  },
+  "api": {
+    "fetchingTableIndex": "Memuat indeks {{table}}",
+    "fetchingTable": "Memuat {{table}}",
+    "fetchingTableEntry": "Memuat {{table}}/{{key}}",
+    "fetchingVersion": "Memeriksa versi",
+    "fetchingLocales": "Memuat daftar bahasa",
+    "fetchingTableDict": "Memuat kamus {{table}} ({{locale}})",
+    "fetchingTableDictEntry": "Memuat kamus {{table}}/{{key}} ({{locale}})",
+    "fetchingSearch": "Mencari arsip",
+    "fetchingText": "Menganalisis teks ({{locale}})"
   },
   "operator": {
     "race": "Ras",

@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LocaleProvider, useLocale } from './lib/locale'
 import { I18nProvider } from './i18n'
+import { LoadingProvider } from './components/Loading/LoadingProvider'
+import { LoadingToast } from './components/Loading/LoadingToast'
 import ArchiveLayout from './components/Layout/ArchiveLayout'
 import LandingPage from './routes/Landing'
 import ArchiveHome from './routes/ArchiveHome'
@@ -31,6 +33,7 @@ function AppRoutes() {
   return (
     <I18nProvider locale={locale}>
       <BrowserRouter>
+        <LoadingToast />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/archive" element={<ArchiveLayout />}>
@@ -64,8 +67,10 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <LocaleProvider>
-      <AppRoutes />
-    </LocaleProvider>
+    <LoadingProvider>
+      <LocaleProvider>
+        <AppRoutes />
+      </LocaleProvider>
+    </LoadingProvider>
   )
 }

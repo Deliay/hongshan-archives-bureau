@@ -70,7 +70,23 @@
     "level": "Lv. {{level}}",
     "unknown": "Unknown",
     "notFound": "{{name}} not found",
-    "basicInfo": "Basic Information"
+    "basicInfo": "Basic Information",
+    "loadingArchive": "Loading archive...",
+    "loadingRequestCount": "Loading {{count}} archives...",
+    "loadingSlow": "Archive data is large, please wait...",
+    "loadingFailed": "Failed to load",
+    "loadingRetry": "Retry"
+  },
+  "api": {
+    "fetchingTableIndex": "Loading {{table}} index",
+    "fetchingTable": "Loading {{table}}",
+    "fetchingTableEntry": "Loading {{table}}/{{key}}",
+    "fetchingVersion": "Checking version",
+    "fetchingLocales": "Loading language list",
+    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
+    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
+    "fetchingSearch": "Searching archives",
+    "fetchingText": "Parsing text ({{locale}})"
   },
   "operator": {
     "race": "Race",

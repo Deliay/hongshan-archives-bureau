@@ -1,6 +1,6 @@
 import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
-import { Skeleton } from '../../components/ui/Skeleton'
+import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useOperatorDetail } from '../../hooks/useData'
@@ -45,7 +45,7 @@ export default function OperatorDetail() {
     [talentNodeMap],
   )
 
-  if (loading) return <Skeleton className="h-32 w-full" />
+  if (loading) return <DetailSkeleton />
   if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
   if (!detail) return <div className="text-archive-dust text-sm">{t('common.notFound', { name: t('operator.title') })}</div>
 
@@ -608,7 +608,6 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
                     <span>CD {p.coolDown}s</span>
                   )}
                   <span>Lv.{level}</span>
-                  {level >= 11 && level === maxLevel && <span className="text-[10px] text-archive-gold">M{level - 10}</span>}
                 </div>
               )
             })()}

@@ -1,6 +1,6 @@
 import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
-import { Skeleton } from '../../components/ui/Skeleton'
+import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useEnemies, getEnemyTypeNameMap, getEnemyAttrNameMap } from '../../hooks/useData'
@@ -149,7 +149,7 @@ export default function EnemyDetail() {
   }, [enemy, locale])
 
   if (loading || !enemy) {
-    if (loading) return <Skeleton className="h-32 w-full" />
+    if (loading) return <DetailSkeleton />
     return <div className="text-archive-dust text-sm">{t('common.notFound', { name: t('enemy.title') })}</div>
   }
 

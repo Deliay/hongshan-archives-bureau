@@ -70,7 +70,23 @@
     "level": "Lv. {{level}}",
     "unknown": "Unknown",
     "notFound": "{{name}} not found",
-    "basicInfo": "Basic Information"
+    "basicInfo": "Basic Information",
+    "loadingArchive": "กำลังโหลดเอกสารเก็บถาวร",
+    "loadingRequestCount": "กำลังโหลด {{count}} เอกสารเก็บถาวร",
+    "loadingSlow": "ข้อมูลเอกสารมีขนาดใหญ่ โปรดรอสักครู่",
+    "loadingFailed": "โหลดล้มเหลว",
+    "loadingRetry": "ลองอีกครั้ง"
+  },
+  "api": {
+    "fetchingTableIndex": "กำลังโหลดดัชนี {{table}}",
+    "fetchingTable": "กำลังโหลด {{table}}",
+    "fetchingTableEntry": "กำลังโหลด {{table}}/{{key}}",
+    "fetchingVersion": "กำลังตรวจสอบเวอร์ชัน",
+    "fetchingLocales": "กำลังโหลดรายการภาษา",
+    "fetchingTableDict": "กำลังโหลดพจนานุกรม {{table}} ({{locale}})",
+    "fetchingTableDictEntry": "กำลังโหลดพจนานุกรม {{table}}/{{key}} ({{locale}})",
+    "fetchingSearch": "กำลังค้นหาเอกสาร",
+    "fetchingText": "กำลังวิเคราะห์ข้อความ ({{locale}})"
   },
   "operator": {
     "race": "เผ่า",

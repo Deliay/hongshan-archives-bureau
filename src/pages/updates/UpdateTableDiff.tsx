@@ -1,4 +1,4 @@
-import { Skeleton } from '../../components/ui/Skeleton'
+import { PageSkeleton } from '../../components/ui/PageSkeleton'
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTableDiff } from '../../hooks/useUpdateDiff'
@@ -19,7 +19,7 @@ export default function UpdateTableDiff() {
     return <div className="text-red-400 text-sm">{t('common.missingParam')}</div>
   }
 
-  if (loading) return <Skeleton className="h-32 w-full" />
+  if (loading) return <PageSkeleton lines={4} />
   if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
   if (!diff) return <div className="text-archive-dust text-sm">{t('common.empty')}</div>
 

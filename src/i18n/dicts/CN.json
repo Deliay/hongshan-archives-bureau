@@ -70,7 +70,23 @@
     "level": "等级 {{level}}",
     "unknown": "未知",
     "notFound": "未找到{{name}}",
-    "basicInfo": "基本信息"
+    "basicInfo": "基本信息",
+    "loadingArchive": "正在调阅档案",
+    "loadingRequestCount": "正在调阅 {{count}} 份档案",
+    "loadingSlow": "档案数据较大，请稍候…",
+    "loadingFailed": "调阅失败",
+    "loadingRetry": "重试"
+  },
+  "api": {
+    "fetchingTableIndex": "正在调阅 {{table}} 索引",
+    "fetchingTable": "正在调阅 {{table}}",
+    "fetchingTableEntry": "正在调阅 {{table}}/{{key}}",
+    "fetchingVersion": "正在检查版本",
+    "fetchingLocales": "正在加载语言列表",
+    "fetchingTableDict": "正在加载 {{table}} 多语言 ({{locale}})",
+    "fetchingTableDictEntry": "正在加载 {{table}}/{{key}} 多语言 ({{locale}})",
+    "fetchingSearch": "正在搜索档案",
+    "fetchingText": "正在解析文本 ({{locale}})"
   },
   "operator": {
     "race": "种族",

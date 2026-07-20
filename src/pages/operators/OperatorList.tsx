@@ -1,6 +1,6 @@
 import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
-import { PageSkeleton } from '../../components/ui/PageSkeleton'
+import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useState, useMemo } from 'react'
 import { useOperators } from '../../hooks/useData'
 import { Link } from 'react-router-dom'
@@ -111,7 +111,7 @@ export default function OperatorList() {
     })
   }, [visible, groupKey])
 
-  if (loading) return <PageSkeleton />
+  if (loading) return <ListSkeleton filters={8} cards={8} />
   if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
   if (!operators || operators.length === 0) return <div className="text-archive-dust text-sm">{t('common.empty')}</div>
 
