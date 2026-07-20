@@ -327,13 +327,22 @@ export default function OperatorDetail() {
   )
 }
 
+function sortPatchLevels(bundle: SkillPatchData[]): SkillPatchData[] {
+  return [...bundle].sort((a, b) => b.level - a.level)
+}
+
 function getPatchesAtLevel(group: SkillGroup, skillPatchMap: Record<string, SkillPatchData[]>, level: number): SkillPatchData[] {
   const patches: SkillPatchData[] = []
   for (const skillId of group.skillIdList) {
     const bundle = skillPatchMap[skillId]
     if (!bundle) continue
-    const patch = bundle.find(p => p.level === level)
-    if (patch) patches.push(patch)
+    const exact = bundle.find(p => p.level === level)
+    if (exact) {
+      patches.push(exact)
+    } else {
+      const sorted = sortPatchLevels(bundle)
+      if (sorted.length > 0) patches.push(sorted[0])
+    }
   }
   return patches
 }
@@ -341,7 +350,10 @@ function getPatchesAtLevel(group: SkillGroup, skillPatchMap: Record<string, Skil
 function getPatchesForSkill(skillId: string, skillPatchMap: Record<string, SkillPatchData[]>, level: number): SkillPatchData[] {
   const bundle = skillPatchMap[skillId]
   if (!bundle) return []
-  return bundle.filter(p => p.level === level)
+  const exact = bundle.filter(p => p.level === level)
+  if (exact.length > 0) return exact
+  const sorted = sortPatchLevels(bundle)
+  return sorted.length > 0 ? [sorted[0]] : []
 }
 
 function collectBlackboards(patches: SkillPatchData[]): Record<string, number> {
@@ -446,10 +458,24 @@ function SkillFormColumn({
   )
 }
 
+function findMaxLevel(group: SkillGroup, skillPatchMap: Record<string, SkillPatchData[]>): number {
+  let max = 1
+  for (const skillId of group.skillIdList) {
+    const bundle = skillPatchMap[skillId]
+    if (bundle) {
+      for (const p of bundle) {
+        if (p.level > max) max = p.level
+      }
+    }
+  }
+  return max
+}
+
 function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatchMap: Record<string, SkillPatchData[]> }) {
-  const [level, setLevel] = useState(13)
   const { locale } = useLocale()
   const { t } = useI18n()
+  const maxLevel = useMemo(() => findMaxLevel(group, skillPatchMap), [group, skillPatchMap])
+  const [level, setLevel] = useState(maxLevel)
 
   const isDual = !!(group.condition1 && group.condition2 && group.condition1.conditionId)
 
@@ -582,7 +608,7 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
                     <span>CD {p.coolDown}s</span>
                   )}
                   <span>Lv.{level}</span>
-                  {level === 13 && <span className="text-[10px] text-archive-gold">M3</span>}
+                  {level >= 11 && level === maxLevel && <span className="text-[10px] text-archive-gold">M{level - 10}</span>}
                 </div>
               )
             })()}
@@ -615,7 +641,7 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
         <input
           type="range"
           min={1}
-          max={13}
+          max={maxLevel}
           value={level}
           onChange={(e) => setLevel(Number(e.target.value))}
           className="flex-1 h-1 accent-archive-gold"
