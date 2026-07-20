@@ -70,7 +70,12 @@
     "level": "等级 {{level}}",
     "unknown": "未知",
     "notFound": "未找到{{name}}",
-    "basicInfo": "基本信息"
+    "basicInfo": "基本信息",
+    "loadingArchive": "正在调阅档案",
+    "loadingRequestCount": "正在调阅 {{count}} 份档案",
+    "loadingSlow": "档案数据较大，请稍候…",
+    "loadingFailed": "调阅失败",
+    "loadingRetry": "重试"
   },
   "operator": {
     "race": "种族",

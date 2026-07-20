@@ -1,6 +1,6 @@
 import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
-import { Skeleton } from '../../components/ui/Skeleton'
+import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { useParams, Link } from 'react-router-dom'
 import { useRaceDetail, useArchiveSearch } from '../../hooks/useData'
 import Rarity from '../../components/Rarity'
@@ -23,7 +23,7 @@ export default function RaceDetail() {
     setPage,
   } = useArchiveSearch(data?.name ?? '', { excludeTables: ['TagDataTable'] })
 
-  if (loading) return <Skeleton className="h-32 w-full" />
+  if (loading) return <DetailSkeleton />
   if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
   if (!data) return <div className="text-archive-dust text-sm">{t('common.empty')}</div>
 

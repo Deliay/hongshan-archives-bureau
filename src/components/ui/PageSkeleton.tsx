@@ -2,12 +2,13 @@ import { Skeleton } from './Skeleton'
 
 interface PageSkeletonProps {
   lines?: number
+  title?: boolean
 }
 
-export function PageSkeleton({ lines = 6 }: PageSkeletonProps) {
+export function PageSkeleton({ lines = 6, title = true }: PageSkeletonProps) {
   return (
     <div className="space-y-4 animate-fade-in-up" data-testid="skeleton">
-      <Skeleton className="h-8 w-48" />
+      {title && <Skeleton className="h-8 w-48" />}
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-3/4" />
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">

@@ -70,7 +70,12 @@
     "level": "Lv. {{level}}",
     "unknown": "Unknown",
     "notFound": "{{name}} not found",
-    "basicInfo": "Basic Information"
+    "basicInfo": "Basic Information",
+    "loadingArchive": "Loading archive...",
+    "loadingRequestCount": "Loading {{count}} archives...",
+    "loadingSlow": "Archive data is large, please wait...",
+    "loadingFailed": "Failed to load",
+    "loadingRetry": "Retry"
   },
   "operator": {
     "race": "Race",
