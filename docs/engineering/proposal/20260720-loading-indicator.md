@@ -28,7 +28,7 @@ type: Fleeting
 ### 1.3 范围
 
 **做**:
-- 新增 `LoadingProvider`、`LoadingToast`、`useLoadingTracker`。
+- 新增 `LoadingProvider`、`LoadingToast`、`useLoading`、`tracker`。
 - 在 `api.ts` 中接入请求生命周期追踪。
 - 新增/完善 `PageSkeleton`、`DetailSkeleton`、`ListSkeleton`、`SearchSkeleton` 等骨架组件。
 - 为所有加载态不完整的页面替换或补充骨架屏。
@@ -58,7 +58,9 @@ flowchart TD
 |------|------|-----------|
 | `src/components/Loading/LoadingProvider.tsx` | 维护全局请求队列、错误队列、计数 | React Context，避免不必要的重渲染 |
 | `src/components/Loading/LoadingToast.tsx` | 渲染右上角浮层 | 固定定位，加载/慢加载/错误三态 |
-| `src/components/Loading/useLoadingTracker.ts` | 供 API 层调用 | 返回 `track` 函数，自动 push/pop/error |
+| `src/components/Loading/tracker.ts` | 供 API 层调用 | 单例，自动 push/pop/error |
+| `src/components/Loading/useLoading.ts` | 消费 Context | 供 React 组件订阅加载状态 |
+| `src/components/Loading/types.ts` | 类型定义 | `LoadingItem`、`LoadingError` |
 | `src/lib/api.ts` | 所有 fetch 入口 | 通过 `trackFetch` 包装，保留原错误抛出 |
 | `src/components/ui/Skeleton.tsx` | 基础骨架块 | 已有组件，复用 |
 | `src/components/ui/PageSkeleton.tsx` | 通用页面骨架 | 扩展为多种变体 |
@@ -78,23 +80,23 @@ flowchart TD
 
 ```ts
 async function trackFetch<T>(
-  key: string,
   description: string,
   fn: () => Promise<T>
 ): Promise<T> {
-  loadingTracker.start(key, description)
+  const key = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+  tracker.start(key, description)
   try {
     const result = await fn()
-    loadingTracker.complete(key)
+    tracker.complete(key)
     return result
   } catch (error) {
-    loadingTracker.fail(key, error instanceof Error ? error.message : String(error))
+    tracker.fail(key, error instanceof Error ? error.message : String(error))
     throw error
   }
 }
 ```
 
-每个请求分配唯一 key，key 格式为 `${table}:${Date.now()}:${random}`，避免并发冲突。
+每个请求分配唯一 key，避免并发冲突。重试时通过 `retryLoading(key)` 重新执行对应请求函数。
 
 ## 4. 技术实现方案
 
@@ -166,7 +168,7 @@ const isSlow = loadingItems.length > 0 && Date.now() - Math.min(...loadingItems.
 
 在 `src/lib/api.ts` 中：
 
-1. 引入 `useLoadingTracker` 中的 tracker 实例（API 层不直接使用 hook，使用暴露的 tracker 对象）。
+1. 引入 `src/components/Loading/tracker.ts` 中的 tracker 单例（API 层不直接使用 hook，使用暴露的 tracker 对象）。
 2. 为每个 `fetch*` 函数增加 `description` 参数或根据 table/locale 生成描述。
 3. 使用 `trackFetch` 包装实际请求。
 
