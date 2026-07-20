@@ -70,18 +70,23 @@
     "level": "Lv. {{level}}",
     "unknown": "Unknown",
     "notFound": "{{name}} not found",
-    "basicInfo": "Basic Information"
+    "basicInfo": "Basic Information",
+    "loadingArchive": "Đang tải tài liệu lưu trữ",
+    "loadingRequestCount": "Đang tải {{count}} tài liệu lưu trữ",
+    "loadingSlow": "Dữ liệu lưu trữ lớn, vui lòng chờ",
+    "loadingFailed": "Tải thất bại",
+    "loadingRetry": "Thử lại"
   },
   "api": {
-    "fetchingTableIndex": "Loading {{table}} index",
-    "fetchingTable": "Loading {{table}}",
-    "fetchingTableEntry": "Loading {{table}}/{{key}}",
-    "fetchingVersion": "Checking version",
-    "fetchingLocales": "Loading language list",
-    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
-    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
-    "fetchingSearch": "Searching archives",
-    "fetchingText": "Parsing text ({{locale}})"
+    "fetchingTableIndex": "Đang tải chỉ mục {{table}}",
+    "fetchingTable": "Đang tải {{table}}",
+    "fetchingTableEntry": "Đang tải {{table}}/{{key}}",
+    "fetchingVersion": "Đang kiểm tra phiên bản",
+    "fetchingLocales": "Đang tải danh sách ngôn ngữ",
+    "fetchingTableDict": "Đang tải từ điển {{table}} ({{locale}})",
+    "fetchingTableDictEntry": "Đang tải từ điển {{table}}/{{key}} ({{locale}})",
+    "fetchingSearch": "Đang tìm kiếm tài liệu",
+    "fetchingText": "Đang phân tích văn bản ({{locale}})"
   },
   "operator": {
     "race": "Chủng Tộc",

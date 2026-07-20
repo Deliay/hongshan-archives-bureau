@@ -70,18 +70,23 @@
     "level": "Lv. {{level}}",
     "unknown": "Unknown",
     "notFound": "{{name}} not found",
-    "basicInfo": "Basic Information"
+    "basicInfo": "Basic Information",
+    "loadingArchive": "Chargement des archives",
+    "loadingRequestCount": "Chargement de {{count}} archives",
+    "loadingSlow": "Les données d'archives sont volumineuses, veuillez patienter",
+    "loadingFailed": "Échec du chargement",
+    "loadingRetry": "Réessayer"
   },
   "api": {
-    "fetchingTableIndex": "Loading {{table}} index",
-    "fetchingTable": "Loading {{table}}",
-    "fetchingTableEntry": "Loading {{table}}/{{key}}",
-    "fetchingVersion": "Checking version",
-    "fetchingLocales": "Loading language list",
-    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
-    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
-    "fetchingSearch": "Searching archives",
-    "fetchingText": "Parsing text ({{locale}})"
+    "fetchingTableIndex": "Chargement de l'index {{table}}",
+    "fetchingTable": "Chargement de {{table}}",
+    "fetchingTableEntry": "Chargement de {{table}}/{{key}}",
+    "fetchingVersion": "Vérification de la version",
+    "fetchingLocales": "Chargement de la liste des langues",
+    "fetchingTableDict": "Chargement du dictionnaire {{table}} ({{locale}})",
+    "fetchingTableDictEntry": "Chargement du dictionnaire {{table}}/{{key}} ({{locale}})",
+    "fetchingSearch": "Recherche dans les archives",
+    "fetchingText": "Analyse du texte ({{locale}})"
   },
   "operator": {
     "race": "Espèce",

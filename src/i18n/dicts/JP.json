@@ -70,18 +70,23 @@
     "level": "レベル {{level}}",
     "unknown": "不明",
     "notFound": "{{name}}が見つかりません",
-    "basicInfo": "基本情報"
+    "basicInfo": "基本情報",
+    "loadingArchive": "アーカイブを読み込み中",
+    "loadingRequestCount": "{{count}} 件のアーカイブを読み込み中",
+    "loadingSlow": "アーカイブデータが大きいため、しばらくお待ちください",
+    "loadingFailed": "読み込み失敗",
+    "loadingRetry": "再試行"
   },
   "api": {
-    "fetchingTableIndex": "Loading {{table}} index",
-    "fetchingTable": "Loading {{table}}",
-    "fetchingTableEntry": "Loading {{table}}/{{key}}",
-    "fetchingVersion": "Checking version",
-    "fetchingLocales": "Loading language list",
-    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
-    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
-    "fetchingSearch": "Searching archives",
-    "fetchingText": "Parsing text ({{locale}})"
+    "fetchingTableIndex": "{{table}} 索引を読み込み中",
+    "fetchingTable": "{{table}} を読み込み中",
+    "fetchingTableEntry": "{{table}}/{{key}} を読み込み中",
+    "fetchingVersion": "バージョンを確認中",
+    "fetchingLocales": "言語リストを読み込み中",
+    "fetchingTableDict": "{{table}} 多言語データを読み込み中 ({{locale}})",
+    "fetchingTableDictEntry": "{{table}}/{{key}} 多言語データを読み込み中 ({{locale}})",
+    "fetchingSearch": "アーカイブを検索中",
+    "fetchingText": "テキストを解析中 ({{locale}})"
   },
   "operator": {
     "race": "種族",

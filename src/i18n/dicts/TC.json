@@ -70,18 +70,23 @@
     "level": "等級 {{level}}",
     "unknown": "未知",
     "notFound": "未找到{{name}}",
-    "basicInfo": "基本信息"
+    "basicInfo": "基本信息",
+    "loadingArchive": "正在調閱檔案",
+    "loadingRequestCount": "正在調閱 {{count}} 份檔案",
+    "loadingSlow": "檔案數據較大，請稍候…",
+    "loadingFailed": "調閱失敗",
+    "loadingRetry": "重試"
   },
   "api": {
-    "fetchingTableIndex": "Loading {{table}} index",
-    "fetchingTable": "Loading {{table}}",
-    "fetchingTableEntry": "Loading {{table}}/{{key}}",
-    "fetchingVersion": "Checking version",
-    "fetchingLocales": "Loading language list",
-    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
-    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
-    "fetchingSearch": "Searching archives",
-    "fetchingText": "Parsing text ({{locale}})"
+    "fetchingTableIndex": "正在調閱 {{table}} 索引",
+    "fetchingTable": "正在調閱 {{table}}",
+    "fetchingTableEntry": "正在調閱 {{table}}/{{key}}",
+    "fetchingVersion": "正在檢查版本",
+    "fetchingLocales": "正在載入語言列表",
+    "fetchingTableDict": "正在載入 {{table}} 多語言 ({{locale}})",
+    "fetchingTableDictEntry": "正在載入 {{table}}/{{key}} 多語言 ({{locale}})",
+    "fetchingSearch": "正在搜尋檔案",
+    "fetchingText": "正在解析文本 ({{locale}})"
   },
   "operator": {
     "race": "種族",

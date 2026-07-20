@@ -70,18 +70,23 @@
     "level": "Ур. {{level}}",
     "unknown": "Неизвестно",
     "notFound": "{{name}} не найдено",
-    "basicInfo": "Основная информация"
+    "basicInfo": "Основная информация",
+    "loadingArchive": "Загрузка архива",
+    "loadingRequestCount": "Загрузка {{count}} архивов",
+    "loadingSlow": "Данные архива велики, пожалуйста, подождите",
+    "loadingFailed": "Ошибка загрузки",
+    "loadingRetry": "Повторить"
   },
   "api": {
-    "fetchingTableIndex": "Loading {{table}} index",
-    "fetchingTable": "Loading {{table}}",
-    "fetchingTableEntry": "Loading {{table}}/{{key}}",
-    "fetchingVersion": "Checking version",
-    "fetchingLocales": "Loading language list",
-    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
-    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
-    "fetchingSearch": "Searching archives",
-    "fetchingText": "Parsing text ({{locale}})"
+    "fetchingTableIndex": "Загрузка индекса {{table}}",
+    "fetchingTable": "Загрузка {{table}}",
+    "fetchingTableEntry": "Загрузка {{table}}/{{key}}",
+    "fetchingVersion": "Проверка версии",
+    "fetchingLocales": "Загрузка списка языков",
+    "fetchingTableDict": "Загрузка словаря {{table}} ({{locale}})",
+    "fetchingTableDictEntry": "Загрузка словаря {{table}}/{{key}} ({{locale}})",
+    "fetchingSearch": "Поиск в архивах",
+    "fetchingText": "Разбор текста ({{locale}})"
   },
   "operator": {
     "race": "Раса",

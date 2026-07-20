@@ -70,18 +70,23 @@
     "level": "Lv. {{level}}",
     "unknown": "Unknown",
     "notFound": "{{name}} not found",
-    "basicInfo": "Basic Information"
+    "basicInfo": "Basic Information",
+    "loadingArchive": "Cargando archivo",
+    "loadingRequestCount": "Cargando {{count}} archivos",
+    "loadingSlow": "Los datos del archivo son grandes, espere por favor",
+    "loadingFailed": "Error al cargar",
+    "loadingRetry": "Reintentar"
   },
   "api": {
-    "fetchingTableIndex": "Loading {{table}} index",
-    "fetchingTable": "Loading {{table}}",
-    "fetchingTableEntry": "Loading {{table}}/{{key}}",
-    "fetchingVersion": "Checking version",
-    "fetchingLocales": "Loading language list",
-    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
-    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
-    "fetchingSearch": "Searching archives",
-    "fetchingText": "Parsing text ({{locale}})"
+    "fetchingTableIndex": "Cargando índice {{table}}",
+    "fetchingTable": "Cargando {{table}}",
+    "fetchingTableEntry": "Cargando {{table}}/{{key}}",
+    "fetchingVersion": "Verificando versión",
+    "fetchingLocales": "Cargando lista de idiomas",
+    "fetchingTableDict": "Cargando diccionario {{table}} ({{locale}})",
+    "fetchingTableDictEntry": "Cargando diccionario {{table}}/{{key}} ({{locale}})",
+    "fetchingSearch": "Buscando en archivos",
+    "fetchingText": "Analizando texto ({{locale}})"
   },
   "operator": {
     "race": "Raza",

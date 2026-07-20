@@ -70,18 +70,23 @@
     "level": "Lv. {{level}}",
     "unknown": "Unknown",
     "notFound": "{{name}} not found",
-    "basicInfo": "Basic Information"
+    "basicInfo": "Basic Information",
+    "loadingArchive": "Archiv wird geladen",
+    "loadingRequestCount": "{{count}} Archive werden geladen",
+    "loadingSlow": "Die Archivdaten sind umfangreich, bitte warten",
+    "loadingFailed": "Laden fehlgeschlagen",
+    "loadingRetry": "Wiederholen"
   },
   "api": {
-    "fetchingTableIndex": "Loading {{table}} index",
-    "fetchingTable": "Loading {{table}}",
-    "fetchingTableEntry": "Loading {{table}}/{{key}}",
-    "fetchingVersion": "Checking version",
-    "fetchingLocales": "Loading language list",
-    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
-    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
-    "fetchingSearch": "Searching archives",
-    "fetchingText": "Parsing text ({{locale}})"
+    "fetchingTableIndex": "Lade Index {{table}}",
+    "fetchingTable": "Lade {{table}}",
+    "fetchingTableEntry": "Lade {{table}}/{{key}}",
+    "fetchingVersion": "Prüfe Version",
+    "fetchingLocales": "Lade Sprachliste",
+    "fetchingTableDict": "Lade Wörterbuch {{table}} ({{locale}})",
+    "fetchingTableDictEntry": "Lade Wörterbuch {{table}}/{{key}} ({{locale}})",
+    "fetchingSearch": "Durchsuche Archiv",
+    "fetchingText": "Analysiere Text ({{locale}})"
   },
   "operator": {
     "race": "Spezies",
