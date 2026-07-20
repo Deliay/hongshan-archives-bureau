@@ -478,7 +478,6 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
   /* --- main description: shared group.desc with blackboard --- */
   const mainDescText = useMemo(() => {
     if (!groupDesc) return ''
-    if (Object.keys(singleBlackboards).length === 0) return groupDesc
     return formatBlackboard(groupDesc, singleBlackboards)
   }, [groupDesc, singleBlackboards])
 
@@ -489,42 +488,36 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
   const postDescText1 = useMemo(() => {
     if (!cond1?.postDesc || !isDual) return ''
     const bb = Object.keys(condBB1).length > 0 ? condBB1 : singleBlackboards
-    if (Object.keys(bb).length === 0) return cond1.postDesc
     return formatBlackboard(cond1.postDesc, bb)
   }, [cond1?.postDesc, condBB1, singleBlackboards, isDual])
 
   const postDescText2 = useMemo(() => {
     if (!cond2?.postDesc || !isDual) return ''
     const bb = Object.keys(condBB2).length > 0 ? condBB2 : singleBlackboards
-    if (Object.keys(bb).length === 0) return cond2.postDesc
     return formatBlackboard(cond2.postDesc, bb)
   }, [cond2?.postDesc, condBB2, singleBlackboards, isDual])
 
   const condDesc1 = useMemo(() => {
     if (!cond1?.desc || !isDual) return ''
     const bb = Object.keys(condBB1).length > 0 ? condBB1 : singleBlackboards
-    if (Object.keys(bb).length === 0) return cond1.desc
     return formatBlackboard(cond1.desc, bb)
   }, [cond1?.desc, condBB1, singleBlackboards, isDual])
 
   const condDesc2 = useMemo(() => {
     if (!cond2?.desc || !isDual) return ''
     const bb = Object.keys(condBB2).length > 0 ? condBB2 : singleBlackboards
-    if (Object.keys(bb).length === 0) return cond2.desc
     return formatBlackboard(cond2.desc, bb)
   }, [cond2?.desc, condBB2, singleBlackboards, isDual])
 
   const condInactive1 = useMemo(() => {
     if (!cond1?.descInactive || !isDual) return ''
     const bb = Object.keys(condBB1).length > 0 ? condBB1 : singleBlackboards
-    if (Object.keys(bb).length === 0) return cond1.descInactive
     return formatBlackboard(cond1.descInactive, bb)
   }, [cond1?.descInactive, condBB1, singleBlackboards, isDual])
 
   const condInactive2 = useMemo(() => {
     if (!cond2?.descInactive || !isDual) return ''
     const bb = Object.keys(condBB2).length > 0 ? condBB2 : singleBlackboards
-    if (Object.keys(bb).length === 0) return cond2.descInactive
     return formatBlackboard(cond2.descInactive, bb)
   }, [cond2?.descInactive, condBB2, singleBlackboards, isDual])
 
