@@ -459,7 +459,7 @@ function SkillPreview({ charId, locale }: { charId: string; locale: string }) {
               const pDesc = resolveI18n(first.description, patchI18n as Record<string, string>) || groupDesc
               const bb: Record<string, number> = {}
               for (const b of (first.blackboard ?? [])) bb[b.key] = b.value
-              groupDesc = Object.keys(bb).length > 0 ? formatBlackboard(pDesc, bb) : pDesc
+              groupDesc = formatBlackboard(pDesc, bb)
             }
           }
           result.push({ name: groupName, icon: groupIcon, desc: groupDesc, type: g.skillGroupType ?? 0 })
@@ -575,7 +575,7 @@ function SkillEntry({ entry, op, locale }: { entry: any; op: string; locale: str
       if (bundle?.length) {
         const bb: Record<string, number> = {}
         for (const b of (bundle[0].blackboard ?? [])) bb[b.key] = b.value
-        if (Object.keys(bb).length > 0) formatter = (text: string) => formatBlackboard(text, bb)
+        formatter = (text: string) => formatBlackboard(text, bb)
       }
       return renderChangeEntry(entry, op, locale, formatter)
     }
@@ -589,7 +589,7 @@ function SkillEntry({ entry, op, locale }: { entry: any; op: string; locale: str
   const desc = localeText(first.description, locale) || resolveI18n(first.description, i18n) || ''
   const bb: Record<string, number> = {}
   for (const b of (first.blackboard ?? [])) bb[b.key] = b.value
-  const formattedDesc = Object.keys(bb).length > 0 ? formatBlackboard(desc, bb) : desc
+  const formattedDesc = formatBlackboard(desc, bb)
   return (
     <div className="text-xs">
       {name && <div className="text-archive-ivory font-medium mb-1">{name}</div>}

@@ -61,4 +61,24 @@ describe('formatBlackboard', () => {
   it('does not color -{expr:fmt}', () => {
     expect(formatBlackboard('-{x:0}点', { x: 10 })).toBe('-10点')
   })
+
+  it('resolves unknown variable with empty blackboard to 0', () => {
+    expect(formatBlackboard('{poise:0}', {})).toBe('0')
+  })
+
+  it('resolves unknown variable with no format specifier to 0', () => {
+    expect(formatBlackboard('{poise}', {})).toBe('0')
+  })
+
+  it('resolves text with unknown variables when blackboard is empty', () => {
+    expect(formatBlackboard('造成 {poise:0} 点伤害', {})).toBe('造成 0 点伤害')
+  })
+
+  it('resolves +{expr:0%} with empty blackboard to +0% in blue', () => {
+    expect(formatBlackboard('+{atk_up:0%}', {})).toBe('<color=#26bbfd>+0%</color>')
+  })
+
+  it('resolves expression with all missing variables', () => {
+    expect(formatBlackboard('{-(x+5):0}', {})).toBe('-5')
+  })
 })

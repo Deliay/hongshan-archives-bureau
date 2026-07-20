@@ -324,7 +324,7 @@ function WeaponSkillEntry({ entry, op, locale }: { entry: any; op: string; local
       if (bundle?.length) {
         const bb: Record<string, number> = {}
         for (const b of (bundle[0].blackboard ?? [])) bb[b.key] = b.value
-        if (Object.keys(bb).length > 0) formatter = (text: string) => formatBlackboard(text, bb)
+        formatter = (text: string) => formatBlackboard(text, bb)
       }
       return renderChangeEntry(entry, op, locale, formatter)
     }
@@ -338,7 +338,7 @@ function WeaponSkillEntry({ entry, op, locale }: { entry: any; op: string; local
   const desc = localeText(first.description, locale) || resolveI18n(first.description, i18n) || ''
   const bb: Record<string, number> = {}
   for (const b of (first.blackboard ?? [])) bb[b.key] = b.value
-  const formattedDesc = Object.keys(bb).length > 0 ? formatBlackboard(desc, bb) : desc
+  const formattedDesc = formatBlackboard(desc, bb)
   return (
     <div className="text-xs">
       {name && <div className="text-archive-ivory font-medium mb-1">{name}</div>}
@@ -436,7 +436,7 @@ function WeaponSkillPreview({ weaponId }: { weaponId: string }) {
           result.push({
             skillId: sid,
             name,
-            desc: Object.keys(bb).length > 0 ? formatBlackboard(desc, bb) : desc,
+            desc: formatBlackboard(desc, bb),
           })
         }
       }
