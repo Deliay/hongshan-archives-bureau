@@ -1,19 +1,16 @@
-import { createContext, useCallback, useContext, useMemo, useReducer, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react'
 import { registerLoadingContext } from './tracker'
 import type { LoadingContextValue, LoadingError, LoadingItem } from './types'
 
 interface State {
   items: LoadingItem[]
   errors: LoadingError[]
-  retryHandlers: Map<string, () => void>
 }
 
 type Action =
   | { type: 'start'; key: string; description: string }
   | { type: 'complete'; key: string }
   | { type: 'fail'; key: string; message: string }
-  | { type: 'registerRetry'; key: string; handler: () => void }
-  | { type: 'retry'; key: string }
 
 const LoadingContext = createContext<LoadingContextValue | null>(null)
 
@@ -38,18 +35,9 @@ function reducer(state: State, action: Action): State {
             description: state.items.find(i => i.key === action.key)?.description ?? action.key,
             message: action.message,
             timestamp: Date.now(),
-            retry: state.retryHandlers.get(action.key),
           },
         ],
       }
-    case 'registerRetry':
-      state.retryHandlers.set(action.key, action.handler)
-      return state
-    case 'retry': {
-      const handler = state.retryHandlers.get(action.key)
-      handler?.()
-      return { ...state, errors: state.errors.filter(e => e.key !== action.key) }
-    }
   }
 }
 
@@ -57,7 +45,6 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, {
     items: [],
     errors: [],
-    retryHandlers: new Map(),
   })
 
   const start = useCallback((key: string, description: string) => {
@@ -72,22 +59,14 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'fail', key, message })
   }, [])
 
-  const registerRetry = useCallback((key: string, handler: () => void) => {
-    dispatch({ type: 'registerRetry', key, handler })
-  }, [])
-
-  const retry = useCallback((key: string) => {
-    dispatch({ type: 'retry', key })
-  }, [])
-
   const value = useMemo<LoadingContextValue>(
-    () => ({ items: state.items, errors: state.errors, start, complete, fail, retry }),
-    [state.items, state.errors, start, complete, fail, retry],
+    () => ({ items: state.items, errors: state.errors, start, complete, fail }),
+    [state.items, state.errors, start, complete, fail],
   )
 
-  useMemo(() => {
-    registerLoadingContext({ ...value, registerRetry } as unknown as LoadingContextValue)
-  }, [value, registerRetry])
+  useEffect(() => {
+    registerLoadingContext(value)
+  }, [value])
 
   return <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>
 }

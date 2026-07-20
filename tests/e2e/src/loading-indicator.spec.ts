@@ -31,6 +31,11 @@ test.describe('加载提示框与骨架屏 (Loading Indicator & Skeleton)', () =
   })
 
   test('并发请求时显示请求数量', async ({ page }) => {
+    await page.route('**/endfield-assets.fffdan.com/table/**', async route => {
+      await new Promise(r => setTimeout(r, 1000))
+      await route.continue()
+    })
+
     await page.goto('/archive/operators')
 
     const countText = page.locator('text=/正在调阅 \\d+ 份档案/')

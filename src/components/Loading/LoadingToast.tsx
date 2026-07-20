@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLoading } from './LoadingProvider'
+import { retryLoading } from '../../lib/api'
 import { useI18n } from '../../i18n'
 
 const MIN_VISIBLE_MS = 400
@@ -7,28 +8,31 @@ const SLOW_THRESHOLD_MS = 3000
 
 export function LoadingToast() {
   const { t } = useI18n()
-  const { items, errors, retry } = useLoading()
+  const { items, errors } = useLoading()
   const [lastEmptyAt, setLastEmptyAt] = useState<number | null>(null)
+  const [, setTick] = useState(0)
 
   useEffect(() => {
-    if (items.length === 0 && errors.length === 0 && lastEmptyAt === null) {
-      setLastEmptyAt(Date.now())
-    } else if ((items.length > 0 || errors.length > 0) && lastEmptyAt !== null) {
+    const id = setInterval(() => setTick(t => t + 1), 250)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    if (items.length === 0 && errors.length === 0) {
+      if (lastEmptyAt === null) {
+        setLastEmptyAt(Date.now())
+      }
+    } else {
       setLastEmptyAt(null)
     }
   }, [items.length, errors.length, lastEmptyAt])
 
-  const visible = useMemo(() => {
-    if (items.length > 0 || errors.length > 0) return true
-    if (lastEmptyAt == null) return false
-    return Date.now() - lastEmptyAt < MIN_VISIBLE_MS
-  }, [items.length, errors.length, lastEmptyAt])
+  const now = Date.now()
+  const hasActive = items.length > 0 || errors.length > 0
+  const inMinDisplay = lastEmptyAt !== null && now - lastEmptyAt < MIN_VISIBLE_MS
+  const visible = hasActive || inMinDisplay
 
-  const isSlow = useMemo(() => {
-    if (items.length === 0) return false
-    const oldest = Math.min(...items.map(i => i.startedAt))
-    return Date.now() - oldest > SLOW_THRESHOLD_MS
-  }, [items])
+  const isSlow = items.length > 0 && now - Math.min(...items.map(i => i.startedAt)) > SLOW_THRESHOLD_MS
 
   if (!visible) return null
 
@@ -40,14 +44,14 @@ export function LoadingToast() {
                     shadow-lg shadow-black/20 p-3">
       {errors.length > 0 ? (
         <div className="flex items-start gap-3">
-          <div className="w-4 h-4 mt-0.5 rounded-full bg-[#9E3A3A] shrink-0" />
+          <div className="w-4 h-4 mt-0.5 rounded-full bg-archive-seal shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-[#9E3A3A]">{t('common.loadingFailed')}</div>
+            <div className="text-sm font-medium text-archive-seal">{t('common.loadingFailed')}</div>
             <div className="text-xs text-archive-dust mt-1 truncate">{latestDescription}</div>
             <div className="text-xs text-archive-lead mt-1 line-clamp-2">{errors[errors.length - 1]?.message}</div>
             <button
               type="button"
-              onClick={() => retry(errors[errors.length - 1].key)}
+              onClick={() => retryLoading(errors[errors.length - 1].key)}
               className="mt-2 px-2.5 py-1 text-xs rounded border border-archive-border
                          text-archive-ivory hover:border-archive-gold/60 transition-colors"
             >

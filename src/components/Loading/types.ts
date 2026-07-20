@@ -9,7 +9,6 @@ export interface LoadingError {
   description: string
   message: string
   timestamp: number
-  retry?: () => void
 }
 
 export interface LoadingContextValue {
@@ -18,5 +17,4 @@ export interface LoadingContextValue {
   start: (key: string, description: string) => void
   complete: (key: string) => void
   fail: (key: string, message: string) => void
-  retry: (key: string) => void
 }

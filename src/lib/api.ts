@@ -1,3 +1,5 @@
+import { startLoading, completeLoading, failLoading } from '../components/Loading/tracker'
+
 const API_BASE = 'https://endfield-assets.fffdan.com'
 
 function safeParse(json: string): any {
@@ -22,8 +24,6 @@ export function retryLoading(key: string) {
   retryHandlers.get(key)?.()
 }
 
-import { startLoading, completeLoading, failLoading } from '../components/Loading/tracker'
-
 async function trackFetch<T>(description: string, fn: () => Promise<T>): Promise<T> {
   const key = generateLoadingKey()
 
@@ -32,6 +32,7 @@ async function trackFetch<T>(description: string, fn: () => Promise<T>): Promise
     try {
       const result = await fn()
       completeLoading(key)
+      retryHandlers.delete(key)
       return result
     } catch (error) {
       failLoading(key, error instanceof Error ? error.message : String(error))
