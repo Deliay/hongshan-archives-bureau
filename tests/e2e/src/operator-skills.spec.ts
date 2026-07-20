@@ -112,6 +112,18 @@ test.describe('干员技能 (Operator Skills)', () => {
     expect(sectionText).not.toContain('"text":')
   })
 
+  test('干员「丽兹妍」技能描述不含未解析的 {placeholder} 占位', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0032_lizhiyan')
+    await page.waitForTimeout(3000)
+
+    const bodyText = await page.locator('body').textContent() || ''
+
+    // No raw format placeholders like {poise:0} or {x:0%} should appear
+    const unresolvedPattern = /\{[a-zA-Z_][a-zA-Z0-9_.]*:?\d/
+    const matches = bodyText.match(unresolvedPattern)
+    expect(matches).toBeNull()
+  })
+
   test.describe('双形态技能切换条件 (Dual-Form Skill Condition)', () => {
 
     test('干员「丽兹妍」双形态技能显示条件名称（阵诀·智 / 阵诀·意）', async ({ page }) => {
