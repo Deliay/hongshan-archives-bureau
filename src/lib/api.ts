@@ -1,4 +1,5 @@
 import { startLoading, completeLoading, failLoading } from '../components/Loading/tracker'
+import { getCachedData } from './cache'
 
 const API_BASE = 'https://endfield-assets.fffdan.com'
 
@@ -95,9 +96,11 @@ export async function fetchI18nSearch(regex: string): Promise<{ Table: string; P
 }
 
 export async function fetchI18nText(locale: string, id: string): Promise<string> {
-  return trackFetch(`正在解析文本 (${locale})`, async () => {
-    const res = await fetch(`${API_BASE}/i18n/${locale}/${id}`)
-    if (!res.ok) return ''
-    return res.text()
-  }, 'api.fetchingText', { locale })
+  return getCachedData<string>(`__i18n_text_${locale}`, async () => {
+    return trackFetch(`正在解析文本 (${locale})`, async () => {
+      const res = await fetch(`${API_BASE}/i18n/${locale}/${id}`)
+      if (!res.ok) return ''
+      return res.text()
+    }, 'api.fetchingText', { locale })
+  }, id)
 }

@@ -50,6 +50,18 @@ scripts/
   generate-i18n-dicts.ts  # generate src/i18n/dicts from /i18n API
 ```
 
+## i18n 添加流程
+
+所有 UI 文案必须通过 `scripts/generate-i18n-dicts.ts` 生成，禁止直接修改 `src/i18n/dicts/*.json`。
+
+1. **确定文本**：在代码中使用 `t('namespace.key')` 确定 key。
+2. **逐语言翻译**：
+   - 若是游戏已有官方文案，在 `scripts/generate-i18n-dicts.ts` 的 `OFFICIAL_IDS` 中新增 `key → id` 映射。
+   - 若是站点自定义文案，在 `CUSTOM` 中新增 key。
+   - 每个 `CUSTOM` key 必须提供全部 14 个语言（CN/TC/EN/JP/KR/RU/MX/BR/DE/FR/VN/TH/ID/IT）的本土翻译，**不允许使用任何语言占位、不允许留空、不允许直接复制中文**。
+3. **重新生成**：运行 `node scripts/generate-i18n-dicts.ts`。
+4. **校验**：运行 `npm run lint && npm run test && npm run build`。
+
 ## Build & Scripts
 
 ```bash

@@ -1,5 +1,5 @@
-// 本文件由 scripts/generate-i18n-dicts.ts 根据 API /i18n 自动生成
-// 请勿手动修改 import 列表
+// 本文件由 scripts/generate-i18n-dicts.ts 根据 i18n-custom.json 自动生成
+// 请勿手动修改
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import CN from './dicts/CN.json'
 import TC from './dicts/TC.json'

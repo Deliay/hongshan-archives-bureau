@@ -7,8 +7,6 @@ describe('i18n translate', () => {
   })
 
   it('falls back to EN when key missing in target locale', () => {
-    // 'site.name' is site-specific and only available in supported UI locales,
-    // so use a synthetic locale that is present in messages but lacks the key.
     expect(translate('MX', 'site.name')).toBe('Hongshan Archives Bureau')
   })
 
@@ -23,5 +21,38 @@ describe('i18n translate', () => {
   it('replaces variables', () => {
     expect(translate('CN', 'common.countPeople', { count: 3 })).toBe('3 人')
     expect(translate('EN', 'common.backToList', { list: 'Operators' })).toBe('Back to Operators list')
+  })
+
+  it('new common.loading* keys have translations in all locales', () => {
+    for (const locale of ['CN', 'TC', 'EN', 'JP', 'KR', 'RU', 'MX', 'BR', 'DE', 'FR', 'VN', 'TH', 'ID', 'IT']) {
+      const archive = translate(locale, 'common.loadingArchive')
+      expect(archive).not.toBe('common.loadingArchive')
+      const retry = translate(locale, 'common.loadingRetry')
+      expect(retry).not.toBe('common.loadingRetry')
+    }
+  })
+
+  it('nav.search has proper translations in all locales', () => {
+    expect(translate('MX', 'nav.search')).not.toBe('档案搜索')
+    expect(translate('TH', 'nav.search')).not.toBe('档案搜索')
+    expect(translate('EN', 'nav.search')).toBe('Archive Search')
+    expect(translate('CN', 'nav.search')).toBe('档案搜索')
+  })
+
+  it('search.resultCount variable interpolation works', () => {
+    expect(translate('CN', 'search.resultCount', { count: 3 })).toBe('找到 3 条相关记载')
+    expect(translate('EN', 'search.resultCount', { count: 3 })).toBe('Found 3 related records')
+  })
+
+  it('common.loadingRequestCount variable interpolation works', () => {
+    expect(translate('CN', 'common.loadingRequestCount', { count: 5 })).toBe('正在调阅 5 份档案')
+    expect(translate('EN', 'common.loadingRequestCount', { count: 5 })).toBe('Loading 5 archives...')
+  })
+
+  it('search.prev and search.next have proper locale-specific translations', () => {
+    expect(translate('JP', 'search.prev')).toBe('前へ')
+    expect(translate('JP', 'search.next')).toBe('次へ')
+    expect(translate('CN', 'search.prev')).toBe('上一页')
+    expect(translate('CN', 'search.next')).toBe('下一页')
   })
 })
