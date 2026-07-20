@@ -26,6 +26,7 @@ function useData<T>(fetcher: () => Promise<T>, deps: unknown[] = []): UseDataRes
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
+    setData(null)
     fetcher()
       .then(setData)
       .catch((e: Error) => setError(e.message))
@@ -698,7 +699,7 @@ export function useRaceDetail(raceId: string): UseDataResult<RaceEntry> {
   const { locale } = useLocale()
   return useData(async () => {
     const [races, results] = await Promise.all([
-      getCachedData<Race[]>('__built_races', async () => {
+      getCachedData<Race[]>(`__built_races_${locale}`, async () => {
         const [[tagRaw, tagI18n], [charTagRaw], [charRaw, charI18n]] = await Promise.all([
           Promise.all([
             getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable')),
@@ -740,7 +741,7 @@ export function useRaceDetail(raceId: string): UseDataResult<RaceEntry> {
         }
         return Object.values(races).sort((a, b) => a.name.localeCompare(b.name))
       }),
-      getCachedData<{ Table: string; Path: string; Id: string }[]>(`__i18n_search_${raceId}`, async () => {
+      getCachedData<{ Table: string; Path: string; Id: string }[]>(`__i18n_search_${locale}_${raceId}`, async () => {
         const tags = await getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable'))
         const tagI18n = await getTableI18nDict('TagDataTable', locale)
         const tag = tags[raceId]
@@ -843,7 +844,7 @@ export function useFactionDetail(factionId: string): UseDataResult<FactionEntry>
   const { locale } = useLocale()
   return useData(async () => {
     const [factions, results] = await Promise.all([
-      getCachedData<Faction[]>('__built_factions', async () => {
+      getCachedData<Faction[]>(`__built_factions_${locale}`, async () => {
         const [[tagRaw, tagI18n], [blocRaw], [charTagRaw], [charRaw, charI18n]] = await Promise.all([
           Promise.all([
             getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable')),
@@ -895,7 +896,7 @@ export function useFactionDetail(factionId: string): UseDataResult<FactionEntry>
         }
         return Object.values(factions).sort((a, b) => a.name.localeCompare(b.name))
       }),
-      getCachedData<{ Table: string; Path: string; Id: string }[]>(`__i18n_search_${factionId}`, async () => {
+      getCachedData<{ Table: string; Path: string; Id: string }[]>(`__i18n_search_${locale}_${factionId}`, async () => {
         const tags = await getCachedData<Record<string, any>>('TagDataTable', () => fetchTableAll('TagDataTable'))
         const tagI18n = await getTableI18nDict('TagDataTable', locale)
         const tag = tags[factionId]

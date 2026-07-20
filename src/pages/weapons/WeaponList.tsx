@@ -228,7 +228,7 @@ export default function WeaponList() {
             className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
           >
             {PAGE_SIZES.map(ps => (
-              <option key={ps} value={ps}>{ps === 0 ? '全部' : `${ps} / 页`}</option>
+              <option key={ps} value={ps}>{ps === 0 ? t('common.all') : `${ps} / ${t('common.page')}`}</option>
             ))}
           </select>
         </div>

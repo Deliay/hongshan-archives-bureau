@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "build": "npm run verify:i18n && tsc -b && vite build",
+    "lint": "oxlint && npm run verify:i18n",
+    "verify:i18n": "node scripts/verify-i18n.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview"

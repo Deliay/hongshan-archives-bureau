@@ -7,6 +7,7 @@ const MEMORY_MAX = 100
 const DEFAULT_TTL = 30 * 60 * 1000
 
 let currentVersion: string | null = null
+let versionPromise: Promise<string> | null = null
 
 export function getVersion(): string | null {
   return currentVersion
@@ -96,16 +97,21 @@ async function idbClear(): Promise<void> {
 
 // ---------- Public API ----------
 
-export async function initCache(): Promise<string> {
-  const version = await (await fetch('https://endfield-assets.fffdan.com/version')).text()
-  const old = await idbGet<string>('_version')
-  if (old != null && old !== version) {
-    await idbClear()
-    memoryCache.clear()
+export function initCache(): Promise<string> {
+  if (!versionPromise) {
+    versionPromise = (async () => {
+      const version = await (await fetch('https://endfield-assets.fffdan.com/version')).text()
+      const old = await idbGet<string>('_version')
+      if (old != null && old !== version) {
+        await idbClear()
+        memoryCache.clear()
+      }
+      await idbSet('_version', version)
+      currentVersion = version
+      return version
+    })()
   }
-  await idbSet('_version', version)
-  currentVersion = version
-  return version
+  return versionPromise
 }
 
 export async function getCachedData<T>(
@@ -113,6 +119,7 @@ export async function getCachedData<T>(
   fetcher: () => Promise<T>,
   key?: string
 ): Promise<T> {
+  if (!versionPromise) await initCache()
   const idbKey = cacheKey(table, key ?? 'all')
 
   const mem = memoryCache.get<T>(idbKey)

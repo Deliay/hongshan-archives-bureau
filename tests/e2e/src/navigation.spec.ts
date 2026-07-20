@@ -1,4 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
+
+async function setLocale(page: Page, locale: string) {
+  await page.evaluate((l) => localStorage.setItem('hs_locale', l), locale)
+  await page.reload({ waitUntil: 'domcontentloaded' })
+}
 
 test.describe('导航与全局布局 (Navigation & Layout)', () => {
 
@@ -33,5 +38,24 @@ test.describe('导航与全局布局 (Navigation & Layout)', () => {
       await page.goto(path, { waitUntil: 'domcontentloaded' })
       await expect(page.locator('h2').first()).toHaveText(heading, { timeout: 15000 })
     }
+  })
+
+  test('切换语言后侧边栏「档案搜索」显示目标语言', async ({ page }) => {
+    // Default is CN — verify sidebar link shows Chinese
+    await expect(
+      page.getByRole('complementary').getByRole('link', { name: '档案搜索' }),
+    ).toBeVisible({ timeout: 10000 })
+
+    // Switch to EN
+    await setLocale(page, 'EN')
+    await expect(
+      page.getByRole('complementary').getByRole('link', { name: 'Archive Search' }),
+    ).toBeVisible({ timeout: 10000 })
+
+    // Switch to FR
+    await setLocale(page, 'FR')
+    await expect(
+      page.getByRole('complementary').getByRole('link', { name: 'Recherche d\'archives' }),
+    ).toBeVisible({ timeout: 10000 })
   })
 })
