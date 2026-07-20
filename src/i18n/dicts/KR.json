@@ -72,6 +72,17 @@
     "notFound": "{{name}}을(를) 찾을 수 없습니다",
     "basicInfo": "기본 정보"
   },
+  "api": {
+    "fetchingTableIndex": "Loading {{table}} index",
+    "fetchingTable": "Loading {{table}}",
+    "fetchingTableEntry": "Loading {{table}}/{{key}}",
+    "fetchingVersion": "Checking version",
+    "fetchingLocales": "Loading language list",
+    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
+    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
+    "fetchingSearch": "Searching archives",
+    "fetchingText": "Parsing text ({{locale}})"
+  },
   "operator": {
     "race": "종족",
     "skill": "스킬",

@@ -72,6 +72,17 @@
     "notFound": "{{name}}が見つかりません",
     "basicInfo": "基本情報"
   },
+  "api": {
+    "fetchingTableIndex": "Loading {{table}} index",
+    "fetchingTable": "Loading {{table}}",
+    "fetchingTableEntry": "Loading {{table}}/{{key}}",
+    "fetchingVersion": "Checking version",
+    "fetchingLocales": "Loading language list",
+    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
+    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
+    "fetchingSearch": "Searching archives",
+    "fetchingText": "Parsing text ({{locale}})"
+  },
   "operator": {
     "race": "種族",
     "skill": "スキル",

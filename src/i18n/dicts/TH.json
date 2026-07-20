@@ -72,6 +72,17 @@
     "notFound": "{{name}} not found",
     "basicInfo": "Basic Information"
   },
+  "api": {
+    "fetchingTableIndex": "Loading {{table}} index",
+    "fetchingTable": "Loading {{table}}",
+    "fetchingTableEntry": "Loading {{table}}/{{key}}",
+    "fetchingVersion": "Checking version",
+    "fetchingLocales": "Loading language list",
+    "fetchingTableDict": "Loading {{table}} dictionary ({{locale}})",
+    "fetchingTableDictEntry": "Loading {{table}}/{{key}} dictionary ({{locale}})",
+    "fetchingSearch": "Searching archives",
+    "fetchingText": "Parsing text ({{locale}})"
+  },
   "operator": {
     "race": "เผ่า",
     "skill": "ส​กิล",
