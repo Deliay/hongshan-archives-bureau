@@ -66,6 +66,9 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     registerLoadingContext(value)
+    return () => {
+      registerLoadingContext(null as unknown as LoadingContextValue)
+    }
   }, [value])
 
   return <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>

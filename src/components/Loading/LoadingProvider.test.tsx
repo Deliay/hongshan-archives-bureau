@@ -41,13 +41,14 @@ function renderWithProvider(ui: React.ReactNode) {
 }
 
 describe('LoadingProvider', () => {
+  beforeEach(() => cleanup())
+  afterEach(() => cleanup())
+
   it('provides initial empty state', () => {
     renderWithProvider(<TestConsumer />)
     expect(screen.getByTestId('items-count').textContent).toBe('0')
     expect(screen.getByTestId('errors-count').textContent).toBe('0')
   })
-
-  beforeEach(() => cleanup())
 
   it('tracks a started item', () => {
     renderWithProvider(
