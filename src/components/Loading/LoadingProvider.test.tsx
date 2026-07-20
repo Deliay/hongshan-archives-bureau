@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { render, screen, act, cleanup } from '@testing-library/react'
+import { render, screen, act, cleanup, waitFor } from '@testing-library/react'
 import { LoadingProvider, useLoading } from './LoadingProvider'
 import { startLoading, completeLoading, failLoading, registerLoadingContext } from './tracker'
 import type { LoadingContextValue } from './types'
@@ -171,9 +171,9 @@ describe('retryLoading', () => {
       const errorKey = failedItems[0].key
       retryLoading(errorKey)
 
-      await new Promise(r => setTimeout(r, 100))
-
-      expect(startedItems.filter(i => i.key === errorKey).length).toBe(2)
+      await waitFor(() => {
+        expect(startedItems.filter(i => i.key === errorKey).length).toBe(2)
+      })
       expect(callCount).toBe(2)
     } finally {
       globalThis.fetch = originalFetch

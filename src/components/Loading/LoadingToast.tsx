@@ -9,10 +9,11 @@ const SLOW_THRESHOLD_MS = 3000
 export function LoadingToast() {
   const { t } = useI18n()
   const { items, errors } = useLoading()
-  const [lastEmptyAt, setLastEmptyAt] = useState<number | null>(null)
+  const [hideToast, setHideToast] = useState(true)
   const [, setTick] = useState(0)
 
-  const needsTimer = items.length > 0 || errors.length > 0 || lastEmptyAt !== null
+  const hasActive = items.length > 0 || errors.length > 0
+  const needsTimer = hasActive
 
   useEffect(() => {
     if (!needsTimer) return
@@ -21,21 +22,17 @@ export function LoadingToast() {
   }, [needsTimer])
 
   useEffect(() => {
-    if (items.length === 0 && errors.length === 0) {
-      if (lastEmptyAt === null) {
-        setLastEmptyAt(Date.now())
-      }
-    } else {
-      setLastEmptyAt(null)
+    if (hasActive) {
+      setHideToast(false)
+      return
     }
-  }, [items.length, errors.length, lastEmptyAt])
+    const id = setTimeout(() => setHideToast(true), MIN_VISIBLE_MS)
+    return () => clearTimeout(id)
+  }, [hasActive])
 
-  const now = Date.now()
-  const hasActive = items.length > 0 || errors.length > 0
-  const inMinDisplay = lastEmptyAt !== null && now - lastEmptyAt < MIN_VISIBLE_MS
-  const visible = hasActive || inMinDisplay
+  const visible = !hideToast
 
-  const isSlow = items.length > 0 && now - Math.min(...items.map(i => i.startedAt)) > SLOW_THRESHOLD_MS
+  const isSlow = items.length > 0 && Date.now() - Math.min(...items.map(i => i.startedAt)) > SLOW_THRESHOLD_MS
 
   if (!visible) return null
 
