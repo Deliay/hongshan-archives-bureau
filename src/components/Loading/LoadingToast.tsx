@@ -12,10 +12,13 @@ export function LoadingToast() {
   const [lastEmptyAt, setLastEmptyAt] = useState<number | null>(null)
   const [, setTick] = useState(0)
 
+  const needsTimer = items.length > 0 || errors.length > 0 || lastEmptyAt !== null
+
   useEffect(() => {
+    if (!needsTimer) return
     const id = setInterval(() => setTick(t => t + 1), 250)
     return () => clearInterval(id)
-  }, [])
+  }, [needsTimer])
 
   useEffect(() => {
     if (items.length === 0 && errors.length === 0) {
@@ -43,7 +46,7 @@ export function LoadingToast() {
                     rounded border border-archive-border bg-archive-ink/95 backdrop-blur-sm
                     shadow-lg shadow-black/20 p-3">
       {errors.length > 0 ? (
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3" role="alert" aria-live="assertive">
           <div className="w-4 h-4 mt-0.5 rounded-full bg-archive-seal shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium text-archive-seal">{t('common.loadingFailed')}</div>

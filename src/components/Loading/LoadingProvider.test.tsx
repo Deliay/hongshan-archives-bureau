@@ -137,3 +137,46 @@ describe('tracker', () => {
     expect((mockCapture.errors[0] as { message: string }).message).toBe('fail msg')
   })
 })
+
+describe('retryLoading', () => {
+  it('re-executes failed request and transitions back to loading', async () => {
+    const startedItems: Array<{ key: string }> = []
+    const completedItems: Array<{ key: string }> = []
+    const failedItems: Array<{ key: string; message: string }> = []
+
+    const testDispatch: LoadingContextValue = {
+      items: [],
+      errors: [],
+      start: (key) => { startedItems.push({ key }) },
+      complete: (key) => { completedItems.push({ key }) },
+      fail: (key, message) => { failedItems.push({ key, message }) },
+    }
+    registerLoadingContext(testDispatch)
+
+    const { retryLoading } = await import('../../lib/api')
+    const { fetchTableKeys } = await import('../../lib/api')
+
+    const originalFetch = globalThis.fetch
+    let callCount = 0
+    globalThis.fetch = async () => {
+      callCount++
+      if (callCount === 1) throw new Error('Network error')
+      return new Response(JSON.stringify([]), { status: 200 })
+    }
+
+    try {
+      await expect(fetchTableKeys('TestTable')).rejects.toThrow('Network error')
+      expect(failedItems.length).toBe(1)
+
+      const errorKey = failedItems[0].key
+      retryLoading(errorKey)
+
+      await new Promise(r => setTimeout(r, 100))
+
+      expect(startedItems.filter(i => i.key === errorKey).length).toBe(2)
+      expect(callCount).toBe(2)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+})
