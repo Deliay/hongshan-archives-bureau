@@ -608,7 +608,6 @@ function SkillGroupCard({ group, skillPatchMap }: { group: SkillGroup; skillPatc
                     <span>CD {p.coolDown}s</span>
                   )}
                   <span>Lv.{level}</span>
-                  {level >= 11 && level === maxLevel && <span className="text-[10px] text-archive-gold">M{level - 10}</span>}
                 </div>
               )
             })()}
