@@ -69,7 +69,7 @@ test.describe('加载提示框与骨架屏 (Loading Indicator & Skeleton)', () =
 
     await page.goto('/archive/operators')
 
-    const errorToast = page.locator('text=调阅失败').first()
+    const errorToast = page.locator('text=档案载入失败').first()
     await expect(errorToast).toBeVisible({ timeout: 15000 })
 
     const retryBtn = page.locator('button', { hasText: '重试' })

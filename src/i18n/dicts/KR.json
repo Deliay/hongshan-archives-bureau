@@ -89,7 +89,7 @@
     "weaponOverview": "무기 변경 개요"
   },
   "enemy": {
-    "alias": "별칭",
+    "alias": "별명",
     "allGroups": "모든 세력",
     "allStars": "모든 성급",
     "attrs": "속성 (레벨 {{level}})",
@@ -259,11 +259,11 @@
     "hint": "키워드를 입력하여 아카이브 검색",
     "next": "다음",
     "noResults": "결과를 찾을 수 없습니다",
-    "placeholder": "오퍼레이터, 무기, 아이템 검색…",
+    "placeholder": "아카이브 키워드 검색…",
     "prev": "이전",
     "resultCount": "{{count}} 개의 관련 기록을 찾았습니다",
     "searchMore": "더 검색",
-    "title": "검색 결과"
+    "title": "아카이브 검색"
   },
   "site": {
     "dataSource": "데이터 출처: 톈시 데이터베이스 API · 관리자 기록",

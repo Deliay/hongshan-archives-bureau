@@ -259,11 +259,11 @@
     "hint": "Enter keywords to search archives",
     "next": "Next",
     "noResults": "No results found",
-    "placeholder": "Search operators, weapons, items…",
+    "placeholder": "Search archive keywords…",
     "prev": "Previous",
     "resultCount": "Found {{count}} related records",
     "searchMore": "Search more",
-    "title": "Search Results"
+    "title": "Archive Search"
   },
   "site": {
     "dataSource": "Data source: Tianshi Database API · Administrator logs",

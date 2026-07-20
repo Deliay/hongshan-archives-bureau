@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename)
 const CUSTOM_JSON = path.resolve(__dirname, 'i18n-custom.json')
 const SRC_DIR = path.resolve(__dirname, '../src')
 const LOCALES = ['CN', 'TC', 'EN', 'JP', 'KR', 'RU', 'MX', 'BR', 'DE', 'FR', 'VN', 'TH', 'ID', 'IT']
+const PLACEHOLDER_CHECK_LOCALES = ['MX', 'BR', 'DE', 'FR', 'VN', 'TH', 'ID', 'IT']
 
 function extractKeysFromCode(): Set<string> {
   const keys = new Set<string>()
@@ -44,6 +45,10 @@ function extractDefinedKeys(): Set<string> {
   return new Set(Object.keys(custom))
 }
 
+function extractVars(s: string): string[] {
+  return [...s.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]).sort()
+}
+
 function validateCustomTranslations(custom: Set<string>): boolean {
   const customData: Record<string, Record<string, string>> = JSON.parse(fs.readFileSync(CUSTOM_JSON, 'utf-8'))
   let allValid = true
@@ -65,6 +70,54 @@ function validateCustomTranslations(custom: Set<string>): boolean {
     if (missing.length > 0) {
       console.error(`ERROR: CUSTOM key '${key}' is missing value for locale(s): ${missing.join(', ')}`)
       allValid = false
+    }
+  }
+
+  for (const key of custom) {
+    const entry = customData[key]
+    if (!entry) continue
+    const enVal = entry.EN?.trim()
+    const cnVal = entry.CN?.trim()
+
+    const allSame = LOCALES.every(l => {
+      const v = entry[l]?.trim()
+      return v && v === enVal
+    })
+    if (allSame) continue
+
+    for (const locale of PLACEHOLDER_CHECK_LOCALES) {
+      const val = entry[locale]?.trim()
+      if (!val) continue
+      const matchesPlaceholder = (enVal && val === enVal) || (cnVal && val === cnVal)
+      if (matchesPlaceholder) {
+        console.error(`ERROR: CUSTOM key '${key}' has placeholder (same as ${val === enVal ? 'EN' : 'CN'}) for locale '${locale}': "${val}"`)
+        allValid = false
+      }
+    }
+  }
+
+  for (const key of custom) {
+    const entry = customData[key]
+    if (!entry) continue
+    const cnVars = extractVars(entry.CN || '')
+    const enVars = extractVars(entry.EN || '')
+    const refVars = [...new Set([...cnVars, ...enVars])].sort()
+    if (refVars.length === 0) continue
+
+    for (const locale of LOCALES) {
+      const locVars = extractVars(entry[locale] || '')
+      for (const v of refVars) {
+        if (!locVars.includes(v)) {
+          console.error(`ERROR: CUSTOM key '${key}' locale '${locale}' is missing variable '{{${v}}}' (found: {${locVars.join(', ')}})`)
+          allValid = false
+        }
+      }
+      for (const v of locVars) {
+        if (!refVars.includes(v)) {
+          console.error(`ERROR: CUSTOM key '${key}' locale '${locale}' has unexpected variable '{{${v}}}' (expected: {${refVars.join(', ')}})`)
+          allValid = false
+        }
+      }
     }
   }
 

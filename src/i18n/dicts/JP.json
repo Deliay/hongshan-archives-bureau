@@ -259,11 +259,11 @@
     "hint": "キーワードを入力して檔案を検索",
     "next": "次へ",
     "noResults": "結果が見つかりませんでした",
-    "placeholder": "オペレーター、武器、アイテムを検索…",
+    "placeholder": "アーカイブのキーワードを検索…",
     "prev": "前へ",
     "resultCount": "{{count}} 件の関連記録が見つかりました",
     "searchMore": "さらに検索",
-    "title": "検索結果"
+    "title": "アーカイブ検索"
   },
   "site": {
     "dataSource": "データソース：天師データベース API · 管理者記録",

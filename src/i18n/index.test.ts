@@ -6,8 +6,10 @@ describe('i18n translate', () => {
     expect(translate('EN', 'nav.operators')).toBe('Operators')
   })
 
-  it('falls back to EN when key missing in target locale', () => {
-    expect(translate('MX', 'site.name')).toBe('Hongshan Archives Bureau')
+  it('returns correct locale text for keys with full translation coverage', () => {
+    expect(translate('MX', 'site.name')).toBe('Archivo de Hongshan')
+    expect(translate('DE', 'site.name')).toBe('Hongshan-Archiv')
+    expect(translate('FR', 'site.name')).toBe('Archives Hongshan')
   })
 
   it('falls back to CN when key missing in both target and EN', () => {
