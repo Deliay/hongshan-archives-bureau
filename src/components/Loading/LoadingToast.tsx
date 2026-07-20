@@ -36,7 +36,12 @@ export function LoadingToast() {
 
   if (!visible) return null
 
-  const latestDescription = items[items.length - 1]?.description ?? errors[errors.length - 1]?.description ?? ''
+  const latestItem = items[items.length - 1] ?? errors[errors.length - 1]
+  const latestDescription = latestItem
+    ? latestItem.descriptionKey
+      ? t(latestItem.descriptionKey, latestItem.descriptionVars)
+      : latestItem.description
+    : ''
 
   return (
     <div className="fixed top-4 right-4 z-50 min-w-[15rem] max-w-[20rem]

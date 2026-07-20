@@ -8,7 +8,7 @@ interface State {
 }
 
 type Action =
-  | { type: 'start'; key: string; description: string }
+  | { type: 'start'; key: string; description: string; descriptionKey?: string; descriptionVars?: Record<string, string | number> }
   | { type: 'complete'; key: string }
   | { type: 'fail'; key: string; message: string }
 
@@ -19,12 +19,13 @@ function reducer(state: State, action: Action): State {
     case 'start':
       return {
         ...state,
-        items: [...state.items, { key: action.key, description: action.description, startedAt: Date.now() }],
+        items: [...state.items, { key: action.key, description: action.description, descriptionKey: action.descriptionKey, descriptionVars: action.descriptionVars, startedAt: Date.now() }],
         errors: state.errors.filter(e => e.key !== action.key),
       }
     case 'complete':
       return { ...state, items: state.items.filter(i => i.key !== action.key) }
-    case 'fail':
+    case 'fail': {
+      const item = state.items.find(i => i.key === action.key)
       return {
         ...state,
         items: state.items.filter(i => i.key !== action.key),
@@ -32,12 +33,15 @@ function reducer(state: State, action: Action): State {
           ...state.errors.filter(e => e.key !== action.key),
           {
             key: action.key,
-            description: state.items.find(i => i.key === action.key)?.description ?? action.key,
+            description: item?.description ?? action.key,
+            descriptionKey: item?.descriptionKey,
+            descriptionVars: item?.descriptionVars,
             message: action.message,
             timestamp: Date.now(),
           },
         ],
       }
+    }
   }
 }
 
@@ -47,8 +51,8 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     errors: [],
   })
 
-  const start = useCallback((key: string, description: string) => {
-    dispatch({ type: 'start', key, description })
+  const start = useCallback((key: string, description: string, descriptionKey?: string, descriptionVars?: Record<string, string | number>) => {
+    dispatch({ type: 'start', key, description, descriptionKey, descriptionVars })
   }, [])
 
   const complete = useCallback((key: string) => {

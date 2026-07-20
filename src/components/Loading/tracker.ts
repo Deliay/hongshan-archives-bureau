@@ -6,8 +6,8 @@ export function registerLoadingContext(ctx: LoadingContextValue) {
   dispatch = ctx
 }
 
-export function startLoading(key: string, description: string) {
-  dispatch?.start(key, description)
+export function startLoading(key: string, description: string, descriptionKey?: string, descriptionVars?: Record<string, string | number>) {
+  dispatch?.start(key, description, descriptionKey, descriptionVars)
 }
 
 export function completeLoading(key: string) {
