@@ -324,5 +324,27 @@
     "fetchingTableIndex": "Memuat indeks…",
     "fetchingText": "Mengambil teks…",
     "fetchingVersion": "Mengambil info versi…"
+  },
+  "equipment": {
+    "sortByRarity": "Urutkan berdasarkan Kelangkaan",
+    "looseGroup": "Satuan",
+    "sortByWearLevel": "Urutkan berdasarkan Level",
+    "title": "Gear",
+    "partBody": "Armor",
+    "partHand": "Sarung Tangan",
+    "partEdc": "Kit",
+    "wearLevel": "Syarat pemasangan: Lv.{{level}}",
+    "baseAttr": "Stat Atribut",
+    "subAttrs": "Stat Sekunder",
+    "enhancedValue": "Tingkatkan",
+    "suitSection": "Set",
+    "suitPieces": "Set {{count}} buah: ",
+    "enhanceMaterials": "Bahan penyempurnaan",
+    "enhanceMaterialsHint": "Setiap upaya penyempurnaan butuh gear berkualitas emas dari <@gd.key>bagian perlengkapan yang sama</>.",
+    "noEnhanceMaterial": "Belum ada bahan penyempurnaan",
+    "recipes": "Formula",
+    "recipeDefault": "Jalur default",
+    "recipeUnlock": "Syarat Membuka",
+    "viewDetail": "Lihat arsip"
   }
 }

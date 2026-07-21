@@ -324,5 +324,27 @@
     "fetchingTableIndex": "Đang tải chỉ mục…",
     "fetchingText": "Đang tải văn bản…",
     "fetchingVersion": "Đang tải thông tin phiên bản…"
+  },
+  "equipment": {
+    "sortByRarity": "Sắp xếp theo độ hiếm",
+    "looseGroup": "Món lẻ",
+    "sortByWearLevel": "Sắp xếp theo cấp",
+    "title": "Trang Bị",
+    "partBody": "Giáp",
+    "partHand": "Găng tay",
+    "partEdc": "Bộ dụng cụ",
+    "wearLevel": "Yêu cầu trang bị: Cấp {{level}}",
+    "baseAttr": "Chỉ Số Thuộc Tính",
+    "subAttrs": "Chỉ Số Phụ",
+    "enhancedValue": "Chế Tác",
+    "suitSection": "Bộ",
+    "suitPieces": "Bộ {{count}} món: ",
+    "enhanceMaterials": "Nguyên liệu chế tác",
+    "enhanceMaterialsHint": "Mỗi lần chế tác sẽ tiêu tốn trang bị chất lượng vàng <@gd.key>cùng vị trí trang bị</>.",
+    "noEnhanceMaterial": "Chưa có nguyên liệu chế tác",
+    "recipes": "Công thức",
+    "recipeDefault": "Mặc định",
+    "recipeUnlock": "Điều kiện mở khóa",
+    "viewDetail": "Xem hồ sơ"
   }
 }

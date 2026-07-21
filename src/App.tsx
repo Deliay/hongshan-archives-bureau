@@ -18,7 +18,8 @@ import FactionDetail from './pages/factions/FactionDetail'
 import GeographyList from './pages/geography/GeographyList'
 import EnemyList from './pages/enemies/EnemyList'
 import EnemyDetail from './pages/enemies/EnemyDetail'
-import EquipmentOverview from './pages/equipment/EquipmentOverview'
+import EquipmentList from './pages/equipment/EquipmentList'
+import EquipmentDetail from './pages/equipment/EquipmentDetail'
 import ItemList from './pages/items/ItemList'
 import FactoryOverview from './pages/factory/FactoryOverview'
 import StoryOverview from './pages/story/StoryOverview'
@@ -50,7 +51,8 @@ function AppRoutes() {
             <Route path="geography" element={<GeographyList />} />
             <Route path="enemies" element={<EnemyList />} />
             <Route path="enemies/:id" element={<EnemyDetail />} />
-            <Route path="equipment" element={<EquipmentOverview />} />
+            <Route path="equipment" element={<EquipmentList />} />
+            <Route path="equipment/:id" element={<EquipmentDetail />} />
             <Route path="items" element={<ItemList />} />
             <Route path="factory" element={<FactoryOverview />} />
             <Route path="story" element={<StoryOverview />} />

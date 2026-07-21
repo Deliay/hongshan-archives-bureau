@@ -324,5 +324,27 @@
     "fetchingTableIndex": "인덱스 불러오는 중…",
     "fetchingText": "텍스트를 불러오는 중…",
     "fetchingVersion": "버전 정보를 불러오는 중…"
+  },
+  "equipment": {
+    "sortByRarity": "희귀도별 정렬",
+    "looseGroup": "단품",
+    "sortByWearLevel": "레벨별 정렬",
+    "title": "장비",
+    "partBody": "방어구",
+    "partHand": "보호 장갑",
+    "partEdc": "부품",
+    "wearLevel": "장착 레벨 요구: Lv.{{level}}",
+    "baseAttr": "기초 속성",
+    "subAttrs": "추가 속성",
+    "enhancedValue": "정밀 단조",
+    "suitSection": "세트",
+    "suitPieces": "{{count}} 세트: ",
+    "enhanceMaterials": "정밀 단조 재료",
+    "enhanceMaterialsHint": "정밀 단조를 진행할 때는 정밀 단조를 진행할 장비와 <@gd.key>같은 부위</>의 노란색 품질 장비가 필요합니다.",
+    "noEnhanceMaterial": "사용 가능한 정밀 단조 재료 없음",
+    "recipes": "조합 공식",
+    "recipeDefault": "기본 경로",
+    "recipeUnlock": "해제 조건",
+    "viewDetail": "문서 보기"
   }
 }

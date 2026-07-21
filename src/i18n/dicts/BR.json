@@ -324,5 +324,27 @@
     "fetchingTableIndex": "Carregando índice…",
     "fetchingText": "Obtendo texto…",
     "fetchingVersion": "Obtendo informações da versão…"
+  },
+  "equipment": {
+    "sortByRarity": "Ordenar por raridade",
+    "looseGroup": "Peças avulsas",
+    "sortByWearLevel": "Ordenar por nível",
+    "title": "Equipamento",
+    "partBody": "Armadura",
+    "partHand": "Luvas",
+    "partEdc": "Kit",
+    "wearLevel": "Requisito do equipamento: Nv. {{level}}",
+    "baseAttr": "Valores de Atributos",
+    "subAttrs": "Atributos Secundários",
+    "enhancedValue": "Aprimorar",
+    "suitSection": "Conjunto",
+    "suitPieces": "Conjunto de {{count}} peças: ",
+    "enhanceMaterials": "Materiais de aprimoramento",
+    "enhanceMaterialsHint": "Cada tentativa de aprimoramento tem um custo de equipamento de qualidade ouro da <@gd.key>mesma peça de equipamento</>.",
+    "noEnhanceMaterial": "Nenhum material de aprimoramento disponível",
+    "recipes": "Fórmulas",
+    "recipeDefault": "Caminho padrão",
+    "recipeUnlock": "Condições de Desbloqueio",
+    "viewDetail": "Ver arquivo"
   }
 }
