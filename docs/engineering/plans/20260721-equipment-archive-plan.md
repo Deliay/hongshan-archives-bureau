@@ -310,11 +310,11 @@ export default function EquipCard({ equip }: { equip: Equip }) { ... }
 布局参照 `WeaponDetail` + `OperatorDetail` 分节模式：
 
 1. 返回链接：`← t('common.backToList', { list: t('equipment.title') })`。
-2. 头部：`w-20 h-20` 图标 + 名称 + `Badge`（`HSA-EQP`，来自 `archiveMeta`）+ 部位 + 稀有度色条 + `t('equipment.wearLevel')`: `minWearLv`。
+2. 头部：`w-20 h-20` 图标 + 名称 + `Badge`（`HSA-EQP`，来自 `archiveMeta`）+ 部位 + 稀有度色条 + `t('equipment.wearLevel', { level: equip.minWearLv })`。
 3. 描述区：`desc` / `decoDesc` 两张卡片，`<RichText>` 渲染。
 4. 属性区：
    - 属性名/图标/格式通过导出的 `getAttributeMap(locale)`（`useEffect` + state 获取，参照 WeaponList 的 `skillNameMap` 模式）。
-   - 主属性一行；副属性列表每行：图标 + 名称 + 基础值，其后展示精锻强化值 `enhancedValues`（`t('equipment.enhancedValue')` + 各阶数值，`formatAttributeShow` 格式化）；`enhancedValues` 为空时不展示。
+   - 基础属性（`baseAttr`）一行；附加属性（`attrs`）列表每行：图标 + 名称 + 基础值，其后展示精锻强化值 `enhancedValues`（`t('equipment.enhancedValue')` + 各阶数值，`formatAttributeShow` 格式化）；`enhancedValues` 为空时不展示。
 5. 套装区（`suit` 非空时）：
    - 徽记 + 套组名。
    - `effects` 逐条：`t('equipment.suitPieces', { count: effect.equipCnt })` + `<SkillReferenceCard skillId={effect.skillId} defaultLevel={effect.skillLv} />`（不开等级滑块）。
@@ -346,7 +346,7 @@ interface RecipePanelProps {
 #### 3.8.1 `src/components/Equipment/EquipTooltipPanel.tsx`
 
 - 自行按 `itemId` 拉取 `EquipTable` / `EquipSuitTable` / i18n dict（`getCachedData`，参照 `WeaponSkillPanel` 的自取数模式）。
-- 展示：部位、稀有度、主属性 + 副属性名称与基础值（属性名经 `getAttributeMap`，但该函数在 hooks 层，Tooltip 内可直接 `getCachedData('AttributeMetaTable'...)` 复用同一缓存键，或改用 hooks 导出——实现时与 `useData.ts` 的导出保持一致）、套组名（`adaptSuit`）。
+- 展示：部位、稀有度、基础属性 + 附加属性名称与基础值（属性名经 `getAttributeMap`，但该函数在 hooks 层，Tooltip 内可直接 `getCachedData('AttributeMetaTable'...)` 复用同一缓存键，或改用 hooks 导出——实现时与 `useData.ts` 的导出保持一致）、套组名（`adaptSuit`）。
 - 底部：`<Link to={/archive/equipment/${itemId}}>` 文案 `t('equipment.viewDetail')`，点击后关闭弹层。
 
 #### 3.8.2 `src/components/Items/ItemTooltip.tsx` 修改
@@ -378,49 +378,84 @@ import EquipmentDetail from './pages/equipment/EquipmentDetail'
 
 ### 3.10 i18n（`scripts/i18n-custom.json`，14 语言全量）
 
-以下 17 个 key 直接写入 `scripts/i18n-custom.json`（扁平 `equipment.*` 顶层 key），随后运行 `node scripts/generate-i18n-dicts.ts` 并用 `node scripts/verify-i18n.ts` 校验。语言列顺序：CN/TC/EN/JP/KR/RU/MX/BR/DE/FR/VN/TH/ID/IT。
+共 17 个 `equipment.*` key。取值优先级：**优先使用游戏数据 API 检索到的官方文案**（`/i18n/search` 定位 TextTable 条目 → `/i18n/{locale}/{id}` 取 14 语言），检索无结果的使用自译。下方表 A 为官方文案（12 个 key），表 B 为自译（5 个 key）。
+
+格式转换规则：官方文案中的 printf 占位符 `%d` 写入 `i18n-custom.json` 时统一转换为站点占位符（`{{count}}` / `{{level}}`）；多句文案仅取首句；`<@gd.key>...</>` 富文本标签保留（站点 RichText 可解析）。
+
+#### 表 A：官方文案来源映射
+
+| key | 来源（TextTable path） | i18n id | CN 原文 |
+|-----|----------------------|---------|---------|
+| `equipment.title` | `LUA_CHAR_INFO_TITLE_EQUIP` | `-6559695596059395645` | 装备 |
+| `equipment.partBody` | `LUA_WIKI_FILTER_NAME_EQUIP_PART_BODY` | `3271101874505039058` | 护甲 |
+| `equipment.partHand` | `LUA_WIKI_FILTER_NAME_EQUIP_PART_HAND` | `-2876534819549155162` | 护手 |
+| `equipment.partEdc` | `LUA_WIKI_FILTER_NAME_EQUIP_PART_EDC` | `4837227339768148713` | 配件 |
+| `equipment.wearLevel` | `LUA_WIKI_EQUIP_MIN_LEVEL` | `-20469816897128872` | 穿戴等级需求：Lv.%d |
+| `equipment.baseAttr` | `ui_dung_energyp_first_attr` | `-6784465772418001403` | 基础属性 |
+| `equipment.subAttrs` | `ui_dung_energyp_second_attr` | `5090034041621366163` | 附加属性 |
+| `equipment.enhancedValue` | `ui_equip_enhance_panel_btn_select` | `-8755337318573613636` | 精锻 |
+| `equipment.suitPieces` | `LUA_WIKI_SET_DESC_PREFIX_FORMAT` | `-4036778782977392490` | %d件套： |
+| `equipment.enhanceMaterialsHint` | `guide_text_equip_enhance_6` | `-4748168403953276770` | 每次进行精锻操作，需消耗与待精锻装备同部位的金色品质装备。 |
+| `equipment.recipes` | `ui_fac_common_formula` | `-400013993139975943` | 配方一览 |
+| `equipment.recipeUnlock` | `ui_fac_tech_tree_layer_unlock_cond` | `2714258989965539283` | 解锁条件 |
+
+#### 表 A-1：官方文案 14 语言（CN/TC/EN/JP/KR/RU/MX）
 
 | key | CN | TC | EN | JP | KR | RU | MX |
 |-----|----|----|----|----|----|----|----|
-| `equipment.title` | 装备 | 裝備 | Equipment | 装備 | 장비 | Снаряжение | Equipo |
+| `equipment.title` | 装备 | 裝備 | Gear | 装備 | 장비 | Снаряжение | Equipamiento |
+| `equipment.partBody` | 护甲 | 護甲 | Armor | 胴 | 방어구 | Броня | Armadura |
+| `equipment.partHand` | 护手 | 護手 | Gloves | 腕 | 보호 장갑 | Перчатки | Guantes |
+| `equipment.partEdc` | 配件 | 配件 | Kit | アクセサリー | 부품 | Амуниция | Kit |
+| `equipment.wearLevel` | 穿戴等级需求：Lv.{{level}} | 穿戴等級需求：Lv.{{level}} | Equip requirement: Lv.{{level}} | 装備必要レベル：Lv.{{level}} | 장착 레벨 요구: Lv.{{level}} | Требования: ур. {{level}} | Requisito de equipamiento: Nvl. {{level}} |
+| `equipment.baseAttr` | 基础属性 | 基礎屬性 | Attribute Stats | 基礎効果 | 기초 속성 | Характеристики показателей | Estadísticas de atributo |
+| `equipment.subAttrs` | 附加属性 | 附加屬性 | Secondary Stats | 付加効果 | 추가 속성 | Побочные характеристики | Estadísticas secundarias |
+| `equipment.enhancedValue` | 精锻 | 精鍛 | Artifice | 精密加工 | 정밀 단조 | Доработка | Elaborar |
+| `equipment.suitPieces` | {{count}}件套： | {{count}}件套： | {{count}}-pc set: | {{count}}点セット： | {{count}} 세트: | Комплект ({{count}} предм.): | conjunto de {{count}} piezas: |
+| `equipment.enhanceMaterialsHint` | 每次进行精锻操作，需消耗与待精锻装备<@gd.key>同部位</>的金色品质装备。 | 每次進行精鍛時，需消耗與待精鍛裝備<@gd.key>同部位</>的金色品質裝備。 | Every artificing attempt costs gold quality gear of the <@gd.key>same equipping part</>. | 精密加工には、対象装備と<@gd.key>同じ部位</>の金品質装備を消費します。 | 정밀 단조를 진행할 때는 정밀 단조를 진행할 장비와 <@gd.key>같은 부위</>의 노란색 품질 장비가 필요합니다. | Каждая доработка потратит предмет золотого снаряжения с <@gd.key>тем же местом размещения</>. | Cada intento de elaboración cuesta equipamiento de calidad dorada de la <@gd.key>misma parte equipada</>. |
+| `equipment.recipes` | 配方一览 | 配方一覽 | Formulas | レシピ一覧 | 조합 공식 | Формулы | Fórmulas |
+| `equipment.recipeUnlock` | 解锁条件 | 解鎖條件 | Unlock Conditions | 解放条件 | 해제 조건 | Требования для открытия | Condiciones de desbloqueo |
+
+#### 表 A-2：官方文案 14 语言（BR/DE/FR/VN/TH/ID/IT）
+
+| key | BR | DE | FR | VN | TH | ID | IT |
+|-----|----|----|----|----|----|----|----|
+| `equipment.title` | Equipamento | Ausrüstung | Équipement | Trang Bị | อุปกรณ์ | Gear | Equipaggiamento |
+| `equipment.partBody` | Armadura | Rüstung | Armure | Giáp | เกราะ | Armor | Armatura |
+| `equipment.partHand` | Luvas | Handschuhe | Gants | Găng tay | ถุงมือ | Sarung Tangan | Guanti |
+| `equipment.partEdc` | Kit | Kit | Kit | Bộ dụng cụ | ชุดเครื่องมือ | Kit | Kit |
+| `equipment.wearLevel` | Requisito do equipamento: Nv. {{level}} | Ausrüstungsvoraussetzung: Lvl. {{level}} | Niveau d'équipement : {{level}} | Yêu cầu trang bị: Cấp {{level}} | ข้อกำหนดการสวมใส่: เลเวล {{level}} | Syarat pemasangan: Lv.{{level}} | Liv. equipaggiamento necessario: {{level}} |
+| `equipment.baseAttr` | Valores de Atributos | Attributwerte | Stats de trait | Chỉ Số Thuộc Tính | ค่าสถานะคุณสมบัติ | Stat Atribut | Statistiche attributo |
+| `equipment.subAttrs` | Atributos Secundários | Sekundärwerte | Stats secondaires | Chỉ Số Phụ | ค่าสถานะรอง | Stat Sekunder | Statistiche secondarie |
+| `equipment.enhancedValue` | Aprimorar | Veredeln | Renforcer | Chế Tác | อาร์ติไฟซ์ | Tingkatkan | Artificio |
+| `equipment.suitPieces` | Conjunto de {{count}} peças: | {{count}}-Stk.-Set: | Ensemble {{count}} pièces : | Bộ {{count}} món: | เซ็ต {{count}} ชิ้น: | Set {{count}} buah: | Set da {{count}}: |
+| `equipment.enhanceMaterialsHint` | Cada tentativa de aprimoramento tem um custo de equipamento de qualidade ouro da <@gd.key>mesma peça de equipamento</>. | Jeder Veredelungsversuch kostet 1 Ausrüstung in Goldqualität <@gd.key>desselben Typs</>. | Chaque tentative de renforcement coûte de l'équipement de qualité or <@gd.key>de même type</>. | Mỗi lần chế tác sẽ tiêu tốn trang bị chất lượng vàng <@gd.key>cùng vị trí trang bị</>. | การพยายามอาร์ติไฟซ์ทุกครั้งใช้<@gd.key>อุปกรณ์สวมใส่ส่วนเดียวกัน</>ที่มีคุณภาพระดับทอง | Setiap upaya penyempurnaan butuh gear berkualitas emas dari <@gd.key>bagian perlengkapan yang sama</>. | Ogni tentativo di artificio costa un equipaggiamento di qualità oro della <@gd.key>stessa tipologia</>. |
+| `equipment.recipes` | Fórmulas | Formeln | Formules | Công thức | สูตร | Formula | Formule |
+| `equipment.recipeUnlock` | Condições de Desbloqueio | Freischalt- | Conditions de déblocage | Điều kiện mở khóa | เงื่อนไขปลดล็อก | Syarat Membuka | Sblocca condizioni |
+
+注：`equipment.recipeUnlock` 的 DE 官方值为 `Freischalt-`（游戏数据原文如此，疑似截断），实现时按原文写入；若视觉效果不佳，后续版本再评估调整。
+
+#### 表 B：自译文案（API 检索无结果，5 个 key）
+
+| key | CN | TC | EN | JP | KR | RU | MX |
+|-----|----|----|----|----|----|----|----|
 | `equipment.looseGroup` | 散件 | 散件 | Loose Pieces | 単品 | 단품 | Без комплекта | Piezas sueltas |
-| `equipment.partBody` | 护甲 | 護甲 | Armor | 胴 | 갑옷 | Броня | Armadura |
-| `equipment.partHand` | 护手 | 護手 | Gloves | 籠手 | 장갑 | Перчатки | Guantes |
-| `equipment.partEdc` | 配件 | 配件 | Kit | アクセサリー | 액세서리 | Аксессуар | Accesorio |
-| `equipment.wearLevel` | 穿戴等级 | 穿戴等級 | Wear Level | 装備レベル | 착용 레벨 | Уровень ношения | Nivel de uso |
-| `equipment.baseAttr` | 主属性 | 主屬性 | Main Attribute | メイン属性 | 주 속성 | Основной атрибут | Atributo principal |
-| `equipment.subAttrs` | 副属性 | 副屬性 | Sub Attributes | サブ属性 | 부 속성 | Доп. атрибуты | Atributos secundarios |
-| `equipment.enhancedValue` | 精锻强化 | 精鍛強化 | Refinement | 精鍛強化 | 정련 강화 | Усиление перековки | Reforja |
 | `equipment.suitSection` | 套装 | 套裝 | Set | セット | 세트 | Комплект | Conjunto |
-| `equipment.suitPieces` | 集齐 {{count}} 件激活 | 集齊 {{count}} 件啟動 | Activate with {{count}} pieces | {{count}} 部位で発動 | {{count}}부위 모으면 발동 | Активен при {{count}} предметах | Se activa con {{count}} piezas |
-| `equipment.enhanceMaterials` | 精锻材料 | 精鍛材料 | Refinement Materials | 精鍛素材 | 정련 재료 | Материалы перековки | Materiales de reforja |
-| `equipment.enhanceMaterialsHint` | 消耗同部位金色品质装备进行精锻 | 消耗同部位金色品質裝備進行精鍛 | Consume gold-quality equipment of the same slot to refine | 同部位の金品質装備を消費して精鍛 | 동일 부위의 금색 등급 장비를 소모하여 정련 | Расходуется золотое снаряжение той же части | Consume equipo dorado de la misma ranura |
-| `equipment.noEnhanceMaterial` | 暂无可用的精锻材料 | 暫無可用的精鍛材料 | No refinement materials available | 精鍛素材がありません | 사용 가능한 정련 재료 없음 | Нет доступных материалов | No hay materiales disponibles |
-| `equipment.recipes` | 制作配方 | 製作配方 | Crafting Recipes | 製作レシピ | 제작 레시피 | Рецепты изготовления | Recetas de fabricación |
-| `equipment.recipeUnlock` | 该配方有解锁条件 | 該配方有解鎖條件 | This recipe has an unlock condition | このレシピには解放条件がある | 이 레시피에는 잠금 해제 조건이 있습니다 | У этого рецепта есть условие разблокировки | Esta receta tiene una condición de desbloqueo |
+| `equipment.enhanceMaterials` | 精锻材料 | 精鍛材料 | Artifice Materials | 精密加工素材 | 정밀 단조 재료 | Материалы доработки | Materiales de elaboración |
+| `equipment.noEnhanceMaterial` | 暂无可用的精锻材料 | 暫無可用的精鍛材料 | No artifice materials available | 精密加工素材がありません | 사용 가능한 정밀 단조 재료 없음 | Нет материалов для доработки | No hay materiales de elaboración disponibles |
 | `equipment.viewDetail` | 查看卷宗 | 查看卷宗 | View Archive | 巻宗を見る | 문서 보기 | Открыть досье | Ver archivo |
 
 | key | BR | DE | FR | VN | TH | ID | IT |
 |-----|----|----|----|----|----|----|----|
-| `equipment.title` | Equipamento | Ausrüstung | Équipement | Trang bị | อุปกรณ์ | Peralatan | Equipaggiamento |
 | `equipment.looseGroup` | Peças avulsas | Einzelteile | Pièces isolées | Món lẻ | ชิ้นเดี่ยว | Satuan | Pezzi singoli |
-| `equipment.partBody` | Armadura | Rüstung | Armure | Giáp | เกราะ | Zirah | Armatura |
-| `equipment.partHand` | Luvas | Handschuhe | Gants | Găng tay | ถุงมือ | Sarung tangan | Guanti |
-| `equipment.partEdc` | Acessório | Zubehör | Accessoire | Phụ kiện | อุปกรณ์เสริม | Aksesori | Accessorio |
-| `equipment.wearLevel` | Nível de uso | Tragestufe | Niveau requis | Cấp đeo | เลเวลสวมใส่ | Level pakai | Livello richiesto |
-| `equipment.baseAttr` | Atributo principal | Hauptattribut | Attribut principal | Thuộc tính chính | คุณสมบัติหลัก | Atribut utama | Attributo principale |
-| `equipment.subAttrs` | Atributos secundários | Sekundäre Attribute | Attributs secondaires | Thuộc tính phụ | คุณสมบัติรอง | Atribut tambahan | Attributi secondari |
-| `equipment.enhancedValue` | Reforja | Veredelung | Reforge | Tinh luyện | การตีขึ้นรูป | Tempa | Riforgiatura |
 | `equipment.suitSection` | Conjunto | Set | Ensemble | Bộ | เซ็ต | Set | Set |
-| `equipment.suitPieces` | Ativa com {{count}} peças | Aktivierung mit {{count}} Teilen | Actif avec {{count}} pièces | Kích hoạt khi đủ {{count}} món | เปิดใช้เมื่อครบ {{count}} ชิ้น | Aktif dengan {{count}} bagian | Si attiva con {{count}} pezzi |
-| `equipment.enhanceMaterials` | Materiais de reforja | Veredelungsmaterialien | Matériaux de reforge | Nguyên liệu tinh luyện | วัสดุตีขึ้นรูป | Bahan tempa | Materiali di riforgiatura |
-| `equipment.enhanceMaterialsHint` | Consome equipamento dourado do mesmo espaço | Verbraucht goldene Ausrüstung desselben Platzes | Consomme de l'équipement doré du même emplacement | Tiêu hao trang bị vàng cùng vị trí | ใช้อุปกรณ์สีทองช่องเดียวกัน | Mengonsumsi peralatan emas di slot yang sama | Consuma equipaggiamento dorato dello stesso slot |
-| `equipment.noEnhanceMaterial` | Nenhum material disponível | Keine Materialien verfügbar | Aucun matériau disponible | Chưa có nguyên liệu | ไม่มีวัสดุที่ใช้ได้ | Belum ada bahan | Nessun materiale disponibile |
-| `equipment.recipes` | Receitas de fabricação | Herstellungsrezepte | Recettes de fabrication | Công thức chế tạo | สูตรผลิต | Resep pembuatan | Ricette di produzione |
-| `equipment.recipeUnlock` | Esta receita tem uma condição de desbloqueio | Dieses Rezept hat eine Freischaltbedingung | Cette recette a une condition de déblocage | Công thức này có điều kiện mở khóa | สูตรนี้มีเงื่อนไขปลดล็อก | Resep ini memiliki syarat buka kunci | Questa ricetta ha una condizione di sblocco |
+| `equipment.enhanceMaterials` | Materiais de aprimoramento | Veredelungsmaterialien | Matériaux de renforcement | Nguyên liệu chế tác | วัสดุอาร์ติไฟซ์ | Bahan penyempurnaan | Materiali di artificio |
+| `equipment.noEnhanceMaterial` | Nenhum material de aprimoramento disponível | Keine Veredelungsmaterialien verfügbar | Aucun matériau de renforcement disponible | Chưa có nguyên liệu chế tác | ไม่มีวัสดุอาร์ติไฟซ์ที่ใช้ได้ | Belum ada bahan penyempurnaan | Nessun materiale di artificio disponibile |
 | `equipment.viewDetail` | Ver arquivo | Akte ansehen | Voir le dossier | Xem hồ sơ | ดูแฟ้ม | Lihat arsip | Vedi scheda |
 
-变量占位统一使用 `{{count}}`（双花括号），与现有 `common.countPiece` 一致。
+自译术语与各语言官方「精锻」译名对齐（EN Artifice / JP 精密加工 / KR 정밀 단조 / RU Доработка / MX Elaborar / BR Aprimorar / DE Veredeln / FR Renforcer / VN Chế Tác / TH อาร์ติไฟซ์ / IT Artificio）。
+
+流程：写入 `scripts/i18n-custom.json` → `node scripts/generate-i18n-dicts.ts` → `node scripts/verify-i18n.ts` → `npm run lint && npm run test && npm run build`。
 
 ## 4. 实现顺序
 

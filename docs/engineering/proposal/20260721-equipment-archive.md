@@ -104,7 +104,7 @@ flowchart TD
 
 - `attrType` → 属性名：通过 `AttributeMetaTable` 解析（与现有属性展示一致，实现时验证 `formatAttributeShow` 是否可复用）。
 - `attrValue` 为基础值，`enhancedAttrValues` 为精锻 1~3 阶强化值（空数组表示不可强化）。
-- 主属性在 `displayBaseAttrModifier`。
+- 基础属性在 `displayBaseAttrModifier`。
 
 ### 3.3 配方数据链路
 
@@ -232,7 +232,7 @@ useEquipDetail(id): UseDataResult<{
 
 1. 返回链接 + 头部：图标、名称、`Badge`（`HSA-EQP`）、部位、稀有度、`minWearLv`。
 2. 描述区：`desc` / `decoDesc` 富文本。
-3. 属性区：主属性 + 副属性列表；每条副属性展示基础值与 `enhancedValues` 各阶强化值。
+3. 属性区：基础属性 + 附加属性列表；每条附加属性展示基础值与 `enhancedValues` 各阶强化值。
 4. 套装区（有套组时）：徽记 + 名称 + `effects` 逐条渲染 `<SkillReferenceCard skillId={effect.skillId} defaultLevel={effect.skillLv} />`（不加等级滑块）；套组内 `suitEquips` 以 `EquipCard` 横排，可跳转。
 5. 精锻材料区：`enhanceMaterials` 卡片横排 + 消耗说明（`EquipEnhanceCostTable` 的通用消耗项，用 `ItemPanel` 展示）；空态 `equipment.noEnhanceMaterial`。
 6. 配方区：`<RecipePanel recipes={formulas} />`。
@@ -256,7 +256,7 @@ props: { recipes: EquipFormula[]; className?: string }
 {Number(itemData.type) === ITEM_TYPE.Equip && <EquipTooltipPanel itemId={itemId} />}
 ```
 
-- `EquipTooltipPanel`：部位、稀有度、主/副属性摘要、套组名、「查看卷宗」`<Link to={/archive/equipment/${itemId}}>`。
+- `EquipTooltipPanel`：部位、稀有度、基础/附加属性摘要、套组名、「查看卷宗」`<Link to={/archive/equipment/${itemId}}>`。
 - `ItemPanel` 本体无需修改（通用字段均来自 `ItemTable`）。
 
 ### 4.7 i18n
@@ -270,22 +270,22 @@ props: { recipes: EquipFormula[]; className?: string }
 | `equipment.partBody` | 护甲（游戏内文案：`LUA_WIKI_FILTER_NAME_EQUIP_PART_BODY`，id `3271101874505039058`，CN 护甲 / EN Armor / JP 胴） |
 | `equipment.partHand` | 护手（游戏内文案：`LUA_WIKI_FILTER_NAME_EQUIP_PART_HAND`，id `-2876534819549155162`，CN 护手 / EN Gloves） |
 | `equipment.partEdc` | 配件（游戏内文案：`LUA_WIKI_FILTER_NAME_EQUIP_PART_EDC`，id `4837227339768148713`，CN 配件 / EN Kit / JP アクセサリー） |
-| `equipment.wearLevel` | 穿戴等级 |
-| `equipment.baseAttr` / `equipment.subAttrs` | 主属性 / 副属性 |
-| `equipment.enhancedValue` | 精锻强化 |
+| `equipment.wearLevel` | 穿戴等级需求：Lv.{{level}}（官方文案） |
+| `equipment.baseAttr` / `equipment.subAttrs` | 基础属性 / 附加属性（官方文案） |
+| `equipment.enhancedValue` | 精锻（官方文案） |
 | `equipment.suitSection` | 套装 |
-| `equipment.suitPieces` | 集齐 {{count}} 件激活 |
+| `equipment.suitPieces` | {{count}}件套：（官方文案） |
 | `equipment.enhanceMaterials` | 精锻材料 |
-| `equipment.enhanceMaterialsHint` | 消耗同部位金色品质装备进行精锻 |
+| `equipment.enhanceMaterialsHint` | 每次进行精锻操作，需消耗与待精锻装备同部位的金色品质装备。（官方文案） |
 | `equipment.noEnhanceMaterial` | 暂无可用的精锻材料 |
-| `equipment.recipes` | 制作配方 |
+| `equipment.recipes` | 配方一览（官方文案） |
 | `equipment.recipeDefault` | 默认链路 |
-| `equipment.recipeUnlock` | 解锁条件 |
+| `equipment.recipeUnlock` | 解锁条件（官方文案） |
 | `equipment.viewDetail` | 查看卷宗 |
 
 流程：改 `i18n-custom.json` → `node scripts/generate-i18n-dicts.ts` → `npm run lint && npm run test && npm run build`。
 
-> **注意**：上表仅列出 CN 文案（部位名称为游戏内原文，已附可查证的 i18n id）。产出实现 plan 时，必须为每个 key 补齐全部 14 种语言（CN/TC/EN/JP/KR/RU/MX/BR/DE/FR/VN/TH/ID/IT）的本土翻译——不允许使用任何语言占位、不允许留空、不允许直接复制中文，并运行 `node scripts/verify-i18n.ts` 校验。详见 [国际化规范](../references/i18n-spec.md)。
+> **注意**：上表仅列出 CN 文案（部位名称为游戏内原文，已附可查证的 i18n id）。产出实现 plan 时，必须为每个 key 补齐全部 14 种语言（CN/TC/EN/JP/KR/RU/MX/BR/DE/FR/VN/TH/ID/IT）的本土翻译——**优先通过游戏数据 API（`/i18n/search` + `/i18n/{locale}/{id}`）检索官方文案，检索无结果时才使用自译**；不允许使用任何语言占位、不允许留空、不允许直接复制中文，并运行 `node scripts/verify-i18n.ts` 校验。详见 [国际化规范](../references/i18n-spec.md)。14 语言全量取值见 [[20260721-equipment-archive-plan|实现方案 3.10 节]]。
 
 ## 5. 项目结构
 
