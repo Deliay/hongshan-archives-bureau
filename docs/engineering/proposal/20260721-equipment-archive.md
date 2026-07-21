@@ -112,7 +112,7 @@ flowchart TD
 flowchart LR
     A[equipId] -->|EquipFormulaReverseTable| B[formulaId]
     B -->|EquipFormulaTable| C[level / unlockType / unlockKey]
-    C -->|EquipFormulaChainTable[level]| D[chainList]
+    C -->|按 level 查 EquipFormulaChainTable| D[chainList]
     D --> E[costItemId + costItemNum 材料]
     D --> F[costGoldId + costGoldNum 货币]
     E -->|ItemTable / ItemPanel| G[材料图标与名称]
