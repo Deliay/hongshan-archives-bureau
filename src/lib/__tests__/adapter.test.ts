@@ -189,6 +189,17 @@ describe('adaptEquipFormula', () => {
     expect(result[0].goldCount).toBe(0)
   })
 
+  it('should handle numeric chainId', () => {
+    const formula = { formulaId: 'f6', level: 'T4' }
+    const chains = [
+      { chainId: 4000, isDefault: true, costItemId: ['m1'], costItemNum: [10] },
+      { chainId: 4001, isDefault: false, costItemId: ['m2'], costItemNum: [5] },
+    ]
+    const result = adaptEquipFormula(formula, chains)
+    expect(result[0].chainId).toBe(4000)
+    expect(result[1].chainId).toBe(4001)
+  })
+
   it('should pass through unlockType and unlockKey', () => {
     const formula = { formulaId: 'f5', level: 'T0', unlockType: 2, unlockKey: 'mission_123' }
     const chains = [{ chainId: 'c8' }]
