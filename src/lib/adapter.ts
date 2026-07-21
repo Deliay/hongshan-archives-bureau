@@ -113,11 +113,11 @@ export function adaptItem(raw: any, i18nMap?: Record<string, string>): Item {
 }
 
 export function adaptEquip(raw: any, itemRaw: any, i18nMap?: Record<string, string>): Equip {
-  const id = raw.itemId ?? raw.$key ?? ''
+  const id = raw?.itemId ?? raw?.$key ?? ''
   const item = itemRaw?.[id]
   const name = item ? resolveI18n(item.name, i18nMap) : ''
 
-  const baseRaw = raw.displayBaseAttrModifier
+  const baseRaw = raw?.displayBaseAttrModifier
   const baseAttr: EquipAttr | null = baseRaw ? {
     attrType: baseRaw.attrType ?? 0,
     value: baseRaw.attrValue ?? 0,
@@ -125,7 +125,7 @@ export function adaptEquip(raw: any, itemRaw: any, i18nMap?: Record<string, stri
     modifierType: baseRaw.modifierType ?? 0,
   } : null
 
-  const attrs: EquipAttr[] = (raw.displayAttrModifiers ?? []).map((a: any) => ({
+  const attrs: EquipAttr[] = (raw?.displayAttrModifiers ?? []).map((a: any) => ({
     attrType: a.attrType ?? 0,
     value: a.attrValue ?? 0,
     enhancedValues: a.enhancedAttrValues ?? [],
@@ -139,9 +139,9 @@ export function adaptEquip(raw: any, itemRaw: any, i18nMap?: Record<string, stri
     decoDesc: item ? resolveI18n(item.decoDesc, i18nMap) : '',
     iconId: item?.iconId ?? id,
     rarity: item?.rarity ?? 0,
-    partType: raw.partType ?? 0,
-    suitId: raw.suitID ?? '',
-    minWearLv: raw.minWearLv ?? 0,
+    partType: raw?.partType ?? 0,
+    suitId: raw?.suitID ?? '',
+    minWearLv: raw?.minWearLv ?? 0,
     baseAttr,
     attrs,
     obtainWayIds: item?.obtainWayIds ?? [],

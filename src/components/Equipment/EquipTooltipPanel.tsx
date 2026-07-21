@@ -4,12 +4,15 @@ import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
 import { resolveI18n } from '../../lib/adapter'
+import { formatAttributeShow } from '../../lib/formatText'
 import { useI18n } from '../../i18n'
 
 interface TooltipEquipAttr {
   attrType: number
   name: string
   value: number
+  valueFormat: string
+  showPercent: boolean
 }
 
 interface TooltipEquip {
@@ -46,10 +49,9 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const [equipRaw, itemRaw, _itemI18n, suitRaw, suitI18n, attrMeta, showConfig, attrI18n] = await Promise.all([
+      const [equipRaw, itemRaw, suitRaw, suitI18n, attrMeta, showConfig, attrI18n] = await Promise.all([
         getCachedData<Record<string, any>>('EquipTable', () => fetchTableAll('EquipTable')),
         getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
-        getCachedData<Record<string, string>>(`I18nDict_${locale}_ItemTable`, () => fetchTableDictAll('ItemTable', locale)),
         getCachedData<Record<string, any>>('EquipSuitTable', () => fetchTableAll('EquipSuitTable')),
         getCachedData<Record<string, string>>(`I18nDict_${locale}_EquipSuitTable`, () => fetchTableDictAll('EquipSuitTable', locale)),
         getCachedData<Record<string, any>>('AttributeMetaTable', () => fetchTableAll('AttributeMetaTable')),
@@ -71,6 +73,8 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
           return (nameId && attrI18n[nameId]) || attrMeta[String(baseRaw.attrType)]?.iconName?.replace('icon_attribute_', '') || ''
         })(),
         value: baseRaw.attrValue ?? 0,
+        valueFormat: showConfig[String(baseRaw.attrType)]?.list?.[0]?.valueFormat ?? '{value}',
+        showPercent: showConfig[String(baseRaw.attrType)]?.list?.[0]?.showPercent ?? false,
       } : null
 
       const attrs = (raw.displayAttrModifiers ?? []).map((a: any) => {
@@ -80,6 +84,8 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
           attrType: a.attrType ?? 0,
           name: (nameId && attrI18n[nameId]) || attrMeta[String(a.attrType)]?.iconName?.replace('icon_attribute_', '') || '',
           value: a.attrValue ?? 0,
+          valueFormat: configItem?.valueFormat ?? '{value}',
+          showPercent: configItem?.showPercent ?? false,
         }
       })
 
@@ -92,8 +98,8 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
       setEquipData({
         partType: raw.partType ?? 0,
         rarity,
-        baseAttr: baseAttr ? { attrType: baseAttr.attrType, name: baseAttr.name, value: baseAttr.value } : null,
-        attrs: attrs.map((a: any) => ({ attrType: a.attrType, name: a.name, value: a.value })),
+        baseAttr: baseAttr ? { attrType: baseAttr.attrType, name: baseAttr.name, value: baseAttr.value, valueFormat: baseAttr.valueFormat, showPercent: baseAttr.showPercent } : null,
+        attrs: attrs.map((a: any) => ({ attrType: a.attrType, name: a.name, value: a.value, valueFormat: a.valueFormat, showPercent: a.showPercent })),
         suitName: suitNameStr,
       })
     }
@@ -114,7 +120,7 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
 
       {equipData.baseAttr && (
         <div className="text-[10px] text-archive-ivory">
-          {equipData.baseAttr.name}: {equipData.baseAttr.value}
+          {equipData.baseAttr.name}: {formatAttributeShow({ valueFormat: equipData.baseAttr.valueFormat, showPercent: equipData.baseAttr.showPercent }, equipData.baseAttr.value)}
         </div>
       )}
 
@@ -122,7 +128,7 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
         <div className="space-y-1">
           {equipData.attrs.map((attr, i) => (
             <div key={`${attr.attrType}-${i}`} className="text-[10px] text-archive-dust">
-              {attr.name}: {attr.value}
+              {attr.name}: {formatAttributeShow({ valueFormat: attr.valueFormat, showPercent: attr.showPercent }, attr.value)}
             </div>
           ))}
         </div>

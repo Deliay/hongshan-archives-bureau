@@ -624,8 +624,11 @@ export function useEquipDetail(id: string): UseDataResult<EquipDetail> {
       getCachedData<Record<string, any>>('EquipFormulaTable', () => fetchTableAll('EquipFormulaTable').catch(() => ({}))),
       getCachedData<Record<string, any>>('EquipFormulaChainTable', () => fetchTableAll('EquipFormulaChainTable').catch(() => ({}))),
     ])
+    if (!equipRaw[id]) {
+      const equip = adaptEquip(undefined, itemRaw, itemI18n)
+      return { equip, suit: null, suitEquips: [], enhanceMaterials: [], enhanceCost: null, recipes: [] }
+    }
     const equip = adaptEquip(equipRaw[id], itemRaw, itemI18n)
-    if (!equipRaw[id]) return { equip, suit: null, suitEquips: [], enhanceMaterials: [], enhanceCost: null, recipes: [] }
     const allEquips = Object.values(equipRaw).map((v: any) => adaptEquip(v, itemRaw, itemI18n))
 
     const suitEntry = equip.suitId ? suitRaw[equip.suitId] : null
