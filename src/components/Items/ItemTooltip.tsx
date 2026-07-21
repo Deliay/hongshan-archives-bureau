@@ -8,6 +8,7 @@ import ItemIcon from './ItemIcon'
 import { resolveI18n, ASSET_BASE } from '../../lib/adapter'
 import { ITEM_TYPE } from '../../data/constants'
 import WeaponSkillPanel from '../Weapons/WeaponSkillPanel'
+import EquipTooltipPanel from '../Equipment/EquipTooltipPanel'
 import RewardPanel from './RewardPanel'
 
 const RARITY_COLORS: Record<number, string> = {
@@ -202,6 +203,13 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
             <div>
               <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('item.weaponSkill')}</div>
               <WeaponSkillPanel weaponId={itemId} />
+            </div>
+          )}
+
+          {itemData && Number(itemData.type) === ITEM_TYPE.Equip && (
+            <div>
+              <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-1">{t('equipment.title')}</div>
+              <EquipTooltipPanel itemId={itemId} onNavigate={onClose} />
             </div>
           )}
 

@@ -324,5 +324,27 @@
     "fetchingTableIndex": "กำลังโหลดดัชนี…",
     "fetchingText": "กำลังโหลดข้อความ…",
     "fetchingVersion": "กำลังโหลดข้อมูลเวอร์ชัน…"
+  },
+  "equipment": {
+    "sortByRarity": "จัดเรียงตามความหายาก",
+    "looseGroup": "ชิ้นเดี่ยว",
+    "sortByWearLevel": "จัดเรียงตามระดับ",
+    "title": "อุปกรณ์",
+    "partBody": "เกราะ",
+    "partHand": "ถุงมือ",
+    "partEdc": "ชุดเครื่องมือ",
+    "wearLevel": "ข้อกำหนดการสวมใส่: เลเวล {{level}}",
+    "baseAttr": "ค่าสถานะคุณสมบัติ",
+    "subAttrs": "ค่าสถานะรอง",
+    "enhancedValue": "อาร์ติไฟซ์",
+    "suitSection": "เซ็ต",
+    "suitPieces": "เซ็ต {{count}} ชิ้น: ",
+    "enhanceMaterials": "วัสดุอาร์ติไฟซ์",
+    "enhanceMaterialsHint": "การพยายามอาร์ติไฟซ์ทุกครั้งใช้<@gd.key>อุปกรณ์สวมใส่ส่วนเดียวกัน</>ที่มีคุณภาพระดับทอง",
+    "noEnhanceMaterial": "ไม่มีวัสดุอาร์ติไฟซ์ที่ใช้ได้",
+    "recipes": "สูตร",
+    "recipeDefault": "เส้นทางเริ่มต้น",
+    "recipeUnlock": "เงื่อนไขปลดล็อก",
+    "viewDetail": "ดูแฟ้ม"
   }
 }

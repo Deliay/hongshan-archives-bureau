@@ -324,5 +324,27 @@
     "fetchingTableIndex": "Chargement de l'index…",
     "fetchingText": "Récupération du texte…",
     "fetchingVersion": "Récupération des infos de version…"
+  },
+  "equipment": {
+    "sortByRarity": "Trier par rareté",
+    "looseGroup": "Pièces isolées",
+    "sortByWearLevel": "Trier par niveau",
+    "title": "Équipement",
+    "partBody": "Armure",
+    "partHand": "Gants",
+    "partEdc": "Kit",
+    "wearLevel": "Niveau d'équipement : {{level}}",
+    "baseAttr": "Stats de trait",
+    "subAttrs": "Stats secondaires",
+    "enhancedValue": "Renforcer",
+    "suitSection": "Ensemble",
+    "suitPieces": "Ensemble {{count}} pièces : ",
+    "enhanceMaterials": "Matériaux de renforcement",
+    "enhanceMaterialsHint": "Chaque tentative de renforcement coûte de l'équipement de qualité or <@gd.key>de même type</>.",
+    "noEnhanceMaterial": "Aucun matériau de renforcement disponible",
+    "recipes": "Formules",
+    "recipeDefault": "Chemin par défaut",
+    "recipeUnlock": "Conditions de déblocage",
+    "viewDetail": "Voir le dossier"
   }
 }

@@ -324,5 +324,27 @@
     "fetchingTableIndex": "Loading index…",
     "fetchingText": "Fetching text…",
     "fetchingVersion": "Fetching version info…"
+  },
+  "equipment": {
+    "sortByRarity": "Sort by Rarity",
+    "looseGroup": "Loose Pieces",
+    "sortByWearLevel": "Sort by Level",
+    "title": "Gear",
+    "partBody": "Armor",
+    "partHand": "Gloves",
+    "partEdc": "Kit",
+    "wearLevel": "Equip requirement: Lv.{{level}}",
+    "baseAttr": "Attribute Stats",
+    "subAttrs": "Secondary Stats",
+    "enhancedValue": "Artifice",
+    "suitSection": "Set",
+    "suitPieces": "{{count}}-pc set: ",
+    "enhanceMaterials": "Artifice Materials",
+    "enhanceMaterialsHint": "Every artificing attempt costs gold quality gear of the <@gd.key>same equipping part</>.",
+    "noEnhanceMaterial": "No artifice materials available",
+    "recipes": "Formulas",
+    "recipeDefault": "Default path",
+    "recipeUnlock": "Unlock Conditions",
+    "viewDetail": "View Archive"
   }
 }

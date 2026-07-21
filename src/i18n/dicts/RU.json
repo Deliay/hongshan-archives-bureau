@@ -324,5 +324,27 @@
     "fetchingTableIndex": "Загрузка индекса…",
     "fetchingText": "Получение текста…",
     "fetchingVersion": "Получение информации о версии…"
+  },
+  "equipment": {
+    "sortByRarity": "Сортировать по редкости",
+    "looseGroup": "Без комплекта",
+    "sortByWearLevel": "Сортировать по уровню",
+    "title": "Снаряжение",
+    "partBody": "Броня",
+    "partHand": "Перчатки",
+    "partEdc": "Амуниция",
+    "wearLevel": "Требования: ур. {{level}}",
+    "baseAttr": "Характеристики показателей",
+    "subAttrs": "Побочные характеристики",
+    "enhancedValue": "Доработка",
+    "suitSection": "Комплект",
+    "suitPieces": "Комплект ({{count}} предм.): ",
+    "enhanceMaterials": "Материалы доработки",
+    "enhanceMaterialsHint": "Каждая доработка потратит предмет золотого снаряжения с <@gd.key>тем же местом размещения</>.",
+    "noEnhanceMaterial": "Нет материалов для доработки",
+    "recipes": "Формулы",
+    "recipeDefault": "Основной путь",
+    "recipeUnlock": "Требования для открытия",
+    "viewDetail": "Открыть досье"
   }
 }

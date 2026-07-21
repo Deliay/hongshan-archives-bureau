@@ -324,5 +324,27 @@
     "fetchingTableIndex": "Cargando índice…",
     "fetchingText": "Obteniendo texto…",
     "fetchingVersion": "Obteniendo información de versión…"
+  },
+  "equipment": {
+    "sortByRarity": "Ordenar por rareza",
+    "looseGroup": "Piezas sueltas",
+    "sortByWearLevel": "Ordenar por nivel",
+    "title": "Equipamiento",
+    "partBody": "Armadura",
+    "partHand": "Guantes",
+    "partEdc": "Kit",
+    "wearLevel": "Requisito de equipamiento: Nvl. {{level}}",
+    "baseAttr": "Estadísticas de atributo",
+    "subAttrs": "Estadísticas secundarias",
+    "enhancedValue": "Elaborar",
+    "suitSection": "Conjunto",
+    "suitPieces": "conjunto de {{count}} piezas: ",
+    "enhanceMaterials": "Materiales de elaboración",
+    "enhanceMaterialsHint": "Cada intento de elaboración cuesta equipamiento de calidad dorada de la <@gd.key>misma parte equipada</>.",
+    "noEnhanceMaterial": "No hay materiales de elaboración disponibles",
+    "recipes": "Fórmulas",
+    "recipeDefault": "Ruta predeterminada",
+    "recipeUnlock": "Condiciones de desbloqueo",
+    "viewDetail": "Ver archivo"
   }
 }

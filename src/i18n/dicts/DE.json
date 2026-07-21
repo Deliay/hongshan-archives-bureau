@@ -324,5 +324,27 @@
     "fetchingTableIndex": "Index wird geladen…",
     "fetchingText": "Text wird abgerufen…",
     "fetchingVersion": "Versionsinfo wird abgerufen…"
+  },
+  "equipment": {
+    "sortByRarity": "Nach Seltenheit sortieren",
+    "looseGroup": "Einzelteile",
+    "sortByWearLevel": "Nach Stufe sortieren",
+    "title": "Ausrüstung",
+    "partBody": "Rüstung",
+    "partHand": "Handschuhe",
+    "partEdc": "Kit",
+    "wearLevel": "Ausrüstungsvoraussetzung: Lvl. {{level}}",
+    "baseAttr": "Attributwerte",
+    "subAttrs": "Sekundärwerte",
+    "enhancedValue": "Veredeln",
+    "suitSection": "Set",
+    "suitPieces": "{{count}}-Stk.-Set: ",
+    "enhanceMaterials": "Veredelungsmaterialien",
+    "enhanceMaterialsHint": "Jeder Veredelungsversuch kostet 1 Ausrüstung in Goldqualität <@gd.key>desselben Typs</>.",
+    "noEnhanceMaterial": "Keine Veredelungsmaterialien verfügbar",
+    "recipes": "Formeln",
+    "recipeDefault": "Standardpfad",
+    "recipeUnlock": "Freischalt-",
+    "viewDetail": "Akte ansehen"
   }
 }

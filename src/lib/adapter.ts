@@ -1,4 +1,4 @@
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area } from './types'
+import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry } from './types'
 
 export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
 
@@ -112,25 +112,74 @@ export function adaptItem(raw: any, i18nMap?: Record<string, string>): Item {
   }
 }
 
-export function adaptEquip(raw: any): Equip {
+export function adaptEquip(raw: any, itemRaw: any, i18nMap?: Record<string, string>): Equip {
+  const id = raw.equipId ?? raw.$key ?? ''
+  const item = itemRaw?.[id]
+  const name = item ? resolveI18n(item.name, i18nMap) : ''
+
+  const baseRaw = raw.displayBaseAttrModifier
+  const baseAttr: EquipAttr | null = baseRaw ? {
+    attrType: baseRaw.attrType ?? 0,
+    value: baseRaw.attrValue ?? 0,
+    enhancedValues: [],
+    modifierType: baseRaw.modifierType ?? 0,
+  } : null
+
+  const attrs: EquipAttr[] = (raw.displayAttrModifiers ?? []).map((a: any) => ({
+    attrType: a.attrType ?? 0,
+    value: a.attrValue ?? 0,
+    enhancedValues: a.enhancedAttrValues ?? [],
+    modifierType: a.modifierType ?? 0,
+  }))
+
   return {
-    id: raw.equipId ?? raw.$key ?? '',
-    name: raw.name?.text ?? raw.equipName?.text ?? '',
-    slot: raw.slot ?? '',
-    rarity: raw.rarity ?? '',
-    suitId: raw.suitId ?? '',
-    description: raw.desc?.text ?? '',
+    id,
+    name: name || id,
+    description: item ? resolveI18n(item.desc, i18nMap) : '',
+    decoDesc: item ? resolveI18n(item.decoDesc, i18nMap) : '',
+    iconId: item?.iconId ?? id,
+    rarity: item?.rarity ?? 0,
+    partType: raw.partType ?? 0,
+    suitId: raw.suitID ?? '',
+    minWearLv: raw.minWearLv ?? 0,
+    baseAttr,
+    attrs,
+    obtainWayIds: item?.obtainWayIds ?? [],
   }
 }
 
 export function adaptSuit(raw: any, i18nMap?: Record<string, string>): Suit {
-  const first = raw.list?.[0]
+  const list = raw.list ?? []
+  const equipIds: string[] = raw.equipList ?? []
+  const effects: { equipCnt: number; skillId: string; skillLv: number }[] = list.map((e: any) => ({
+    equipCnt: e.equipCnt ?? 0,
+    skillId: e.skillID ?? '',
+    skillLv: e.skillLv ?? 0,
+  }))
+
   return {
     id: raw.suitId ?? raw.$key ?? '',
-    name: resolveI18n(first?.suitName, i18nMap) || raw.suitId || '',
-    twoPieceEffect: resolveI18n(raw.twoPieceEffect, i18nMap),
-    fourPieceEffect: resolveI18n(raw.fourPieceEffect, i18nMap),
+    name: resolveI18n(list[0]?.suitName, i18nMap) || raw.suitId || '',
+    logoName: raw.suitLogoName ?? '',
+    equipIds,
+    effects,
   }
+}
+
+export function adaptEquipFormula(formula: any, chains: any[]): RecipeEntry[] {
+  return chains.map((chain: any) => ({
+    formulaId: formula.formulaId ?? '',
+    level: formula.level ?? '',
+    isDefault: chain.isDefault === 1,
+    materials: (chain.costItemId ?? []).map((itemId: string, i: number) => ({
+      itemId,
+      count: chain.costItemNum?.[i] ?? 0,
+    })),
+    goldId: chain.costGoldId ?? '',
+    goldCount: chain.costGoldNum ?? 0,
+    unlockType: formula.unlockType ?? 0,
+    unlockKey: formula.unlockKey ?? '',
+  }))
 }
 
 export function adaptGem(raw: any, i18nMap?: Record<string, string>): Gem {
