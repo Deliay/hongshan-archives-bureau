@@ -77,7 +77,7 @@ flowchart TD
 
 | 表 | 用途 | 关键字段 |
 |----|------|---------|
-| `EquipTable` | 装备本体（243 件） | `itemId`、`partType`（0=身体/1=护手/2=挂件，已按 key 中 `body/hand/edc` 验证）、`suitID`（200 件有套组，43 件散件为空）、`minWearLv`、`displayBaseAttrModifier`、`displayAttrModifiers[]`、`domainId` |
+| `EquipTable` | 装备本体（243 件） | `itemId`、`partType`（0=护甲/1=护手/2=配件，已按 key 中 `body/hand/edc` 验证）、`suitID`（200 件有套组，43 件散件为空）、`minWearLv`、`displayBaseAttrModifier`、`displayAttrModifiers[]`、`domainId` |
 | `ItemTable` | 装备的名称/描述/图标/稀有度 | 装备 `type = 6`（`ITEM_TYPE.Equip`）；`name`、`desc`、`decoDesc`、`iconId`、`rarity`、`obtainWayIds` |
 | `EquipSuitTable` | 套组（23 个） | `equipList[]`（套组内全部装备 id）、`list[]`：`equipCnt`（激活件数，如 3）、`skillID`（如 `passive_equipsuit_combosuit_01`）、`skillLv`、`suitLogoName`、`suitName`（i18n ref） |
 | `SkillPatchTable` | 套装技能 | `skillID` 已确认存在，`SkillPatchDataBundle[]` 含 `blackboard`、`description`、`level` —— 与 `SkillReferenceCard` 数据契约完全一致 |
@@ -168,7 +168,7 @@ export interface Equip {
   decoDesc: string
   iconId: string
   rarity: number
-  partType: number        // 0=身体 1=护手 2=挂件
+  partType: number        // 0=护甲 1=护手 2=配件
   suitId: string
   minWearLv: number
   baseAttr: EquipAttr
@@ -267,7 +267,9 @@ props: { recipes: EquipFormula[]; className?: string }
 |-----|---------|
 | `equipment.title` | 装备 |
 | `equipment.looseGroup` | 散件 |
-| `equipment.partBody` / `partHand` / `partEdc` | 身体 / 护手 / 挂件 |
+| `equipment.partBody` | 护甲（游戏内文案：`LUA_WIKI_FILTER_NAME_EQUIP_PART_BODY`，id `3271101874505039058`，CN 护甲 / EN Armor / JP 胴） |
+| `equipment.partHand` | 护手（游戏内文案：`LUA_WIKI_FILTER_NAME_EQUIP_PART_HAND`，id `-2876534819549155162`，CN 护手 / EN Gloves） |
+| `equipment.partEdc` | 配件（游戏内文案：`LUA_WIKI_FILTER_NAME_EQUIP_PART_EDC`，id `4837227339768148713`，CN 配件 / EN Kit / JP アクセサリー） |
 | `equipment.wearLevel` | 穿戴等级 |
 | `equipment.baseAttr` / `equipment.subAttrs` | 主属性 / 副属性 |
 | `equipment.enhancedValue` | 精锻强化 |
@@ -282,6 +284,8 @@ props: { recipes: EquipFormula[]; className?: string }
 | `equipment.viewDetail` | 查看卷宗 |
 
 流程：改 `i18n-custom.json` → `node scripts/generate-i18n-dicts.ts` → `npm run lint && npm run test && npm run build`。
+
+> **注意**：上表仅列出 CN 文案（部位名称为游戏内原文，已附可查证的 i18n id）。产出实现 plan 时，必须为每个 key 补齐全部 14 种语言（CN/TC/EN/JP/KR/RU/MX/BR/DE/FR/VN/TH/ID/IT）的本土翻译——不允许使用任何语言占位、不允许留空、不允许直接复制中文，并运行 `node scripts/verify-i18n.ts` 校验。详见 [国际化规范](../references/i18n-spec.md)。
 
 ## 5. 项目结构
 
