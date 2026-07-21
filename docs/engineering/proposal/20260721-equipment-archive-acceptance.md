@@ -301,6 +301,7 @@ scripts/i18n-custom.json        # +2 key（14 语言）
 
 - [[20260721-equipment-archive|装备图鉴产品方案（docs/product/draft，v1.1）]]
 - [装备图鉴技术方案 v1.0](./20260721-equipment-archive.md)
+- [装备图鉴验收修复实现方案](../plans/20260721-equipment-archive-acceptance-plan.md)
 - [数据表映射参考](../references/data-mapping-tables.md)
 - [数据层常见陷阱](../references/data-pitfalls.md)
 - [国际化规范](../references/i18n-spec.md)
