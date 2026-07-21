@@ -225,20 +225,86 @@ export interface Area {
   faction: string
 }
 
+export interface EquipAttr {
+  attrType: number
+  value: number
+  enhancedValues: number[]
+  modifierType: number
+  compositeAttr: string
+}
+
+export interface EnhanceMaterialItem {
+  equip: Equip
+  attrValue: number
+}
+
+export interface EnhanceMaterialGroup {
+  attrKey: string
+  modifierType: number
+  attrName: string
+  valueFormat: string
+  showPercent: boolean
+  materials: EnhanceMaterialItem[]
+}
+
 export interface Equip {
   id: string
   name: string
-  slot: string
-  rarity: string
-  suitId: string
   description: string
+  decoDesc: string
+  iconId: string
+  rarity: number
+  partType: number
+  suitId: string
+  minWearLv: number
+  baseAttr: EquipAttr | null
+  attrs: EquipAttr[]
+  obtainWayIds: string[]
+}
+
+export interface SuitEffect {
+  equipCnt: number
+  skillId: string
+  skillLv: number
 }
 
 export interface Suit {
   id: string
   name: string
-  twoPieceEffect: string
-  fourPieceEffect: string
+  logoName: string
+  equipIds: string[]
+  effects: SuitEffect[]
+}
+
+export interface RecipeMaterial {
+  itemId: string
+  count: number
+}
+
+export interface RecipeEntry {
+  formulaId: string
+  chainId: string | number
+  level: string
+  isDefault: boolean
+  materials: RecipeMaterial[]
+  goldId: string
+  goldCount: number
+  unlockType: number
+  unlockKey: string
+}
+
+export interface EnhanceCost {
+  itemId: string
+  count: number
+}
+
+export interface EquipDetail {
+  equip: Equip
+  suit: Suit | null
+  suitEquips: Equip[]
+  enhanceMaterialGroups: EnhanceMaterialGroup[]
+  enhanceCost: EnhanceCost | null
+  recipes: RecipeEntry[]
 }
 
 export interface Gem {
@@ -324,10 +390,4 @@ export interface UseArchiveSearchResult {
   refetch: () => void
 }
 
-export interface Recipe {
-  id: string
-  inputs: { itemId: string; amount: number }[]
-  outputs: { itemId: string; amount: number }[]
-  time: number
-  power: number
-}
+

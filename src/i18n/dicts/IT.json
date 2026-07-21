@@ -33,7 +33,8 @@
     "prev": "Precedente",
     "searchWithName": "Cerca {{name}} per nome o ID…",
     "sort": "Ordina",
-    "unknown": "Sconosciuto"
+    "unknown": "Sconosciuto",
+    "unknownAttr": "Attributo sconosciuto"
   },
   "diff": {
     "abilities": "Abilità {{count}}",
@@ -324,5 +325,28 @@
     "fetchingTableIndex": "Caricamento indice…",
     "fetchingText": "Recupero testo…",
     "fetchingVersion": "Recupero info versione…"
+  },
+  "equipment": {
+    "sortByRarity": "Ordina per rarità",
+    "looseGroup": "Pezzi singoli",
+    "sortByWearLevel": "Ordina per livello",
+    "title": "Equipaggiamento",
+    "partBody": "Armatura",
+    "partHand": "Guanti",
+    "partEdc": "Kit",
+    "wearLevel": "Liv. equipaggiamento necessario: {{level}}",
+    "baseAttr": "Statistiche attributo",
+    "subAttrs": "Statistiche secondarie",
+    "enhancedValue": "Artificio",
+    "suitSection": "Set",
+    "suitPieces": "Set da {{count}}: ",
+    "enhanceMaterials": "Materiali di artificio",
+    "enhanceMaterialsHint": "Ogni tentativo di artificio costa un equipaggiamento di qualità oro della <@gd.key>stessa tipologia</>.",
+    "noEnhanceMaterial": "Nessun materiale di artificio disponibile",
+    "noEnhanceMaterialForAttr": "Nessun materiale per questo attributo",
+    "recipes": "Formule",
+    "recipeDefault": "Percorso predefinito",
+    "recipeUnlock": "Sblocca condizioni",
+    "viewDetail": "Vedi scheda"
   }
 }

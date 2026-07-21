@@ -4,10 +4,11 @@ import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem } from '../lib/types'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
+import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
 
 interface UseDataResult<T> {
   data: T | null
@@ -593,19 +594,93 @@ export function useItems(): UseDataResult<Item[]> {
   }, [locale])
 }
 
-export function useEquips(): UseDataResult<Equip[]> {
-  return useTableData('EquipTable', adaptEquip)
-}
-
-export function useSuits(): UseDataResult<Suit[]> {
+export function useEquips(): UseDataResult<{ equips: Equip[]; suits: Suit[] }> {
   const { locale } = useLocale()
   return useData(async () => {
-    const [rawData, i18nMap] = await Promise.all([
+    const [equipRaw, suitRaw, suitI18n, itemRaw, itemI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('EquipTable', () => fetchTableAll('EquipTable')),
       getCachedData<Record<string, any>>('EquipSuitTable', () => fetchTableAll('EquipSuitTable')),
       getTableI18nDict('EquipSuitTable', locale),
+      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+      getTableI18nDict('ItemTable', locale),
     ])
-    return Object.entries(rawData).map(([, v]) => adaptSuit(v, i18nMap))
+    const equips = Object.values(equipRaw).map((v: any) => adaptEquip(v, itemRaw, itemI18n))
+    const suits = Object.entries(suitRaw).map(([key, v]) => adaptSuit({ ...v, $key: key }, suitI18n))
+    return { equips, suits }
   }, [locale])
+}
+
+export function useEquipDetail(id: string): UseDataResult<EquipDetail> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [equipRaw, itemRaw, itemI18n, suitRaw, suitI18n, constRaw, enhanceCostRaw, reverseRaw, formulaRaw, chainRaw, attrShowMap] = await Promise.all([
+      getCachedData<Record<string, any>>('EquipTable', () => fetchTableAll('EquipTable')),
+      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+      getTableI18nDict('ItemTable', locale),
+      getCachedData<Record<string, any>>('EquipSuitTable', () => fetchTableAll('EquipSuitTable')),
+      getTableI18nDict('EquipSuitTable', locale),
+      getCachedData<Record<string, any>>('EquipConst', () => fetchTableAll('EquipConst').catch(() => ({}))),
+      getCachedData<Record<string, any>>('EquipEnhanceCostTable', () => fetchTableAll('EquipEnhanceCostTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('EquipFormulaReverseTable', () => fetchTableAll('EquipFormulaReverseTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('EquipFormulaTable', () => fetchTableAll('EquipFormulaTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('EquipFormulaChainTable', () => fetchTableAll('EquipFormulaChainTable').catch(() => ({}))),
+      getAttributeShowMap(locale),
+    ])
+    if (!equipRaw[id]) {
+      const equip = adaptEquip(undefined, itemRaw, itemI18n)
+      return { equip, suit: null, suitEquips: [], enhanceMaterialGroups: [], enhanceCost: null, recipes: [] }
+    }
+    const equip = adaptEquip(equipRaw[id], itemRaw, itemI18n)
+    const allEquips = Object.values(equipRaw).map((v: any) => adaptEquip(v, itemRaw, itemI18n))
+
+    const suitEntry = equip.suitId ? suitRaw[equip.suitId] : null
+    const suit = suitEntry ? adaptSuit({ ...suitEntry, $key: equip.suitId }, suitI18n) : null
+    const equipById = new Map(allEquips.map((e) => [e.id, e]))
+    const suitEquips = (suit?.equipIds ?? []).map((eid) => equipById.get(eid)).filter((e): e is Equip => Boolean(e))
+
+    const enhanceRarity = constRaw.enhanceEquipRarity ?? 5
+    const enhanceCandidates = allEquips
+      .filter((e) => e.id !== id && e.partType === equip.partType && e.rarity >= enhanceRarity)
+
+    const enhanceableAttrs = equip.attrs.filter(a => a.enhancedValues.length > 0)
+    const enhanceMaterialGroups: EnhanceMaterialGroup[] = enhanceableAttrs.map(attr => {
+      const aKey = attr.compositeAttr || String(attr.attrType)
+      const attrInfo = resolveAttrShow(attrShowMap, attr)
+      const materials: EnhanceMaterialItem[] = []
+      for (const candidate of enhanceCandidates) {
+        for (const ca of candidate.attrs) {
+          const caKey = ca.compositeAttr || String(ca.attrType)
+          if (caKey === aKey) {
+            materials.push({ equip: candidate, attrValue: ca.value })
+            break
+          }
+        }
+      }
+      materials.sort((a, b) => b.attrValue - a.attrValue || b.equip.rarity - a.equip.rarity || b.equip.minWearLv - a.equip.minWearLv)
+      return {
+        attrKey: aKey,
+        modifierType: attr.modifierType,
+        attrName: attrInfo.name,
+        valueFormat: attrInfo.valueFormat,
+        showPercent: attrInfo.showPercent,
+        materials,
+      }
+    })
+
+    const costEntry = enhanceCostRaw[equipRaw[id]?.domainId]
+    const enhanceCost = costEntry?.consumeItemId
+      ? { itemId: costEntry.consumeItemId, count: costEntry.consumeItemCnt ?? 0 }
+      : null
+
+    const formulaId = reverseRaw[id]
+    const formula = formulaId ? formulaRaw[formulaId] : null
+    const chains = formula ? (chainRaw[formula.level]?.chainList ?? []) : []
+    const recipes = formula ? adaptEquipFormula(formula, chains) : []
+
+    recipes.sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0))
+
+    return { equip, suit, suitEquips, enhanceMaterialGroups, enhanceCost, recipes }
+  }, [id, locale])
 }
 
 export function useGems(): UseDataResult<Gem[]> {

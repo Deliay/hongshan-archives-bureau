@@ -9,6 +9,12 @@ const CUSTOM_JSON = path.resolve(__dirname, 'i18n-custom.json')
 const SRC_DIR = path.resolve(__dirname, '../src')
 const LOCALES = ['CN', 'TC', 'EN', 'JP', 'KR', 'RU', 'MX', 'BR', 'DE', 'FR', 'VN', 'TH', 'ID', 'IT']
 const PLACEHOLDER_CHECK_LOCALES = ['MX', 'BR', 'DE', 'FR', 'VN', 'TH', 'ID', 'IT']
+const SAME_AS_EN_WHITELIST = new Set([
+  'equipment.title',
+  'equipment.partBody',
+  'equipment.partEdc',
+  'equipment.suitSection',
+])
 
 function extractKeysFromCode(): Set<string> {
   const keys = new Set<string>()
@@ -74,6 +80,7 @@ function validateCustomTranslations(custom: Set<string>): boolean {
   }
 
   for (const key of custom) {
+    if (SAME_AS_EN_WHITELIST.has(key)) continue
     const entry = customData[key]
     if (!entry) continue
     const enVal = entry.EN?.trim()
