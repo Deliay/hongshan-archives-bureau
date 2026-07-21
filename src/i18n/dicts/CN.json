@@ -33,7 +33,8 @@
     "prev": "上一页",
     "searchWithName": "搜索{{name}}名称或 ID…",
     "sort": "排序",
-    "unknown": "未知"
+    "unknown": "未知",
+    "unknownAttr": "未知属性"
   },
   "diff": {
     "abilities": "能力（{{count}}）",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "精锻材料",
     "enhanceMaterialsHint": "每次进行精锻操作，需消耗与待精锻装备<@gd.key>同部位</>的金色品质装备。",
     "noEnhanceMaterial": "暂无可用的精锻材料",
+    "noEnhanceMaterialForAttr": "暂无适配该词条的精锻材料",
     "recipes": "配方一览",
     "recipeDefault": "默认链路",
     "recipeUnlock": "解锁条件",

@@ -33,7 +33,8 @@
     "prev": "Anterior",
     "searchWithName": "Pesquisar {{name}} por nome ou ID…",
     "sort": "Ordenar",
-    "unknown": "Desconhecido"
+    "unknown": "Desconhecido",
+    "unknownAttr": "Atributo desconhecido"
   },
   "diff": {
     "abilities": "Habilidades {{count}}",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "Materiais de aprimoramento",
     "enhanceMaterialsHint": "Cada tentativa de aprimoramento tem um custo de equipamento de qualidade ouro da <@gd.key>mesma peça de equipamento</>.",
     "noEnhanceMaterial": "Nenhum material de aprimoramento disponível",
+    "noEnhanceMaterialForAttr": "Nenhum material para este atributo",
     "recipes": "Fórmulas",
     "recipeDefault": "Caminho padrão",
     "recipeUnlock": "Condições de Desbloqueio",

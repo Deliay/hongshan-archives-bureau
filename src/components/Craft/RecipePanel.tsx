@@ -13,9 +13,9 @@ export default function RecipePanel({ recipes, className }: RecipePanelProps) {
   if (recipes.length === 0) return null
 
   return (
-    <div className={`space-y-3 ${className ?? ''}`}>
+    <div className={`flex flex-wrap items-start gap-3 ${className ?? ''}`}>
       {recipes.map((recipe) => (
-          <div key={recipe.chainId || `${recipe.formulaId}-${recipe.level}`} className="p-3 rounded border border-archive-border bg-archive-file">
+          <div key={recipe.chainId || `${recipe.formulaId}-${recipe.level}`} className="p-3 rounded border border-archive-border bg-archive-file w-fit max-w-full">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] text-archive-dust uppercase tracking-wide">{recipe.level}</span>
             {recipe.isDefault && (

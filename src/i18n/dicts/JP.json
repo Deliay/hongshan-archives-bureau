@@ -33,7 +33,8 @@
     "prev": "前へ",
     "searchWithName": "{{name}}の名前またはIDで検索…",
     "sort": "並び順",
-    "unknown": "不明"
+    "unknown": "不明",
+    "unknownAttr": "不明な属性"
   },
   "diff": {
     "abilities": "能力（{{count}}）",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "精密加工素材",
     "enhanceMaterialsHint": "精密加工には、対象装備と<@gd.key>同じ部位</>の金品質装備を消費します。",
     "noEnhanceMaterial": "精密加工素材がありません",
+    "noEnhanceMaterialForAttr": "この属性に適した素材がありません",
     "recipes": "レシピ一覧",
     "recipeDefault": "デフォルトパス",
     "recipeUnlock": "解放条件",

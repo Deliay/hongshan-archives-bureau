@@ -33,7 +33,8 @@
     "prev": "Trước",
     "searchWithName": "Tìm {{name}} theo tên hoặc ID…",
     "sort": "Sắp xếp",
-    "unknown": "Không rõ"
+    "unknown": "Không rõ",
+    "unknownAttr": "Thuộc tính không rõ"
   },
   "diff": {
     "abilities": "Kỹ năng {{count}}",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "Nguyên liệu chế tác",
     "enhanceMaterialsHint": "Mỗi lần chế tác sẽ tiêu tốn trang bị chất lượng vàng <@gd.key>cùng vị trí trang bị</>.",
     "noEnhanceMaterial": "Chưa có nguyên liệu chế tác",
+    "noEnhanceMaterialForAttr": "Chưa có nguyên liệu phù hợp thuộc tính này",
     "recipes": "Công thức",
     "recipeDefault": "Mặc định",
     "recipeUnlock": "Điều kiện mở khóa",
