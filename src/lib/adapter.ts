@@ -113,7 +113,7 @@ export function adaptItem(raw: any, i18nMap?: Record<string, string>): Item {
 }
 
 export function adaptEquip(raw: any, itemRaw: any, i18nMap?: Record<string, string>): Equip {
-  const id = raw.equipId ?? raw.$key ?? ''
+  const id = raw.itemId ?? raw.$key ?? ''
   const item = itemRaw?.[id]
   const name = item ? resolveI18n(item.name, i18nMap) : ''
 
@@ -158,9 +158,9 @@ export function adaptSuit(raw: any, i18nMap?: Record<string, string>): Suit {
   }))
 
   return {
-    id: raw.suitId ?? raw.$key ?? '',
-    name: resolveI18n(list[0]?.suitName, i18nMap) || raw.suitId || '',
-    logoName: raw.suitLogoName ?? '',
+    id: list[0]?.suitID ?? raw.$key ?? '',
+    name: resolveI18n(list[0]?.suitName, i18nMap) || list[0]?.suitID || raw.$key || '',
+    logoName: list[0]?.suitLogoName ?? '',
     equipIds,
     effects,
   }
@@ -169,8 +169,9 @@ export function adaptSuit(raw: any, i18nMap?: Record<string, string>): Suit {
 export function adaptEquipFormula(formula: any, chains: any[]): RecipeEntry[] {
   return chains.map((chain: any) => ({
     formulaId: formula.formulaId ?? '',
+    chainId: chain.chainId ?? '',
     level: formula.level ?? '',
-    isDefault: chain.isDefault === 1,
+    isDefault: Boolean(chain.isDefault),
     materials: (chain.costItemId ?? []).map((itemId: string, i: number) => ({
       itemId,
       count: chain.costItemNum?.[i] ?? 0,

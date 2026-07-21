@@ -268,6 +268,7 @@ export interface RecipeMaterial {
 
 export interface RecipeEntry {
   formulaId: string
+  chainId: string
   level: string
   isDefault: boolean
   materials: RecipeMaterial[]

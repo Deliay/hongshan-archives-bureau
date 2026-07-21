@@ -596,16 +596,15 @@ export function useItems(): UseDataResult<Item[]> {
 export function useEquips(): UseDataResult<{ equips: Equip[]; suits: Suit[] }> {
   const { locale } = useLocale()
   return useData(async () => {
-    const [equipRaw, _equipI18n, suitRaw, suitI18n, itemRaw, itemI18n] = await Promise.all([
+    const [equipRaw, suitRaw, suitI18n, itemRaw, itemI18n] = await Promise.all([
       getCachedData<Record<string, any>>('EquipTable', () => fetchTableAll('EquipTable')),
-      getTableI18nDict('ItemTable', locale),
       getCachedData<Record<string, any>>('EquipSuitTable', () => fetchTableAll('EquipSuitTable')),
       getTableI18nDict('EquipSuitTable', locale),
       getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
       getTableI18nDict('ItemTable', locale),
     ])
     const equips = Object.values(equipRaw).map((v: any) => adaptEquip(v, itemRaw, itemI18n))
-    const suits = Object.entries(suitRaw).map(([, v]) => adaptSuit(v, suitI18n))
+    const suits = Object.entries(suitRaw).map(([key, v]) => adaptSuit({ ...v, $key: key }, suitI18n))
     return { equips, suits }
   }, [locale])
 }
@@ -626,6 +625,7 @@ export function useEquipDetail(id: string): UseDataResult<EquipDetail> {
       getCachedData<Record<string, any>>('EquipFormulaChainTable', () => fetchTableAll('EquipFormulaChainTable').catch(() => ({}))),
     ])
     const equip = adaptEquip(equipRaw[id], itemRaw, itemI18n)
+    if (!equipRaw[id]) return { equip, suit: null, suitEquips: [], enhanceMaterials: [], enhanceCost: null, recipes: [] }
     const allEquips = Object.values(equipRaw).map((v: any) => adaptEquip(v, itemRaw, itemI18n))
 
     const suitEntry = equip.suitId ? suitRaw[equip.suitId] : null

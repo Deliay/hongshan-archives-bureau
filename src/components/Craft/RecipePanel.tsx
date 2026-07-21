@@ -15,7 +15,7 @@ export default function RecipePanel({ recipes, className }: RecipePanelProps) {
   return (
     <div className={`space-y-3 ${className ?? ''}`}>
       {recipes.map((recipe) => (
-        <div key={recipe.formulaId + recipe.level} className="p-3 rounded border border-archive-border bg-archive-file">
+          <div key={recipe.chainId || `${recipe.formulaId}-${recipe.level}`} className="p-3 rounded border border-archive-border bg-archive-file">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] text-archive-dust uppercase tracking-wide">{recipe.level}</span>
             {recipe.isDefault && (

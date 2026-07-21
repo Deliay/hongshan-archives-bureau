@@ -8,6 +8,7 @@ import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
+import { formatAttributeShow } from '../../lib/formatText'
 import SkillReferenceCard from '../../components/skills/SkillReferenceCard'
 import RecipePanel from '../../components/Craft/RecipePanel'
 import EquipCard from '../../components/Equipment/EquipCard'
@@ -33,8 +34,16 @@ function getItemIconUrl(iconId: string): string {
   return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${iconId}.png`
 }
 
+interface AttrInfo {
+  id: number
+  name: string
+  icon: string
+  valueFormat: string
+  showPercent: boolean
+}
+
 function useAttrMap(locale: string) {
-  const [attrMap, setAttrMap] = useState<Record<number, { id: number; name: string; icon: string }>>({})
+  const [attrMap, setAttrMap] = useState<Record<number, AttrInfo>>({})
   useEffect(() => {
     let cancelled = false
     async function load() {
@@ -44,7 +53,7 @@ function useAttrMap(locale: string) {
         getCachedData<Record<string, string>>(`I18nDict_${locale}_AttributeShowConfigTable`, () => fetchTableDictAll('AttributeShowConfigTable', locale)),
       ])
       if (cancelled) return
-      const map: Record<number, { id: number; name: string; icon: string }> = {}
+      const map: Record<number, AttrInfo> = {}
       for (const [k, v] of Object.entries(metaRaw)) {
         const attrType = Number(k)
         const configItem = showRaw[k]?.list?.[0]
@@ -53,6 +62,8 @@ function useAttrMap(locale: string) {
           id: attrType,
           name: (nameId && i18nMap[nameId]) || v.iconName?.replace('icon_attribute_', '') || `属性${k}`,
           icon: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/attributeicon/${v.iconName}.png`,
+          valueFormat: configItem?.valueFormat ?? '{value}',
+          showPercent: configItem?.showPercent ?? false,
         }
       }
       setAttrMap(map)
@@ -63,16 +74,20 @@ function useAttrMap(locale: string) {
   return attrMap
 }
 
-function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<number, { name: string }>; t: (key: string) => string }) {
+function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<number, AttrInfo>; t: (key: string) => string }) {
   const info = attrMap[attr.attrType]
   const name = info?.name ?? String(attr.attrType)
+  const valueFormat = info?.valueFormat ?? '{value}'
+  const showPercent = info?.showPercent ?? false
+  const formattedValue = formatAttributeShow({ valueFormat, showPercent }, attr.value)
+  const formattedEnhanced = attr.enhancedValues.map(v => formatAttributeShow({ valueFormat, showPercent }, v))
   return (
     <div className="flex items-center gap-2 text-xs text-archive-ivory">
       <span className="text-archive-dust min-w-[60px]">{name}</span>
-      <span className="text-archive-ivory">{attr.value}</span>
+      <span className="text-archive-ivory">{formattedValue}</span>
       {attr.enhancedValues.length > 0 && (
         <span className="text-archive-gold text-[10px] ml-2">
-          {t('equipment.enhancedValue')}：{attr.enhancedValues.join(' / ')}
+          {t('equipment.enhancedValue')}：{formattedEnhanced.join(' / ')}
         </span>
       )}
     </div>
@@ -164,6 +179,7 @@ export default function EquipmentDetail() {
 
       {suit && (
         <div className="mb-4 p-3 rounded border border-archive-border bg-archive-file">
+          <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-2">{t('equipment.suitSection')}</div>
           <div className="flex items-center gap-2 mb-2">
             {suit.logoName && (
               <img
