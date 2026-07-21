@@ -8,15 +8,34 @@ export interface AttrShowInfo {
   showPercent: boolean
 }
 
+interface AttrShowListItem {
+  name: { id?: number; text?: string }
+  valueFormat: string
+  showPercent: boolean
+  attributeModifier?: number
+  resolvedName: string
+}
+
 interface AttrShowEntry {
-  list: { name: { id?: number; text?: string }; valueFormat: string; showPercent: boolean; attributeModifier?: number }[]
+  list: AttrShowListItem[]
+}
+
+export interface InternalAttrEntry {
+  list: AttrShowListItem[]
+  nameId: string
 }
 
 function attrKey(attr: EquipAttr): string {
   return attr.compositeAttr || String(attr.attrType)
 }
 
-export async function getAttributeShowMap(locale: string): Promise<Record<string, AttrShowInfo>> {
+function pickListItem(list: AttrShowListItem[], modifierType: number): AttrShowListItem {
+  if (list.length === 0) return { name: {}, valueFormat: '{value}', showPercent: false, resolvedName: '' }
+  const match = list.find(item => item.attributeModifier === modifierType)
+  return match ?? list[0]
+}
+
+export async function getAttributeShowMap(locale: string): Promise<Record<string, InternalAttrEntry>> {
   const [normalRaw, compositeRaw, normalDict, compositeDict] = await Promise.all([
     getCachedData<Record<string, AttrShowEntry>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')),
     getCachedData<Record<string, AttrShowEntry>>('CompositeAttributeShowConfigTable', () => fetchTableAll('CompositeAttributeShowConfigTable')),
@@ -24,7 +43,9 @@ export async function getAttributeShowMap(locale: string): Promise<Record<string
     getCachedData<Record<string, string>>(`I18nDict_${locale}_CompositeAttributeShowConfigTable`, () => fetchTableDictAll('CompositeAttributeShowConfigTable', locale)),
   ])
 
+  const keyToNameIds = new Map<string, string[]>()
   const missingIds = new Set<string>()
+
   const tryResolve = (dict: Record<string, string>, id?: number | string): string => {
     const key = String(id ?? '')
     if (!key || key === '0') return ''
@@ -34,30 +55,31 @@ export async function getAttributeShowMap(locale: string): Promise<Record<string
     return ''
   }
 
-  const map: Record<string, AttrShowInfo> = {}
+  const map: Record<string, InternalAttrEntry> = {}
+
+  const resolveList = (list: AttrShowEntry['list'], dict: Record<string, string>): AttrShowListItem[] => {
+    return list.map(item => {
+      const resolvedName = tryResolve(dict, item.name?.id)
+      return { ...item, resolvedName }
+    })
+  }
 
   for (const [k, v] of Object.entries(normalRaw)) {
-    const list = v?.list ?? []
-    if (list.length === 0) continue
-    const entry = list[0]
-    const name = tryResolve(normalDict, entry?.name?.id)
-    map[k] = {
-      name,
-      valueFormat: entry?.valueFormat ?? '{value}',
-      showPercent: entry?.showPercent ?? false,
-    }
+    const rawList = v?.list ?? []
+    if (rawList.length === 0) continue
+    const list = resolveList(rawList, normalDict)
+    const nameIds = rawList.map(item => String(item.name?.id ?? ''))
+    keyToNameIds.set(k, nameIds)
+    map[k] = { list, nameId: nameIds[0] }
   }
 
   for (const [k, v] of Object.entries(compositeRaw)) {
-    const list = v?.list ?? []
-    if (list.length === 0) continue
-    const entry = list[0]
-    const name = tryResolve(compositeDict, entry?.name?.id)
-    map[k] = {
-      name,
-      valueFormat: entry?.valueFormat ?? '{value}',
-      showPercent: entry?.showPercent ?? false,
-    }
+    const rawList = v?.list ?? []
+    if (rawList.length === 0) continue
+    const list = resolveList(rawList, compositeDict)
+    const nameIds = rawList.map(item => String(item.name?.id ?? ''))
+    keyToNameIds.set(k, nameIds)
+    map[k] = { list, nameId: nameIds[0] }
   }
 
   if (missingIds.size > 0) {
@@ -65,20 +87,16 @@ export async function getAttributeShowMap(locale: string): Promise<Record<string
       Array.from(missingIds).map(async (id) => ({ id, text: await fetchI18nText(locale, id) }))
     )
     const globalMap = Object.fromEntries(globalTexts.filter(t => t.text).map(t => [t.id, t.text]))
-    for (const info of Object.values(map)) {
-      if (!info.name) {
-        const nameId = (() => {
-          for (const entries of [Object.values(normalRaw), Object.values(compositeRaw)]) {
-            for (const v of entries) {
-              const entry = v?.list?.[0]
-              if (entry && String(entry.name?.id ?? '') && globalMap[String(entry.name?.id ?? '')]) {
-                return String(entry.name?.id ?? '')
-              }
-            }
+    for (const [k, entry] of Object.entries(map)) {
+      const nameIds = keyToNameIds.get(k) ?? []
+      for (let i = 0; i < entry.list.length; i++) {
+        const item = entry.list[i]
+        if (!item.resolvedName) {
+          const nameId = nameIds[i] ?? ''
+          if (nameId && nameId !== '0' && globalMap[nameId]) {
+            item.resolvedName = globalMap[nameId]
           }
-          return ''
-        })()
-        if (nameId) info.name = globalMap[nameId] || info.name
+        }
       }
     }
   }
@@ -87,16 +105,20 @@ export async function getAttributeShowMap(locale: string): Promise<Record<string
 }
 
 export function resolveAttrShow(
-  map: Record<string, AttrShowInfo>,
+  map: Record<string, InternalAttrEntry>,
   attr: EquipAttr,
   unknownFallback?: string,
 ): AttrShowInfo {
   const key = attrKey(attr)
-  const info = map[key]
-  if (info?.name) return info
+  const entry = map[key]
+  if (!entry) {
+    return { name: unknownFallback ?? '', valueFormat: '{value}', showPercent: false }
+  }
+  const item = pickListItem(entry.list, attr.modifierType)
+  const name = item.resolvedName || (unknownFallback ?? '')
   return {
-    name: unknownFallback ?? '',
-    valueFormat: info?.valueFormat ?? '{value}',
-    showPercent: info?.showPercent ?? false,
+    name,
+    valueFormat: item.valueFormat ?? '{value}',
+    showPercent: item.showPercent ?? false,
   }
 }

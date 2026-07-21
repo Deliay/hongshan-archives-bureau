@@ -46,6 +46,7 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
   const { locale } = useLocale()
   const { t } = useI18n()
   const [equipData, setEquipData] = useState<TooltipEquip | null>(null)
+  const unknownFallback = t('common.unknownAttr')
 
   useEffect(() => {
     let cancelled = false
@@ -72,7 +73,7 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
         compositeAttr: baseRaw.compositeAttr ?? '',
       } : null
       const baseAttr = baseAttrEquipAttr ? (() => {
-        const info = resolveAttrShow(attrShowMap, baseAttrEquipAttr, '')
+        const info = resolveAttrShow(attrShowMap, baseAttrEquipAttr, unknownFallback)
         return { attr: baseAttrEquipAttr, name: info.name, valueFormat: info.valueFormat, showPercent: info.showPercent }
       })() : null
 
@@ -84,7 +85,7 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
           modifierType: a.modifierType ?? 0,
           compositeAttr: a.compositeAttr ?? '',
         }
-        const info = resolveAttrShow(attrShowMap, equipAttr, '')
+        const info = resolveAttrShow(attrShowMap, equipAttr, unknownFallback)
         return { attr: equipAttr, name: info.name, valueFormat: info.valueFormat, showPercent: info.showPercent }
       })
 

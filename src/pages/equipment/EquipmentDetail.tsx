@@ -6,6 +6,7 @@ import { useEquipDetail } from '../../hooks/useData'
 import { ASSET_BASE } from '../../lib/adapter'
 import { formatAttributeShow } from '../../lib/formatText'
 import { getAttributeShowMap, resolveAttrShow } from '../../lib/attributeShow'
+import type { InternalAttrEntry } from '../../lib/attributeShow'
 import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
 import SkillReferenceCard from '../../components/skills/SkillReferenceCard'
@@ -35,7 +36,7 @@ function getItemIconUrl(iconId: string): string {
 }
 
 function useAttrMap(locale: string) {
-  const [map, setMap] = useState<Record<string, { name: string; valueFormat: string; showPercent: boolean }>>({})
+  const [map, setMap] = useState<Record<string, InternalAttrEntry>>({})
   useEffect(() => {
     let cancelled = false
     getAttributeShowMap(locale).then(m => {
@@ -46,7 +47,7 @@ function useAttrMap(locale: string) {
   return map
 }
 
-function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<string, { name: string; valueFormat: string; showPercent: boolean }>; t: (key: string, vars?: Record<string, string | number>) => string }) {
+function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<string, InternalAttrEntry>; t: (key: string, vars?: Record<string, string | number>) => string }) {
   const info = resolveAttrShow(attrMap, attr, t('common.unknownAttr'))
   const formattedValue = formatAttributeShow({ valueFormat: info.valueFormat, showPercent: info.showPercent }, attr.value)
   const formattedEnhanced = attr.enhancedValues.map(v => formatAttributeShow({ valueFormat: info.valueFormat, showPercent: info.showPercent }, v))
@@ -63,25 +64,23 @@ function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<string
   )
 }
 
-function EnhanceMaterialSection({ groups, t, attrMap }: { groups: EnhanceMaterialGroup[]; t: (key: string, vars?: Record<string, string | number>) => string; attrMap: Record<string, { name: string; valueFormat: string; showPercent: boolean }> }) {
+function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialGroup[]; t: (key: string, vars?: Record<string, string | number>) => string }) {
   const hasAny = groups.some(g => g.materials.length > 0)
   if (!hasAny) {
     return <div className="text-xs text-archive-lead">{t('equipment.noEnhanceMaterial')}</div>
   }
   return (
     <div className="space-y-3">
-      {groups.map((group) => {
-        const attrInfo = resolveAttrShow(attrMap, { attrType: 0, value: 0, enhancedValues: [], modifierType: group.modifierType, compositeAttr: group.attrKey }, group.attrKey)
-        return (
+      {groups.map((group) => (
           <div key={group.attrKey}>
-            <div className="text-[10px] text-archive-gold uppercase tracking-wide mb-1">{attrInfo.name || group.attrKey}</div>
+            <div className="text-[10px] text-archive-gold uppercase tracking-wide mb-1">{group.attrName}</div>
             {group.materials.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {group.materials.map((item) => (
                   <div key={item.equip.id} className="flex flex-col items-center gap-1">
                     <EquipCard equip={item.equip} interactive="tooltip" />
                     <span className="text-[10px] text-archive-dust font-mono">
-                      {formatAttributeShow({ valueFormat: attrInfo.valueFormat, showPercent: attrInfo.showPercent }, item.attrValue)}
+                      {formatAttributeShow({ valueFormat: group.valueFormat, showPercent: group.showPercent }, item.attrValue)}
                     </span>
                   </div>
                 ))}
@@ -90,8 +89,7 @@ function EnhanceMaterialSection({ groups, t, attrMap }: { groups: EnhanceMateria
               <div className="text-[10px] text-archive-lead">{t('equipment.noEnhanceMaterialForAttr')}</div>
             )}
           </div>
-        )
-      })}
+      ))}
     </div>
   )
 }
@@ -216,7 +214,7 @@ export default function EquipmentDetail() {
             <ItemPanel itemId={enhanceCost.itemId} amount={enhanceCost.count} showName />
           </div>
         )}
-        <EnhanceMaterialSection groups={enhanceMaterialGroups} t={t} attrMap={attrMap} />
+        <EnhanceMaterialSection groups={enhanceMaterialGroups} t={t} />
       </div>
 
       {recipes.length > 0 && (

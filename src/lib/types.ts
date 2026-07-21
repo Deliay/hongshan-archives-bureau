@@ -241,6 +241,9 @@ export interface EnhanceMaterialItem {
 export interface EnhanceMaterialGroup {
   attrKey: string
   modifierType: number
+  attrName: string
+  valueFormat: string
+  showPercent: boolean
   materials: EnhanceMaterialItem[]
 }
 
