@@ -543,6 +543,22 @@
     "ID": "Tidak diketahui",
     "IT": "Sconosciuto"
   },
+  "common.unknownAttr": {
+    "CN": "未知属性",
+    "TC": "未知屬性",
+    "EN": "Unknown Attribute",
+    "JP": "不明な属性",
+    "KR": "알 수 없는 속성",
+    "RU": "Неизвестный атрибут",
+    "MX": "Atributo desconocido",
+    "BR": "Atributo desconhecido",
+    "DE": "Unbekanntes Attribut",
+    "FR": "Attribut inconnu",
+    "VN": "Thuộc tính không rõ",
+    "TH": "คุณสมบัติที่ไม่ทราบ",
+    "ID": "Atribut tidak diketahui",
+    "IT": "Attributo sconosciuto"
+  },
   "diff.abilities": {
     "CN": "能力（{{count}}）",
     "TC": "能力（{{count}}）",
@@ -4894,6 +4910,22 @@
     "TH": "ไม่มีวัสดุอาร์ติไฟซ์ที่ใช้ได้",
     "ID": "Belum ada bahan penyempurnaan",
     "IT": "Nessun materiale di artificio disponibile"
+  },
+  "equipment.noEnhanceMaterialForAttr": {
+    "CN": "暂无适配该词条的精锻材料",
+    "TC": "暫無適配該詞條的精鍛材料",
+    "EN": "No materials matching this attribute",
+    "JP": "この属性に適した素材がありません",
+    "KR": "이 속성에 맞는 재료 없음",
+    "RU": "Нет материалов для этого атрибута",
+    "MX": "No hay materiales para este atributo",
+    "BR": "Nenhum material para este atributo",
+    "DE": "Keine Materialien für dieses Attribut",
+    "FR": "Aucun matériau pour cet attribut",
+    "VN": "Chưa có nguyên liệu phù hợp thuộc tính này",
+    "TH": "ไม่มีวัสดุที่ตรงกับคุณสมบัตินี้",
+    "ID": "Belum ada bahan yang cocok untuk atribut ini",
+    "IT": "Nessun materiale per questo attributo"
   },
   "equipment.recipes": {
     "CN": "配方一览",

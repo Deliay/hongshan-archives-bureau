@@ -33,7 +33,8 @@
     "prev": "ก่อนหน้า",
     "searchWithName": "ค้นหา{{name}}ตามชื่อหรือ ID…",
     "sort": "จัดเรียง",
-    "unknown": "ไม่ทราบ"
+    "unknown": "ไม่ทราบ",
+    "unknownAttr": "คุณสมบัติที่ไม่ทราบ"
   },
   "diff": {
     "abilities": "ความสามารถ {{count}}",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "วัสดุอาร์ติไฟซ์",
     "enhanceMaterialsHint": "การพยายามอาร์ติไฟซ์ทุกครั้งใช้<@gd.key>อุปกรณ์สวมใส่ส่วนเดียวกัน</>ที่มีคุณภาพระดับทอง",
     "noEnhanceMaterial": "ไม่มีวัสดุอาร์ติไฟซ์ที่ใช้ได้",
+    "noEnhanceMaterialForAttr": "ไม่มีวัสดุที่ตรงกับคุณสมบัตินี้",
     "recipes": "สูตร",
     "recipeDefault": "เส้นทางเริ่มต้น",
     "recipeUnlock": "เงื่อนไขปลดล็อก",

@@ -33,7 +33,8 @@
     "prev": "Precedente",
     "searchWithName": "Cerca {{name}} per nome o ID…",
     "sort": "Ordina",
-    "unknown": "Sconosciuto"
+    "unknown": "Sconosciuto",
+    "unknownAttr": "Attributo sconosciuto"
   },
   "diff": {
     "abilities": "Abilità {{count}}",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "Materiali di artificio",
     "enhanceMaterialsHint": "Ogni tentativo di artificio costa un equipaggiamento di qualità oro della <@gd.key>stessa tipologia</>.",
     "noEnhanceMaterial": "Nessun materiale di artificio disponibile",
+    "noEnhanceMaterialForAttr": "Nessun materiale per questo attributo",
     "recipes": "Formule",
     "recipeDefault": "Percorso predefinito",
     "recipeUnlock": "Sblocca condizioni",

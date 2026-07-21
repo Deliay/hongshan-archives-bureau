@@ -51,7 +51,7 @@ describe('adaptEquip', () => {
       displayBaseAttrModifier: { attrType: 39, attrValue: 100, modifierType: 5 },
     }
     const result = adaptEquip(raw, mockItemRaw, mockI18n)
-    expect(result.baseAttr).toEqual({ attrType: 39, value: 100, enhancedValues: [], modifierType: 5 })
+    expect(result.baseAttr).toEqual({ attrType: 39, value: 100, enhancedValues: [], modifierType: 5, compositeAttr: '' })
   })
 
   it('should parse display attributes with enhancedValues', () => {
@@ -64,7 +64,7 @@ describe('adaptEquip', () => {
     }
     const result = adaptEquip(raw, mockItemRaw, mockI18n)
     expect(result.attrs).toHaveLength(1)
-    expect(result.attrs[0]).toEqual({ attrType: 10, value: 32, enhancedValues: [35, 38, 41], modifierType: 5 })
+    expect(result.attrs[0]).toEqual({ attrType: 10, value: 32, enhancedValues: [35, 38, 41], modifierType: 5, compositeAttr: '' })
   })
 
   it('should handle suitID field', () => {

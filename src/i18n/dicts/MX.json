@@ -33,7 +33,8 @@
     "prev": "Anterior",
     "searchWithName": "Buscar {{name}} por nombre o ID…",
     "sort": "Ordenar",
-    "unknown": "Desconocido"
+    "unknown": "Desconocido",
+    "unknownAttr": "Atributo desconocido"
   },
   "diff": {
     "abilities": "Habilidades {{count}}",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "Materiales de elaboración",
     "enhanceMaterialsHint": "Cada intento de elaboración cuesta equipamiento de calidad dorada de la <@gd.key>misma parte equipada</>.",
     "noEnhanceMaterial": "No hay materiales de elaboración disponibles",
+    "noEnhanceMaterialForAttr": "No hay materiales para este atributo",
     "recipes": "Fórmulas",
     "recipeDefault": "Ruta predeterminada",
     "recipeUnlock": "Condiciones de desbloqueo",

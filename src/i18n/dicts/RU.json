@@ -33,7 +33,8 @@
     "prev": "Назад",
     "searchWithName": "Поиск {{name}} по имени или ID…",
     "sort": "Сортировать",
-    "unknown": "Неизвестно"
+    "unknown": "Неизвестно",
+    "unknownAttr": "Неизвестный атрибут"
   },
   "diff": {
     "abilities": "Способности ({{count}})",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "Материалы доработки",
     "enhanceMaterialsHint": "Каждая доработка потратит предмет золотого снаряжения с <@gd.key>тем же местом размещения</>.",
     "noEnhanceMaterial": "Нет материалов для доработки",
+    "noEnhanceMaterialForAttr": "Нет материалов для этого атрибута",
     "recipes": "Формулы",
     "recipeDefault": "Основной путь",
     "recipeUnlock": "Требования для открытия",

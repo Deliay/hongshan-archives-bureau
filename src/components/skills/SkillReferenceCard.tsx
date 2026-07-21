@@ -31,6 +31,7 @@ interface SkillReferenceCardProps {
   defaultPatchIndex?: number
   className?: string
   skillGroupName?: string
+  hideNameWhenMissing?: boolean
 }
 
 async function getTableI18nDict(table: string, locale: string): Promise<Record<string, string>> {
@@ -44,6 +45,7 @@ export default function SkillReferenceCard({
   defaultPatchIndex,
   className,
   skillGroupName,
+  hideNameWhenMissing = false,
 }: SkillReferenceCardProps) {
   const { locale } = useLocale()
   const { t } = useI18n()
@@ -134,7 +136,9 @@ export default function SkillReferenceCard({
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         )}
-        <span className="text-xs font-medium text-archive-ivory">{current.skillName || skillGroupName || skillId}</span>
+        {!(hideNameWhenMissing && !current.skillName) && (
+          <span className="text-xs font-medium text-archive-ivory">{current.skillName || skillGroupName || skillId}</span>
+        )}
         <span className="text-[10px] text-archive-lead font-mono ml-auto">{t('common.level', { level: current.level })}</span>
       </div>
       {current.description && (

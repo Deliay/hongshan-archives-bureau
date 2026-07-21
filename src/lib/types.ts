@@ -230,6 +230,21 @@ export interface EquipAttr {
   value: number
   enhancedValues: number[]
   modifierType: number
+  compositeAttr: string
+}
+
+export interface EnhanceMaterialItem {
+  equip: Equip
+  attrValue: number
+}
+
+export interface EnhanceMaterialGroup {
+  attrKey: string
+  modifierType: number
+  attrName: string
+  valueFormat: string
+  showPercent: boolean
+  materials: EnhanceMaterialItem[]
 }
 
 export interface Equip {
@@ -287,7 +302,7 @@ export interface EquipDetail {
   equip: Equip
   suit: Suit | null
   suitEquips: Equip[]
-  enhanceMaterials: Equip[]
+  enhanceMaterialGroups: EnhanceMaterialGroup[]
   enhanceCost: EnhanceCost | null
   recipes: RecipeEntry[]
 }

@@ -4,8 +4,8 @@ import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useState, useMemo, useEffect } from 'react'
 import { useEquips } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
-import { ASSET_BASE } from '../../lib/adapter'
 import EquipCard from '../../components/Equipment/EquipCard'
+import SuitLogo from '../../components/Equipment/SuitLogo'
 import type { Equip, Suit } from '../../lib/types'
 
 const PAGE_SIZES = [12, 24, 48, 0] as const
@@ -165,14 +165,7 @@ export default function EquipmentList() {
           return (
             <section key={groupKey}>
               <div className="flex items-center gap-2 mb-2 pb-1 border-b border-archive-border">
-                {suit?.logoName && (
-                  <img
-                    src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/equipmentlogobig/${suit.logoName}.png`}
-                    alt=""
-                    className="w-5 h-5 object-contain"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                  />
-                )}
+                <SuitLogo logoName={suit?.logoName ?? ''} />
                 <h3 className="text-sm font-medium text-archive-gold">
                   {suit?.name ?? t('equipment.looseGroup')}
                 </h3>
