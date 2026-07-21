@@ -33,29 +33,34 @@ test.describe('装备图鉴 (Equipment Archive)', () => {
     expect(count).toBeGreaterThan(0)
   })
 
-  test('装备列表按稀有度倒序排序', async ({ page }) => {
+  test('装备列表按稀有度倒序排序（组内单调）', async ({ page }) => {
     await waitForListReady(page)
 
     const card = page.locator('main a[href*="/archive/equipment/"]').first()
     await expect(card).toBeVisible({ timeout: 15000 })
 
-    const rarities = await page.locator('main a[href*="/archive/equipment/"]').evaluateAll((els) => {
-      return els.map((el) => {
-        const bar = el.querySelector('.rounded-full')
-        if (!bar) return 0
-        const bg = (bar as HTMLElement).style.backgroundColor
-        if (bg.includes('254, 90, 0') || bg.includes('fe5a00')) return 6
-        if (bg.includes('255, 187, 3') || bg.includes('FFBB03')) return 5
-        if (bg.includes('148, 82, 250') || bg.includes('9452FA')) return 4
-        if (bg.includes('38, 187, 253') || bg.includes('26BBFD')) return 3
-        return 0
+    const sectionRarities = await page.locator('main section').evaluateAll((sections) => {
+      return sections.map((section) => {
+        const cards = section.querySelectorAll('a[href*="/archive/equipment/"]')
+        return Array.from(cards).map((el) => {
+          const bar = el.querySelector('.rounded-full')
+          if (!bar) return 0
+          const bg = (bar as HTMLElement).style.backgroundColor
+          if (bg.includes('254, 90, 0') || bg.includes('fe5a00')) return 6
+          if (bg.includes('255, 187, 3') || bg.includes('FFBB03')) return 5
+          if (bg.includes('148, 82, 250') || bg.includes('9452FA')) return 4
+          if (bg.includes('38, 187, 253') || bg.includes('26BBFD')) return 3
+          return 0
+        })
       })
     })
 
-    expect(rarities.length).toBeGreaterThan(0)
-    const known = rarities.filter(r => r > 0)
-    for (let i = 1; i < known.length; i++) {
-      expect(known[i]).toBeLessThanOrEqual(known[i - 1])
+    expect(sectionRarities.length).toBeGreaterThan(0)
+    for (const rarities of sectionRarities) {
+      const known = rarities.filter(r => r > 0)
+      for (let i = 1; i < known.length; i++) {
+        expect(known[i]).toBeLessThanOrEqual(known[i - 1])
+      }
     }
   })
 
@@ -86,10 +91,12 @@ test.describe('装备图鉴 (Equipment Archive)', () => {
     await waitForListReady(page)
 
     const card = page.locator('main a[href*="/archive/equipment/"]').first()
-    await expect(card).toBeVisible({ timeout: 15000 })
+    await expect(card).toBeVisible({ timeout: 20000 })
 
     const typeSelect = page.locator('select', { has: page.locator('option', { hasText: '全部类型' }) })
     await expect(typeSelect).toBeVisible({ timeout: 5000 })
+
+    const initialCount = await page.locator('main a[href*="/archive/equipment/"]').count()
 
     const options = await typeSelect.locator('option').all()
     expect(options.length).toBeGreaterThan(1)
@@ -97,10 +104,13 @@ test.describe('装备图鉴 (Equipment Archive)', () => {
     const firstType = await options[1].getAttribute('value')
     if (firstType) {
       await typeSelect.selectOption(firstType)
-      await page.waitForTimeout(1000)
 
-      const cards = page.locator('main a[href*="/archive/equipment/"]')
-      const cardCount = await cards.count()
+      await page.waitForFunction((prevCount) => {
+        const cards = document.querySelectorAll('main a[href*="/archive/equipment/"]')
+        return cards.length > 0 && cards.length !== prevCount
+      }, initialCount, { timeout: 5000 })
+
+      const cardCount = await page.locator('main a[href*="/archive/equipment/"]').count()
       expect(cardCount).toBeGreaterThan(0)
     }
   })

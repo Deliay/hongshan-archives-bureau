@@ -103,7 +103,7 @@ export default function EquipmentDetail() {
 
   if (loading) return <DetailSkeleton />
   if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
-  if (!detail) return <div className="text-archive-dust text-sm">{t('common.notFound', { name: t('equipment.title') })}</div>
+  if (!detail || !detail.equip.id) return <div className="text-archive-dust text-sm">{t('common.notFound', { name: t('equipment.title') })}</div>
 
   const { equip, suit, suitEquips, enhanceMaterials, enhanceCost, recipes } = detail
 
