@@ -20,7 +20,7 @@ interface AttrShowEntry {
   list: AttrShowListItem[]
 }
 
-export interface InternalAttrEntry {
+export interface AttrShowMapEntry {
   list: AttrShowListItem[]
   nameId: string
 }
@@ -35,7 +35,7 @@ function pickListItem(list: AttrShowListItem[], modifierType: number): AttrShowL
   return match ?? list[0]
 }
 
-export async function getAttributeShowMap(locale: string): Promise<Record<string, InternalAttrEntry>> {
+export async function getAttributeShowMap(locale: string): Promise<Record<string, AttrShowMapEntry>> {
   const [normalRaw, compositeRaw, normalDict, compositeDict] = await Promise.all([
     getCachedData<Record<string, AttrShowEntry>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')),
     getCachedData<Record<string, AttrShowEntry>>('CompositeAttributeShowConfigTable', () => fetchTableAll('CompositeAttributeShowConfigTable')),
@@ -55,7 +55,7 @@ export async function getAttributeShowMap(locale: string): Promise<Record<string
     return ''
   }
 
-  const map: Record<string, InternalAttrEntry> = {}
+  const map: Record<string, AttrShowMapEntry> = {}
 
   const resolveList = (list: AttrShowEntry['list'], dict: Record<string, string>): AttrShowListItem[] => {
     return list.map(item => {
@@ -105,7 +105,7 @@ export async function getAttributeShowMap(locale: string): Promise<Record<string
 }
 
 export function resolveAttrShow(
-  map: Record<string, InternalAttrEntry>,
+  map: Record<string, AttrShowMapEntry>,
   attr: EquipAttr,
   unknownFallback?: string,
 ): AttrShowInfo {

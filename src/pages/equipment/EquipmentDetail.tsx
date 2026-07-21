@@ -6,7 +6,7 @@ import { useEquipDetail } from '../../hooks/useData'
 import { ASSET_BASE } from '../../lib/adapter'
 import { formatAttributeShow } from '../../lib/formatText'
 import { getAttributeShowMap, resolveAttrShow } from '../../lib/attributeShow'
-import type { InternalAttrEntry } from '../../lib/attributeShow'
+import type { AttrShowMapEntry } from '../../lib/attributeShow'
 import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
 import SkillReferenceCard from '../../components/skills/SkillReferenceCard'
@@ -36,7 +36,7 @@ function getItemIconUrl(iconId: string): string {
 }
 
 function useAttrMap(locale: string) {
-  const [map, setMap] = useState<Record<string, InternalAttrEntry>>({})
+  const [map, setMap] = useState<Record<string, AttrShowMapEntry>>({})
   useEffect(() => {
     let cancelled = false
     getAttributeShowMap(locale).then(m => {
@@ -47,7 +47,7 @@ function useAttrMap(locale: string) {
   return map
 }
 
-function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<string, InternalAttrEntry>; t: (key: string, vars?: Record<string, string | number>) => string }) {
+function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<string, AttrShowMapEntry>; t: (key: string, vars?: Record<string, string | number>) => string }) {
   const info = resolveAttrShow(attrMap, attr, t('common.unknownAttr'))
   const formattedValue = formatAttributeShow({ valueFormat: info.valueFormat, showPercent: info.showPercent }, attr.value)
   const formattedEnhanced = attr.enhancedValues.map(v => formatAttributeShow({ valueFormat: info.valueFormat, showPercent: info.showPercent }, v))
@@ -73,7 +73,7 @@ function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialGroup[];
     <div className="space-y-3">
       {groups.map((group) => (
           <div key={group.attrKey}>
-            <div className="text-[10px] text-archive-gold uppercase tracking-wide mb-1">{group.attrName}</div>
+            <div className="text-[10px] text-archive-gold uppercase tracking-wide mb-1">{group.attrName || t('common.unknownAttr')}</div>
             {group.materials.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {group.materials.map((item) => (

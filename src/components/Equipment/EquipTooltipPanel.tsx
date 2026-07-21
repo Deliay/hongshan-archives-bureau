@@ -46,11 +46,11 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
   const { locale } = useLocale()
   const { t } = useI18n()
   const [equipData, setEquipData] = useState<TooltipEquip | null>(null)
-  const unknownFallback = t('common.unknownAttr')
 
   useEffect(() => {
     let cancelled = false
     async function load() {
+      const unknownFallback = t('common.unknownAttr')
       const [equipRaw, itemRaw, suitRaw, suitI18n, attrShowMap] = await Promise.all([
         getCachedData<Record<string, any>>('EquipTable', () => fetchTableAll('EquipTable')),
         getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),

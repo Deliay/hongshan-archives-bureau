@@ -660,7 +660,7 @@ export function useEquipDetail(id: string): UseDataResult<EquipDetail> {
       return {
         attrKey: aKey,
         modifierType: attr.modifierType,
-        attrName: attrInfo.name || aKey,
+        attrName: attrInfo.name,
         valueFormat: attrInfo.valueFormat,
         showPercent: attrInfo.showPercent,
         materials,
