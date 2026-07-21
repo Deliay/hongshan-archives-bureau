@@ -33,7 +33,8 @@
     "prev": "Previous",
     "searchWithName": "Search {{name}} by name or ID…",
     "sort": "Sort",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "unknownAttr": "Unknown Attribute"
   },
   "diff": {
     "abilities": "Abilities ({{count}})",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "Artifice Materials",
     "enhanceMaterialsHint": "Every artificing attempt costs gold quality gear of the <@gd.key>same equipping part</>.",
     "noEnhanceMaterial": "No artifice materials available",
+    "noEnhanceMaterialForAttr": "No materials matching this attribute",
     "recipes": "Formulas",
     "recipeDefault": "Default path",
     "recipeUnlock": "Unlock Conditions",

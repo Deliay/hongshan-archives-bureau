@@ -4,18 +4,18 @@ import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { useParams, Link } from 'react-router-dom'
 import { useEquipDetail } from '../../hooks/useData'
 import { ASSET_BASE } from '../../lib/adapter'
-import { getCachedData } from '../../lib/cache'
-import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
+import { formatAttributeShow } from '../../lib/formatText'
+import { getAttributeShowMap, resolveAttrShow } from '../../lib/attributeShow'
 import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
-import { formatAttributeShow } from '../../lib/formatText'
 import SkillReferenceCard from '../../components/skills/SkillReferenceCard'
 import RecipePanel from '../../components/Craft/RecipePanel'
 import EquipCard from '../../components/Equipment/EquipCard'
 import ItemPanel from '../../components/Items/ItemPanel'
+import SuitLogo from '../../components/Equipment/SuitLogo'
 import { useI18n } from '../../i18n'
 import { useState, useEffect } from 'react'
-import type { EquipAttr } from '../../lib/types'
+import type { EquipAttr, EnhanceMaterialGroup } from '../../lib/types'
 
 const RARITY_COLORS: Record<number, string> = {
   3: '#26BBFD',
@@ -34,62 +34,64 @@ function getItemIconUrl(iconId: string): string {
   return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${iconId}.png`
 }
 
-interface AttrInfo {
-  id: number
-  name: string
-  icon: string
-  valueFormat: string
-  showPercent: boolean
-}
-
 function useAttrMap(locale: string) {
-  const [attrMap, setAttrMap] = useState<Record<number, AttrInfo>>({})
+  const [map, setMap] = useState<Record<string, { name: string; valueFormat: string; showPercent: boolean }>>({})
   useEffect(() => {
     let cancelled = false
-    async function load() {
-      const [metaRaw, showRaw, i18nMap] = await Promise.all([
-        getCachedData<Record<string, any>>('AttributeMetaTable', () => fetchTableAll('AttributeMetaTable')),
-        getCachedData<Record<string, any>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')),
-        getCachedData<Record<string, string>>(`I18nDict_${locale}_AttributeShowConfigTable`, () => fetchTableDictAll('AttributeShowConfigTable', locale)),
-      ])
-      if (cancelled) return
-      const map: Record<number, AttrInfo> = {}
-      for (const [k, v] of Object.entries(metaRaw)) {
-        const attrType = Number(k)
-        const configItem = showRaw[k]?.list?.[0]
-        const nameId = String(configItem?.name?.id ?? '')
-        map[attrType] = {
-          id: attrType,
-          name: (nameId && i18nMap[nameId]) || v.iconName?.replace('icon_attribute_', '') || `属性${k}`,
-          icon: `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/attributeicon/${v.iconName}.png`,
-          valueFormat: configItem?.valueFormat ?? '{value}',
-          showPercent: configItem?.showPercent ?? false,
-        }
-      }
-      setAttrMap(map)
-    }
-    load()
+    getAttributeShowMap(locale).then(m => {
+      if (!cancelled) setMap(m)
+    })
     return () => { cancelled = true }
   }, [locale])
-  return attrMap
+  return map
 }
 
-function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<number, AttrInfo>; t: (key: string) => string }) {
-  const info = attrMap[attr.attrType]
-  const name = info?.name ?? String(attr.attrType)
-  const valueFormat = info?.valueFormat ?? '{value}'
-  const showPercent = info?.showPercent ?? false
-  const formattedValue = formatAttributeShow({ valueFormat, showPercent }, attr.value)
-  const formattedEnhanced = attr.enhancedValues.map(v => formatAttributeShow({ valueFormat, showPercent }, v))
+function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<string, { name: string; valueFormat: string; showPercent: boolean }>; t: (key: string, vars?: Record<string, string | number>) => string }) {
+  const info = resolveAttrShow(attrMap, attr, t('common.unknownAttr'))
+  const formattedValue = formatAttributeShow({ valueFormat: info.valueFormat, showPercent: info.showPercent }, attr.value)
+  const formattedEnhanced = attr.enhancedValues.map(v => formatAttributeShow({ valueFormat: info.valueFormat, showPercent: info.showPercent }, v))
   return (
     <div className="flex items-center gap-2 text-xs text-archive-ivory">
-      <span className="text-archive-dust min-w-[60px]">{name}</span>
+      <span className="text-archive-dust min-w-[60px]">{info.name}</span>
       <span className="text-archive-ivory">{formattedValue}</span>
       {attr.enhancedValues.length > 0 && (
         <span className="text-archive-gold text-[10px] ml-2">
           {t('equipment.enhancedValue')}：{formattedEnhanced.join(' / ')}
         </span>
       )}
+    </div>
+  )
+}
+
+function EnhanceMaterialSection({ groups, t, attrMap }: { groups: EnhanceMaterialGroup[]; t: (key: string, vars?: Record<string, string | number>) => string; attrMap: Record<string, { name: string; valueFormat: string; showPercent: boolean }> }) {
+  const hasAny = groups.some(g => g.materials.length > 0)
+  if (!hasAny) {
+    return <div className="text-xs text-archive-lead">{t('equipment.noEnhanceMaterial')}</div>
+  }
+  return (
+    <div className="space-y-3">
+      {groups.map((group) => {
+        const attrInfo = resolveAttrShow(attrMap, { attrType: 0, value: 0, enhancedValues: [], modifierType: group.modifierType, compositeAttr: group.attrKey }, group.attrKey)
+        return (
+          <div key={group.attrKey}>
+            <div className="text-[10px] text-archive-gold uppercase tracking-wide mb-1">{attrInfo.name || group.attrKey}</div>
+            {group.materials.length > 0 ? (
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                {group.materials.map((item) => (
+                  <div key={item.equip.id} className="flex flex-col items-center gap-1">
+                    <EquipCard equip={item.equip} interactive="tooltip" />
+                    <span className="text-[10px] text-archive-dust font-mono">
+                      {formatAttributeShow({ valueFormat: attrInfo.valueFormat, showPercent: attrInfo.showPercent }, item.attrValue)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[10px] text-archive-lead">{t('equipment.noEnhanceMaterialForAttr')}</div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -105,7 +107,7 @@ export default function EquipmentDetail() {
   if (error) return <div className="text-red-400 text-sm">{t('common.loadFailed')}：{error}</div>
   if (!detail || !detail.equip.id) return <div className="text-archive-dust text-sm">{t('common.notFound', { name: t('equipment.title') })}</div>
 
-  const { equip, suit, suitEquips, enhanceMaterials, enhanceCost, recipes } = detail
+  const { equip, suit, suitEquips, enhanceMaterialGroups, enhanceCost, recipes } = detail
 
   return (
     <div>
@@ -181,14 +183,7 @@ export default function EquipmentDetail() {
         <div className="mb-4 p-3 rounded border border-archive-border bg-archive-file">
           <div className="text-[10px] text-archive-dust uppercase tracking-wide mb-2">{t('equipment.suitSection')}</div>
           <div className="flex items-center gap-2 mb-2">
-            {suit.logoName && (
-              <img
-                src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/equipmentlogobig/${suit.logoName}.png`}
-                alt=""
-                className="w-6 h-6 object-contain"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-              />
-            )}
+            <SuitLogo logoName={suit.logoName} />
             <span className="text-sm font-medium text-archive-gold">{suit.name}</span>
           </div>
           {suit.effects.map((effect, i) => (
@@ -197,13 +192,14 @@ export default function EquipmentDetail() {
               <SkillReferenceCard
                 skillId={effect.skillId}
                 defaultLevel={effect.skillLv}
+                hideNameWhenMissing
               />
             </div>
           ))}
           {suitEquips.length > 0 && (
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
               {suitEquips.map(e => (
-                <EquipCard key={e.id} equip={e} />
+                <EquipCard key={e.id} equip={e} interactive="tooltip" />
               ))}
             </div>
           )}
@@ -220,15 +216,7 @@ export default function EquipmentDetail() {
             <ItemPanel itemId={enhanceCost.itemId} amount={enhanceCost.count} showName />
           </div>
         )}
-        {enhanceMaterials.length > 0 ? (
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-            {enhanceMaterials.map(e => (
-              <EquipCard key={e.id} equip={e} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-xs text-archive-lead">{t('equipment.noEnhanceMaterial')}</div>
-        )}
+        <EnhanceMaterialSection groups={enhanceMaterialGroups} t={t} attrMap={attrMap} />
       </div>
 
       {recipes.length > 0 && (

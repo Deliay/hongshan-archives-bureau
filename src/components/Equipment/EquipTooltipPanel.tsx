@@ -5,12 +5,13 @@ import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
 import { resolveI18n } from '../../lib/adapter'
 import { formatAttributeShow } from '../../lib/formatText'
+import { getAttributeShowMap, resolveAttrShow } from '../../lib/attributeShow'
 import { useI18n } from '../../i18n'
+import type { EquipAttr } from '../../lib/types'
 
 interface TooltipEquipAttr {
-  attrType: number
+  attr: EquipAttr
   name: string
-  value: number
   valueFormat: string
   showPercent: boolean
 }
@@ -49,14 +50,12 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const [equipRaw, itemRaw, suitRaw, suitI18n, attrMeta, showConfig, attrI18n] = await Promise.all([
+      const [equipRaw, itemRaw, suitRaw, suitI18n, attrShowMap] = await Promise.all([
         getCachedData<Record<string, any>>('EquipTable', () => fetchTableAll('EquipTable')),
         getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
         getCachedData<Record<string, any>>('EquipSuitTable', () => fetchTableAll('EquipSuitTable')),
         getCachedData<Record<string, string>>(`I18nDict_${locale}_EquipSuitTable`, () => fetchTableDictAll('EquipSuitTable', locale)),
-        getCachedData<Record<string, any>>('AttributeMetaTable', () => fetchTableAll('AttributeMetaTable')),
-        getCachedData<Record<string, any>>('AttributeShowConfigTable', () => fetchTableAll('AttributeShowConfigTable')),
-        getCachedData<Record<string, string>>(`I18nDict_${locale}_AttributeShowConfigTable`, () => fetchTableDictAll('AttributeShowConfigTable', locale)),
+        getAttributeShowMap(locale),
       ])
       if (cancelled) return
 
@@ -65,28 +64,28 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
 
       const rarity = itemRaw[itemId]?.rarity ?? 0
       const baseRaw = raw.displayBaseAttrModifier
-      const baseAttr = baseRaw ? {
+      const baseAttrEquipAttr: EquipAttr | null = baseRaw ? {
         attrType: baseRaw.attrType ?? 0,
-        name: (() => {
-          const configItem = showConfig[String(baseRaw.attrType)]?.list?.[0]
-          const nameId = String(configItem?.name?.id ?? '')
-          return (nameId && attrI18n[nameId]) || attrMeta[String(baseRaw.attrType)]?.iconName?.replace('icon_attribute_', '') || ''
-        })(),
         value: baseRaw.attrValue ?? 0,
-        valueFormat: showConfig[String(baseRaw.attrType)]?.list?.[0]?.valueFormat ?? '{value}',
-        showPercent: showConfig[String(baseRaw.attrType)]?.list?.[0]?.showPercent ?? false,
+        enhancedValues: [],
+        modifierType: baseRaw.modifierType ?? 0,
+        compositeAttr: baseRaw.compositeAttr ?? '',
       } : null
+      const baseAttr = baseAttrEquipAttr ? (() => {
+        const info = resolveAttrShow(attrShowMap, baseAttrEquipAttr, '')
+        return { attr: baseAttrEquipAttr, name: info.name, valueFormat: info.valueFormat, showPercent: info.showPercent }
+      })() : null
 
-      const attrs = (raw.displayAttrModifiers ?? []).map((a: any) => {
-        const configItem = showConfig[String(a.attrType)]?.list?.[0]
-        const nameId = String(configItem?.name?.id ?? '')
-        return {
+      const attrs: TooltipEquipAttr[] = (raw.displayAttrModifiers ?? []).map((a: any) => {
+        const equipAttr: EquipAttr = {
           attrType: a.attrType ?? 0,
-          name: (nameId && attrI18n[nameId]) || attrMeta[String(a.attrType)]?.iconName?.replace('icon_attribute_', '') || '',
           value: a.attrValue ?? 0,
-          valueFormat: configItem?.valueFormat ?? '{value}',
-          showPercent: configItem?.showPercent ?? false,
+          enhancedValues: a.enhancedAttrValues ?? [],
+          modifierType: a.modifierType ?? 0,
+          compositeAttr: a.compositeAttr ?? '',
         }
+        const info = resolveAttrShow(attrShowMap, equipAttr, '')
+        return { attr: equipAttr, name: info.name, valueFormat: info.valueFormat, showPercent: info.showPercent }
       })
 
       const suitId = raw.suitID
@@ -98,8 +97,8 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
       setEquipData({
         partType: raw.partType ?? 0,
         rarity,
-        baseAttr: baseAttr ? { attrType: baseAttr.attrType, name: baseAttr.name, value: baseAttr.value, valueFormat: baseAttr.valueFormat, showPercent: baseAttr.showPercent } : null,
-        attrs: attrs.map((a: any) => ({ attrType: a.attrType, name: a.name, value: a.value, valueFormat: a.valueFormat, showPercent: a.showPercent })),
+        baseAttr,
+        attrs,
         suitName: suitNameStr,
       })
     }
@@ -120,15 +119,15 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
 
       {equipData.baseAttr && (
         <div className="text-[10px] text-archive-ivory">
-          {equipData.baseAttr.name}: {formatAttributeShow({ valueFormat: equipData.baseAttr.valueFormat, showPercent: equipData.baseAttr.showPercent }, equipData.baseAttr.value)}
+          {equipData.baseAttr.name}: {formatAttributeShow({ valueFormat: equipData.baseAttr.valueFormat, showPercent: equipData.baseAttr.showPercent }, equipData.baseAttr.attr.value)}
         </div>
       )}
 
       {equipData.attrs.length > 0 && (
         <div className="space-y-1">
           {equipData.attrs.map((attr, i) => (
-            <div key={`${attr.attrType}-${i}`} className="text-[10px] text-archive-dust">
-              {attr.name}: {formatAttributeShow({ valueFormat: attr.valueFormat, showPercent: attr.showPercent }, attr.value)}
+            <div key={`${attr.attr.attrType}-${i}`} className="text-[10px] text-archive-dust">
+              {attr.name}: {formatAttributeShow({ valueFormat: attr.valueFormat, showPercent: attr.showPercent }, attr.attr.value)}
             </div>
           ))}
         </div>

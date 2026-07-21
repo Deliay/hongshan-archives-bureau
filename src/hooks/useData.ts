@@ -4,7 +4,7 @@ import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail } from '../lib/types'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
@@ -626,7 +626,7 @@ export function useEquipDetail(id: string): UseDataResult<EquipDetail> {
     ])
     if (!equipRaw[id]) {
       const equip = adaptEquip(undefined, itemRaw, itemI18n)
-      return { equip, suit: null, suitEquips: [], enhanceMaterials: [], enhanceCost: null, recipes: [] }
+      return { equip, suit: null, suitEquips: [], enhanceMaterialGroups: [], enhanceCost: null, recipes: [] }
     }
     const equip = adaptEquip(equipRaw[id], itemRaw, itemI18n)
     const allEquips = Object.values(equipRaw).map((v: any) => adaptEquip(v, itemRaw, itemI18n))
@@ -637,9 +637,25 @@ export function useEquipDetail(id: string): UseDataResult<EquipDetail> {
     const suitEquips = (suit?.equipIds ?? []).map((eid) => equipById.get(eid)).filter((e): e is Equip => Boolean(e))
 
     const enhanceRarity = constRaw.enhanceEquipRarity ?? 5
-    const enhanceMaterials = allEquips
+    const enhanceCandidates = allEquips
       .filter((e) => e.id !== id && e.partType === equip.partType && e.rarity >= enhanceRarity)
-      .sort((a, b) => b.rarity - a.rarity || b.minWearLv - a.minWearLv)
+
+    const enhanceableAttrs = equip.attrs.filter(a => a.enhancedValues.length > 0)
+    const enhanceMaterialGroups: EnhanceMaterialGroup[] = enhanceableAttrs.map(attr => {
+      const aKey = attr.compositeAttr || String(attr.attrType)
+      const materials: EnhanceMaterialItem[] = []
+      for (const candidate of enhanceCandidates) {
+        for (const ca of candidate.attrs) {
+          const caKey = ca.compositeAttr || String(ca.attrType)
+          if (caKey === aKey) {
+            materials.push({ equip: candidate, attrValue: ca.value })
+            break
+          }
+        }
+      }
+      materials.sort((a, b) => b.attrValue - a.attrValue)
+      return { attrKey: aKey, modifierType: attr.modifierType, materials }
+    })
 
     const costEntry = enhanceCostRaw[equipRaw[id]?.domainId]
     const enhanceCost = costEntry?.consumeItemId
@@ -653,7 +669,7 @@ export function useEquipDetail(id: string): UseDataResult<EquipDetail> {
 
     recipes.sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0))
 
-    return { equip, suit, suitEquips, enhanceMaterials, enhanceCost, recipes }
+    return { equip, suit, suitEquips, enhanceMaterialGroups, enhanceCost, recipes }
   }, [id, locale])
 }
 

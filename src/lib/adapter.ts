@@ -123,6 +123,7 @@ export function adaptEquip(raw: any, itemRaw: any, i18nMap?: Record<string, stri
     value: baseRaw.attrValue ?? 0,
     enhancedValues: [],
     modifierType: baseRaw.modifierType ?? 0,
+    compositeAttr: baseRaw.compositeAttr ?? '',
   } : null
 
   const attrs: EquipAttr[] = (raw?.displayAttrModifiers ?? []).map((a: any) => ({
@@ -130,6 +131,7 @@ export function adaptEquip(raw: any, itemRaw: any, i18nMap?: Record<string, stri
     value: a.attrValue ?? 0,
     enhancedValues: a.enhancedAttrValues ?? [],
     modifierType: a.modifierType ?? 0,
+    compositeAttr: a.compositeAttr ?? '',
   }))
 
   return {

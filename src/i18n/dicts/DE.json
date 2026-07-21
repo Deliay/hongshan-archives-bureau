@@ -33,7 +33,8 @@
     "prev": "Vorherige",
     "searchWithName": "{{name}} nach Name oder ID suchen…",
     "sort": "Sortieren",
-    "unknown": "Unbekannt"
+    "unknown": "Unbekannt",
+    "unknownAttr": "Unbekanntes Attribut"
   },
   "diff": {
     "abilities": "Fähigkeiten {{count}}",
@@ -342,6 +343,7 @@
     "enhanceMaterials": "Veredelungsmaterialien",
     "enhanceMaterialsHint": "Jeder Veredelungsversuch kostet 1 Ausrüstung in Goldqualität <@gd.key>desselben Typs</>.",
     "noEnhanceMaterial": "Keine Veredelungsmaterialien verfügbar",
+    "noEnhanceMaterialForAttr": "Keine Materialien für dieses Attribut",
     "recipes": "Formeln",
     "recipeDefault": "Standardpfad",
     "recipeUnlock": "Freischalt-",
