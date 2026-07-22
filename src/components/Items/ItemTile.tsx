@@ -76,13 +76,13 @@ export default function ItemTile({
     >
       <ItemIcon itemId={itemId} className="w-full h-full" />
       {amount !== undefined && <AmountBadge amount={amount} />}
-      {badge && <div className="absolute top-0.5 left-0.5">{badge}</div>}
+      {badge != null && badge !== false && <div className="absolute top-0.5 left-0.5">{badge}</div>}
     </RarityFrame>
   )
 
   if (plain) {
     return (
-      <div className="block rounded border border-archive-border bg-archive-file overflow-hidden">
+      <div className="w-fit rounded border border-archive-border bg-archive-file overflow-hidden">
         {tileContent}
       </div>
     )
@@ -90,7 +90,7 @@ export default function ItemTile({
 
   if (href) {
     return (
-      <Link to={href} className="block rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors overflow-hidden">
+      <Link to={href} className="w-fit rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors overflow-hidden">
         {tileContent}
       </Link>
     )
@@ -103,7 +103,7 @@ export default function ItemTile({
       <button
         type="button"
         onClick={() => { if (canTip) setShowTooltip(v => !v) }}
-        className={`block rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors overflow-hidden ${canTip ? 'cursor-pointer' : 'cursor-default'}`}
+        className={`w-fit rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors overflow-hidden ${canTip ? 'cursor-pointer' : 'cursor-default'}`}
       >
         {tileContent}
       </button>
