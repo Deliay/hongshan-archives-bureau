@@ -70,7 +70,6 @@ export function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialG
                       name={item.equip.name}
                       rarity={item.equip.rarity}
                       size="lg"
-                      showTips={false}
                       badge={
                         <span className="text-[8px] font-medium px-0.5 rounded bg-archive-gold/80 text-archive-ink leading-tight whitespace-nowrap">
                           {group.attrName}+{formattedValue}

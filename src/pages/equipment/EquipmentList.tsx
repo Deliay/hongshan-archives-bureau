@@ -25,7 +25,7 @@ export default function EquipmentList() {
   const { data, loading, error } = useEquips()
   const [search, setSearch] = useState('')
   const [partFilter, setPartFilter] = useState('')
-  const [rarityFilter, setRarityFilter] = useState<number | null>(null)
+  const [rarityFilter, setRarityFilter] = useState<number | null>(5)
   const [sortField, setSortField] = useState<'rarity' | 'wearLevel'>('rarity')
   const [sortDesc, setSortDesc] = useState(true)
   const [pageSize, setPageSize] = useState(24)
