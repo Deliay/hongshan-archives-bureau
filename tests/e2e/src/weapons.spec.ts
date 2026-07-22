@@ -48,10 +48,10 @@ test.describe('武器文章 (Weapon Archive)', () => {
         const bar = el.querySelector('.rounded-full')
         if (!bar) return 0
         const bg = (bar as HTMLElement).style.backgroundColor
-        if (bg.includes('254, 90, 0') || bg.includes('fe5a00')) return 6
-        if (bg.includes('255, 187, 3') || bg.includes('FFBB03')) return 5
-        if (bg.includes('148, 82, 250') || bg.includes('9452FA')) return 4
-        if (bg.includes('38, 187, 253') || bg.includes('26BBFD')) return 3
+        if (bg.includes('239, 90, 0') || bg.includes('ef5a00') || bg.includes('254, 90, 0') || bg.includes('fe5a00')) return 6
+        if (bg.includes('255, 187, 3') || bg.includes('ffbb03') || bg.includes('FFBB03')) return 5
+        if (bg.includes('148, 82, 250') || bg.includes('9452fa') || bg.includes('9452FA')) return 4
+        if (bg.includes('38, 187, 253') || bg.includes('26bbfd') || bg.includes('26BBFD')) return 3
         return 0
       })
     })
@@ -68,10 +68,14 @@ test.describe('武器文章 (Weapon Archive)', () => {
 
     const searchInput = page.getByPlaceholder('搜索武器档案名称或 ID…')
     await searchInput.fill('赫拉芬格')
-    await page.waitForTimeout(2000)
+
+    // Wait for the skill names to appear in the weapon card (they load async from SkillPatchTable)
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return /力量提升|攻击提升|迸发/.test(body)
+    }, { timeout: 30000 })
 
     const bodyText = await page.locator('main').textContent() || ''
-    // After search, at least one card should show skill tags
     const hasSkillTags = /力量提升|攻击提升|迸发/.test(bodyText)
     expect(hasSkillTags).toBe(true)
   })

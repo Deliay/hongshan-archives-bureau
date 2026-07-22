@@ -7,7 +7,7 @@ import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
 import { resolveI18n, ASSET_BASE } from '../../lib/adapter'
-import ItemPanel from '../../components/Items/ItemPanel'
+import ItemTile from '../../components/Items/ItemTile'
 import { useI18n } from '../../i18n'
 
 const PAGE_SIZES = [24, 48, 96, 0] as const
@@ -319,7 +319,7 @@ export default function ItemList() {
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                   {groupPaged.map(item => (
-                    <ItemPanel key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
+                    <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
                   ))}
                 </div>
                 {pageSize > 0 && groupTotalPages > 1 && (
@@ -351,7 +351,7 @@ export default function ItemList() {
         <>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {paged.map((item) => (
-              <ItemPanel key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
+              <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
             ))}
           </div>
 

@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll } from '../../lib/api'
-import { ASSET_BASE } from '../../lib/adapter'
-
-function getItemIconUrl(itemId: string): string {
-  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${itemId}.png`
-}
+import { getItemIconUrl } from '../../lib/icons'
 
 interface FullBottleData {
   liquidId?: string

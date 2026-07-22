@@ -11,7 +11,7 @@ import { formatBlackboard } from '../../lib/formatText'
 import { RichTextDiff } from './RichTextDiff'
 import { useI18n, translate } from '../../i18n'
 
-const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
+import { rarityColor } from '../../data/constants'
 
 const TABLE_COLORS: Record<string, string> = {
   CharacterTable: '#5A7A6A',
@@ -51,8 +51,8 @@ function localeText(obj: unknown, locale: string): string {
 
 function StarRating({ level }: { level: number }) {
   return (
-    <span className="inline-flex gap-0.5 text-xs" style={{ color: RARITY_COLORS[level] || '#6b7280' }}>
-      {'✦'.repeat(Math.min(level, 7))}
+    <span className="inline-flex gap-0.5 text-xs" style={{ color: rarityColor(level) }}>
+      {'★'.repeat(Math.min(level, 7))}
     </span>
   )
 }

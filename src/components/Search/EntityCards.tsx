@@ -3,7 +3,7 @@ import type { SearchEntity } from '../../lib/types'
 import { ASSET_BASE } from '../../lib/adapter'
 import { Skeleton } from '../ui/Skeleton'
 import Rarity from '../Rarity'
-import ItemPanel from '../Items/ItemPanel'
+import ItemTile from '../Items/ItemTile'
 
 function getEnemyIconUrl(templateId: string): string {
   return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/monstericonbig/${templateId}.png`
@@ -23,15 +23,14 @@ interface ReferenceCardProps {
 
 function WeaponReferenceCard({ entity }: ReferenceCardProps) {
   return (
-    <ItemPanel
+    <ItemTile
       itemId={entity.id}
       name={entity.name}
       rarity={entity.rarity ?? 1}
       showTips={false}
       showName
       href={entity.route}
-      className="w-24 items-start"
-      iconClassName="w-12 h-12"
+      size="md"
     />
   )
 }
@@ -58,13 +57,13 @@ function OperatorReferenceCard({ entity }: ReferenceCardProps) {
 
 function ItemReferenceCard({ entity }: ReferenceCardProps) {
   return (
-    <ItemPanel
+    <ItemTile
       itemId={entity.id}
       name={entity.name}
       rarity={entity.rarity ?? 1}
       showTips
       showName
-      className="w-auto"
+      size="md"
     />
   )
 }

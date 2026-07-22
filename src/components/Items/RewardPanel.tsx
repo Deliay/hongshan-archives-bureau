@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import ItemPanel from './ItemPanel'
+import ItemTile from './ItemTile'
 import { useI18n } from '../../i18n'
 
 interface ItemBundle {
@@ -53,7 +53,7 @@ export default function RewardPanel({ rewardIds, rewardTable }: RewardPanelProps
             <div className="text-[10px] text-archive-ivory mb-1">{t('reward.fixed')}</div>
             <div className="flex flex-wrap gap-1.5">
               {fixed.map(item => (
-                <ItemPanel key={item.id} itemId={item.id} amount={item.count} className="min-w-[80px]" />
+                <ItemTile key={item.id} itemId={item.id} amount={item.count} className="min-w-[80px]" />
               ))}
             </div>
           </div>
@@ -66,7 +66,7 @@ export default function RewardPanel({ rewardIds, rewardTable }: RewardPanelProps
             <div className="text-[10px] text-archive-ivory mb-1">{t('reward.random')}</div>
             <div className="flex flex-wrap gap-1.5">
               {prob.map(item => (
-                <ItemPanel key={item.id} itemId={item.id} amount={item.count} className="min-w-[80px]" />
+                <ItemTile key={item.id} itemId={item.id} amount={item.count} className="min-w-[80px]" />
               ))}
             </div>
           </div>

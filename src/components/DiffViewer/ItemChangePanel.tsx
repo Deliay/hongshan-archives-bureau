@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLocale } from '../../lib/locale'
-import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
+import { resolveI18n } from '../../lib/adapter'
+import { getItemIconUrl } from '../../lib/icons'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useItemAggregatedDiff } from '../../hooks/useItemAggregatedDiff'
@@ -9,16 +10,7 @@ import type { ChangedEntry } from '../../lib/types-diff'
 import { RichText } from '../../lib/richText'
 import { RichTextDiff } from './RichTextDiff'
 import { useI18n, translate } from '../../i18n'
-
-const RARITY_COLORS: Record<number, string> = {
-  0: '#6b7280',
-  1: '#6b7280',
-  2: '#6b7280',
-  3: '#26BBFD',
-  4: '#9452FA',
-  5: '#FFBB03',
-  6: '#fe5a00',
-}
+import { rarityColor } from '../../data/constants'
 
 const TABLE_COLORS: Record<string, string> = {
   ItemTable: '#5A7A6A',
@@ -29,10 +21,6 @@ function localeText(obj: unknown, locale: string): string {
   if (!obj || typeof obj !== 'object') return ''
   const dict = obj as Record<string, string>
   return dict[locale] || dict.CN || ''
-}
-
-function getItemIconUrl(iconId: string): string {
-  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${iconId}.png`
 }
 
 function ChangeBadge({ label, color, count }: { label: string; color: string; count: number }) {
@@ -217,8 +205,8 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
               <span className="text-sm font-medium text-archive-ivory">{name}</span>
               <span className="text-[10px] text-archive-lead font-mono">{item.itemId}</span>
             </div>
-            <span className="inline-flex gap-0.5 text-xs" style={{ color: RARITY_COLORS[rarity] || '#6b7280' }}>
-              {'✦'.repeat(Math.min(rarity, 6))}
+            <span className="inline-flex gap-0.5 text-xs" style={{ color: rarityColor(rarity) }}>
+              {'★'.repeat(Math.min(rarity, 6))}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1">

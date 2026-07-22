@@ -2,12 +2,12 @@ import { MODULE_CODES } from '../../data/archiveMeta'
 import { Badge } from '../../components/ui/Badge'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useState, useMemo, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { useWeapons } from '../../hooks/useData'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
-import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
+import { resolveI18n } from '../../lib/adapter'
+import WeaponBar from '../../components/Weapons/WeaponBar'
 import { useI18n } from '../../i18n'
 
 const PAGE_SIZES = [12, 24, 48, 0] as const
@@ -15,17 +15,6 @@ const RARITIES = [3, 4, 5, 6]
 
 type SortField = '' | 'weaponType' | 'rarity'
 type GroupField = '' | 'weaponType'
-
-function getItemIconUrl(iconId: string): string {
-  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${iconId}.png`
-}
-
-const RARITY_COLORS: Record<number, string> = {
-  3: '#26BBFD',
-  4: '#9452FA',
-  5: '#FFBB03',
-  6: '#fe5a00',
-}
 
 export default function WeaponList() {
   const { locale } = useLocale()
@@ -332,9 +321,9 @@ export default function WeaponList() {
                   <h3 className="text-sm font-medium text-archive-gold">{typeName}</h3>
                   <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {groupPaged.map(w => (
-                    <WeaponCard key={w.id} weapon={w} skillNameMap={skillNameMap} />
+                    <WeaponBar key={w.id} weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
                   ))}
                 </div>
                 {pageSize > 0 && groupTotalPages > 1 && (
@@ -354,9 +343,9 @@ export default function WeaponList() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {paged.map(w => (
-              <WeaponCard key={w.id} weapon={w} skillNameMap={skillNameMap} />
+              <WeaponBar key={w.id} weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
             ))}
           </div>
 
@@ -376,34 +365,5 @@ export default function WeaponList() {
         </>
       )}
     </div>
-  )
-}
-
-function WeaponCard({ weapon, skillNameMap }: { weapon: import('../../lib/types').Weapon; skillNameMap: Record<string, string[]> }) {
-  const skillNames = weapon.skills.flatMap(sid => skillNameMap[sid] ?? [])
-  return (
-    <Link
-      to={`/archive/weapons/${weapon.id}`}
-      className="flex gap-3 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors"
-    >
-      <div className="flex flex-col items-center gap-1 shrink-0">
-        <img
-          src={getItemIconUrl(weapon.iconId)}
-          alt=""
-          className="w-12 h-12 object-cover bg-archive-border"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-        />
-        <div className="w-10 h-0.5 rounded-full" style={{ backgroundColor: RARITY_COLORS[weapon.rarity] || '#a0a0a0' }} />
-        <span className="text-[11px] text-archive-ivory text-center leading-tight line-clamp-2">{weapon.name}</span>
-        <span className="text-[9px] text-archive-lead">{weapon.type}</span>
-      </div>
-      {skillNames.length > 0 && (
-        <div className="flex flex-col gap-1 justify-center">
-          {skillNames.slice(0, 3).map((sn, i) => (
-            <span key={i} className="text-xs text-archive-dust leading-tight">{sn}</span>
-          ))}
-        </div>
-      )}
-    </Link>
   )
 }

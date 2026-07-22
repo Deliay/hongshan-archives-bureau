@@ -8,7 +8,7 @@ import { RichTextDiff } from './RichTextDiff'
 import { useI18n, translate } from '../../i18n'
 import type { FieldChange, ChangedEntry } from '../../lib/types-diff'
 
-const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
+import { rarityColor } from '../../data/constants'
 
 interface LookupMaps {
   professions: Record<number, { name: string; icon: string }>
@@ -275,7 +275,7 @@ function OpCard({ charId, entry, maps, compact }: { charId: string; entry: any; 
 }
 
 function StarRating({ level }: { level: number }) {
-  const color = RARITY_COLORS[level] || '#6b7280'
+  const color = rarityColor(level)
   return <span className="inline-flex gap-0.5 text-xs" style={{ color }}>{'★'.repeat(Math.min(level, 6))}</span>
 }
 

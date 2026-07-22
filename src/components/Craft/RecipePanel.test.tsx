@@ -9,7 +9,7 @@ vi.mock('../../i18n', () => ({
   }),
 }))
 
-vi.mock('../Items/ItemPanel', () => ({
+vi.mock('../Items/ItemTile', () => ({
   default: ({ itemId, amount, showName }: any) => (
     <div data-testid="item-panel">
       <span data-testid="item-id">{itemId}</span>

@@ -4,8 +4,11 @@ import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useState, useMemo, useEffect } from 'react'
 import { useEquips } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
-import EquipCard from '../../components/Equipment/EquipCard'
+import { useLocale } from '../../lib/locale'
+import EquipBar from '../../components/Equipment/EquipBar'
 import SuitLogo from '../../components/Equipment/SuitLogo'
+import { getAttributeShowMap } from '../../lib/attributeShow'
+import type { AttrShowMapEntry } from '../../lib/attributeShow'
 import type { Equip, Suit } from '../../lib/types'
 
 const PAGE_SIZES = [12, 24, 48, 0] as const
@@ -26,6 +29,14 @@ export default function EquipmentList() {
   const [sortDesc, setSortDesc] = useState(true)
   const [pageSize, setPageSize] = useState(24)
   const [groupPageMap, setGroupPageMap] = useState<Record<string, number>>({})
+  const { locale } = useLocale()
+  const [attrShowMap, setAttrShowMap] = useState<Record<string, AttrShowMapEntry>>({})
+
+  useEffect(() => {
+    let cancelled = false
+    getAttributeShowMap(locale).then(m => { if (!cancelled) setAttrShowMap(m) })
+    return () => { cancelled = true }
+  }, [locale])
 
   const suits = useMemo(() => {
     if (!data) return new Map<string, Suit>()
@@ -171,9 +182,9 @@ export default function EquipmentList() {
                 </h3>
                 <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {groupPaged.map(e => (
-                  <EquipCard key={e.id} equip={e} />
+                  <EquipBar key={e.id} equip={e} attrShowMap={attrShowMap} />
                 ))}
               </div>
               {pageSize > 0 && groupTotalPages > 1 && (

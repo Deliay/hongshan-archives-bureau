@@ -9,7 +9,7 @@ import { useI18n } from '../../i18n'
 import Rarity from '../../components/Rarity'
 import { ASSET_BASE } from '../../lib/adapter'
 import { RichText } from '../../lib/richText'
-import ItemPanel from '../../components/Items/ItemPanel'
+import ItemTile from '../../components/Items/ItemTile'
 import { formatBlackboard } from '../../lib/formatText'
 import type { SkillGroup, SkillPatchData } from '../../lib/types'
 
@@ -151,7 +151,7 @@ export default function OperatorDetail() {
                 {node.requiredItem.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {node.requiredItem.map((item) => (
-                      <ItemPanel key={item.id} itemId={item.id} amount={item.count} showName={false} iconClassName="w-8 h-8" className="w-16" />
+                      <ItemTile key={item.id} itemId={item.id} amount={item.count} showName={false} size="sm" />
                     ))}
                   </div>
                 )}
@@ -212,7 +212,7 @@ export default function OperatorDetail() {
                 {node.requiredItem.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {node.requiredItem.map((item) => (
-                      <ItemPanel key={item.id} itemId={item.id} amount={item.count} showName={false} iconClassName="w-8 h-8" className="w-16" />
+                      <ItemTile key={item.id} itemId={item.id} amount={item.count} showName={false} size="sm" />
                     ))}
                   </div>
                 )}
@@ -235,7 +235,7 @@ export default function OperatorDetail() {
                 {node.requiredItem.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {node.requiredItem.map((item) => (
-                      <ItemPanel key={item.id} itemId={item.id} amount={item.count} showName={false} iconClassName="w-8 h-8" className="w-16" />
+                      <ItemTile key={item.id} itemId={item.id} amount={item.count} showName={false} size="sm" />
                     ))}
                   </div>
                 )}
@@ -255,7 +255,7 @@ export default function OperatorDetail() {
                 <h4 className="text-xs text-archive-gold mb-2 tracking-wider">{t('operator.equipFit')} I</h4>
                 <div className="flex flex-wrap gap-2">
                   {wpnRecommend.weaponIds1.map((wid) => (
-                    <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
+                    <ItemTile key={wid} itemId={wid} showName={false} href={`/archive/weapons/${wid}`} size="lg" />
                   ))}
                 </div>
               </div>
@@ -265,7 +265,7 @@ export default function OperatorDetail() {
                 <h4 className="text-xs text-archive-gold mb-2 tracking-wider">{t('operator.equipFit')} II</h4>
                 <div className="flex flex-wrap gap-2">
                   {wpnRecommend.weaponIds2.map((wid) => (
-                    <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
+                    <ItemTile key={wid} itemId={wid} showName={false} href={`/archive/weapons/${wid}`} size="lg" />
                   ))}
                 </div>
               </div>
@@ -275,7 +275,7 @@ export default function OperatorDetail() {
                 <h4 className="text-xs text-archive-gold mb-2 tracking-wider">{t('operator.equipFit')} III</h4>
                 <div className="flex flex-wrap gap-2">
                   {wpnRecommend.weaponIds3.map((wid) => (
-                    <ItemPanel key={wid} itemId={wid} showName={false} iconClassName="w-10 h-10" className="w-20" />
+                    <ItemTile key={wid} itemId={wid} showName={false} href={`/archive/weapons/${wid}`} size="lg" />
                   ))}
                 </div>
               </div>
