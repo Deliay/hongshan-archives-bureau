@@ -11,6 +11,13 @@ import type { ReactNode } from 'react'
 
 export type ItemTileSize = 'sm' | 'md' | 'lg' | 'xl'
 
+const SIZE_CLASSES: Record<ItemTileSize, string> = {
+  sm: 'w-12',
+  md: 'w-16',
+  lg: 'w-20',
+  xl: 'w-24',
+}
+
 const DISABLED_TIP_ITEMS = new Set(['item_cbp_exp'])
 
 interface ItemTileProps {
@@ -29,7 +36,7 @@ interface ItemTileProps {
 
 export default function ItemTile({
   itemId,
-  size: _size = 'md',
+  size = 'md',
   name: resolvedName,
   rarity: resolvedRarity,
   amount,
@@ -38,7 +45,7 @@ export default function ItemTile({
   showTips = true,
   plain = false,
   href,
-  className: _className,
+  className,
 }: ItemTileProps) {
   const { locale } = useLocale()
   const [itemData, setItemData] = useState<any>(null)
@@ -60,11 +67,15 @@ export default function ItemTile({
 
   const name = resolvedName ?? (itemData?.name ? (i18nMap?.[String(itemData.name.id)] || itemData.name.text || itemId) : itemId)
   const rarity: number = resolvedRarity ?? itemData?.rarity ?? 1
+  const baseClass = `aspect-square ${SIZE_CLASSES[size]} overflow-hidden ${className ?? ''}`
+  const visualClass = plain ? '' : 'rounded border border-archive-border bg-archive-file'
+  const wrapperClass = `${baseClass} ${visualClass}`
 
   const tileContent = (
     <RarityFrame
       rarity={rarity}
       name={showName ? name : undefined}
+      size={size}
       className="w-full h-full"
     >
       <ItemIcon itemId={itemId} className="w-full h-full" />
@@ -75,7 +86,7 @@ export default function ItemTile({
 
   if (plain) {
     return (
-      <div className="w-full aspect-square rounded border border-archive-border bg-archive-file overflow-hidden">
+      <div className={wrapperClass}>
         {tileContent}
       </div>
     )
@@ -83,7 +94,7 @@ export default function ItemTile({
 
   if (href) {
     return (
-      <Link to={href} className="w-full aspect-square rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors overflow-hidden">
+      <Link to={href} className={`${wrapperClass} hover:border-archive-gold/40 transition-colors`}>
         {tileContent}
       </Link>
     )
@@ -96,7 +107,7 @@ export default function ItemTile({
       <button
         type="button"
         onClick={() => { if (canTip) setShowTooltip(v => !v) }}
-        className={`w-full aspect-square rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors overflow-hidden ${canTip ? 'cursor-pointer' : 'cursor-default'}`}
+        className={`${wrapperClass} hover:border-archive-gold/40 transition-colors ${canTip ? 'cursor-pointer' : 'cursor-default'}`}
       >
         {tileContent}
       </button>

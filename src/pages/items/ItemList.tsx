@@ -314,7 +314,7 @@ export default function ItemList() {
                   <h3 className="text-sm font-medium text-archive-gold">{label}</h3>
                   <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                <div className="grid justify-items-start grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                   {groupPaged.map(item => (
                     <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
                   ))}
@@ -346,7 +346,7 @@ export default function ItemList() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+          <div className="grid justify-items-start grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {paged.map((item) => (
               <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
             ))}

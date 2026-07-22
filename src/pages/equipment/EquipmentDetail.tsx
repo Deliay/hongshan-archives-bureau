@@ -61,7 +61,7 @@ export function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialG
           <div key={group.attrKey}>
             <div className="text-[10px] text-archive-gold uppercase tracking-wide mb-1">{group.attrName || t('common.unknownAttr')}</div>
             {group.materials.length > 0 ? (
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+              <div className="grid justify-items-start grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                 {group.materials.map((item) => {
                   const formattedValue = formatAttributeShow({ valueFormat: group.valueFormat, showPercent: group.showPercent }, item.attrValue)
                   return (
@@ -189,7 +189,7 @@ export default function EquipmentDetail() {
             </div>
           ))}
           {suitEquips.length > 0 && (
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
+            <div className="grid justify-items-start grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
               {suitEquips.map(e => (
                 <EquipCard key={e.id} equip={e} interactive="tooltip" />
               ))}

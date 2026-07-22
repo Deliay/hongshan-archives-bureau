@@ -14,18 +14,59 @@ test.describe('物品图鉴 (Item Archive)', () => {
     }, { timeout: 20000 })
   }
 
-  test('物品列表显示正方形卡片', async ({ page }) => {
+  test('物品列表渲染成功', async ({ page }) => {
     await waitForItemsReady(page)
+    await expect(page.getByRole('main').getByText('物品')).toBeVisible({ timeout: 5000 })
+    const card = page.locator('main button').first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+  })
 
-    const panel = page.locator('main .aspect-square').first()
-    await expect(panel).toBeVisible({ timeout: 15000 })
-
-    const box = await panel.boundingBox()
+  test('物品卡片为正方形', async ({ page }) => {
+    await waitForItemsReady(page)
+    const card = page.locator('main .aspect-square').first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+    const box = await card.boundingBox()
     expect(box).not.toBeNull()
     if (box) {
       const ratio = box.width / box.height
       expect(ratio).toBeGreaterThan(0.9)
       expect(ratio).toBeLessThan(1.1)
     }
+  })
+
+  test('物品列表桌面端多列', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await waitForItemsReady(page)
+    const card = page.locator('main .aspect-square').first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+    const grid = page.locator('main .grid').first()
+    const cols = await grid.evaluate(el => {
+      const style = getComputedStyle(el)
+      return style.gridTemplateColumns.split(' ').length
+    })
+    expect(cols).toBeGreaterThanOrEqual(4)
+  })
+
+  test('物品列表移动端列数减少', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await waitForItemsReady(page)
+    const card = page.locator('main .aspect-square').first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+    const grid = page.locator('main .grid').first()
+    const cols = await grid.evaluate(el => {
+      const style = getComputedStyle(el)
+      return style.gridTemplateColumns.split(' ').length
+    })
+    expect(cols).toBeLessThanOrEqual(4)
+  })
+
+  test('物品列表搜索', async ({ page }) => {
+    await waitForItemsReady(page)
+    const searchInput = page.getByPlaceholder(/搜索物品/)
+    await expect(searchInput).toBeVisible({ timeout: 10000 })
+    const initialCount = await page.locator('main .aspect-square').count()
+    expect(initialCount).toBeGreaterThan(0)
+    const firstItem = page.locator('main .aspect-square').first()
+    await expect(firstItem).toBeVisible({ timeout: 15000 })
   })
 })

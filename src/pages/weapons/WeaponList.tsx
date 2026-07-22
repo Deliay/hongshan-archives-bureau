@@ -318,7 +318,7 @@ export default function WeaponList() {
                   <h3 className="text-sm font-medium text-archive-gold">{typeName}</h3>
                   <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="grid justify-items-start grid-cols-2 md:grid-cols-4 gap-2">
                   {groupPaged.map(w => (
                     <WeaponBar key={w.id} weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
                   ))}
@@ -340,7 +340,7 @@ export default function WeaponList() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid justify-items-start grid-cols-2 md:grid-cols-4 gap-2">
             {paged.map(w => (
               <WeaponBar key={w.id} weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
             ))}
