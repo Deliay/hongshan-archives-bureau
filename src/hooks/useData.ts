@@ -650,7 +650,7 @@ export function useEquipDetail(id: string): UseDataResult<EquipDetail> {
       for (const candidate of enhanceCandidates) {
         for (const ca of candidate.attrs) {
           const caKey = ca.compositeAttr || String(ca.attrType)
-          if (caKey === aKey) {
+          if (caKey === aKey && ca.modifierType === attr.modifierType && ca.value >= attr.value) {
             materials.push({ equip: candidate, attrValue: ca.value })
             break
           }

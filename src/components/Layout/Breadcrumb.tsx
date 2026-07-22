@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useI18n } from '../../i18n'
-import { useOperator, useWeapon, useRaces, useFactions, useEnemies } from '../../hooks/useData'
+import { useOperator, useWeapon, useRaces, useFactions, useEnemies, useEquips } from '../../hooks/useData'
 import { Badge } from '../ui/Badge'
 
 function useListLabel(): Record<string, string> {
@@ -40,6 +40,12 @@ function EnemyName({ id }: { id: string }) {
   return <span className="text-archive-ivory">{enemy?.name || id}</span>
 }
 
+function EquipmentName({ id }: { id: string }) {
+  const { data } = useEquips()
+  const equip = data?.equips.find(e => e.id === id)
+  return <span className="text-archive-ivory">{equip?.name || id}</span>
+}
+
 function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
   const { data: op } = useOperator(id)
   const { data: wpn } = useWeapon(id)
@@ -57,6 +63,9 @@ function DetailLabel({ listKey, id }: { listKey: string; id: string }) {
   }
   if (listKey === 'enemies') {
     return <EnemyName id={id} />
+  }
+  if (listKey === 'equipment') {
+    return <EquipmentName id={id} />
   }
   return <span className="text-archive-ivory">{id}</span>
 }

@@ -12,8 +12,7 @@ import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
 import SkillReferenceCard from '../../components/skills/SkillReferenceCard'
 import RecipePanel from '../../components/Craft/RecipePanel'
-import EquipCard from '../../components/Equipment/EquipCard'
-import { EQUIPMENT_PART_KEYS } from '../../components/Equipment/PartBadge'
+import PartBadge, { EQUIPMENT_PART_KEYS } from '../../components/Equipment/PartBadge'
 import RarityStars from '../../components/RarityStars'
 import ItemTile from '../../components/Items/ItemTile'
 import SuitLogo from '../../components/Equipment/SuitLogo'
@@ -71,7 +70,6 @@ export function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialG
                       name={item.equip.name}
                       rarity={item.equip.rarity}
                       size="lg"
-                      showTips={false}
                       badge={
                         <span className="text-[8px] font-medium px-0.5 rounded bg-archive-gold/80 text-archive-ink leading-tight whitespace-nowrap">
                           {group.attrName}+{formattedValue}
@@ -189,9 +187,17 @@ export default function EquipmentDetail() {
             </div>
           ))}
           {suitEquips.length > 0 && (
-            <div className="grid items-start grid-cols-[repeat(auto-fill,4rem)] gap-2 mt-2">
+            <div className="grid items-start grid-cols-[repeat(auto-fill,5rem)] gap-2 mt-2">
               {suitEquips.map(e => (
-                <EquipCard key={e.id} equip={e} interactive="tooltip" />
+                <div key={e.id} className="flex flex-col items-center gap-1">
+                  <ItemTile
+                    itemId={e.iconId}
+                    size="lg"
+                    name={e.name}
+                    rarity={e.rarity}
+                    badge={<PartBadge partType={e.partType} />}
+                  />
+                </div>
               ))}
             </div>
           )}
