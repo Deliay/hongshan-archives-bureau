@@ -7,6 +7,7 @@ import { useI18n } from '../../i18n'
 import { useLocale } from '../../lib/locale'
 import EquipBar from '../../components/Equipment/EquipBar'
 import SuitLogo from '../../components/Equipment/SuitLogo'
+import RarityFilterSelect from '../../components/RarityFilterSelect'
 import { getAttributeShowMap } from '../../lib/attributeShow'
 import type { AttrShowMapEntry } from '../../lib/attributeShow'
 import type { Equip, Suit } from '../../lib/types'
@@ -24,7 +25,7 @@ export default function EquipmentList() {
   const { data, loading, error } = useEquips()
   const [search, setSearch] = useState('')
   const [partFilter, setPartFilter] = useState('')
-  const [rarityFilter, setRarityFilter] = useState('')
+  const [rarityFilter, setRarityFilter] = useState<number | null>(null)
   const [sortField, setSortField] = useState<'rarity' | 'wearLevel'>('rarity')
   const [sortDesc, setSortDesc] = useState(true)
   const [pageSize, setPageSize] = useState(24)
@@ -57,7 +58,7 @@ export default function EquipmentList() {
     return data.equips.filter(e => {
       if (search && !e.name.toLowerCase().includes(search.toLowerCase()) && !e.id.toLowerCase().includes(search.toLowerCase())) return false
       if (partFilter !== '' && e.partType !== Number(partFilter)) return false
-      if (rarityFilter !== '' && e.rarity !== Number(rarityFilter)) return false
+      if (rarityFilter !== null && e.rarity !== rarityFilter) return false
       return true
     })
   }, [data, search, partFilter, rarityFilter])
@@ -135,16 +136,12 @@ export default function EquipmentList() {
             ))}
           </select>
 
-          <select
+          <RarityFilterSelect
             value={rarityFilter}
-            onChange={(e) => setRarityFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
-          >
-            <option value="">{t('common.allRarity')}</option>
-            {rarities.map(r => (
-              <option key={r} value={r}>{'★'.repeat(r)}</option>
-            ))}
-          </select>
+            onChange={setRarityFilter}
+            levels={rarities}
+            allLabel={t('common.allRarity')}
+          />
 
           <select
             value={sortField}

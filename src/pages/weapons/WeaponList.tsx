@@ -8,6 +8,7 @@ import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
 import { resolveI18n } from '../../lib/adapter'
 import WeaponBar from '../../components/Weapons/WeaponBar'
+import RarityFilterSelect from '../../components/RarityFilterSelect'
 import { useI18n } from '../../i18n'
 
 const PAGE_SIZES = [12, 24, 48, 0] as const
@@ -22,7 +23,7 @@ export default function WeaponList() {
   const { data: weapons, loading, error } = useWeapons()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
-  const [rarityFilter, setRarityFilter] = useState('')
+  const [rarityFilter, setRarityFilter] = useState<number | null>(null)
   const [pageSize, setPageSize] = useState(24)
   const [page, setPage] = useState(0)
   const [sortField, setSortField] = useState<SortField>('rarity')
@@ -139,7 +140,7 @@ export default function WeaponList() {
     return weapons.filter(w => {
       if (search && !w.name.toLowerCase().includes(search.toLowerCase()) && !w.id.toLowerCase().includes(search.toLowerCase())) return false
       if (typeFilter && String(w.weaponType) !== typeFilter) return false
-      if (rarityFilter && w.rarity !== Number(rarityFilter)) return false
+      if (rarityFilter !== null && w.rarity !== rarityFilter) return false
       if (skill1Filter) {
         const sid = w.skills[0]
         const tags = sid ? skillTagMap[sid] : undefined
@@ -234,16 +235,12 @@ export default function WeaponList() {
             ))}
           </select>
 
-          <select
+          <RarityFilterSelect
             value={rarityFilter}
-            onChange={(e) => setRarityFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
-          >
-            <option value="">{t('common.allRarity')}</option>
-            {RARITIES.map(r => (
-              <option key={r} value={r}>{'★'.repeat(r)}</option>
-            ))}
-          </select>
+            onChange={setRarityFilter}
+            levels={RARITIES}
+            allLabel={t('common.allRarity')}
+          />
 
           <select
             value={skill1Filter}

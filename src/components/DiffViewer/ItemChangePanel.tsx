@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLocale } from '../../lib/locale'
 import { resolveI18n } from '../../lib/adapter'
-import { getItemIconUrl } from '../../lib/icons'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useItemAggregatedDiff } from '../../hooks/useItemAggregatedDiff'
@@ -11,6 +10,7 @@ import { RichText } from '../../lib/richText'
 import { RichTextDiff } from './RichTextDiff'
 import { useI18n, translate } from '../../i18n'
 import { rarityColor } from '../../data/constants'
+import ItemTile from '../Items/ItemTile'
 
 const TABLE_COLORS: Record<string, string> = {
   ItemTable: '#5A7A6A',
@@ -164,7 +164,6 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
     || (fallbackData?.name ? resolveI18n(fallbackData.name, itemI18n) : null)
     || item.itemId
 
-  const iconId = item.iconId ?? itemEntry?.iconId ?? fallbackData?.iconId ?? ''
   const rarity = item.rarity ?? itemEntry?.rarity ?? fallbackData?.rarity ?? 0
   const typeNum = item.type ?? itemEntry?.type ?? fallbackData?.type ?? 0
   const typeName = typeMap[typeNum] || ''
@@ -192,11 +191,8 @@ function ItemCard({ item, locale }: { item: ItemChange; locale: string }) {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-start gap-3 p-3 text-left hover:bg-[#22222C] transition-colors"
       >
-        <div className="w-12 h-12 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
-          {iconId && (
-            <img src={getItemIconUrl(iconId)} alt={name} className="w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-          )}
+        <div className="shrink-0">
+          <ItemTile itemId={item.itemId} size="sm" showName={false} showTips={false} name={name} rarity={rarity} plain />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">

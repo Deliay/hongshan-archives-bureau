@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocale } from '../../lib/locale'
 import { resolveI18n } from '../../lib/adapter'
-import { getItemIconUrl } from '../../lib/icons'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useWeaponAggregatedDiff } from '../../hooks/useWeaponAggregatedDiff'
@@ -12,6 +11,7 @@ import { formatBlackboard } from '../../lib/formatText'
 import { RichTextDiff } from './RichTextDiff'
 import { useI18n, translate } from '../../i18n'
 import { rarityColor } from '../../data/constants'
+import ItemTile from '../Items/ItemTile'
 
 const TABLE_COLORS: Record<string, string> = {
   WeaponBasicTable: '#5A7A6A',
@@ -189,7 +189,6 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
     || (fallbackItemData?.name ? resolveI18n(fallbackItemData.name, itemI18n) : null)
     || wp.weaponId
 
-  const iconId = wp.iconId ?? itemEntry?.iconId ?? fallbackItemData?.iconId ?? ''
   const rarity = wp.rarity ?? basicEntry?.rarity ?? itemEntry?.rarity ?? fallbackBasicData?.rarity ?? fallbackItemData?.rarity ?? 0
   const weaponTypeNum = wp.weaponType ?? basicEntry?.weaponType ?? fallbackBasicData?.weaponType ?? 0
   const typeName = weaponTypeMap[weaponTypeNum] || ''
@@ -217,11 +216,8 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-start gap-3 p-3 text-left hover:bg-[#22222C] transition-colors"
       >
-        <div className="w-12 h-12 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
-          {iconId && (
-            <img src={getItemIconUrl(iconId)} alt={name} className="w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-          )}
+        <div className="shrink-0">
+          <ItemTile itemId={wp.weaponId} size="sm" showName={false} showTips={false} name={name} rarity={rarity} plain />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
