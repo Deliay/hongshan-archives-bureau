@@ -9,9 +9,9 @@ vi.mock('../../i18n', () => ({
   }),
 }))
 
-vi.mock('../Items/ItemPanel', () => ({
+vi.mock('../Items/ItemTile', () => ({
   default: ({ itemId, amount, showName }: any) => (
-    <div data-testid="item-panel">
+    <div data-testid="item-tile">
       <span data-testid="item-id">{itemId}</span>
       {amount !== undefined && <span data-testid="item-amount">{amount}</span>}
       {showName && <span data-testid="item-show-name">showName</span>}
@@ -66,7 +66,7 @@ describe('RecipePanel', () => {
       ],
     })]
     render(<RecipePanel recipes={recipes} />)
-    const panels = screen.getAllByTestId('item-panel')
+    const panels = screen.getAllByTestId('item-tile')
     expect(panels).toHaveLength(2)
     expect(screen.getAllByTestId('item-id')[0].textContent).toBe('mat_001')
     expect(screen.getAllByTestId('item-amount')[0].textContent).toBe('10')
@@ -75,7 +75,7 @@ describe('RecipePanel', () => {
   it('renders gold cost when present', () => {
     const recipes = [makeRecipe({ goldId: 'gold_01', goldCount: 100 })]
     render(<RecipePanel recipes={recipes} />)
-    const panels = screen.getAllByTestId('item-panel')
+    const panels = screen.getAllByTestId('item-tile')
     expect(panels).toHaveLength(1)
     expect(screen.getByTestId('item-id').textContent).toBe('gold_01')
     expect(screen.getByTestId('item-amount').textContent).toBe('100')
@@ -84,7 +84,7 @@ describe('RecipePanel', () => {
   it('hides gold cost when goldId is empty', () => {
     const recipes = [makeRecipe({ goldId: '', goldCount: 0 })]
     render(<RecipePanel recipes={recipes} />)
-    expect(screen.queryByTestId('item-panel')).toBeNull()
+    expect(screen.queryByTestId('item-tile')).toBeNull()
   })
 
   it('shows unlock message when unlockType is non-zero', () => {

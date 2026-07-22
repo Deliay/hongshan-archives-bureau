@@ -7,7 +7,8 @@ import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useLocale } from '../../lib/locale'
 import { resolveI18n, ASSET_BASE } from '../../lib/adapter'
-import ItemPanel from '../../components/Items/ItemPanel'
+import ItemTile from '../../components/Items/ItemTile'
+import RarityFilterSelect from '../../components/RarityFilterSelect'
 import { useI18n } from '../../i18n'
 
 const PAGE_SIZES = [24, 48, 96, 0] as const
@@ -41,7 +42,7 @@ export default function ItemList() {
   const { data: items, loading, error } = useItems()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
-  const [rarityFilter, setRarityFilter] = useState('')
+  const [rarityFilter, setRarityFilter] = useState<number | null>(null)
   const [showingTypeFilter, setShowingTypeFilter] = useState('')
   const [valuableTabFilter, setValuableTabFilter] = useState('')
   const [pageSize, setPageSize] = useState(48)
@@ -146,7 +147,7 @@ export default function ItemList() {
     return items.filter(i => {
       if (search && !i.name.toLowerCase().includes(search.toLowerCase()) && !i.id.toLowerCase().includes(search.toLowerCase())) return false
       if (typeFilter && String(i.type) !== typeFilter) return false
-      if (rarityFilter && i.rarity !== Number(rarityFilter)) return false
+      if (rarityFilter !== null && i.rarity !== rarityFilter) return false
       if (showingTypeFilter && String(i.showingType) !== showingTypeFilter) return false
       if (valuableTabFilter && String(i.valuableTabType) !== valuableTabFilter) return false
       return true
@@ -232,16 +233,12 @@ export default function ItemList() {
             ))}
           </select>
 
-          <select
+          <RarityFilterSelect
             value={rarityFilter}
-            onChange={(e) => setRarityFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
-          >
-            <option value="">{t('common.allRarity')}</option>
-            {RARITIES.map(r => (
-              <option key={r} value={r}>{'★'.repeat(r)}</option>
-            ))}
-          </select>
+            onChange={setRarityFilter}
+            levels={RARITIES}
+            allLabel={t('common.allRarity')}
+          />
 
           <select
             value={showingTypeFilter}
@@ -317,9 +314,9 @@ export default function ItemList() {
                   <h3 className="text-sm font-medium text-archive-gold">{label}</h3>
                   <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                <div className="grid items-start grid-cols-[repeat(auto-fill,6rem)] gap-2">
                   {groupPaged.map(item => (
-                    <ItemPanel key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
+                    <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} size="xl" />
                   ))}
                 </div>
                 {pageSize > 0 && groupTotalPages > 1 && (
@@ -349,9 +346,9 @@ export default function ItemList() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+          <div className="grid items-start grid-cols-[repeat(auto-fill,6rem)] gap-2">
             {paged.map((item) => (
-              <ItemPanel key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} />
+              <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} size="xl" />
             ))}
           </div>
 

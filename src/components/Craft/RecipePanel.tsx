@@ -1,4 +1,4 @@
-import ItemPanel from '../Items/ItemPanel'
+import ItemTile from '../Items/ItemTile'
 import { useI18n } from '../../i18n'
 import type { RecipeEntry } from '../../lib/types'
 
@@ -25,25 +25,21 @@ export default function RecipePanel({ recipes, className }: RecipePanelProps) {
           {recipe.materials.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {recipe.materials.map((mat, i) => (
-                <ItemPanel
+                <ItemTile
                   key={`${mat.itemId}-${i}`}
                   itemId={mat.itemId}
                   amount={mat.count}
-                  showName={false}
-                  iconClassName="w-8 h-8"
-                  className="w-16"
+                  size="lg"
                 />
               ))}
             </div>
           )}
           {recipe.goldId && recipe.goldCount > 0 && (
             <div className="flex items-center gap-2 mb-2">
-              <ItemPanel
+              <ItemTile
                 itemId={recipe.goldId}
                 amount={recipe.goldCount}
-                showName={false}
-                iconClassName="w-5 h-5"
-                className="w-12"
+                size="lg"
               />
             </div>
           )}

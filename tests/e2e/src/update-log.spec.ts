@@ -66,7 +66,7 @@ test.describe('更新日志 (Update Log)', () => {
     // At minimum, some text should be displayed that's different from just the raw ID pattern
     expect(cardText.length).toBeGreaterThan('chr_0030_zhuangfy'.length + 5)
     // The card should contain resolved content (stars, profession info, etc.)
-    expect(cardText).toContain('✦')
+    expect(cardText).toContain('★')
   })
 
   test('unlockType变更展示为含义而非原始数字', async ({ page }) => {

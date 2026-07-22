@@ -21,6 +21,12 @@ export const RARITY_STARS: Record<number, number> = {
   2: 5,
 }
 
+export const RARITY_COLORS: readonly string[] = ['black', 'black', 'gray', '#26bbfd', '#9452fa', '#ffbb03', '#ef5a00']
+
+export function rarityColor(rarity: number): string {
+  return RARITY_COLORS[Math.min(Math.max(rarity, 1), 6)]
+}
+
 export const WEAPON_TYPE_KEYS: Record<number, string> = {
   1: 'LUA_WEAPON_TYPE_1',
   2: 'LUA_WEAPON_TYPE_2',
