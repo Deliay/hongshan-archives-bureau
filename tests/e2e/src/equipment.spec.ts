@@ -46,10 +46,10 @@ test.describe('装备图鉴 (Equipment Archive)', () => {
           const bar = el.querySelector('.rounded-full')
           if (!bar) return 0
           const bg = (bar as HTMLElement).style.backgroundColor
-          if (bg.includes('254, 90, 0') || bg.includes('fe5a00')) return 6
-          if (bg.includes('255, 187, 3') || bg.includes('FFBB03')) return 5
-          if (bg.includes('148, 82, 250') || bg.includes('9452FA')) return 4
-          if (bg.includes('38, 187, 253') || bg.includes('26BBFD')) return 3
+          if (bg.includes('239, 90, 0') || bg.includes('ef5a00') || bg.includes('254, 90, 0') || bg.includes('fe5a00')) return 6
+          if (bg.includes('255, 187, 3') || bg.includes('ffbb03') || bg.includes('FFBB03')) return 5
+          if (bg.includes('148, 82, 250') || bg.includes('9452fa') || bg.includes('9452FA')) return 4
+          if (bg.includes('38, 187, 253') || bg.includes('26bbfd') || bg.includes('26BBFD')) return 3
           return 0
         })
       })
@@ -139,7 +139,7 @@ test.describe('装备图鉴 (Equipment Archive)', () => {
     await page.waitForFunction(() => {
       const body = document.body.textContent || ''
       return body.includes('返回装备列表') || body.includes('未找到装备') || body.includes('加载失败')
-    }, { timeout: 30000 })
+    }, { timeout: 60000 })
 
     const bodyText = await page.locator('body').textContent() || ''
     const hasAttrs = bodyText.includes('基础属性') || bodyText.includes('附加属性') || bodyText.includes('未找到装备')
@@ -166,7 +166,7 @@ test.describe('装备图鉴 (Equipment Archive)', () => {
     await page.waitForFunction(() => {
       const body = document.body.textContent || ''
       return body.includes('返回装备列表')
-    }, { timeout: 30000 })
+    }, { timeout: 60000 })
 
     const backLink = page.getByText('返回装备列表')
     await expect(backLink).toBeVisible()

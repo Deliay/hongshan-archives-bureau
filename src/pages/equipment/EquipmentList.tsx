@@ -4,8 +4,12 @@ import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useState, useMemo, useEffect } from 'react'
 import { useEquips } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
-import EquipCard from '../../components/Equipment/EquipCard'
+import { useLocale } from '../../lib/locale'
+import EquipBar from '../../components/Equipment/EquipBar'
 import SuitLogo from '../../components/Equipment/SuitLogo'
+import RarityFilterSelect from '../../components/RarityFilterSelect'
+import { getAttributeShowMap } from '../../lib/attributeShow'
+import type { AttrShowMapEntry } from '../../lib/attributeShow'
 import type { Equip, Suit } from '../../lib/types'
 
 const PAGE_SIZES = [12, 24, 48, 0] as const
@@ -21,11 +25,19 @@ export default function EquipmentList() {
   const { data, loading, error } = useEquips()
   const [search, setSearch] = useState('')
   const [partFilter, setPartFilter] = useState('')
-  const [rarityFilter, setRarityFilter] = useState('')
+  const [rarityFilter, setRarityFilter] = useState<number | null>(null)
   const [sortField, setSortField] = useState<'rarity' | 'wearLevel'>('rarity')
   const [sortDesc, setSortDesc] = useState(true)
   const [pageSize, setPageSize] = useState(24)
   const [groupPageMap, setGroupPageMap] = useState<Record<string, number>>({})
+  const { locale } = useLocale()
+  const [attrShowMap, setAttrShowMap] = useState<Record<string, AttrShowMapEntry>>({})
+
+  useEffect(() => {
+    let cancelled = false
+    getAttributeShowMap(locale).then(m => { if (!cancelled) setAttrShowMap(m) })
+    return () => { cancelled = true }
+  }, [locale])
 
   const suits = useMemo(() => {
     if (!data) return new Map<string, Suit>()
@@ -46,7 +58,7 @@ export default function EquipmentList() {
     return data.equips.filter(e => {
       if (search && !e.name.toLowerCase().includes(search.toLowerCase()) && !e.id.toLowerCase().includes(search.toLowerCase())) return false
       if (partFilter !== '' && e.partType !== Number(partFilter)) return false
-      if (rarityFilter !== '' && e.rarity !== Number(rarityFilter)) return false
+      if (rarityFilter !== null && e.rarity !== rarityFilter) return false
       return true
     })
   }, [data, search, partFilter, rarityFilter])
@@ -124,16 +136,12 @@ export default function EquipmentList() {
             ))}
           </select>
 
-          <select
+          <RarityFilterSelect
             value={rarityFilter}
-            onChange={(e) => setRarityFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded border border-archive-border bg-archive-file text-archive-ivory focus:outline-none focus:border-archive-gold/40 transition-colors"
-          >
-            <option value="">{t('common.allRarity')}</option>
-            {rarities.map(r => (
-              <option key={r} value={r}>{'★'.repeat(r)}</option>
-            ))}
-          </select>
+            onChange={setRarityFilter}
+            levels={rarities}
+            allLabel={t('common.allRarity')}
+          />
 
           <select
             value={sortField}
@@ -171,9 +179,9 @@ export default function EquipmentList() {
                 </h3>
                 <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {groupPaged.map(e => (
-                  <EquipCard key={e.id} equip={e} />
+                  <EquipBar key={e.id} equip={e} attrShowMap={attrShowMap} />
                 ))}
               </div>
               {pageSize > 0 && groupTotalPages > 1 && (

@@ -13,7 +13,7 @@ import { useI18n, translate } from '../../i18n'
 
 const ENEMY_STARS: Record<number, number> = { 0: 1, 1: 3, 2: 6, 3: 4, 4: 5 }
 
-const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
+const ENEMY_RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
 
 const TABLE_COLORS: Record<string, string> = {
   EnemyTemplateDisplayInfoTable: '#5A7A6A',
@@ -445,8 +445,8 @@ function EnemyCard({ ep, locale }: { ep: EnemyChange; locale: string }) {
               <span className="text-sm font-medium text-archive-ivory">{name}</span>
               <span className="text-[10px] text-archive-lead font-mono">{ep.enemyId}</span>
             </div>
-            <span className="inline-flex gap-0.5 text-xs" style={{ color: RARITY_COLORS[stars] || '#6b7280' }}>
-              {'✦'.repeat(Math.min(stars, 6))}
+            <span className="inline-flex gap-0.5 text-xs" style={{ color: ENEMY_RARITY_COLORS[stars] || '#6b7280' }}>
+              {'★'.repeat(Math.min(stars, 6))}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1 flex-wrap">

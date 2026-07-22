@@ -3,37 +3,23 @@ import { Badge } from '../../components/ui/Badge'
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { useParams, Link } from 'react-router-dom'
 import { useEquipDetail } from '../../hooks/useData'
-import { ASSET_BASE } from '../../lib/adapter'
+import { getItemIconUrl } from '../../lib/icons'
 import { formatAttributeShow } from '../../lib/formatText'
 import { getAttributeShowMap, resolveAttrShow } from '../../lib/attributeShow'
 import type { AttrShowMapEntry } from '../../lib/attributeShow'
+import { rarityColor } from '../../data/constants'
 import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
 import SkillReferenceCard from '../../components/skills/SkillReferenceCard'
 import RecipePanel from '../../components/Craft/RecipePanel'
 import EquipCard from '../../components/Equipment/EquipCard'
-import ItemPanel from '../../components/Items/ItemPanel'
+import { EQUIPMENT_PART_KEYS } from '../../components/Equipment/PartBadge'
+import RarityStars from '../../components/RarityStars'
+import ItemTile from '../../components/Items/ItemTile'
 import SuitLogo from '../../components/Equipment/SuitLogo'
 import { useI18n } from '../../i18n'
 import { useState, useEffect } from 'react'
 import type { EquipAttr, EnhanceMaterialGroup } from '../../lib/types'
-
-const RARITY_COLORS: Record<number, string> = {
-  3: '#26BBFD',
-  4: '#9452FA',
-  5: '#FFBB03',
-  6: '#fe5a00',
-}
-
-const PART_NAMES: Record<number, string> = {
-  0: 'equipment.partBody',
-  1: 'equipment.partHand',
-  2: 'equipment.partEdc',
-}
-
-function getItemIconUrl(iconId: string): string {
-  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${iconId}.png`
-}
 
 function useAttrMap(locale: string) {
   const [map, setMap] = useState<Record<string, AttrShowMapEntry>>({})
@@ -126,11 +112,9 @@ export default function EquipmentDetail() {
             <Badge variant="ghost" className="font-mono">{MODULE_CODES.equipment}</Badge>
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-archive-dust">{t(PART_NAMES[equip.partType] ?? '')}</span>
+            <span className="text-sm text-archive-dust">{t(EQUIPMENT_PART_KEYS[equip.partType] ?? '')}</span>
             <span className="text-xs text-archive-lead">·</span>
-            <span className="text-sm" style={{ color: RARITY_COLORS[equip.rarity] || '#888' }}>
-              {'★'.repeat(equip.rarity)}
-            </span>
+            <RarityStars level={equip.rarity} />
             {equip.minWearLv > 0 && (
               <>
                 <span className="text-xs text-archive-lead">·</span>
@@ -138,7 +122,7 @@ export default function EquipmentDetail() {
               </>
             )}
           </div>
-          <div className="h-0.5 w-24 rounded-full mt-2" style={{ backgroundColor: RARITY_COLORS[equip.rarity] || '#a0a0a0' }} />
+          <div className="h-0.5 w-24 rounded-full mt-2" style={{ backgroundColor: rarityColor(equip.rarity) }} />
         </div>
       </div>
 
@@ -210,8 +194,8 @@ export default function EquipmentDetail() {
           <RichText text={t('equipment.enhanceMaterialsHint')} />
         </div>
         {enhanceCost && (
-          <div className="mb-2">
-            <ItemPanel itemId={enhanceCost.itemId} amount={enhanceCost.count} showName />
+          <div className="mb-2 flex items-center gap-2">
+            <ItemTile itemId={enhanceCost.itemId} amount={enhanceCost.count} size="sm" />
           </div>
         )}
         <EnhanceMaterialSection groups={enhanceMaterialGroups} t={t} />

@@ -5,7 +5,7 @@ import type { TableDiffComponentProps } from './registry'
 import type { FieldChange, ChangedEntry } from '../../lib/types-diff'
 import { useI18n, translate } from '../../i18n'
 
-const RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
+const OPERATOR_RARITY_COLORS = ['#6b7280', '#6b7280', '#6b7280', '#5A7A6A', '#9452fa', '#B89A6A', '#ef5a00']
 
 function localeText(obj: unknown, locale: string): string {
   if (!obj || typeof obj !== 'object') return String(obj ?? '')
@@ -14,10 +14,10 @@ function localeText(obj: unknown, locale: string): string {
 }
 
 function StarRating({ level, locale }: { level: number; locale: string }) {
-  const color = RARITY_COLORS[level] || '#6b7280'
+  const color = OPERATOR_RARITY_COLORS[level] || '#6b7280'
   return (
     <span className="inline-flex gap-0.5" title={translate(locale, 'operator.rarityLevel', { level })} style={{ color }}>
-      {'✦'.repeat(level)}
+      {'★'.repeat(level)}
     </span>
   )
 }

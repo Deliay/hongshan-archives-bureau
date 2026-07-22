@@ -3,21 +3,12 @@ import { Badge } from '../../components/ui/Badge'
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { useParams, Link } from 'react-router-dom'
 import { useWeapon } from '../../hooks/useData'
-import { ASSET_BASE } from '../../lib/adapter'
+import { getItemIconUrl } from '../../lib/icons'
+import { rarityColor } from '../../data/constants'
+import RarityStars from '../../components/RarityStars'
 import { RichText } from '../../lib/richText'
 import WeaponSkillPanel from '../../components/Weapons/WeaponSkillPanel'
 import { useI18n } from '../../i18n'
-
-const RARITY_COLORS: Record<number, string> = {
-  3: '#26BBFD',
-  4: '#9452FA',
-  5: '#FFBB03',
-  6: '#fe5a00',
-}
-
-function getItemIconUrl(iconId: string): string {
-  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${iconId}.png`
-}
 
 export default function WeaponDetail() {
   const { id } = useParams<{ id: string }>()
@@ -49,11 +40,9 @@ export default function WeaponDetail() {
           <div className="flex items-center gap-2 mt-1">
             <span className="text-sm text-archive-dust">{weapon.type}</span>
             <span className="text-xs text-archive-lead">·</span>
-            <span className="text-sm" style={{ color: RARITY_COLORS[weapon.rarity] || '#888' }}>
-              {'★'.repeat(weapon.rarity)}
-            </span>
+            <RarityStars level={weapon.rarity} />
           </div>
-          <div className="h-0.5 w-24 rounded-full mt-2" style={{ backgroundColor: RARITY_COLORS[weapon.rarity] || '#a0a0a0' }} />
+          <div className="h-0.5 w-24 rounded-full mt-2" style={{ backgroundColor: rarityColor(weapon.rarity) }} />
         </div>
       </div>
 

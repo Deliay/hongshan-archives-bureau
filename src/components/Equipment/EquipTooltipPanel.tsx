@@ -6,6 +6,8 @@ import { useLocale } from '../../lib/locale'
 import { resolveI18n } from '../../lib/adapter'
 import { formatAttributeShow } from '../../lib/formatText'
 import { getAttributeShowMap, resolveAttrShow } from '../../lib/attributeShow'
+import { rarityColor } from '../../data/constants'
+import { EQUIPMENT_PART_KEYS } from './PartBadge'
 import { useI18n } from '../../i18n'
 import type { EquipAttr } from '../../lib/types'
 
@@ -22,19 +24,6 @@ interface TooltipEquip {
   baseAttr: TooltipEquipAttr | null
   attrs: TooltipEquipAttr[]
   suitName: string
-}
-
-const RARITY_COLORS: Record<number, string> = {
-  3: '#26BBFD',
-  4: '#9452FA',
-  5: '#FFBB03',
-  6: '#fe5a00',
-}
-
-const PART_NAMES: Record<number, string> = {
-  0: 'equipment.partBody',
-  1: 'equipment.partHand',
-  2: 'equipment.partEdc',
 }
 
 interface EquipTooltipPanelProps {
@@ -112,8 +101,8 @@ export default function EquipTooltipPanel({ itemId, onNavigate }: EquipTooltipPa
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-archive-lead">{t(PART_NAMES[equipData.partType] ?? '')}</span>
-        <span className="text-xs" style={{ color: RARITY_COLORS[equipData.rarity] || '#888' }}>
+        <span className="text-[10px] text-archive-lead">{t(EQUIPMENT_PART_KEYS[equipData.partType] ?? '')}</span>
+        <span className="text-xs" style={{ color: rarityColor(equipData.rarity) }}>
           {'★'.repeat(equipData.rarity)}
         </span>
       </div>

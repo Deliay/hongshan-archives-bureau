@@ -6,19 +6,10 @@ import { useI18n } from '../../i18n'
 import { RichText } from '../../lib/richText'
 import ItemIcon from './ItemIcon'
 import { resolveI18n, ASSET_BASE } from '../../lib/adapter'
-import { ITEM_TYPE } from '../../data/constants'
+import { ITEM_TYPE, rarityColor } from '../../data/constants'
 import WeaponSkillPanel from '../Weapons/WeaponSkillPanel'
 import EquipTooltipPanel from '../Equipment/EquipTooltipPanel'
 import RewardPanel from './RewardPanel'
-
-const RARITY_COLORS: Record<number, string> = {
-  1: '#a0a0a0',
-  2: '#dcdc00',
-  3: '#26BBFD',
-  4: '#9452FA',
-  5: '#FFBB03',
-  6: '#fe5a00',
-}
 
 interface ItemTooltipOverlayProps {
   itemId: string
@@ -122,7 +113,7 @@ export default function ItemTooltipOverlay({ itemId, onClose }: ItemTooltipOverl
             <ItemIcon itemId={itemId} className="w-10 h-10" />
             <div>
               <h3 className="text-sm font-medium text-archive-ivory">{name}</h3>
-              <div className="h-0.5 w-full rounded-full mt-1" style={{ backgroundColor: RARITY_COLORS[rarity] || '#a0a0a0', width: `${rarity * 12}px` }} />
+              <div className="h-0.5 w-full rounded-full mt-1" style={{ backgroundColor: rarityColor(rarity), width: `${rarity * 12}px` }} />
             </div>
           </div>
           <button

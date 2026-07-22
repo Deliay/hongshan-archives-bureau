@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocale } from '../../lib/locale'
-import { ASSET_BASE, resolveI18n } from '../../lib/adapter'
+import { resolveI18n } from '../../lib/adapter'
 import { getCachedData } from '../../lib/cache'
 import { fetchTableAll, fetchTableDictAll } from '../../lib/api'
 import { useWeaponAggregatedDiff } from '../../hooks/useWeaponAggregatedDiff'
@@ -10,13 +10,8 @@ import { RichText } from '../../lib/richText'
 import { formatBlackboard } from '../../lib/formatText'
 import { RichTextDiff } from './RichTextDiff'
 import { useI18n, translate } from '../../i18n'
-
-const RARITY_COLORS: Record<number, string> = {
-  3: '#26BBFD',
-  4: '#9452FA',
-  5: '#FFBB03',
-  6: '#fe5a00',
-}
+import { rarityColor } from '../../data/constants'
+import ItemTile from '../Items/ItemTile'
 
 const TABLE_COLORS: Record<string, string> = {
   WeaponBasicTable: '#5A7A6A',
@@ -24,15 +19,10 @@ const TABLE_COLORS: Record<string, string> = {
   SkillPatchTable: '#B89A6A',
 }
 
-
 function localeText(obj: unknown, locale: string): string {
   if (!obj || typeof obj !== 'object') return ''
   const dict = obj as Record<string, string>
   return dict[locale] || dict.CN || ''
-}
-
-function getItemIconUrl(iconId: string): string {
-  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${iconId}.png`
 }
 
 function ChangeBadge({ label, color, count }: { label: string; color: string; count: number }) {
@@ -199,7 +189,6 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
     || (fallbackItemData?.name ? resolveI18n(fallbackItemData.name, itemI18n) : null)
     || wp.weaponId
 
-  const iconId = wp.iconId ?? itemEntry?.iconId ?? fallbackItemData?.iconId ?? ''
   const rarity = wp.rarity ?? basicEntry?.rarity ?? itemEntry?.rarity ?? fallbackBasicData?.rarity ?? fallbackItemData?.rarity ?? 0
   const weaponTypeNum = wp.weaponType ?? basicEntry?.weaponType ?? fallbackBasicData?.weaponType ?? 0
   const typeName = weaponTypeMap[weaponTypeNum] || ''
@@ -227,11 +216,8 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-start gap-3 p-3 text-left hover:bg-[#22222C] transition-colors"
       >
-        <div className="w-12 h-12 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
-          {iconId && (
-            <img src={getItemIconUrl(iconId)} alt={name} className="w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-          )}
+        <div className="shrink-0">
+          <ItemTile itemId={wp.weaponId} size="sm" showName={false} showTips={false} name={name} rarity={rarity} plain />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
@@ -240,8 +226,8 @@ function WeaponCard({ wp, locale }: { wp: WeaponChange; locale: string }) {
               <span className="text-sm font-medium text-archive-ivory">{name}</span>
               <span className="text-[10px] text-archive-lead font-mono">{wp.weaponId}</span>
             </div>
-            <span className="inline-flex gap-0.5 text-xs" style={{ color: RARITY_COLORS[rarity] || '#6b7280' }}>
-              {'✦'.repeat(Math.min(rarity, 6))}
+            <span className="inline-flex gap-0.5 text-xs" style={{ color: rarityColor(rarity) }}>
+              {'★'.repeat(Math.min(rarity, 6))}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1">
