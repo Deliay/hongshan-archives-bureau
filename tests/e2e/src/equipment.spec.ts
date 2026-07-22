@@ -144,7 +144,7 @@ test.describe('装备图鉴 (Equipment Archive)', () => {
     }, { timeout: 30000 })
     const bodyText = await page.locator('body').textContent() || ''
     if (bodyText.includes('精煅')) {
-      const badge = page.locator('.absolute.top-0\\.5.left-0\\.5').first()
+      const badge = page.locator('.absolute.top-0.left-0').first()
       const badgeExists = await badge.count()
       if (badgeExists > 0) {
         await expect(badge).toBeVisible()

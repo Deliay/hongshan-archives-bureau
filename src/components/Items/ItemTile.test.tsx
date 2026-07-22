@@ -118,7 +118,7 @@ describe('ItemTile', () => {
 
   it('does not render badge when badge is undefined', () => {
     const { container } = render(<ItemTile itemId="test" showTips={false} />)
-    const absDivs = container.querySelectorAll('.absolute.top-0\\.5')
+    const absDivs = container.querySelectorAll('.absolute.top-0')
     expect(absDivs.length).toBe(0)
   })
 

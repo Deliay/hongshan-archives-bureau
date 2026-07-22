@@ -29,8 +29,7 @@ export default function RecipePanel({ recipes, className }: RecipePanelProps) {
                   key={`${mat.itemId}-${i}`}
                   itemId={mat.itemId}
                   amount={mat.count}
-                  showName={false}
-                  size="sm"
+                  size="lg"
                 />
               ))}
             </div>
@@ -40,8 +39,7 @@ export default function RecipePanel({ recipes, className }: RecipePanelProps) {
               <ItemTile
                 itemId={recipe.goldId}
                 amount={recipe.goldCount}
-                showName={false}
-                size="sm"
+                size="lg"
               />
             </div>
           )}

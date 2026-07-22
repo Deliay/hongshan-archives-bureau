@@ -61,7 +61,7 @@ export function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialG
           <div key={group.attrKey}>
             <div className="text-[10px] text-archive-gold uppercase tracking-wide mb-1">{group.attrName || t('common.unknownAttr')}</div>
             {group.materials.length > 0 ? (
-              <div className="grid justify-items-start grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+              <div className="grid items-start grid-cols-[repeat(auto-fill,5rem)] gap-2">
                 {group.materials.map((item) => {
                   const formattedValue = formatAttributeShow({ valueFormat: group.valueFormat, showPercent: group.showPercent }, item.attrValue)
                   return (
@@ -70,7 +70,7 @@ export function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialG
                       itemId={item.equip.id}
                       name={item.equip.name}
                       rarity={item.equip.rarity}
-                      size="sm"
+                      size="lg"
                       showTips={false}
                       badge={
                         <span className="text-[8px] font-medium px-0.5 rounded bg-archive-gold/80 text-archive-ink leading-tight whitespace-nowrap">
@@ -189,7 +189,7 @@ export default function EquipmentDetail() {
             </div>
           ))}
           {suitEquips.length > 0 && (
-            <div className="grid justify-items-start grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
+            <div className="grid items-start grid-cols-[repeat(auto-fill,4rem)] gap-2 mt-2">
               {suitEquips.map(e => (
                 <EquipCard key={e.id} equip={e} interactive="tooltip" />
               ))}
@@ -205,7 +205,7 @@ export default function EquipmentDetail() {
         </div>
         {enhanceCost && (
           <div className="mb-2 flex items-center gap-2">
-            <ItemTile itemId={enhanceCost.itemId} amount={enhanceCost.count} size="sm" />
+            <ItemTile itemId={enhanceCost.itemId} amount={enhanceCost.count} size="lg" />
           </div>
         )}
         <EnhanceMaterialSection groups={enhanceMaterialGroups} t={t} />

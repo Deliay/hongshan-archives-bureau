@@ -80,7 +80,7 @@ export default function ItemTile({
     >
       <ItemIcon itemId={itemId} className="w-full h-full" />
       {amount !== undefined && <AmountBadge amount={amount} />}
-      {badge != null && badge !== false && <div className="absolute top-0.5 left-0.5">{badge}</div>}
+      {badge != null && badge !== false && <div className="absolute top-0 left-0 leading-[0.5]">{badge}</div>}
     </RarityFrame>
   )
 

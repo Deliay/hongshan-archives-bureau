@@ -3,10 +3,10 @@ import { rarityColor } from '../data/constants'
 type TileSize = 'sm' | 'md' | 'lg' | 'xl'
 
 const TEXT_CLASSES: Record<TileSize, string> = {
-  sm: 'text-[7px]',
-  md: 'text-[10px]',
-  lg: 'text-xs',
-  xl: 'text-sm',
+  sm: 'text-[6px]',
+  md: 'text-[9px]',
+  lg: 'text-[11px]',
+  xl: 'text-xs',
 }
 
 interface RarityFrameProps {
