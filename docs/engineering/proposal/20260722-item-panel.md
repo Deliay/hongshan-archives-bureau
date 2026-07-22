@@ -1,5 +1,5 @@
 ---
-description: 物品组件规范化（ItemPanel）技术实现方案：统一物品组件体系、收敛稀有度与图标常量、全场景改造
+description: 物品组件规范化（ItemPanel）技术实现方案：通用渐变框架组件、组合式物品组件体系、全场景改造
 type: Fleeting
 ---
 
@@ -7,7 +7,7 @@ type: Fleeting
 
 **功能名称**: 物品组件规范化
 **关联 PRD**: [[20260722-item-panel|物品组件规范化（ItemPanel）]]
-**技术提案版本**: v1.0
+**技术提案版本**: v1.1
 **创建日期**: 2026-07-22
 **作者**: 前端工程
 **feat-branch**: `feat/item-panel`
@@ -19,26 +19,28 @@ type: Fleeting
 物品展示遍布全站，但实现各自为政，主要问题：
 
 - **常量重复**：`getItemIconUrl` 重复定义 7 处（ItemIcon、EquipCard、EquipmentDetail、WeaponList、WeaponDetail、ItemChangePanel、WeaponChangePanel）；`RARITY_COLORS` 重复定义 12 处，且存在两套不一致的色值（物品侧 2 星 `#dcdc00` vs `Rarity.tsx` 2 星 `#8B8982`；6 星 `#fe5a00` vs `#ef5a00`）。
-- **符号混用**：稀有度星级 `★`（WeaponDetail、EquipmentDetail）与 `✦`（DiffViewer 变更面板）并存。
+- **符号混用**：稀有度星级 `★`（WeaponDetail、EquipmentDetail）与 `✦`（DiffViewer 变更面板）并存；稀有度筛选下拉使用纯数字。
 - **未接入组件体系**：武器列表卡片、武器详情头部、装备卡片（EquipCard）、装备详情头部、Diff 变更面板均手写 `<img>` + 稀有度色条，未复用 `components/Items/` 下的 ItemPanel / ItemIcon。
-- **设计语言缺失**：现有 ItemPanel 不是正方形（图标 + 下方名称纵向堆叠、宽度由场景自由传入 `className`/`iconClassName`），不支持标准化的外挂信息位置，场景各自用 `className` 硬调尺寸。
+- **设计语言缺失**：现有 ItemPanel 不是正方形，稀有度色条、数量、名称纵向堆叠，场景靠 `className`/`iconClassName` 硬调尺寸，没有统一的信息呈现规则。
 
 ### 1.2 目标
 
-- 建立统一的物品组件体系：正方形 `ItemPanel`（基础单元）+ `ItemBar`（左方块右属性长条）。
-- 外挂信息槽位化：数量角标、名称、类型标签、星级按场景挂载。
-- 收敛常量：`getItemIconUrl` 与 `RARITY_COLORS` 全站单一定义。
-- 全场景改造：武器、装备、干员材料、搜索、宝箱、Diff 变更面板统一接入。
+- 抽出与物品无关的**通用渐变框架组件**：底部稀有度色条 + 色条向名称的渐变托底 + 底部居中名称，不限制高宽，供物品组件与后续干员组件重构共用。
+- 以**组合方式**建立物品组件体系：基础件（图标、角标、星级）+ 通用框架，按场景组合封装场景组件，而不是一个组件靠大量 props 适配所有场景。
+- 物品组件对外为正方形。
+- 收敛常量：`getItemIconUrl` 与 `RARITY_COLORS` 全站单一定义，星级符号统一 `★`。
+- 稀有度筛选下拉使用星级展示，选项按稀有度颜色着色。
+- 武器图鉴与装备图鉴列表条目为「左物品组件 + 右属性」长条。
 
 ### 1.3 范围
 
 **做**:
 
-- 重设计 `ItemPanel` 为正方形物品方块，提供尺寸档位与信息槽位。
-- 新增 `ItemBar` 长条组件，改造武器图鉴与装备图鉴列表条目。
+- 新增通用组件 `RarityFrame`（底部色条 + 渐变托底 + 可选名称，不限高宽）。
+- 新增物品基础件与场景组合组件（`AmountBadge`、`ItemTile`、`ItemBar`、`WeaponBar`、`EquipBar` 等）。
 - 收敛 `getItemIconUrl`、`RARITY_COLORS` 到公共模块，统一星级符号为 `★`。
-- 改造武器列表/详情头部、装备卡片/详情头部、Diff 物品与武器变更面板等手写 `<img>` 场景。
-- 迁移现有 ItemPanel 调用方（干员材料、搜索卡片、RewardPanel、强化材料费用）到新 API。
+- 稀有度筛选下拉星级化（道具材料、武器图鉴、装备图鉴）。
+- 全场景改造：武器、装备、干员材料、搜索、宝箱、Diff 变更面板统一接入。
 
 **不做**:
 
@@ -46,32 +48,44 @@ type: Fleeting
 - 不改动 `ItemIcon` 的图标解析逻辑（ItemTable 异步解析、液体叠加层）。
 - 不实现物品独立卷宗页，物品详情继续由 ItemTooltip 浮层承载。
 - 不改造工厂系统（占位模块）。
+- 干员组件重构不在本期，仅提供其后续可复用的 `RarityFrame`。
 - 不改动非物品图标（干员头像、敌人、技能/天赋图标等）。
 
 ## 2. 技术架构
 
-### 2.1 模块划分
+### 2.1 组合式组件体系
 
 ```mermaid
 flowchart TD
-    C[src/data/constants.ts<br/>RARITY_COLORS 单一定义] --> P
+    C[src/data/constants.ts<br/>RARITY_COLORS 单一定义] --> F
+    C --> ST
     U[src/lib/icons.ts<br/>getItemIconUrl 单一定义] --> I
-    I[ItemIcon<br/>纯方形图标] --> P[ItemPanel<br/>正方形物品方块 + 信息槽位]
-    P --> B[ItemBar<br/>左方块 + 右属性长条]
-    P --> S1[道具材料/干员材料/宝箱/搜索]
-    B --> S2[武器图鉴/装备图鉴列表]
-    P --> S3[详情页头部/Diff 变更面板]
-    P --> T[ItemTooltip<br/>点击提示浮层]
+    F[RarityFrame 通用框架<br/>底部色条 + 渐变 + 可选名称<br/>不限高宽] --> T[ItemTile<br/>正方形物品方块]
+    I[ItemIcon<br/>纯图标] --> T
+    AB[AmountBadge<br/>数量角标] --> T
+    ST[RarityStars<br/>星级着色展示] --> SC
+    T --> B[ItemBar<br/>左方块 + 右属性区]
+    B --> WB[WeaponBar<br/>武器场景组合]
+    B --> EB[EquipBar<br/>装备场景组合]
+    T --> MT[场景组合<br/>材料/宝箱/搜索/Diff]
+    F -.后续复用.-> OP[干员组件重构<br/>本期不实现]
 ```
+
+设计原则：**组合优于配置**。基础件只提供单一能力，场景组件通过组合基础件封装，场景特有信息（武器技能、装备属性、变更标识）留在场景组件内，不下沉到基础件。
 
 | 模块 | 职责 | 关键技术点 |
 |------|------|-----------|
 | `src/data/constants.ts` | 新增 `RARITY_COLORS` 单一定义 | 按 common-rules 色值：`['black','black','gray','#26bbfd','#9452fa','#ffbb03','#ef5a00']`，按稀有度索引 |
 | `src/lib/icons.ts` | 新增 `getItemIconUrl(iconId)` 单一定义 | 复用 `ASSET_BASE`，itemicon 目录拼接 |
-| `src/components/Items/ItemIcon.tsx` | 纯方形图标（现状保留） | 删除本地 `getItemIconUrl`，改从 `lib/icons` 导入 |
-| `src/components/Items/ItemPanel.tsx` | 正方形物品方块 | 重设计：尺寸档位 + 槽位 props |
-| `src/components/Items/ItemBar.tsx` | 长条组件（新增） | 左 ItemPanel + 右属性区（children） |
-| `src/components/Rarity.tsx` | 星级展示 | 改用统一 `RARITY_COLORS`，消除第二套色值 |
+| `src/components/RarityFrame.tsx` | 通用渐变框架（新增） | 不限高宽；色条满宽置底；名称可选，有名称才有渐变 |
+| `src/components/RarityStars.tsx` | 星级着色展示 | 由 `Rarity.tsx` 迁移/重命名，色值引用统一定义；符号统一 `★` |
+| `src/components/RarityFilterSelect.tsx` | 稀有度筛选下拉（新增） | 选项展示着色星级 |
+| `src/components/Items/ItemIcon.tsx` | 纯图标（现状保留） | 删除本地 `getItemIconUrl`，改从 `lib/icons` 导入 |
+| `src/components/Items/AmountBadge.tsx` | 数量角标（新增） | 绝对定位徽章，k 缩写 |
+| `src/components/Items/ItemTile.tsx` | 正方形物品方块（新增，取代 ItemPanel） | RarityFrame + ItemIcon + 可选 AmountBadge；tooltip/href 交互 |
+| `src/components/Items/ItemBar.tsx` | 长条外壳（新增） | 左 ItemTile + 右属性区（children） |
+| `src/components/Weapons/WeaponBar.tsx` | 武器场景组合（新增） | ItemBar + 武器名称/星级/类型/技能名 |
+| `src/components/Equipment/EquipBar.tsx` | 装备场景组合（新增） | ItemBar + 装备名称/星级/部位/套装/属性摘要 |
 
 ### 2.2 技术栈
 
@@ -114,84 +128,168 @@ export function getItemIconUrl(iconId: string): string {
 
 ## 4. 技术实现方案
 
-### 4.1 ItemPanel 重设计（正方形 + 槽位）
+### 4.1 RarityFrame（通用渐变框架）
 
-对外为正方形方块：图标区固定 `aspect-square w-full`，稀有度色条与名称作为方块的标准组成部分与可选槽位。
+与物品无关的通用展示框架，scope 严格限定为：
 
-```ts
-export type ItemPanelSize = 'sm' | 'md' | 'lg' | 'xl'
-// sm: w-12 (48px)  干员材料等密集网格
-// md: w-16 (64px)  默认档位，道具材料/宝箱/搜索
-// lg: w-20 (80px)  详情页头部、推荐武器
-// xl: w-24 (96px)  ItemBar 左侧方块
+- 稀有度色条位于**最底部**，**占满容器宽度**。
+- 传入名称时：从色条向上做「稀有度颜色 → 透明」的渐变托底，名称**底部居中**叠加在内容之上。
+- 不传名称时：不显示渐变，仅保留底部色条。
+- **不限制高宽**：容器尺寸完全由调用方通过 `className` 决定，框架只负责叠加层。
 
-interface ItemPanelProps {
+```tsx
+interface RarityFrameProps {
+  rarity: number
+  name?: string
+  children: ReactNode   // 图标、头像等内容
+  className?: string    // 高宽由调用方决定
+}
+```
+
+结构：
+
+```tsx
+<div className={`relative overflow-hidden ${className ?? ''}`}>
+  {children}
+  {name && (
+    <>
+      <div
+        className="absolute inset-x-0 bottom-0 h-2/3 pointer-events-none"
+        style={{ background: `linear-gradient(to top, ${rarityColor(rarity)}59, transparent)` }}
+      />
+      <span className="absolute inset-x-0 bottom-0.5 text-center text-[10px] leading-tight text-archive-ivory line-clamp-2 px-0.5">
+        {name}
+      </span>
+    </>
+  )}
+  <div
+    className="absolute inset-x-0 bottom-0 h-0.5"
+    style={{ backgroundColor: rarityColor(rarity) }}
+  />
+</div>
+```
+
+- 渐变透明度（示例 `59` 即 35%）在实现时按视觉走查微调，确保名称可读且不过度遮挡图标。
+- 后续干员组件重构直接复用：`RarityFrame` 包裹干员头像即可，无需改动本组件。
+
+### 4.2 物品基础件
+
+**`AmountBadge`** — 数量角标：
+
+```tsx
+<span className="absolute top-0.5 right-0.5 rounded bg-archive-ink/80 px-0.5 text-[9px] font-mono text-archive-ivory">
+  ×{toCountString(amount)}
+</span>
+```
+
+- `toCountString`（>10000 缩写为 `x.xk`）迁移自现有 ItemPanel，放入 `src/lib/formatText.ts` 或组件内私有。
+
+**`ItemTile`** — 正方形物品方块（取代现有 ItemPanel）：
+
+```tsx
+interface ItemTileProps {
   itemId: string
-  size?: ItemPanelSize          // 默认 md，取代场景自定义 iconClassName
-  name?: string                 // 允许调用方覆盖（现状保留）
-  rarity?: number               // 允许调用方覆盖（现状保留）
-  amount?: number               // 数量角标（右上角叠加 ×N，>10000 缩写 k）
-  showName?: boolean            // 名称槽位，默认 true
-  tag?: string                  // 类型标签槽位（名称下方弱提示小字）
-  showStars?: boolean           // 稀有度星级槽位（替代色条，用于详情头部）
-  showTips?: boolean            // 点击弹 ItemTooltip，默认 true
-  href?: string                 // 配置后渲染为 Link，点击跳转
+  size?: ItemTileSize    // sm: w-12 / md: w-16 / lg: w-20 / xl: w-24，默认 md
+  name?: string          // 覆盖名称解析（沿用现有 ItemTable 解析逻辑）
+  rarity?: number        // 覆盖稀有度解析
+  amount?: number        // 传入时组合 AmountBadge
+  showName?: boolean     // 默认 true；false 时 RarityFrame 不传 name（无渐变）
+  showTips?: boolean     // 点击弹 ItemTooltip，默认 true
+  href?: string          // 配置后渲染为 Link
   className?: string
 }
 ```
 
-关键实现点：
+- 实现为 `RarityFrame`（`aspect-square` + size 档位宽度）包裹 `ItemIcon`，按需叠加 `AmountBadge`。
+- 交互：`href` → `<Link>`；否则 `<button>` 点击切换 `ItemTooltipOverlay`（保留 `DISABLED_TIP_ITEMS` 黑名单）。禁止 Link 嵌套（frontend-spec 交互规范）。
+- 现有 ItemPanel 的名称/稀有度异步解析逻辑（ItemTable + 词典缓存）迁移到 ItemTile。
 
-- **正方形约束**：组件根宽度由 `size` 档位唯一决定（`w-12/16/20/24`），图标 `aspect-square`；名称槽位开启时名称位于方块下方、不撑开宽度（`w-full line-clamp-2`）。调用方不再传入 `iconClassName` 调尺寸。
-- **数量角标**：由现在名称上方的独立文本改为 `absolute top-0.5 right-0.5` 叠加在图标右上角的深色底徽章（`bg-archive-ink/80 rounded px-0.5`），不占文档流。
-- **名称槽位**：`showName=false` 时不渲染，无占位。
-- **类型标签槽位**：`tag` 传入时渲染 `text-[9px] text-archive-lead`，用于武器类型、装备部位、物品分类。
-- **星级槽位**：`showStars=true` 时用 `★` × rarity（统一色值着色）替代色条，服务详情页头部场景。
-- **交互**：`href` → `<Link>`；否则 `<button>` 点击切换 `ItemTooltipOverlay`（保留 `DISABLED_TIP_ITEMS` 黑名单）。禁止 Link 嵌套（见 frontend-spec 交互规范）。
+**`ItemBar`** — 长条外壳：
 
-### 4.2 ItemBar（新增长条组件）
-
-```ts
+```tsx
 interface ItemBarProps {
   itemId: string
-  href: string                  // 长条整体跳转目标（武器/装备卷宗）
-  name?: string
-  rarity?: number
-  size?: ItemPanelSize          // 左侧方块尺寸，默认 lg
-  children: ReactNode           // 右侧属性区，由场景组装
+  href: string            // 长条整体跳转目标
+  size?: ItemTileSize     // 左侧方块尺寸，默认 lg；窄屏降 md
+  children: ReactNode     // 右侧属性区，由场景组件组装
 }
 ```
 
-- 布局：`flex items-center gap-3 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40`，与全站卡片语言一致。
-- 左侧为 `ItemPanel size="lg" showName={false}`；右侧属性区 `flex-1 min-w-0`，内容（名称、稀有度星、类型/部位、技能名、属性摘要）由调用方以现有文本样式组装。
-- 响应式：窄屏（< sm）左侧方块降为 `md`，属性区允许换行截断。
-- ItemBar 只提供外壳与方块，不感知武器/装备数据类型，保证通用性（工厂系统后续可复用）。
+- 布局：`flex items-center gap-3 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40`，内部 `<ItemTile showName={false}>` + `flex-1 min-w-0` 属性区。
+- 只提供外壳与方块，不感知任何领域数据。
 
-### 4.3 场景改造清单
+### 4.3 场景组合组件
+
+场景特有信息不进入基础件，由各场景组件组合封装：
+
+**`WeaponBar`**（`src/components/Weapons/WeaponBar.tsx`）：
+
+```tsx
+<ItemBar itemId={weapon.id} href={`/archive/weapons/${weapon.id}`}>
+  <div>名称</div>
+  <div><RarityStars rarity /> · 武器类型</div>
+  <div>技能名称（最多 3 条）</div>
+</ItemBar>
+```
+
+**`EquipBar`**（`src/components/Equipment/EquipBar.tsx`）：
+
+```tsx
+<ItemBar itemId={equip.id} href={`/archive/equipment/${equip.id}`}>
+  <div>名称</div>
+  <div><RarityStars rarity /> · 部位 · 套装名</div>
+  <div>核心属性摘要（attributeShow 解析）</div>
+</ItemBar>
+```
+
+**材料/宝箱/搜索/Diff 场景** 直接组合 `ItemTile`（+ `amount` / `showName` / `href` / `showTips`），无需额外封装组件；若干员材料等场景出现重复组合模式，再在对应领域目录内抽取。
+
+**详情页头部**（武器/装备卷宗）：组合 `RarityFrame` + `ItemIcon` + `RarityStars`，头部布局（名称、类型、徽章）保留页面自有结构。
+
+### 4.4 稀有度筛选星级化
+
+- `RarityStars`：现有 `Rarity.tsx` 迁移重命名（保留 `Rarity` 导出别名以避免干员/敌人页面改动，或直接全量替换引用），色值引用统一 `rarityColor`，符号统一 `★`。
+- `RarityFilterSelect`（`src/components/RarityFilterSelect.tsx`）：封装稀有度筛选下拉，选项渲染 `★ × n` 且文字颜色为对应稀有度色：
+
+```tsx
+interface RarityFilterSelectProps {
+  value: number | null
+  onChange: (value: number | null) => void
+  levels: number[]        // 如 [3, 4, 5, 6]
+  className?: string
+}
+```
+
+- `<option style={{ color: rarityColor(n) }}>` 着色；样式与全站下拉规范一致（深色背景 + 细边框，focus 强调色）。
+- 接入道具材料、武器图鉴、装备图鉴列表页，替换现有数字选项；筛选状态与逻辑不变。
+
+### 4.5 场景改造清单
 
 | 场景 | 文件 | 现状 | 改造 |
 |------|------|------|------|
-| 道具材料列表 | `pages/items/ItemList.tsx` | ItemPanel 旧 API | 迁移到新 API（`size`），行为不变 |
-| 干员卷宗材料 | `pages/operators/OperatorDetail.tsx` | ItemPanel + `iconClassName` 硬调 | 改用 `size="sm"` + `amount` 角标 |
-| 干员卷宗推荐武器 | `pages/operators/OperatorDetail.tsx` | ItemPanel `showName={false}` | 改用 `size="lg"`，`href` 跳武器卷宗 |
-| 武器图鉴列表 | `pages/weapons/WeaponList.tsx` | 手写 `<img>` 纵向卡片 | 改为 `ItemBar`，右侧：名称 + 稀有度星 + 类型 + 技能名 |
-| 武器卷宗头部 | `pages/weapons/WeaponDetail.tsx` | 手写 `<img>` + `★` + 色条 | 改用 `ItemPanel size="lg" showStars` |
-| 装备图鉴列表 | `pages/equipment/EquipmentList.tsx` + `components/Equipment/EquipCard.tsx` | 手写 `<img>` 纵向卡片 | 改为 `ItemBar`，右侧：名称 + 稀有度星 + 部位 + 套装 + 核心属性摘要 |
-| 装备卷宗头部 | `pages/equipment/EquipmentDetail.tsx` | 手写 `<img>` + `★` + 色条 | 改用 `ItemPanel size="lg" showStars` |
-| 装备强化材料费用 | `pages/equipment/EquipmentDetail.tsx` | ItemPanel 旧 API | 迁移到新 API |
-| 搜索结果条目 | `components/Search/EntityCards.tsx` | ItemPanel 旧 API | 迁移到新 API（`size`），行为不变 |
-| 宝箱内容物 | `components/Items/RewardPanel.tsx` | ItemPanel 旧 API | 迁移到新 API（`amount` 角标） |
-| 版本对比变更面板 | `components/DiffViewer/ItemChangePanel.tsx`、`WeaponChangePanel.tsx` | 手写 `<img>` + `✦` | 改用 `ItemPanel size="sm" showTips={false}` + 统一 `★`；变更计数等面板自有信息保留 |
+| 道具材料列表 | `pages/items/ItemList.tsx` | ItemPanel 旧 API | 改用 `ItemTile`；稀有度筛选换 `RarityFilterSelect` |
+| 干员卷宗材料 | `pages/operators/OperatorDetail.tsx` | ItemPanel + `iconClassName` 硬调 | `ItemTile size="sm" amount` |
+| 干员卷宗推荐武器 | `pages/operators/OperatorDetail.tsx` | ItemPanel `showName={false}` | `ItemTile size="lg" showName={false} href` |
+| 武器图鉴列表 | `pages/weapons/WeaponList.tsx` | 手写 `<img>` 纵向卡片 | 改用 `WeaponBar`；稀有度筛选换 `RarityFilterSelect` |
+| 武器卷宗头部 | `pages/weapons/WeaponDetail.tsx` | 手写 `<img>` + `★` + 色条 | 组合 `RarityFrame` + `ItemIcon` + `RarityStars` |
+| 装备图鉴列表 | `pages/equipment/EquipmentList.tsx` + `components/Equipment/EquipCard.tsx` | 手写 `<img>` 纵向卡片 | 改用 `EquipBar`；稀有度筛选换 `RarityFilterSelect` |
+| 装备卷宗头部 | `pages/equipment/EquipmentDetail.tsx` | 手写 `<img>` + `★` + 色条 | 组合 `RarityFrame` + `ItemIcon` + `RarityStars` |
+| 装备强化材料费用 | `pages/equipment/EquipmentDetail.tsx` | ItemPanel 旧 API | `ItemTile amount` |
+| 同套装装备网格 | `components/Equipment/EquipCard.tsx` | 手写 `<img>` | 基于 `ItemTile` 重写（保留 link/tooltip 两种交互） |
+| 搜索结果条目 | `components/Search/EntityCards.tsx` | ItemPanel 旧 API | `ItemTile`（href / showTips 两种用法保留） |
+| 宝箱内容物 | `components/Items/RewardPanel.tsx` | ItemPanel 旧 API | `ItemTile amount` |
+| 版本对比变更面板 | `components/DiffViewer/ItemChangePanel.tsx`、`WeaponChangePanel.tsx` | 手写 `<img>` + `✦` | 组合 `ItemTile size="sm" showTips={false}` + `RarityStars`；变更计数等自有信息保留 |
 | 装备提示面板 | `components/Equipment/EquipTooltipPanel.tsx` | 本地 RARITY_COLORS | 仅收敛常量，结构不动 |
+| 物品提示浮层 | `components/Items/ItemTooltip.tsx` | 本地 RARITY_COLORS + ItemIcon | 仅收敛常量，结构不动 |
 
-### 4.4 i18n
+### 4.6 i18n
 
-无新增 UI 文案：名称、类型、部位等文本均来自数据表或既有 i18n key（`equipment.*`、武器类型等）。数量缩写格式（`1.2k`）为数字格式，不引入文案。
+无新增 UI 文案：名称、类型、部位等文本均来自数据表或既有 i18n key。星级与数量缩写为符号/数字格式，不引入文案。
 
-### 4.5 兼容与迁移
+### 4.7 兼容与迁移
 
-- ItemPanel 旧 props（`iconClassName`、`showAmount`）在新 API 中移除，全部调用方在同一 PR 内迁移，不留双轨。
-- `EquipCard` 在装备详情的「同套装」网格与装备列表中复用：列表场景替换为 ItemBar；同套装网格保留小方块形态，但内部改为基于 ItemPanel 实现，消除手写 `<img>`。
+- 旧 `ItemPanel` 组件删除，全部调用方在同一 PR 内迁移到 `ItemTile` / 场景组合组件，不留双轨。
+- `Rarity.tsx` 的迁移保证干员/敌人/种族/阵营页面视觉不变（色值收敛后 2 星由 `#8B8982` 变灰系、6 星 `#ef5a00` 不变，视觉差异可忽略或走查确认）。
 
 ## 5. 项目结构
 
@@ -202,79 +300,93 @@ src/
   lib/
     icons.ts                  # 新增 getItemIconUrl
   components/
-    Rarity.tsx                # 改用统一色值
+    RarityFrame.tsx           # 新增：通用渐变框架（不限高宽）
+    RarityStars.tsx           # Rarity.tsx 迁移重命名，统一色值
+    RarityFilterSelect.tsx    # 新增：星级筛选下拉
     Items/
       ItemIcon.tsx            # 导入统一 getItemIconUrl
-      ItemPanel.tsx           # 重设计：正方形 + 尺寸档位 + 槽位
-      ItemBar.tsx             # 新增：左方块 + 右属性长条
-      ItemTooltip.tsx         # 仅收敛 RARITY_COLORS 引用
-      RewardPanel.tsx         # 迁移新 API
+      AmountBadge.tsx         # 新增：数量角标
+      ItemTile.tsx            # 新增：正方形物品方块（取代 ItemPanel.tsx）
+      ItemBar.tsx             # 新增：左方块 + 右属性长条外壳
+      ItemPanel.tsx           # 删除
+      ItemTooltip.tsx         # 仅收敛常量
+      RewardPanel.tsx         # 迁移 ItemTile
       __tests__/
-        ItemPanel.test.tsx    # 新增
+        ItemTile.test.tsx     # 新增
         ItemBar.test.tsx      # 新增
+    Weapons/
+      WeaponBar.tsx           # 新增：武器场景组合
     Equipment/
-      EquipCard.tsx           # 基于 ItemPanel 重写
+      EquipBar.tsx            # 新增：装备场景组合
+      EquipCard.tsx           # 基于 ItemTile 重写
       EquipTooltipPanel.tsx   # 收敛常量
-    Search/EntityCards.tsx    # 迁移新 API
-    DiffViewer/               # ItemChangePanel/WeaponChangePanel 接入 ItemPanel
+    Search/EntityCards.tsx    # 迁移 ItemTile
+    DiffViewer/               # ItemChangePanel/WeaponChangePanel 组合 ItemTile
   pages/
-    weapons/WeaponList.tsx    # ItemBar 长条
-    weapons/WeaponDetail.tsx  # ItemPanel 头部
-    equipment/EquipmentList.tsx    # ItemBar 长条
-    equipment/EquipmentDetail.tsx  # ItemPanel 头部
-    operators/OperatorDetail.tsx   # 迁移新 API
-    items/ItemList.tsx        # 迁移新 API
+    weapons/WeaponList.tsx    # WeaponBar 长条 + 星级筛选
+    weapons/WeaponDetail.tsx  # RarityFrame 组合头部
+    equipment/EquipmentList.tsx    # EquipBar 长条 + 星级筛选
+    equipment/EquipmentDetail.tsx  # RarityFrame 组合头部
+    operators/OperatorDetail.tsx   # 迁移 ItemTile
+    items/ItemList.tsx        # 迁移 ItemTile + 星级筛选
 ```
 
 ## 6. 技术决策
 
 | 决策 | 选项 A | 选项 B | 最终选择 | 原因 |
 |------|--------|--------|---------|------|
-| 正方形实现 | `aspect-square` 固定档位 | 调用方自由传宽高 | A | 档位收敛杜绝场景各自硬调，保证「对外正方形」 |
-| 数量展示 | 角标叠加在图标上 | 图标下方独立文本 | A | 不占文档流，方块保持正方形 |
-| ItemBar 属性区 | 组件内置武器/装备属性逻辑 | children 由场景组装 | B | 组件不耦合数据类型，工厂等后续场景可复用 |
-| 稀有度色值 | 沿用物品侧 Record 两套并存 | 收敛 common-rules 单一数组 | B | common-rules 已有约定，消除 `#fe5a00`/`#ef5a00` 分歧 |
-| Diff 变更面板 | 保持手写 | 接入 ItemPanel | B | PRD 要求全场景统一，变更标识以槽位/外挂形式保留 |
+| 名称展示方式 | 方块内底部居中 + 渐变托底 | 方块下方独立文本行 | A | Review 意见；布局紧凑，且形成可复用的通用框架 |
+| 通用框架粒度 | RarityFrame 只管色条/渐变/名称 | 把图标解析也塞进通用组件 | A | Review 意见限定 scope；干员组件后续可直接复用 |
+| 场景适配方式 | 组合式场景组件（WeaponBar/EquipBar） | 单组件多 props 适配所有场景 | A | Review 意见；避免 props 膨胀，场景信息不下沉 |
+| 数量展示 | AmountBadge 角标叠加 | 图标下方独立文本 | A | 不占文档流，方块保持正方形 |
+| 稀有度色值 | 收敛 common-rules 单一数组 | 沿用物品侧 Record 两套并存 | A | common-rules 已有约定，消除 `#fe5a00`/`#ef5a00` 分歧 |
+| 筛选稀有度表达 | 星级 + 选项着色 | 纯数字 | A | Review 意见；与物品方块稀有度表达一致 |
 
 ## 7. 测试策略
 
 ### 7.1 单元/组件测试
 
-- `ItemPanel`：各尺寸档位渲染正方形；`amount` 角标显示与 k 缩写；`showName`/`tag`/`showStars` 槽位开关；`href` 渲染 Link、无 `href` 渲染 button 且点击弹出 tooltip。
+- `RarityFrame`：色条位于底部且满宽；传 `name` 时渲染渐变与底部居中名称；不传 `name` 时不渲染渐变；容器尺寸由 `className` 决定。
+- `AmountBadge`：数量渲染与 k 缩写边界（10000/10001）。
+- `ItemTile`：各尺寸档位渲染正方形；`amount` 组合角标；`showName` 开关；`href` 渲染 Link、无 `href` 渲染 button 且点击弹出 tooltip。
 - `ItemBar`：渲染左侧方块与右侧 children；跳转 href 正确。
-- `rarityColor`：边界稀有度（0、1、6、7）取值正确。
-- `toCountString` 缩写逻辑（迁移自现有实现）。
+- `RarityStars` / `rarityColor`：边界稀有度（0、1、6、7）取值正确；符号为 `★`。
+- `RarityFilterSelect`：选项星级与颜色渲染；onChange 行为。
 
 ### 7.2 E2E 测试
 
-- 武器图鉴列表：条目为长条结构，点击进入武器卷宗。
-- 装备图鉴列表：条目为长条结构，点击进入装备卷宗。
+- 武器图鉴列表：条目为长条结构，点击进入武器卷宗；稀有度筛选下拉显示着色星级且筛选结果正确。
+- 装备图鉴列表：条目为长条结构，点击进入装备卷宗；稀有度筛选同上。
 - 干员卷宗：材料方块展示数量角标，点击弹出物品提示。
-- 道具材料列表：点击物品弹出提示。
+- 道具材料列表：点击物品弹出提示；稀有度筛选星级化。
 
 ### 7.3 回归校验
 
 - `npm run lint`、`npm run test`、`npm run build` 全部通过。
-- 全站 grep 确认无残留本地 `RARITY_COLORS` / `getItemIconUrl` 定义。
+- 全站 grep 确认无残留本地 `RARITY_COLORS` / `getItemIconUrl` 定义、无 `✦` 残留。
 
 ## 8. 验收标准
 
 - [ ] 技术方案评审通过。
+- [ ] `RarityFrame` 通用组件符合 scope：色条置底满宽、名称可选、有名称才有渐变、不限高宽。
 - [ ] `RARITY_COLORS`、`getItemIconUrl` 全站单一定义，无重复。
-- [ ] ItemPanel 对外正方形，数量/名称/类型标签/星级槽位可按场景开关。
+- [ ] 物品组件（ItemTile）对外正方形，尺寸档位化。
+- [ ] 场景组件以组合方式实现（WeaponBar / EquipBar / ItemTile 组合），无单组件多场景大 props。
 - [ ] 武器图鉴与装备图鉴列表条目为「左方块 + 右属性」长条，可点击跳转。
-- [ ] 4.3 改造清单中所有场景接入统一组件，无手写物品 `<img>`。
+- [ ] 稀有度筛选下拉使用星级且选项按稀有度着色（道具材料/武器/装备）。
 - [ ] 星级符号全站统一为 `★`。
+- [ ] 4.5 改造清单中所有场景接入统一组件，无手写物品 `<img>`。
 - [ ] `npm run lint`、`npm run test`、`npm run build` 通过。
 
 ## 9. 风险与回滚
 
 | 风险 | 影响 | 缓解措施 |
 |------|------|---------|
-| ItemPanel API 变更遗漏调用方 | 构建报错或样式回退 | TypeScript 编译期即可发现；grep 全量核对 |
-| 稀有度色值变更引起视觉差异 | 2 星/6 星颜色变化 | 遵循 common-rules 约定，属预期内统一 |
+| 渐变托底遮挡图标主体 | 视觉受损 | 渐变高度与透明度视觉走查微调；name 可选关闭 |
+| ItemPanel 删除遗漏调用方 | 构建报错或样式回退 | TypeScript 编译期即可发现；grep 全量核对 |
+| 稀有度色值变更引起视觉差异 | 2 星颜色变化 | 遵循 common-rules 约定，属预期内统一 |
+| 原生 `<select>` option 着色浏览器差异 | 部分浏览器选项颜色不生效 | 着色为渐进增强，星级文本始终可读 |
 | 长条改造影响列表筛选/分页逻辑 | 功能回退 | 仅替换条目渲染，不触碰 useMemo 筛选排序逻辑；E2E 覆盖 |
-| 角标叠加遮挡小尺寸图标 | 视觉拥挤 | sm 档位角标缩小字号，视觉走查 |
 
 回滚策略：纯展示层重构，无数据与契约变更，可直接回滚分支。
 
