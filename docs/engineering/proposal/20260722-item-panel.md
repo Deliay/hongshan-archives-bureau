@@ -7,7 +7,7 @@ type: Fleeting
 
 **功能名称**: 物品组件规范化
 **关联 PRD**: [[20260722-item-panel|物品组件规范化（ItemPanel）]]
-**技术提案版本**: v1.1
+**技术提案版本**: v1.2
 **创建日期**: 2026-07-22
 **作者**: 前端工程
 **feat-branch**: `feat/item-panel`
@@ -84,8 +84,8 @@ flowchart TD
 | `src/components/Items/AmountBadge.tsx` | 数量角标（新增） | 绝对定位徽章，k 缩写 |
 | `src/components/Items/ItemTile.tsx` | 正方形物品方块（新增，取代 ItemPanel） | RarityFrame + ItemIcon + 可选 AmountBadge；tooltip/href 交互 |
 | `src/components/Items/ItemBar.tsx` | 长条外壳（新增） | 左 ItemTile + 右属性区（children） |
-| `src/components/Weapons/WeaponBar.tsx` | 武器场景组合（新增） | ItemBar + 武器名称/星级/类型/技能名 |
-| `src/components/Equipment/EquipBar.tsx` | 装备场景组合（新增） | ItemBar + 装备名称/星级/部位/套装/属性摘要 |
+| `src/components/Weapons/WeaponBar.tsx` | 武器场景组合（新增） | ItemBar + 星级/类型/满级攻击力/技能名（名称由 ItemTile 展示） |
+| `src/components/Equipment/EquipBar.tsx` | 装备场景组合（新增） | ItemBar + 星级/部位/套装/基础与副属性（名称由 ItemTile 展示） |
 
 ### 2.2 技术栈
 
@@ -98,6 +98,14 @@ flowchart TD
 ### 3.1 接口契约
 
 无新增或变更接口。物品名称/稀有度/iconId 继续由 `ItemTable` + `I18nDict_{locale}_ItemTable` 提供，沿用 `getCachedData` 缓存。
+
+新增数据表消费（只读、既有接口）：
+
+| 数据表 | 用途 | 说明 |
+|--------|------|------|
+| `WeaponUpgradeTemplateTable` | 武器长条展示满级基础攻击力 | 全表仅 21 条升级曲线，按 `levelTemplateId` 取 `list` 末级 `baseAtk` |
+| `SkillPatchTable` | 武器长条技能名称 | 复用列表页现有解析逻辑 |
+| `AttributeShowConfigTable` / `CompositeAttributeShowConfigTable` | 装备长条属性名称与格式化 | 复用既有 `getAttributeShowMap` / `resolveAttrShow` / `formatAttributeShow` |
 
 ### 3.2 常量收敛
 
@@ -215,32 +223,61 @@ interface ItemBarProps {
 }
 ```
 
-- 布局：`flex items-center gap-3 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40`，内部 `<ItemTile showName={false}>` + `flex-1 min-w-0` 属性区。
+- 布局：`flex items-center gap-3 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40`，内部 `<ItemTile>`（默认展示名称，名字位于方块内底部居中）+ `flex-1 min-w-0` 属性区。
+- 名称由 ItemTile 自身展示，**右侧属性区不重复展示名称**，只承载属性信息。
 - 只提供外壳与方块，不感知任何领域数据。
 
 ### 4.3 场景组合组件
 
-场景特有信息不进入基础件，由各场景组件组合封装：
+场景特有信息不进入基础件，由各场景组件组合封装。数据获取在页面/Hook 层完成，场景组件保持纯展示。
 
-**`WeaponBar`**（`src/components/Weapons/WeaponBar.tsx`）：
+**`WeaponBar`**（`src/components/Weapons/WeaponBar.tsx`）
 
-```tsx
-<ItemBar itemId={weapon.id} href={`/archive/weapons/${weapon.id}`}>
-  <div>名称</div>
-  <div><RarityStars rarity /> · 武器类型</div>
-  <div>技能名称（最多 3 条）</div>
-</ItemBar>
+左侧 `ItemTile` 展示图标与名称，右侧三行属性（不重复名称）：
+
+```
+┌──────────┐  ★★★★ · 双手剑
+│          │  基础攻击力 341（满级）
+│  icon    │  刚力 · 攻击强化 · 专属技能名
+│  名称     │
+└──────────┘
 ```
 
-**`EquipBar`**（`src/components/Equipment/EquipBar.tsx`）：
+```tsx
+interface WeaponBarProps {
+  weapon: Weapon
+  maxBaseAtk: number | null    // 页面层预解析
+  skillNames: string[]         // 页面层预解析，最多 3 条
+}
+```
+
+- **行 1**：`RarityStars` + 武器类型（既有 `weapon.type` i18n）。
+- **行 2**：满级基础攻击力。数据源：`WeaponBasicTable.levelTemplateId` → `WeaponUpgradeTemplateTable[levelTemplateId].list` 末级 `baseAtk`。该表全表仅 21 条升级曲线，列表页一次性拉取并按 `levelTemplateId` 建立 `maxBaseAtk` 映射（`getCachedData` 缓存）；数据缺失时该行不渲染。
+- **行 3**：技能名称（`weaponSkillList` 最多 3 条），复用列表页现有 `SkillPatchTable` 名称解析逻辑（`skillNameMap`），`text-archive-dust` 小字以 `·` 分隔；专属技能（第 3 条）可用强调色区分。
+
+**`EquipBar`**（`src/components/Equipment/EquipBar.tsx`）
+
+左侧 `ItemTile` 展示图标与名称，右侧三行属性（不重复名称）：
+
+```
+┌──────────┐  ★★★★★ · 身体 · 套装名
+│          │  基础属性：防御力 +24
+│  icon    │  力量 +12 · 敏捷 +8 · 生命 +5%
+│  名称     │
+└──────────┘
+```
 
 ```tsx
-<ItemBar itemId={equip.id} href={`/archive/equipment/${equip.id}`}>
-  <div>名称</div>
-  <div><RarityStars rarity /> · 部位 · 套装名</div>
-  <div>核心属性摘要（attributeShow 解析）</div>
-</ItemBar>
+interface EquipBarProps {
+  equip: Equip
+  suitName: string             // 页面层预解析
+  attrShowMap: Record<string, AttrShowMapEntry>  // 页面层一次性 getAttributeShowMap(locale)
+}
 ```
+
+- **行 1**：`RarityStars` + 部位（既有 `equipment.part*` i18n）+ 套装名（`text-archive-gold`）。
+- **行 2**：基础属性（`equip.baseAttr`），经 `resolveAttrShow` + `formatAttributeShow` 解析名称与格式化值，与 `EquipTooltipPanel` 口径一致；无基础属性时该行不渲染。
+- **行 3**：副属性（`equip.attrs` 最多 3 条），同样经 attributeShow 解析，`name value` 以 `·` 分隔；超出 3 条截断，完整属性在卷宗页查看。
 
 **材料/宝箱/搜索/Diff 场景** 直接组合 `ItemTile`（+ `amount` / `showName` / `href` / `showTips`），无需额外封装组件；若干员材料等场景出现重复组合模式，再在对应领域目录内抽取。
 
@@ -350,6 +387,8 @@ src/
 - `AmountBadge`：数量渲染与 k 缩写边界（10000/10001）。
 - `ItemTile`：各尺寸档位渲染正方形；`amount` 组合角标；`showName` 开关；`href` 渲染 Link、无 `href` 渲染 button 且点击弹出 tooltip。
 - `ItemBar`：渲染左侧方块与右侧 children；跳转 href 正确。
+- `WeaponBar`：三行属性渲染（星级+类型 / 满级攻击力 / 技能名）；`maxBaseAtk` 为 null 时攻击力行不渲染。
+- `EquipBar`：三行属性渲染（星级+部位+套装 / 基础属性 / 副属性）；无基础属性时该行不渲染，副属性超过 3 条截断。
 - `RarityStars` / `rarityColor`：边界稀有度（0、1、6、7）取值正确；符号为 `★`。
 - `RarityFilterSelect`：选项星级与颜色渲染；onChange 行为。
 
@@ -372,7 +411,8 @@ src/
 - [ ] `RARITY_COLORS`、`getItemIconUrl` 全站单一定义，无重复。
 - [ ] 物品组件（ItemTile）对外正方形，尺寸档位化。
 - [ ] 场景组件以组合方式实现（WeaponBar / EquipBar / ItemTile 组合），无单组件多场景大 props。
-- [ ] 武器图鉴与装备图鉴列表条目为「左方块 + 右属性」长条，可点击跳转。
+- [ ] 武器图鉴与装备图鉴列表条目为「左方块 + 右属性」长条，可点击跳转；名称仅由左侧方块展示，右侧不重复。
+- [ ] 武器长条展示满级基础攻击力（WeaponUpgradeTemplateTable）与最多 3 条技能名；装备长条展示基础属性与最多 3 条副属性（attributeShow 口径）。
 - [ ] 稀有度筛选下拉使用星级且选项按稀有度着色（道具材料/武器/装备）。
 - [ ] 星级符号全站统一为 `★`。
 - [ ] 4.5 改造清单中所有场景接入统一组件，无手写物品 `<img>`。
