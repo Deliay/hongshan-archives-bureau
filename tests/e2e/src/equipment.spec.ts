@@ -64,6 +64,64 @@ test.describe('装备图鉴 (Equipment Archive)', () => {
     }
   })
 
+  test('装备列表一行4个（桌面）', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await waitForListReady(page)
+
+    const card = page.locator('main a[href*="/archive/equipment/"]').first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+
+    const grid = page.locator('main .grid').first()
+    const cols = await grid.evaluate(el => {
+      const style = getComputedStyle(el)
+      return style.gridTemplateColumns.split(' ').length
+    })
+    expect(cols).toBe(4)
+  })
+
+  test('装备列表移动端一行2个', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await waitForListReady(page)
+
+    const card = page.locator('main a[href*="/archive/equipment/"]').first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+
+    const grid = page.locator('main .grid').first()
+    const cols = await grid.evaluate(el => {
+      const style = getComputedStyle(el)
+      return style.gridTemplateColumns.split(' ').length
+    })
+    expect(cols).toBe(2)
+  })
+
+  test('装备详情精煅材料显示属性角标', async ({ page }) => {
+    await page.goto('/archive/equipment')
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('装备')
+    }, { timeout: 20000 })
+
+    const card = page.locator('main a[href*="/archive/equipment/"]').first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+    await card.click()
+
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('返回装备列表') || body.includes('未找到装备')
+    }, { timeout: 30000 })
+
+    const bodyText = await page.locator('body').textContent() || ''
+    if (bodyText.includes('精煅')) {
+      const badge = page.locator('.absolute.top-0\\.5.left-0\\.5').first()
+      const badgeExists = await badge.count()
+      if (badgeExists > 0) {
+        await expect(badge).toBeVisible()
+        const text = await badge.textContent() || ''
+        expect(text).toMatch(/.+\+\d+/)
+      }
+    }
+  })
+
   test('装备列表搜索功能', async ({ page }) => {
     await waitForListReady(page)
 

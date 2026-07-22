@@ -63,6 +63,36 @@ test.describe('武器文章 (Weapon Archive)', () => {
     }
   })
 
+  test('武器列表一行4个（桌面）', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await waitForWeaponsReady(page)
+
+    const card = page.locator('main a[href*="/archive/weapons/"]').first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+
+    const grid = page.locator('main .grid').first()
+    const cols = await grid.evaluate(el => {
+      const style = getComputedStyle(el)
+      return style.gridTemplateColumns.split(' ').length
+    })
+    expect(cols).toBe(4)
+  })
+
+  test('武器列表移动端一行2个', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await waitForWeaponsReady(page)
+
+    const card = page.locator('main a[href*="/archive/weapons/"]').first()
+    await expect(card).toBeVisible({ timeout: 15000 })
+
+    const grid = page.locator('main .grid').first()
+    const cols = await grid.evaluate(el => {
+      const style = getComputedStyle(el)
+      return style.gridTemplateColumns.split(' ').length
+    })
+    expect(cols).toBe(2)
+  })
+
   test('武器列表展示技能名称「赫拉芬格」', async ({ page }) => {
     await waitForWeaponsReady(page)
 

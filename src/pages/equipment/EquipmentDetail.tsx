@@ -50,7 +50,7 @@ function AttrRow({ attr, attrMap, t }: { attr: EquipAttr; attrMap: Record<string
   )
 }
 
-function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialGroup[]; t: (key: string, vars?: Record<string, string | number>) => string }) {
+export function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialGroup[]; t: (key: string, vars?: Record<string, string | number>) => string }) {
   const hasAny = groups.some(g => g.materials.length > 0)
   if (!hasAny) {
     return <div className="text-xs text-archive-lead">{t('equipment.noEnhanceMaterial')}</div>
@@ -61,15 +61,25 @@ function EnhanceMaterialSection({ groups, t }: { groups: EnhanceMaterialGroup[];
           <div key={group.attrKey}>
             <div className="text-[10px] text-archive-gold uppercase tracking-wide mb-1">{group.attrName || t('common.unknownAttr')}</div>
             {group.materials.length > 0 ? (
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                {group.materials.map((item) => (
-                  <div key={item.equip.id} className="flex flex-col items-center gap-1">
-                    <EquipCard equip={item.equip} interactive="tooltip" />
-                    <span className="text-[10px] text-archive-dust font-mono">
-                      {formatAttributeShow({ valueFormat: group.valueFormat, showPercent: group.showPercent }, item.attrValue)}
-                    </span>
-                  </div>
-                ))}
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                {group.materials.map((item) => {
+                  const formattedValue = formatAttributeShow({ valueFormat: group.valueFormat, showPercent: group.showPercent }, item.attrValue)
+                  return (
+                    <ItemTile
+                      key={item.equip.id}
+                      itemId={item.equip.id}
+                      name={item.equip.name}
+                      rarity={item.equip.rarity}
+                      size="sm"
+                      showTips={false}
+                      badge={
+                        <span className="text-[8px] font-medium px-0.5 rounded bg-archive-gold/80 text-archive-ink leading-tight whitespace-nowrap">
+                          {group.attrName}+{formattedValue}
+                        </span>
+                      }
+                    />
+                  )
+                })}
               </div>
             ) : (
               <div className="text-[10px] text-archive-lead">{t('equipment.noEnhanceMaterialForAttr')}</div>
