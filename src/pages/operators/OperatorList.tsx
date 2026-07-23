@@ -3,8 +3,7 @@ import { Badge } from '../../components/ui/Badge'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useState, useMemo } from 'react'
 import { useOperators } from '../../hooks/useData'
-import { Link } from 'react-router-dom'
-import Rarity from '../../components/Rarity'
+import OperatorPortraitCard from '../../components/Operators/OperatorPortraitCard'
 import { useI18n } from '../../i18n'
 
 type SortKey = 'profession' | 'rarity' | 'element' | 'race' | 'faction'
@@ -211,122 +210,36 @@ export default function OperatorList() {
           {grouped.map(([groupLabel, ops]) => (
             <div key={groupLabel}>
               <h3 className="text-sm font-medium text-archive-ivory mb-2">{groupLabel} · {ops.length}</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                 {ops.map((op) => (
-                  <Link
+                  <OperatorPortraitCard
                     key={op.id}
-                    to={`/archive/operators/${op.id}`}
-                    className="block p-4 rounded border border-archive-border bg-archive-file
-                               hover:border-archive-gold/40 transition-all duration-200 group"
-                  >
-                    <div className="flex gap-3">
-                      <div className="w-14 h-14 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
-                        {op.portrait ? (
-                          <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-archive-lead text-lg">?</div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium text-archive-ivory group-hover:text-archive-gold transition-colors truncate">
-                          {op.name || t('common.unknown')}
-                        </h4>
-                        <Rarity level={op.rarity} />
-                        {op.race && (
-                          <div className="text-[10px] text-archive-dust leading-tight">{op.race}</div>
-                        )}
-                        {op.faction && (
-                          <div className="text-[10px] text-archive-lead leading-tight">{op.faction}</div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="flex items-center gap-1">
-                        <img src={op.elementIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                        <span className="text-xs shrink-0" style={{ color: op.elementColor }}>{op.element}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <img src={op.professionIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                        <span className="text-xs text-archive-dust shrink-0">{op.profession}</span>
-                      </span>
-                      {op.mainAttr.icon && (
-                        <span className="flex items-center gap-1 ml-auto">
-                          <img src={op.mainAttr.icon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                          <span className="text-xs text-archive-dust shrink-0">{op.mainAttr.name}</span>
-                        </span>
-                      )}
-                    </div>
-                    {op.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {op.tags.slice(0, 3).map((tag, i) => (
-                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </Link>
+                    id={op.id}
+                    name={op.name}
+                    portrait={op.portrait}
+                    rarity={op.rarity}
+                    professionIcon={op.professionIcon}
+                    elementIcon={op.elementIcon}
+                    elementColor={op.elementColor}
+                  />
                 ))}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
           {visible.map((op) => (
-            <Link
+            <OperatorPortraitCard
               key={op.id}
-              to={`/archive/operators/${op.id}`}
-              className="block p-4 rounded border border-archive-border bg-archive-file
-                         hover:border-archive-gold/40 transition-all duration-200 group"
-            >
-              <div className="flex gap-3">
-                <div className="w-14 h-14 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
-                  {op.portrait ? (
-                    <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-archive-lead text-lg">?</div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-medium text-archive-ivory group-hover:text-archive-gold transition-colors truncate">
-                    {op.name || '未知'}
-                  </h3>
-                  <Rarity level={op.rarity} />
-                  {op.race && (
-                    <div className="text-[10px] text-archive-dust leading-tight">{op.race}</div>
-                  )}
-                  {op.faction && (
-                    <div className="text-[10px] text-archive-lead leading-tight">{op.faction}</div>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="flex items-center gap-1">
-                  <img src={op.elementIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                  <span className="text-xs shrink-0" style={{ color: op.elementColor }}>{op.element}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <img src={op.professionIcon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                  <span className="text-xs text-archive-dust shrink-0">{op.profession}</span>
-                </span>
-                {op.mainAttr.icon && (
-                  <span className="flex items-center gap-1 ml-auto">
-                    <img src={op.mainAttr.icon} alt="" className="w-3.5 h-3.5 shrink-0" />
-                    <span className="text-xs text-archive-dust shrink-0">{op.mainAttr.name}</span>
-                  </span>
-                )}
-              </div>
-              {op.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {op.tags.slice(0, 3).map((tag, i) => (
-                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-archive-border text-archive-dust">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </Link>
+              id={op.id}
+              name={op.name}
+              portrait={op.portrait}
+              rarity={op.rarity}
+              professionIcon={op.professionIcon}
+              elementIcon={op.elementIcon}
+              elementColor={op.elementColor}
+            />
           ))}
         </div>
       )}

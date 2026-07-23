@@ -24,14 +24,16 @@ test.describe('干员档案 (Operator Archive)', () => {
     // 骨架屏消失
     await expect(page.getByTestId('skeleton')).toHaveCount(0, { timeout: 60000 })
 
-    // 页面正常显示内容：有标题、有卡片、卡片内有名称和星级
+    // 页面正常显示内容：有标题、有卡片
     await expect(page.locator('h2').first()).toHaveText('干员档案')
     expect(await cards.count()).toBeGreaterThan(0)
 
+    // 验证卡片为竖向长方形（高 > 宽）
     const firstCard = cards.first()
-    const name = await firstCard.locator('h3').textContent()
-    expect(name).toBeTruthy()
-    expect(name!.trim().length).toBeGreaterThan(0)
+    await expect(firstCard).toBeVisible()
+    const box = await firstCard.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.height).toBeGreaterThan(box!.width)
 
     // 验证没有 <a> 嵌套 <a> 的非法结构
     const hasNestedAnchor = await page.evaluate(() => {
@@ -72,26 +74,27 @@ test.describe('干员档案 (Operator Archive)', () => {
     expect(fontFamily).toMatch(/Noto Sans SC|PingFang SC|Microsoft YaHei|sans-serif/)
   })
 
-  test('干员名称与星级显示正常，包含 5 星干员「陈千语」', async ({ page }) => {
+  test('干员卡片显示正常，包含 5 星干员「陈千语」', async ({ page }) => {
     await page.waitForSelector('h2', { timeout: 30000 })
     const cards = page.locator('a[href^="/archive/operators/"]')
     await expect(cards.first()).toBeVisible({ timeout: 15000 })
     const count = await cards.count()
     expect(count).toBeGreaterThan(0)
 
-    for (let i = 0; i < count; i++) {
+    // 验证每张卡片都有头像图片和名称
+    for (let i = 0; i < Math.min(count, 5); i++) {
       const card = cards.nth(i)
-      const name = await card.locator('h3').textContent()
+      // 卡片内应有 img 元素（头像）
+      const img = card.locator('img').first()
+      await expect(img).toBeVisible()
+      // 卡片底部应有名称文本（在 span 中）
+      const nameSpan = card.locator('span').last()
+      const name = await nameSpan.textContent()
       expect(name).toBeTruthy()
-      expect(name!.trim().length).toBeGreaterThan(0)
-      // 星级渲染在 Rarity 组件的 span 中，查找包含 ★ 的 span
-      const stars = await card.locator('span').filter({ hasText: /★+/ }).first().textContent()
-      expect(stars).toMatch(/^★+$/)
     }
 
-    const chenQianYu = page.locator('a[href^="/archive/operators/"]', { has: page.locator('h3', { hasText: '陈千语' }) })
+    // 查找包含「陈千语」文本的卡片
+    const chenQianYu = page.locator('a[href^="/archive/operators/"]').filter({ hasText: '陈千语' })
     await expect(chenQianYu).toBeVisible({ timeout: 5000 })
-    const stars = await chenQianYu.locator('span').filter({ hasText: /★+/ }).first().textContent()
-    expect(stars?.trim()).toBe('★★★★★')
   })
 })

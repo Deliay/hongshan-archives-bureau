@@ -7,6 +7,7 @@ import { useOperatorDetail } from '../../hooks/useData'
 import { useLocale } from '../../lib/locale'
 import { useI18n } from '../../i18n'
 import Rarity from '../../components/Rarity'
+import { rarityColor } from '../../data/constants'
 import { ASSET_BASE } from '../../lib/adapter'
 import { RichText } from '../../lib/richText'
 import ItemTile from '../../components/Items/ItemTile'
@@ -55,12 +56,13 @@ export default function OperatorDetail() {
     <div className="max-w-3xl space-y-6">
       {/* 基础信息 */}
       <div className="flex items-start gap-4">
-        <div className="w-20 h-20 rounded border border-archive-border bg-archive-file overflow-hidden shrink-0">
+        <div className="w-24 aspect-[152/212] rounded border border-archive-border bg-archive-file overflow-hidden shrink-0 relative">
           {op.portrait ? (
             <img src={op.portrait} alt={op.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-2xl text-archive-lead">?</span>
+            <div className="w-full h-full flex items-center justify-center bg-archive-ink text-archive-lead text-2xl">?</div>
           )}
+          <div className="absolute inset-x-0 bottom-0 h-0.5" style={{ backgroundColor: rarityColor(op.rarity) }} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

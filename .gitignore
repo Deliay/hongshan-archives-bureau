@@ -2,6 +2,7 @@
 dist
 dist-ssr
 .DS_Store
+.mimocode
 # Editor directories and files
 endfield-data
 # Game data
