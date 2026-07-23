@@ -3,7 +3,7 @@ import { Badge } from '../../components/ui/Badge'
 import { PageSkeleton } from '../../components/ui/PageSkeleton'
 import { useFactions } from '../../hooks/useData'
 import { Link } from 'react-router-dom'
-import Rarity from '../../components/Rarity'
+import OperatorPortraitCard from '../../components/Operators/OperatorPortraitCard'
 import { useI18n } from '../../i18n'
 
 export default function FactionList() {
@@ -40,28 +40,16 @@ export default function FactionList() {
             </Link>
 
             {faction.members.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                 {faction.members.map((m) => (
-                  <Link
+                  <OperatorPortraitCard
                     key={m.id}
-                    to={`/archive/operators/${m.id}`}
-                    className="flex items-center gap-2 p-2 rounded border border-transparent
-                               hover:border-archive-gold/40 hover:bg-archive-ink/60 transition-all duration-200"
-                  >
-                    <div className="w-10 h-10 rounded border border-archive-border bg-archive-ink overflow-hidden shrink-0">
-                      {m.portrait ? (
-                        <img src={m.portrait} alt={m.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-archive-lead text-xs">?</div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs text-archive-ivory group-hover:text-archive-gold transition-colors truncate">
-                        {m.name}
-                      </div>
-                      <Rarity level={m.rarity} />
-                    </div>
-                  </Link>
+                    id={m.id}
+                    name={m.name}
+                    portrait={m.portrait}
+                    rarity={m.rarity}
+                    size="sm"
+                  />
                 ))}
               </div>
             )}
