@@ -210,7 +210,7 @@ export default function OperatorList() {
           {grouped.map(([groupLabel, ops]) => (
             <div key={groupLabel}>
               <h3 className="text-sm font-medium text-archive-ivory mb-2">{groupLabel} · {ops.length}</h3>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                 {ops.map((op) => (
                   <OperatorPortraitCard
                     key={op.id}
@@ -228,7 +228,7 @@ export default function OperatorList() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
           {visible.map((op) => (
             <OperatorPortraitCard
               key={op.id}
