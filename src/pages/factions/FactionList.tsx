@@ -40,7 +40,7 @@ export default function FactionList() {
             </Link>
 
             {faction.members.length > 0 && (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1.5">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                 {faction.members.map((m) => (
                   <OperatorPortraitCard
                     key={m.id}
