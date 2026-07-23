@@ -35,25 +35,21 @@ describe('OperatorPortraitCard', () => {
     expect(link.getAttribute('href')).toBe('/archive/operators/char_0027_tangtang')
   })
 
-  it('renders with md size by default', () => {
+  it('renders with aspect ratio 152/212', () => {
     render(<OperatorPortraitCard {...defaultProps} />)
     const link = screen.getByTestId('card-link')
-    expect(link.className).toContain('w-[114px]')
-    expect(link.className).toContain('h-[159px]')
+    expect(link.className).toContain('w-full')
+    expect(link.className).toContain('aspect-[152/212]')
   })
 
-  it('renders with sm size', () => {
-    render(<OperatorPortraitCard {...defaultProps} size="sm" />)
-    const link = screen.getByTestId('card-link')
-    expect(link.className).toContain('w-[76px]')
-    expect(link.className).toContain('h-[106px]')
-  })
-
-  it('renders with lg size', () => {
-    render(<OperatorPortraitCard {...defaultProps} size="lg" />)
-    const link = screen.getByTestId('card-link')
-    expect(link.className).toContain('w-[152px]')
-    expect(link.className).toContain('h-[212px]')
+  it('renders with w-full for all sizes', () => {
+    for (const size of ['sm', 'md', 'lg'] as const) {
+      render(<OperatorPortraitCard {...defaultProps} size={size} />)
+      const link = screen.getByTestId('card-link')
+      expect(link.className).toContain('w-full')
+      expect(link.className).toContain('aspect-[152/212]')
+      cleanup()
+    }
   })
 
   it('renders portrait image', () => {
