@@ -14,9 +14,9 @@ interface OperatorPortraitCardProps {
 }
 
 const SIZE_MAP = {
-  sm: { card: 'w-[76px] h-[106px]', badge: 'w-4 h-4', frameSize: 'sm' as const },
-  md: { card: 'w-[114px] h-[159px]', badge: 'w-5 h-5', frameSize: 'md' as const },
-  lg: { card: 'w-[152px] h-[212px]', badge: 'w-6 h-6', frameSize: 'lg' as const },
+  sm: { badge: 'w-4 h-4', frameSize: 'sm' as const },
+  md: { badge: 'w-5 h-5', frameSize: 'md' as const },
+  lg: { badge: 'w-6 h-6', frameSize: 'lg' as const },
 }
 
 export default function OperatorPortraitCard({
@@ -35,7 +35,7 @@ export default function OperatorPortraitCard({
   return (
     <Link
       to={`/archive/operators/${id}`}
-      className={`block ${s.card} rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-all duration-200 overflow-hidden shrink-0 ${className}`}
+      className={`block w-full aspect-[152/212] rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-all duration-200 overflow-hidden ${className}`}
     >
       <RarityFrame rarity={rarity} name={name} size={s.frameSize} className="relative w-full h-full">
         {portrait ? (
