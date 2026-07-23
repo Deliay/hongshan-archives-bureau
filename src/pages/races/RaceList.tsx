@@ -39,7 +39,7 @@ export default function RaceList() {
               <span className="text-xs text-archive-lead">{t('common.countPeople', { count: race.members.length })}</span>
             </Link>
 
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1.5">
               {race.members.map((m) => (
                 <OperatorPortraitCard
                   key={m.id}
