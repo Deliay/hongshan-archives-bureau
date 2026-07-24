@@ -316,7 +316,7 @@ export default function ItemList() {
                 </div>
                 <div className="flex flex-wrap gap-2 items-start">
                   {groupPaged.map(item => (
-                    <div key={item.id} className="flex-1 min-w-24 max-w-36">
+                    <div key={item.id} className="flex-1 min-w-24">
                       <ItemTile itemId={item.id} name={item.name} rarity={item.rarity} size="xl" className="!w-full" />
                     </div>
                   ))}
@@ -350,7 +350,7 @@ export default function ItemList() {
         <>
           <div className="flex flex-wrap gap-2 items-start">
             {paged.map((item) => (
-              <div key={item.id} className="flex-1 min-w-24 max-w-36">
+              <div key={item.id} className="flex-1 min-w-24">
                 <ItemTile itemId={item.id} name={item.name} rarity={item.rarity} size="xl" className="!w-full" />
               </div>
             ))}

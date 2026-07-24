@@ -320,7 +320,7 @@ export default function WeaponList() {
                 </div>
                 <div className="flex flex-wrap gap-2 items-start">
                   {groupPaged.map(w => (
-                    <div key={w.id} className="flex-1 min-w-72 max-w-72">
+                    <div key={w.id} className="flex-1 min-w-72">
                       <WeaponBar weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
                     </div>
                   ))}
@@ -344,7 +344,7 @@ export default function WeaponList() {
         <>
           <div className="flex flex-wrap gap-2 items-start">
             {paged.map(w => (
-              <div key={w.id} className="flex-1 min-w-72 max-w-72">
+              <div key={w.id} className="flex-1 min-w-72">
                 <WeaponBar weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
               </div>
             ))}
