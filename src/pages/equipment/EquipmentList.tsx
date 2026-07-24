@@ -179,11 +179,9 @@ export default function EquipmentList() {
                 </h3>
                 <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
               </div>
-              <div className="flex flex-wrap gap-2 items-start">
+              <div className="grid items-start grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-2">
                 {groupPaged.map(e => (
-                  <div key={e.id} className="grow-0 min-w-72">
-                    <EquipBar equip={e} attrShowMap={attrShowMap} />
-                  </div>
+                  <EquipBar key={e.id} equip={e} attrShowMap={attrShowMap} />
                 ))}
               </div>
               {pageSize > 0 && groupTotalPages > 1 && (

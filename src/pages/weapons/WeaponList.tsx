@@ -318,11 +318,9 @@ export default function WeaponList() {
                   <h3 className="text-sm font-medium text-archive-gold">{typeName}</h3>
                   <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
                 </div>
-                <div className="flex flex-wrap gap-2 items-start">
+                <div className="grid items-start grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-2">
                   {groupPaged.map(w => (
-                    <div key={w.id} className="grow-0 min-w-72">
-                      <WeaponBar weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
-                    </div>
+                    <WeaponBar key={w.id} weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
                   ))}
                 </div>
                 {pageSize > 0 && groupTotalPages > 1 && (
@@ -342,11 +340,9 @@ export default function WeaponList() {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-2 items-start">
+          <div className="grid items-start grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-2">
             {paged.map(w => (
-              <div key={w.id} className="grow-0 min-w-72">
-                <WeaponBar weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
-              </div>
+              <WeaponBar key={w.id} weapon={w} skillNames={w.skills.flatMap(sid => skillNameMap[sid] ?? [])} />
             ))}
           </div>
 
