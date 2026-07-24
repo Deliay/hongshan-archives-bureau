@@ -314,9 +314,9 @@ export default function ItemList() {
                   <h3 className="text-sm font-medium text-archive-gold">{label}</h3>
                   <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
                 </div>
-                <div className="grid items-start grid-cols-[repeat(auto-fill,6rem)] gap-2">
+                <div className="grid items-start grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-2">
                   {groupPaged.map(item => (
-                    <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} size="xl" />
+                    <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} size="xl" className="!w-full" />
                   ))}
                 </div>
                 {pageSize > 0 && groupTotalPages > 1 && (
@@ -346,9 +346,9 @@ export default function ItemList() {
         </div>
       ) : (
         <>
-          <div className="grid items-start grid-cols-[repeat(auto-fill,6rem)] gap-2">
+          <div className="grid items-start grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-2">
             {paged.map((item) => (
-              <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} size="xl" />
+              <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} size="xl" className="!w-full" />
             ))}
           </div>
 

@@ -179,7 +179,7 @@ export default function EquipmentList() {
                 </h3>
                 <span className="text-[10px] text-archive-lead">{t('common.countPiece', { count: groupItems.length })}</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid items-start grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-2">
                 {groupPaged.map(e => (
                   <EquipBar key={e.id} equip={e} attrShowMap={attrShowMap} />
                 ))}
