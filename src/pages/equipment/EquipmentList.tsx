@@ -181,7 +181,7 @@ export default function EquipmentList() {
               </div>
               <div className="flex flex-wrap gap-2 items-start">
                 {groupPaged.map(e => (
-                  <div key={e.id} className="flex-1 min-w-72 max-w-96">
+                  <div key={e.id} className="flex-1 min-w-72 max-w-72">
                     <EquipBar equip={e} attrShowMap={attrShowMap} />
                   </div>
                 ))}
