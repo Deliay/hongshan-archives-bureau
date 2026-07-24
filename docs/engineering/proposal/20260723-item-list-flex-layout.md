@@ -1,13 +1,13 @@
 ---
-description: 物品列表 Flex 布局技术方案 — ItemList 容器从 Grid 改为 Flex
+description: 列表页 Flex 布局技术方案 — 物品/武器/装备容器从 Grid 改为 Flex
 type: Permanent
 ---
 
-# 物品列表 Flex 自适应布局技术方案
+# 列表页 Flex 自适应布局技术方案
 
 ## 概述
 
-将 `ItemList.tsx` 中物品卡片容器的 CSS 类从 Grid `auto-fill` 改为 Flex `flex-wrap`，使卡片在任意容器宽度下自然换行排列。`ItemTile` 组件本身无需修改（xl 尺寸已有固定宽度 `w-24`）。
+将物品列表、武器列表、装备列表的卡片容器统一从 Grid 改为 Flex `flex-wrap`，使卡片在任意容器宽度下自然换行排列，消除 Grid 固定列数导致的留白问题。
 
 ## 改动范围
 
@@ -15,70 +15,87 @@ type: Permanent
 
 | 操作 | 文件 | 说明 |
 |------|------|------|
-| **修改** | `src/pages/items/ItemList.tsx` | 列表容器 CSS 类名变更（2 处） |
+| **修改** | `src/pages/items/ItemList.tsx` | 物品列表容器改为 flex-wrap（2 处） |
+| **修改** | `src/pages/weapons/WeaponList.tsx` | 武器列表容器改为 flex-wrap（2 处） |
+| **修改** | `src/pages/equipment/EquipmentList.tsx` | 装备列表容器改为 flex-wrap（1 处） |
 
-**无需修改**: `ItemTile.tsx`、`RarityFrame.tsx`、其他页面
+**无需修改**: `ItemTile.tsx`、`ItemBar.tsx`、`RarityFrame.tsx`
 
 ### 改动详情
 
-**文件**: `src/pages/items/ItemList.tsx`
+#### ItemList.tsx（物品列表）
 
-改动 2 处容器 className，从：
-
-```
-grid items-start grid-cols-[repeat(auto-fill,6rem)] gap-2
-```
-
-改为：
-
-```
-flex flex-wrap gap-2 items-start
-```
-
-#### 改动 1: 分组模式（约 L317）
+物品 tile 使用 wrapper `div.flex-1.min-w-24` + ItemTile `!w-full`，最小宽度 6rem：
 
 ```diff
 - <div className="grid items-start grid-cols-[repeat(auto-fill,6rem)] gap-2">
+-   {groupPaged.map(item => (
+-     <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} size="xl" />
+-   ))}
+- </div>
 + <div className="flex flex-wrap gap-2 items-start">
-    {groupPaged.map(item => (
-      <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} size="xl" />
-    ))}
-  </div>
++   {groupPaged.map(item => (
++     <div key={item.id} className="flex-1 min-w-24">
++       <ItemTile itemId={item.id} name={item.name} rarity={item.rarity} size="xl" className="!w-full" />
++     </div>
++   ))}
++ </div>
 ```
 
-#### 改动 2: 非分组模式（约 L349）
+分组模式（约 L317）和非分组模式（约 L349）均做同样改动。
+
+#### WeaponList.tsx（武器列表）
+
+WeaponBar 使用 wrapper `div.flex-1.min-w-72`，最小宽度 18rem：
 
 ```diff
-- <div className="grid items-start grid-cols-[repeat(auto-fill,6rem)] gap-2">
+- <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+-   {groupPaged.map(w => (
+-     <WeaponBar key={w.id} weapon={w} skillNames={...} />
+-   ))}
+- </div>
 + <div className="flex flex-wrap gap-2 items-start">
-    {paged.map((item) => (
-      <ItemTile key={item.id} itemId={item.id} name={item.name} rarity={item.rarity} size="xl" />
-    ))}
-  </div>
++   {groupPaged.map(w => (
++     <div key={w.id} className="flex-1 min-w-72">
++       <WeaponBar weapon={w} skillNames={...} />
++     </div>
++   ))}
++ </div>
 ```
+
+分组模式（约 L321）和非分组模式（约 L343）均做同样改动。
+
+#### EquipmentList.tsx（装备列表）
+
+EquipBar 使用 wrapper `div.flex-1.min-w-72`，最小宽度 18rem：
+
+```diff
+- <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+-   {groupPaged.map(e => (
+-     <EquipBar key={e.id} equip={e} attrShowMap={attrShowMap} />
+-   ))}
+- </div>
++ <div className="flex flex-wrap gap-2 items-start">
++   {groupPaged.map(e => (
++     <div key={e.id} className="flex-1 min-w-72">
++       <EquipBar equip={e} attrShowMap={attrShowMap} />
++     </div>
++   ))}
++ </div>
+```
+
+仅分组模式（装备无非分组视图）。
 
 ## 布局原理
 
-| 属性 | Grid auto-fill | Flex wrap |
-|------|---------------|-----------|
-| 列数计算 | 由容器宽度 / 6rem 决定 | 由卡片自然排列 + 换行 |
-| 末尾留白 | 容器宽度非 6rem 倍数时有空白 | 无，卡片左对齐紧贴 |
-| 卡片宽度 | 由 grid 列轨道控制 | 由 ItemTile `w-24`（6rem）固定 |
-| 间距 | `gap-2` | `gap-2` |
-
-ItemTile `size="xl"` 已有 `w-24`（6rem）+ `aspect-square`，flex-wrap 下每个卡片宽度固定，自然按行排列换行。
-
-## 不涉及的页面
-
-| 页面 | 布局 | 原因 |
-|------|------|------|
-| 武器列表 (`WeaponList.tsx`) | Grid `grid-cols-2 md:grid-cols-4` | 使用 ItemBar 横向卡片，需要 stretch 填充列宽 |
-| 装备列表 (`EquipmentList.tsx`) | Grid `grid-cols-2 md:grid-cols-4` | 同上 |
+| 卡片类型 | min-width | 说明 |
+|----------|-----------|------|
+| ItemTile（物品） | `min-w-24`（6rem） | 正方形 tile，宽度较小 |
+| ItemBar（武器/装备） | `min-w-72`（18rem） | 横向条状卡片，含图标+文字，需要更宽 |
 
 ## 分支与提交
 
-- 分支: `prd/item-list-flex-layout`（产品文档 PR）
-- 实现分支: `feat/item-list-flex-layout`（产品文档通过后创建）
+- 分支: `prd/item-list-flex-layout`
 - 无 i18n 变更
 
 ## 验证方案
@@ -86,4 +103,4 @@ ItemTile `size="xl"` 已有 `w-24`（6rem）+ `aspect-square`，flex-wrap 下每
 1. `npm run lint` — 无 lint 错误
 2. `npm run test` — 现有测试通过
 3. `npm run build` — TypeScript 编译通过
-4. 视觉验证：物品列表卡片左对齐、自动换行、无异常留白
+4. 视觉验证：三个列表页卡片左对齐、自动换行、无异常留白
