@@ -1154,6 +1154,10 @@ export function useFactoryData(): UseDataResult<{ recipes: FactoryRecipe[]; mach
       getCachedData<Record<string, any>>('FactoryItemAsMachineCrafterOutcomeTable', () => fetchTableAll('FactoryItemAsMachineCrafterOutcomeTable').catch(() => ({}))),
     ])
     getCachedData<Record<string, any>>('FullBottleTable', () => fetchTableAll('FullBottleTable').catch(() => ({}))).catch(() => {})
+    Promise.all([
+      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+      getTableI18nDict('ItemTable', locale),
+    ]).catch(() => {})
     const recipes = Object.values(craftRaw).map(v => adaptFactoryRecipe(v))
     const machines: Record<string, FactoryMachine> = {}
     for (const [k, v] of Object.entries(buildingRaw)) {
