@@ -1140,45 +1140,54 @@ export function useArchiveSearch(
 // ---------- Factory hooks ----------
 
 import type { FactoryRecipe, FactoryMachine, FactoryItemIndex, ChainGraph } from '../lib/factory/types'
-import { adaptFactoryRecipe, adaptFactoryMachine, buildFactoryItemIndex, adaptFactorySources } from '../lib/factory/recipes'
+import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '../lib/factory/recipes'
 import { buildChainGraph } from '../lib/factory/chain'
 
-export function useFactoryData(): UseDataResult<{ recipes: FactoryRecipe[]; machines: Record<string, FactoryMachine>; index: FactoryItemIndex }> {
+export function useFactoryData(): UseDataResult<{ recipes: FactoryRecipe[]; machines: Record<string, FactoryMachine>; itemIds: string[]; index: FactoryItemIndex }> {
   const { locale } = useLocale()
   return useData(async () => {
-    const [craftRaw, buildingRaw, buildingI18n, incomeRaw, outcomeRaw] = await Promise.all([
+    const [craftRaw, buildingRaw, buildingI18n] = await Promise.all([
       getCachedData<Record<string, any>>('FactoryMachineCraftTable', () => fetchTableAll('FactoryMachineCraftTable')),
       getCachedData<Record<string, any>>('FactoryBuildingTable', () => fetchTableAll('FactoryBuildingTable')),
       getTableI18nDict('FactoryBuildingTable', locale).catch(() => ({}) as Record<string, string>),
-      getCachedData<Record<string, any>>('FactoryItemAsMachineCrafterIncomeTable', () => fetchTableAll('FactoryItemAsMachineCrafterIncomeTable').catch(() => ({}))),
-      getCachedData<Record<string, any>>('FactoryItemAsMachineCrafterOutcomeTable', () => fetchTableAll('FactoryItemAsMachineCrafterOutcomeTable').catch(() => ({}))),
     ])
     getCachedData<Record<string, any>>('FullBottleTable', () => fetchTableAll('FullBottleTable').catch(() => ({}))).catch(() => {})
     Promise.all([
       getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
       getTableI18nDict('ItemTable', locale),
     ]).catch(() => {})
+
     const recipes = Object.values(craftRaw).map(v => adaptFactoryRecipe(v))
     const machines: Record<string, FactoryMachine> = {}
     for (const [k, v] of Object.entries(buildingRaw)) {
       machines[k] = adaptFactoryMachine(v, buildingI18n)
     }
-    const index = buildFactoryItemIndex(incomeRaw, outcomeRaw)
-    return { recipes, machines, index }
+
+    const itemIdSet = new Set<string>()
+    const asIngredient: Record<string, string[]> = {}
+    const asOutcome: Record<string, string[]> = {}
+    for (const recipe of recipes) {
+      for (const ing of recipe.ingredients) {
+        itemIdSet.add(ing.itemId)
+        if (!asIngredient[ing.itemId]) asIngredient[ing.itemId] = []
+        asIngredient[ing.itemId].push(recipe.id)
+      }
+      for (const out of recipe.outcomes) {
+        itemIdSet.add(out.itemId)
+        if (!asOutcome[out.itemId]) asOutcome[out.itemId] = []
+        asOutcome[out.itemId].push(recipe.id)
+      }
+    }
+    const itemIds = Array.from(itemIdSet).sort()
+    const index: FactoryItemIndex = { asIngredient, asOutcome }
+
+    return { recipes, machines, itemIds, index }
   }, [locale])
 }
 
 export function useFactoryItemIds(): UseDataResult<string[]> {
   const { data, loading, error, refetch } = useFactoryData()
-  const itemIds = useMemo(() => {
-    if (!data) return []
-    const ids = new Set<string>([
-      ...Object.keys(data.index.asIngredient),
-      ...Object.keys(data.index.asOutcome),
-    ])
-    return Array.from(ids).sort()
-  }, [data])
-  return { data: itemIds, loading, error, refetch }
+  return { data: data?.itemIds ?? [], loading, error, refetch }
 }
 
 export function useItemRecipes(itemId: string | null): { asProduct: FactoryRecipe[]; asMaterial: FactoryRecipe[] } {
