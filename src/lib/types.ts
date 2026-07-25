@@ -104,6 +104,14 @@ export interface FactorySkill {
   parameters: { key: string; value: number }[]
 }
 
+export interface PotentialLevel {
+  level: number
+  name: string
+  description: string
+  requiredItem: { id: string; count: number }[]
+  portraitUrl: string
+}
+
 export interface OperatorDetailData {
   op: Operator
   attributes: CharacterAttributeSet[]
@@ -115,6 +123,7 @@ export interface OperatorDetailData {
   skillPatchMap: Record<string, SkillPatchData[]>
   factorySkills: FactorySkill[]
   skillConditions: Record<string, SkillCondition>
+  potentialLevels: PotentialLevel[]
 }
 
 export interface Operator {

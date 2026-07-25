@@ -3039,6 +3039,22 @@
     "ID": "Skill pabrik",
     "IT": "Abilità fabbrica"
   },
+  "operator.potential": {
+    "CN": "潜能",
+    "TC": "潛能",
+    "EN": "Potential",
+    "JP": "潜在能力",
+    "KR": "잠재력",
+    "RU": "Потенциал",
+    "MX": "Potencial",
+    "BR": "Potencial",
+    "DE": "Potenzial",
+    "FR": "Potentiel",
+    "VN": "Tiềm Năng",
+    "TH": "ศักยภาพ",
+    "ID": "Potensi",
+    "IT": "Potenziale"
+  },
   "operator.groupByElement": {
     "CN": "元素",
     "TC": "元素",

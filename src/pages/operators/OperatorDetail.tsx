@@ -13,6 +13,7 @@ import { RichText } from '../../lib/richText'
 import ItemTile from '../../components/Items/ItemTile'
 import { formatBlackboard } from '../../lib/formatText'
 import type { SkillGroup, SkillPatchData } from '../../lib/types'
+import PotentialSection from './PotentialSection'
 
 const SKILL_TYPE_LABELS: Record<number, string> = {
   0: 'operator.skillType.0',
@@ -160,6 +161,14 @@ export default function OperatorDetail() {
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* 潜能 */}
+      {detail.potentialLevels.length > 0 && (
+        <section>
+          <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.potential')}</h3>
+          <PotentialSection levels={detail.potentialLevels} />
         </section>
       )}
 
