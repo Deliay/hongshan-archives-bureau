@@ -250,7 +250,7 @@ async function buildItemEntityMap(locale: string): Promise<Record<string, Search
   ])
   const map: Record<string, SearchEntity> = {}
   for (const [, v] of Object.entries<any>(raw)) {
-    const id = v.itemId ?? v.$key ?? ''
+    const id = v.itemId ?? v.$key ?? v.id ?? ''
     map[id] = {
       type: 'item',
       id,
@@ -267,7 +267,7 @@ async function buildItemEntityMap(locale: string): Promise<Record<string, Search
       getTableI18nDict('ItemTypeTable', locale),
     ])
     for (const entry of Object.values(map)) {
-      const rawEntry = Object.values<any>(raw).find((v: any) => (v.itemId ?? v.$key ?? '') === entry.id)
+      const rawEntry = Object.values<any>(raw).find((v: any) => (v.itemId ?? v.$key ?? v.id ?? '') === entry.id)
       if (rawEntry) {
         const typeName = resolveI18n(typeRaw[String(rawEntry.type)]?.name, typeI18n) || ''
         if (typeName) entry.subInfo = typeName
