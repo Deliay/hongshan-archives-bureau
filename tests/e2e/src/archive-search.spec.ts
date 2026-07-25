@@ -98,7 +98,7 @@ test.describe('档案搜索 (Archive Search)', () => {
 
     await expect(page.getByText('EnemyAbilityDescTable').first()).toBeVisible({ timeout: 20000 })
     // 验证敌人卡片出现（检查怪物图标或敌人名称）
-    const enemyIcon = page.locator('img[src*="monstericonbig"]').first()
+    const enemyIcon = page.locator('img[src*="monstericon/"]').first()
     await expect(enemyIcon).toBeVisible({ timeout: 10000 })
   })
 

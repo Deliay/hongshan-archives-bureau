@@ -10,6 +10,41 @@ import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
 
+// AttributeType enum name → blackboard key (from TianShiTools Attributes.cs)
+const ATTRIBUTE_TYPE_MAP: Record<number, string> = {
+  0: 'Level', 1: 'MaxHp', 2: 'Atk', 3: 'Def',
+  4: 'PhysicalDamageTakenScalar', 5: 'FireDamageTakenScalar', 6: 'PulseDamageTakenScalar', 7: 'CrystDamageTakenScalar',
+  8: 'Weight', 9: 'CriticalRate', 10: 'CriticalDamageIncrease',
+  17: 'NormalAttackDamageIncrease',
+  28: 'UltimateSkillDamageIncrease', 29: 'HealOutputIncrease', 30: 'HealTakenIncrease',
+  32: 'NormalSkillDamageIncrease', 33: 'ComboSkillDamageIncrease',
+  35: 'FireBurstDamageIncrease', 36: 'PulseBurstDamageIncrease', 37: 'CrystBurstDamageIncrease', 38: 'NaturalBurstDamageIncrease',
+  39: 'Str', 40: 'Agi', 41: 'Wisd', 42: 'Will',
+  47: 'ComboSkillCooldownScalar', 48: 'NaturalDamageTakenScalar',
+  50: 'PhysicalDamageIncrease', 51: 'FireDamageIncrease', 52: 'PulseDamageIncrease', 53: 'CrystDamageIncrease', 54: 'NaturalDamageIncrease',
+  87: 'PhysicalAndSpellInflictionEnhance',
+}
+
+function extractPotentialBlackboard(entry: any): Record<string, number> {
+  const bb: Record<string, number> = {}
+  for (const dl of entry.dataList ?? []) {
+    for (const b of dl.attachSkill?.blackboard ?? []) {
+      if (!(b.key in bb)) bb[b.key] = b.value
+    }
+    for (const b of dl.attachBuff?.blackboard ?? []) {
+      if (!(b.key in bb)) bb[b.key] = b.value
+    }
+    if (dl.skillBbModifier?.bbKey && dl.skillBbModifier.floatValue !== undefined) {
+      if (!(dl.skillBbModifier.bbKey in bb)) bb[dl.skillBbModifier.bbKey] = dl.skillBbModifier.floatValue
+    }
+    if (dl.attrModifier?.attrType !== undefined && dl.attrModifier?.attrValue !== undefined) {
+      const key = ATTRIBUTE_TYPE_MAP[dl.attrModifier.attrType]
+      if (key && !(key in bb)) bb[key] = dl.attrModifier.attrValue
+    }
+  }
+  return bb
+}
+
 const ADMIN_OPERATOR_MAP: Record<string, string> = {
   chr_0002_endminm: 'chr_9000_endmin',
   chr_0003_endminf: 'chr_9000_endmin',
@@ -350,19 +385,7 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
               const entry = potentialTalentEffectRaw[psi.talentEffectId]
               const raw = resolveI18n(entry.desc, potentialTalentEffectI18n)
               if (!raw) return ''
-              const bb: Record<string, number> = {}
-              for (const dl of entry.dataList ?? []) {
-                for (const b of dl.attachSkill?.blackboard ?? []) {
-                  if (!(b.key in bb)) bb[b.key] = b.value
-                }
-                for (const b of dl.attachBuff?.blackboard ?? []) {
-                  if (!(b.key in bb)) bb[b.key] = b.value
-                }
-                if (dl.skillBbModifier?.bbKey && dl.skillBbModifier.floatValue !== undefined) {
-                  if (!(dl.skillBbModifier.bbKey in bb)) bb[dl.skillBbModifier.bbKey] = dl.skillBbModifier.floatValue
-                }
-              }
-              return formatBlackboard(raw, bb)
+              return formatBlackboard(raw, extractPotentialBlackboard(entry))
             })()
           : ''
         talentNodeMap[k] = {
@@ -494,19 +517,7 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
           const entry = potentialTalentEffectRaw[bundle.potentialEffectId]
           const raw = resolveI18n(entry.desc, potentialTalentEffectI18n)
           if (raw) {
-            const bb: Record<string, number> = {}
-            for (const dl of entry.dataList ?? []) {
-              for (const b of dl.attachSkill?.blackboard ?? []) {
-                if (!(b.key in bb)) bb[b.key] = b.value
-              }
-              for (const b of dl.attachBuff?.blackboard ?? []) {
-                if (!(b.key in bb)) bb[b.key] = b.value
-              }
-              if (dl.skillBbModifier?.bbKey && dl.skillBbModifier.floatValue !== undefined) {
-                if (!(dl.skillBbModifier.bbKey in bb)) bb[dl.skillBbModifier.bbKey] = dl.skillBbModifier.floatValue
-              }
-            }
-            description = formatBlackboard(raw, bb)
+            description = formatBlackboard(raw, extractPotentialBlackboard(entry))
           }
         }
         const requiredItem = (bundle.itemIds ?? []).map((itemId: string, i: number) => ({

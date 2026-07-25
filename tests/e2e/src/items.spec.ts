@@ -16,7 +16,7 @@ test.describe('物品图鉴 (Item Archive)', () => {
 
   test('物品列表渲染成功', async ({ page }) => {
     await waitForItemsReady(page)
-    await expect(page.getByRole('main').getByText('物品')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('main').getByRole('heading', { name: '道具材料' })).toBeVisible({ timeout: 5000 })
     const card = page.locator('main button').first()
     await expect(card).toBeVisible({ timeout: 15000 })
   })
@@ -62,7 +62,7 @@ test.describe('物品图鉴 (Item Archive)', () => {
 
   test('物品列表搜索', async ({ page }) => {
     await waitForItemsReady(page)
-    const searchInput = page.getByPlaceholder(/搜索物品/)
+    const searchInput = page.getByPlaceholder(/搜索道具材料/)
     await expect(searchInput).toBeVisible({ timeout: 10000 })
     const initialCount = await page.locator('main .aspect-square').count()
     expect(initialCount).toBeGreaterThan(0)

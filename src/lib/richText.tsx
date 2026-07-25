@@ -85,6 +85,7 @@ async function ensureHyperlinks(locale: string): Promise<void> {
   return hyperlinkPromise
 }
 
+// Static fallback for instant render before RichTextStyleTable loads.
 const STYLE_COLORS: Record<string, string> = {
   'ba.natur': '#b4d945',
   'ba.naturalinflict': '#b4d945',
@@ -96,6 +97,43 @@ const STYLE_COLORS: Record<string, string> = {
   'ba.shield': '#26bbfd',
   'ba.ice': '#21C6D0',
   'ba.thunder': '#ffc000',
+  'ba.vup': '#9eb7ff',
+  'ba.vdown': '#ff8080',
+  'qu.key': '#ffcc00',
+}
+
+let styleColorCache: Record<string, string> | null = null
+let styleColorPromise: Promise<void> | null = null
+
+const COLOR_TAG_RE = /<color=(#[0-9a-fA-F]{3,8})>/
+
+function extractColor(preDef: string[] | undefined): string | null {
+  if (!preDef?.[0]) return null
+  const m = COLOR_TAG_RE.exec(preDef[0])
+  return m ? m[1] : null
+}
+
+function ensureStyleColors(): Promise<void> {
+  if (styleColorCache) return Promise.resolve()
+  if (styleColorPromise) return styleColorPromise
+  styleColorPromise = (async () => {
+    try {
+      const raw = await getCachedData<Record<string, any>>('RichTextStyleTable', () => fetchTableAll('RichTextStyleTable'))
+      const map: Record<string, string> = {}
+      for (const [key, entry] of Object.entries(raw)) {
+        const color = extractColor(entry.preDef)
+        if (color) map[key] = color
+      }
+      styleColorCache = map
+    } catch {
+      styleColorCache = {}
+    }
+  })()
+  return styleColorPromise
+}
+
+function resolveStyleColor(tagName: string): string | undefined {
+  return styleColorCache?.[tagName] ?? STYLE_COLORS[tagName]
 }
 
 interface TextSeg { type: 'text'; text: string }
@@ -257,8 +295,9 @@ function renderNode(node: TreeNode, showTips?: boolean): ReactNode {
       if (node.prefix === '#') {
         return <HyperlinkTag tag={node.tagName!} showTips={showTips}><u>{children}</u></HyperlinkTag>
       }
-      if (node.tagName && STYLE_COLORS[node.tagName]) {
-        return <span style={{ color: STYLE_COLORS[node.tagName] }}>{children}</span>
+      if (node.tagName) {
+        const color = resolveStyleColor(node.tagName)
+        if (color) return <span style={{ color }}>{children}</span>
       }
       return <span>{children}</span>
     }
@@ -352,6 +391,10 @@ interface RichTextProps {
 
 export function RichText({ text, formatter }: RichTextProps) {
   const processed = formatter ? formatter(text) : text
+  const [, setStyleLoaded] = useState(false)
+  useEffect(() => {
+    ensureStyleColors().then(() => setStyleLoaded(true))
+  }, [])
   const tree = useMemo(() => {
     const segments = tokenize(processed)
     return buildTree(segments)
