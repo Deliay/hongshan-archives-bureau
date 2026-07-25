@@ -70,9 +70,12 @@ describe('ActivityGantt', () => {
     const ongoing = makeActivity({ id: 'a_ong', name: '进行中活动', status: 'ongoing' })
     const upcoming = makeActivity({ id: 'a_up', name: '未开始活动', status: 'upcoming', timeRanges: [{ openTime: now + 5 * DAY, closeTime: now + 15 * DAY }] })
     renderGantt([expired, upcoming, ongoing])
-    const names = screen.getAllByText(/活动$/).map((el) => el.textContent)
-    expect(names).toEqual(['进行中活动', '未开始活动', '已结束活动'])
+    const rowIds = screen.getAllByTestId('activity-row').map(
+      (row) => row.querySelector('[data-testid^="gantt-bar-"]')?.getAttribute('data-testid'),
+    )
+    expect(rowIds).toEqual(['gantt-bar-a_ong', 'gantt-bar-a_up', 'gantt-bar-a_exp'])
   })
+
 
   it('renders today line when now is within axis', () => {
     renderGantt([makeActivity({ id: 'a1' })])

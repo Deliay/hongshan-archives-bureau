@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useRef } from 'react'
-import type { Activity } from '../../lib/types'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { Activity, ActivityTimeRange } from '../../lib/types'
 import { ACTIVITY_GROUP_COLORS } from '../../data/constants'
 import { useI18n } from '../../i18n'
 import { formatMonthLabel } from './timeFormat'
 
-const NAME_COL_WIDTH = 180
-const ROW_HEIGHT = 36
-const MONTH_PX = 120
+const NAME_COL_WIDTH = 140
+const ROW_HEIGHT = 52
+const BAR_HEIGHT = 34
 const DAY_MS = 86400000
 const MONTH_MS = 30.4375 * DAY_MS
 const PAD_MS = 15 * DAY_MS
+const MIN_TICK_PX = 64
+const MIN_WINDOW_MS = 3 * MONTH_MS
 
 const STATUS_ORDER: Record<string, number> = {
   ongoing: 0,
@@ -18,15 +20,78 @@ const STATUS_ORDER: Record<string, number> = {
   expired: 3,
 }
 
+const TICK_STEPS = [1, 2, 3, 6, 12]
+
 interface ActivityGanttProps {
   activities: Activity[]
   onSelect: (activity: Activity) => void
 }
 
+interface GanttBarProps {
+  activity: Activity
+  range: ActivityTimeRange
+  left: number
+  width: number
+  onSelect: (activity: Activity) => void
+}
+
+function GanttBar({ activity, range, left, width, onSelect }: GanttBarProps) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const color = ACTIVITY_GROUP_COLORS[activity.group] ?? ACTIVITY_GROUP_COLORS.other
+  const permanent = range.closeTime === null
+  const expired = activity.status === 'expired'
+  return (
+    <button
+      type="button"
+      data-testid={`gantt-bar-${activity.id}`}
+      title={activity.name}
+      onClick={() => onSelect(activity)}
+      className={`absolute top-1/2 -translate-y-1/2 overflow-hidden rounded-md border transition hover:brightness-125 ${expired ? 'opacity-40 saturate-50' : ''}`}
+      style={{
+        left,
+        width: Math.max(10, width),
+        height: BAR_HEIGHT,
+        borderColor: `${color}66`,
+        backgroundColor: `${color}26`,
+      }}
+    >
+      {activity.tabImg && !imgFailed && (
+        <img
+          src={activity.tabImg}
+          alt=""
+          loading="lazy"
+          onError={() => setImgFailed(true)}
+          className="absolute inset-0 h-full w-full object-cover object-[center_20%] opacity-70"
+        />
+      )}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: permanent
+            ? 'linear-gradient(to right, rgba(19,20,26,0.35) 0%, rgba(19,20,26,0.25) 55%, rgba(19,20,26,0.85) 90%, #13141A 100%)'
+            : 'linear-gradient(to bottom, rgba(19,20,26,0.15) 0%, rgba(19,20,26,0.45) 100%)',
+        }}
+      />
+      <div className="absolute inset-y-0 left-0 w-1" style={{ background: color }} />
+    </button>
+  )
+}
+
 export default function ActivityGantt({ activities, onSelect }: ActivityGanttProps) {
   const { t, locale } = useI18n()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [viewportWidth, setViewportWidth] = useState(0)
   const now = useMemo(() => Date.now(), [])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setViewportWidth(el.clientWidth)
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => setViewportWidth(el.clientWidth))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   const rows = useMemo(() => {
     return [...activities].sort((a, b) => {
@@ -42,60 +107,60 @@ export default function ActivityGantt({ activities, onSelect }: ActivityGanttPro
 
   const { axisStart, axisEnd } = useMemo(() => {
     let min = Infinity
-    let max = -Infinity
+    let maxClose = -Infinity
     for (const a of activities) {
       for (const r of a.timeRanges) {
         if (r.openTime < min) min = r.openTime
-        const end = r.closeTime ?? now
-        if (end > max) max = end
+        if (r.closeTime !== null && r.closeTime > maxClose) maxClose = r.closeTime
       }
     }
-    if (!isFinite(min) || !isFinite(max)) {
-      min = now
-      max = now
-    }
-    return { axisStart: min - PAD_MS, axisEnd: max + PAD_MS }
+    if (!isFinite(min)) min = now
+    const end = Math.max(now, isFinite(maxClose) ? maxClose : now)
+    return { axisStart: min - PAD_MS, axisEnd: end + PAD_MS }
   }, [activities, now])
 
-  const pxPerMs = MONTH_PX / MONTH_MS
-  const timelineWidth = Math.max(MONTH_PX, Math.round((axisEnd - axisStart) * pxPerMs))
+  const timelineViewport = Math.max(240, viewportWidth - NAME_COL_WIDTH)
+  const windowMs = Math.max(2 * (axisEnd - now), MIN_WINDOW_MS)
+  const pxPerMs = timelineViewport / windowMs
+  const timelineWidth = Math.max(timelineViewport, Math.round((axisEnd - axisStart) * pxPerMs))
 
   const months = useMemo(() => {
+    const step = TICK_STEPS.find((s) => s * MONTH_MS * pxPerMs >= MIN_TICK_PX) ?? 12
     const result: { time: number; label: string }[] = []
     const start = new Date(axisStart)
     const y = start.getUTCFullYear()
     let m = start.getUTCMonth()
     let tick = Date.UTC(y, m, 1)
     if (tick < axisStart) {
-      m += 1
+      m += step
       tick = Date.UTC(y, m, 1)
     }
     while (tick <= axisEnd) {
       result.push({ time: tick, label: formatMonthLabel(tick, locale) })
-      m += 1
+      m += step
       tick = Date.UTC(y, m, 1)
     }
     return result
-  }, [axisStart, axisEnd, locale])
+  }, [axisStart, axisEnd, locale, pxPerMs])
 
   const todayX = NAME_COL_WIDTH + (now - axisStart) * pxPerMs
 
   useEffect(() => {
     const el = scrollRef.current
-    if (!el) return
-    el.scrollLeft = Math.max(0, todayX - el.clientWidth / 3)
-  }, [todayX])
+    if (!el || viewportWidth === 0) return
+    el.scrollLeft = Math.max(0, todayX - viewportWidth / 2 - NAME_COL_WIDTH / 2)
+  }, [todayX, viewportWidth])
 
   return (
     <div
       ref={scrollRef}
-      className="overflow-x-auto rounded border border-archive-border bg-archive-file"
+      className="min-w-0 overflow-x-auto rounded border border-archive-border bg-archive-file"
       data-testid="activity-gantt"
     >
       <div className="relative" style={{ width: NAME_COL_WIDTH + timelineWidth }}>
-        <div className="flex border-b border-archive-border">
+        <div className="flex h-8 border-b border-archive-border">
           <div
-            className="sticky left-0 z-10 shrink-0 bg-archive-file px-3 text-xs leading-8 text-archive-lead"
+            className="sticky left-0 z-10 shrink-0 bg-archive-file px-2 text-[11px] leading-8 text-archive-lead"
             style={{ width: NAME_COL_WIDTH }}
           >
             {t('activity.title')}
@@ -121,7 +186,7 @@ export default function ActivityGantt({ activities, onSelect }: ActivityGanttPro
             style={{ height: ROW_HEIGHT }}
           >
             <div
-              className="sticky left-0 z-10 shrink-0 truncate bg-archive-file px-3 text-xs text-archive-ivory group-hover:bg-[#17181F]"
+              className="sticky left-0 z-10 shrink-0 truncate bg-archive-file px-2 text-xs text-archive-ivory group-hover:bg-[#17181F]"
               style={{ width: NAME_COL_WIDTH, lineHeight: `${ROW_HEIGHT}px` }}
             >
               {a.name}
@@ -131,23 +196,14 @@ export default function ActivityGantt({ activities, onSelect }: ActivityGanttPro
                 const end = Math.min(r.closeTime ?? axisEnd, axisEnd)
                 const left = Math.max(0, (r.openTime - axisStart) * pxPerMs)
                 const width = Math.max(3, (end - Math.max(r.openTime, axisStart)) * pxPerMs)
-                const color = ACTIVITY_GROUP_COLORS[a.group] ?? ACTIVITY_GROUP_COLORS.other
-                const permanent = r.closeTime === null
                 return (
-                  <button
+                  <GanttBar
                     key={i}
-                    type="button"
-                    data-testid={`gantt-bar-${a.id}`}
-                    title={a.name}
-                    onClick={() => onSelect(a)}
-                    className={`absolute top-1/2 h-3.5 -translate-y-1/2 rounded-full transition-opacity hover:opacity-80 ${a.status === 'expired' ? 'opacity-40' : ''}`}
-                    style={{
-                      left,
-                      width,
-                      background: permanent
-                        ? `linear-gradient(to right, ${color} 0%, ${color} 55%, transparent 100%)`
-                        : color,
-                    }}
+                    activity={a}
+                    range={r}
+                    left={left}
+                    width={width}
+                    onSelect={onSelect}
                   />
                 )
               })}
@@ -162,7 +218,7 @@ export default function ActivityGantt({ activities, onSelect }: ActivityGanttPro
             data-testid="gantt-today-line"
           >
             <div className="h-full w-px bg-archive-seal" />
-            <span className="absolute top-0 left-1 text-[10px] leading-4 text-archive-seal whitespace-nowrap">
+            <span className="absolute top-0 left-1 rounded bg-archive-file/90 px-1 text-[10px] leading-4 text-archive-seal whitespace-nowrap">
               {t('activity.today')}
             </span>
           </div>
