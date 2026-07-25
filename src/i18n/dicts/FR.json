@@ -349,5 +349,27 @@
     "recipeDefault": "Chemin par défaut",
     "recipeUnlock": "Conditions de déblocage",
     "viewDetail": "Voir le dossier"
+  },
+  "factory": {
+    "recipes": "Recettes d'usine",
+    "chains": "Chaîne de fabrication",
+    "asProduct": "En tant que produit",
+    "asMaterial": "En tant que matériau",
+    "searchItem": "Rechercher des objets",
+    "selectItemHint": "Sélectionnez un objet à gauche pour voir les recettes",
+    "noRecipes": "Aucune recette associée",
+    "machine": "Appareil",
+    "craftTime": "Temps de fabrication",
+    "perMinute": "par min",
+    "outputPerMin": "production/min",
+    "inputPerMin": "consommation/min",
+    "addTarget": "Ajouter un produit cible",
+    "selectedTargets": "Produits sélectionnés",
+    "clearAll": "Tout effacer",
+    "cycleMark": "Boucle",
+    "sourceNode": "Collecte",
+    "switchRecipe": "Changer de recette",
+    "emptyChainHint": "Recherchez et ajoutez des produits cibles pour générer une chaîne de fabrication",
+    "target": "Cible"
   }
 }

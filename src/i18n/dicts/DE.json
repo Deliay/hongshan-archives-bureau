@@ -349,5 +349,27 @@
     "recipeDefault": "Standardpfad",
     "recipeUnlock": "Freischalt-",
     "viewDetail": "Akte ansehen"
+  },
+  "factory": {
+    "recipes": "Werkrezepte",
+    "chains": "Herstellungskette",
+    "asProduct": "Als Produkt",
+    "asMaterial": "Als Material",
+    "searchItem": "Gegenstände suchen",
+    "selectItemHint": "Wählen Sie links einen Gegenstand aus, um Rezepte anzuzeigen",
+    "noRecipes": "Keine zugehörigen Rezepte",
+    "machine": "Maschine",
+    "craftTime": "Herstellungszeit",
+    "perMinute": "pro Min",
+    "outputPerMin": "Ausgabe/Min",
+    "inputPerMin": "Verbrauch/Min",
+    "addTarget": "Zielprodukt hinzufügen",
+    "selectedTargets": "Ausgewählte Produkte",
+    "clearAll": "Alle löschen",
+    "cycleMark": "Zyklus",
+    "sourceNode": "Gewinnung",
+    "switchRecipe": "Rezept wechseln",
+    "emptyChainHint": "Suchen und fügen Sie Zielprodukte hinzu, um eine Herstellungskette zu erstellen",
+    "target": "Ziel"
   }
 }

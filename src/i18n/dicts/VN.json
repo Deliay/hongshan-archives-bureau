@@ -349,5 +349,27 @@
     "recipeDefault": "Mặc định",
     "recipeUnlock": "Điều kiện mở khóa",
     "viewDetail": "Xem hồ sơ"
+  },
+  "factory": {
+    "recipes": "Công Thức Nhà Máy",
+    "chains": "Chuỗi Chế Tạo",
+    "asProduct": "Dạng Sản Phẩm",
+    "asMaterial": "Dạng Nguyên Liệu",
+    "searchItem": "Tìm kiếm vật phẩm",
+    "selectItemHint": "Chọn vật phẩm bên trái để xem công thức",
+    "noRecipes": "Chưa có công thức liên quan",
+    "machine": "Máy",
+    "craftTime": "Thời gian chế tạo",
+    "perMinute": "phút",
+    "outputPerMin": "đầu ra/phút",
+    "inputPerMin": "tiêu thụ/phút",
+    "addTarget": "Thêm sản phẩm mục tiêu",
+    "selectedTargets": "Sản phẩm đã chọn",
+    "clearAll": "Xóa tất cả",
+    "cycleMark": "Chu kỳ",
+    "sourceNode": "Thu thập",
+    "switchRecipe": "Đổi công thức",
+    "emptyChainHint": "Tìm kiếm và thêm sản phẩm mục tiêu để tạo chuỗi chế tạo",
+    "target": "Mục tiêu"
   }
 }

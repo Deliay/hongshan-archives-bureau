@@ -349,5 +349,27 @@
     "recipeDefault": "Основной путь",
     "recipeUnlock": "Требования для открытия",
     "viewDetail": "Открыть досье"
+  },
+  "factory": {
+    "recipes": "Заводские рецепты",
+    "chains": "Цепочка крафта",
+    "asProduct": "Как продукт",
+    "asMaterial": "Как материал",
+    "searchItem": "Поиск предметов",
+    "selectItemHint": "Выберите предмет слева для просмотра рецептов",
+    "noRecipes": "Нет связанных рецептов",
+    "machine": "Машина",
+    "craftTime": "Время создания",
+    "perMinute": "в мин",
+    "outputPerMin": "выход/мин",
+    "inputPerMin": "расход/мин",
+    "addTarget": "Добавить целевой продукт",
+    "selectedTargets": "Выбранные продукты",
+    "clearAll": "Очистить",
+    "cycleMark": "Цикл",
+    "sourceNode": "Добыча",
+    "switchRecipe": "Сменить рецепт",
+    "emptyChainHint": "Найдите и добавьте целевые продукты для построения цепочки крафта",
+    "target": "Цель"
   }
 }

@@ -349,5 +349,27 @@
     "recipeDefault": "기본 경로",
     "recipeUnlock": "해제 조건",
     "viewDetail": "문서 보기"
+  },
+  "factory": {
+    "recipes": "공장 레시피",
+    "chains": "제작 체인",
+    "asProduct": "제품으로",
+    "asMaterial": "재료로",
+    "searchItem": "아이템 검색",
+    "selectItemHint": "왼쪽에서 아이템을 선택하여 레시피를 확인하세요",
+    "noRecipes": "관련 레시피 없음",
+    "machine": "필요 기계",
+    "craftTime": "제작 시간",
+    "perMinute": "분당",
+    "outputPerMin": "생산/분",
+    "inputPerMin": "소비/분",
+    "addTarget": "목표 제품 추가",
+    "selectedTargets": "선택된 제품",
+    "clearAll": "모두 지우기",
+    "cycleMark": "순환",
+    "sourceNode": "채집",
+    "switchRecipe": "레시피 전환",
+    "emptyChainHint": "목표 제품을 검색하여 추가하면 제작 체인이 생성됩니다",
+    "target": "목표"
   }
 }
