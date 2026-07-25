@@ -129,6 +129,7 @@ export default function ArchiveSearchResults({
           return (
             <div key={`${r.id}-${i}`} className="rounded border border-archive-border bg-archive-file p-3">
               <div className="text-[10px] text-archive-lead mb-1">{r.table}</div>
+              {(entity || ownerEntity) && <div className="mb-2"><EntityReferenceCard entity={ownerEntity ?? entity} /></div>}
               <div className="text-sm text-archive-ivory leading-relaxed mb-2">
                 <RichText text={highlightText(r.text, query)} />
               </div>
@@ -145,7 +146,6 @@ export default function ArchiveSearchResults({
               {r.table === 'PotentialTalentEffectTable' && r.entityKey && (
                 <TalentReferenceCard talentEffectId={r.entityKey} className="mb-2" />
               )}
-              {(entity || ownerEntity) && <EntityReferenceCard entity={ownerEntity ?? entity} />}
             </div>
           )
         })}
