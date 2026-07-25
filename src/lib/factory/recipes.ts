@@ -1,5 +1,5 @@
 import { resolveI18n } from '../adapter'
-import type { FactoryRecipe, FactoryMachine, FactorySource, FactoryItemIndex } from './types'
+import type { FactoryRecipe, FactoryMachine, FactorySource } from './types'
 
 function flattenGroup(group: { group: { id: string; count: number }[] }[]): { itemId: string; count: number }[] {
   if (!Array.isArray(group) || group.length === 0) return []
@@ -26,37 +26,6 @@ export function adaptFactoryMachine(raw: any, i18nMap?: Record<string, string>):
     name: resolveI18n(raw.name, i18nMap) || raw.buildingId || '',
     iconId: raw.iconOnPanel ?? '',
   }
-}
-
-export function buildFactoryItemIndex(
-  incomeRaw: Record<string, any>,
-  outcomeRaw: Record<string, any>,
-): FactoryItemIndex {
-  const asIngredient: Record<string, string[]> = {}
-  const asOutcome: Record<string, string[]> = {}
-
-  for (const [, entry] of Object.entries(incomeRaw)) {
-    const list: string[] = entry?.list ?? []
-    for (const formulaId of list) {
-      if (!asIngredient[formulaId]) asIngredient[formulaId] = []
-    }
-  }
-  for (const [itemId, entry] of Object.entries(incomeRaw)) {
-    const list: string[] = entry?.list ?? []
-    for (const formulaId of list) {
-      if (!asIngredient[itemId]) asIngredient[itemId] = []
-      asIngredient[itemId].push(formulaId)
-    }
-  }
-  for (const [itemId, entry] of Object.entries(outcomeRaw)) {
-    const list: string[] = entry?.list ?? []
-    for (const formulaId of list) {
-      if (!asOutcome[itemId]) asOutcome[itemId] = []
-      asOutcome[itemId].push(formulaId)
-    }
-  }
-
-  return { asIngredient, asOutcome }
 }
 
 export function adaptFactorySources(

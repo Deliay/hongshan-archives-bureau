@@ -1164,18 +1164,18 @@ export function useFactoryData(): UseDataResult<{ recipes: FactoryRecipe[]; mach
     }
 
     const itemIdSet = new Set<string>()
-    const asIngredient: Record<string, string[]> = {}
-    const asOutcome: Record<string, string[]> = {}
+    const asIngredient: Record<string, FactoryRecipe[]> = {}
+    const asOutcome: Record<string, FactoryRecipe[]> = {}
     for (const recipe of recipes) {
       for (const ing of recipe.ingredients) {
         itemIdSet.add(ing.itemId)
         if (!asIngredient[ing.itemId]) asIngredient[ing.itemId] = []
-        asIngredient[ing.itemId].push(recipe.id)
+        asIngredient[ing.itemId].push(recipe)
       }
       for (const out of recipe.outcomes) {
         itemIdSet.add(out.itemId)
         if (!asOutcome[out.itemId]) asOutcome[out.itemId] = []
-        asOutcome[out.itemId].push(recipe.id)
+        asOutcome[out.itemId].push(recipe)
       }
     }
     const itemIds = Array.from(itemIdSet).sort()
@@ -1194,12 +1194,9 @@ export function useItemRecipes(itemId: string | null): { asProduct: FactoryRecip
   const { data } = useFactoryData()
   return useMemo(() => {
     if (!data || !itemId) return { asProduct: [], asMaterial: [] }
-    const outcomeFormulas = data.index.asOutcome[itemId] ?? []
-    const ingredientFormulas = data.index.asIngredient[itemId] ?? []
-    const recipeById = new Map(data.recipes.map(r => [r.id, r]))
     return {
-      asProduct: outcomeFormulas.map(id => recipeById.get(id)).filter((r): r is FactoryRecipe => Boolean(r)),
-      asMaterial: ingredientFormulas.map(id => recipeById.get(id)).filter((r): r is FactoryRecipe => Boolean(r)),
+      asProduct: data.index.asOutcome[itemId] ?? [],
+      asMaterial: data.index.asIngredient[itemId] ?? [],
     }
   }, [data, itemId])
 }

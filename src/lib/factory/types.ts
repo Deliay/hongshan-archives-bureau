@@ -26,8 +26,8 @@ export interface FactorySource {
 }
 
 export interface FactoryItemIndex {
-  asIngredient: Record<string, string[]>
-  asOutcome: Record<string, string[]>
+  asIngredient: Record<string, FactoryRecipe[]>
+  asOutcome: Record<string, FactoryRecipe[]>
 }
 
 export interface ChainNode {

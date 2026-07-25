@@ -51,13 +51,13 @@ describe('buildChainGraph', () => {
 
   const index: FactoryItemIndex = {
     asIngredient: {
-      iron_ore: ['iron_ingot'],
-      iron_ingot: ['steel_ingot'],
-      coal: ['steel_ingot'],
+      iron_ore: [ironOreRecipe],
+      iron_ingot: [steelRecipe],
+      coal: [steelRecipe],
     },
     asOutcome: {
-      iron_ingot: ['iron_ingot'],
-      steel_ingot: ['steel_ingot'],
+      iron_ingot: [ironOreRecipe],
+      steel_ingot: [steelRecipe],
     },
   }
 
@@ -110,12 +110,12 @@ describe('buildChainGraph', () => {
     }
     const cycleIndex: FactoryItemIndex = {
       asIngredient: {
-        glass_bottle: ['bottle_water'],
-        water_bottle: ['empty_bottle'],
+        glass_bottle: [bottleRecipe],
+        water_bottle: [emptyBottleRecipe],
       },
       asOutcome: {
-        water_bottle: ['bottle_water'],
-        glass_bottle: ['empty_bottle'],
+        water_bottle: [bottleRecipe],
+        glass_bottle: [emptyBottleRecipe],
       },
     }
     const graph = buildChainGraph(['water_bottle'], [bottleRecipe, emptyBottleRecipe], cycleIndex, [], {})

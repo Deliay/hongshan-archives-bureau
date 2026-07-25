@@ -30,10 +30,9 @@ export function buildChainGraph(
     if (overrideId && recipeById.has(overrideId)) return recipeById.get(overrideId)!
     const defaultId = defaultCrafts[itemId]
     if (defaultId && recipeById.has(defaultId)) return recipeById.get(defaultId)!
-    const outcomeFormulas = index.asOutcome[itemId]
-    if (outcomeFormulas?.length) {
-      const firstId = outcomeFormulas[0]
-      if (recipeById.has(firstId)) return recipeById.get(firstId)!
+    const outcomeRecipes = index.asOutcome[itemId]
+    if (outcomeRecipes?.length) {
+      return outcomeRecipes[0]
     }
     return null
   }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { adaptFactoryRecipe, adaptFactoryMachine, buildFactoryItemIndex, adaptFactorySources } from './recipes'
+import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from './recipes'
 
 describe('adaptFactoryRecipe', () => {
   it('adapts raw recipe data', () => {
@@ -67,24 +67,6 @@ describe('adaptFactoryMachine', () => {
     }
     const machine = adaptFactoryMachine(raw, {})
     expect(machine.name).toBe('Furnace')
-  })
-})
-
-describe('buildFactoryItemIndex', () => {
-  it('builds item index from income and outcome tables', () => {
-    const incomeRaw = {
-      iron_ore: { list: ['iron_ingot'] },
-      coal: { list: ['steel_ingot', 'iron_ingot'] },
-    }
-    const outcomeRaw = {
-      iron_ingot: { list: ['iron_ingot'] },
-      steel_ingot: { list: ['steel_ingot'] },
-    }
-    const index = buildFactoryItemIndex(incomeRaw, outcomeRaw)
-    expect(index.asIngredient['iron_ore']).toEqual(['iron_ingot'])
-    expect(index.asIngredient['coal']).toEqual(['steel_ingot', 'iron_ingot'])
-    expect(index.asOutcome['iron_ingot']).toEqual(['iron_ingot'])
-    expect(index.asOutcome['steel_ingot']).toEqual(['steel_ingot'])
   })
 })
 
