@@ -2623,6 +2623,22 @@
     "ID": "Arsip acara",
     "IT": "Archivio eventi"
   },
+  "nav.activitiesDesc": {
+    "CN": "活动排期编年长卷",
+    "TC": "活動排期編年長卷",
+    "EN": "Chronicle of event schedules",
+    "JP": "イベント日程の編年録",
+    "KR": "이벤트 일정 연대기",
+    "RU": "Хроника расписания событий",
+    "MX": "Ver cronograma de eventos",
+    "BR": "Ver cronograma de eventos",
+    "DE": "Event-Zeitpläne ansehen",
+    "FR": "Voir le calendrier des événements",
+    "VN": "Xem lịch trình sự kiện",
+    "TH": "ดูกำหนดการกิจกรรม",
+    "ID": "Lihat jadwal event",
+    "IT": "Vedi il calendario degli eventi"
+  },
   "nav.archive": {
     "CN": "档案局",
     "TC": "檔案局",

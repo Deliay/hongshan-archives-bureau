@@ -176,6 +176,7 @@
   },
   "nav": {
     "activities": "Eventarchiv",
+    "activitiesDesc": "Event-Zeitpläne ansehen",
     "archive": "Archiv",
     "areas": "Regionalgeografie",
     "areasDesc": "Regionen und Zonen erkunden",

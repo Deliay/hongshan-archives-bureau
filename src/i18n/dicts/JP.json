@@ -176,6 +176,7 @@
   },
   "nav": {
     "activities": "イベントアーカイブ",
+    "activitiesDesc": "イベント日程の編年録",
     "archive": "檔案局",
     "areas": "地域地理",
     "areasDesc": "地域分布と探索",

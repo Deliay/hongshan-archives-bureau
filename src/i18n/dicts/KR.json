@@ -176,6 +176,7 @@
   },
   "nav": {
     "activities": "이벤트 아카이브",
+    "activitiesDesc": "이벤트 일정 연대기",
     "archive": "아카이브국",
     "areas": "지역 지리",
     "areasDesc": "지역 분포 및 탐사",

@@ -176,6 +176,7 @@
   },
   "nav": {
     "activities": "Arquivo de eventos",
+    "activitiesDesc": "Ver cronograma de eventos",
     "archive": "Arquivo",
     "areas": "Geografia de áreas",
     "areasDesc": "Explorar regiões e zonas",

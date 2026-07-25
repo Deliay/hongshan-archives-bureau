@@ -176,6 +176,7 @@
   },
   "nav": {
     "activities": "Activity Archive",
+    "activitiesDesc": "Chronicle of event schedules",
     "archive": "Archives",
     "areas": "Area Geography",
     "areasDesc": "Regional distribution and exploration",
