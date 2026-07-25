@@ -6,8 +6,8 @@ describe('adaptFactoryRecipe', () => {
     const raw = {
       formulaId: 'test_formula',
       machineId: 'furnace',
-      ingredients: [[{ id: 'iron_ore', count: 2 }]],
-      outcomes: [[{ id: 'iron_ingot', count: 1 }]],
+      ingredients: [{ group: [{ id: 'iron_ore', count: 2 }] }],
+      outcomes: [{ group: [{ id: 'iron_ingot', count: 1 }] }],
       totalProgress: 12000,
       sortId: 0,
     }
@@ -35,8 +35,8 @@ describe('adaptFactoryRecipe', () => {
     const raw = {
       formulaId: 'test',
       ingredients: [
-        [{ id: 'a', count: 1 }, { id: 'b', count: 2 }],
-        [{ id: 'c', count: 3 }],
+        { group: [{ id: 'a', count: 1 }, { id: 'b', count: 2 }] },
+        { group: [{ id: 'c', count: 3 }] },
       ],
     }
     const recipe = adaptFactoryRecipe(raw)

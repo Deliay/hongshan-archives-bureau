@@ -1,10 +1,12 @@
 import { resolveI18n } from '../adapter'
 import type { FactoryRecipe, FactoryMachine, FactorySource, FactoryItemIndex } from './types'
 
-function flattenGroup(group: { id: string; count: number }[][]): { itemId: string; count: number }[] {
-  if (group.length === 0) return []
+function flattenGroup(group: { group: { id: string; count: number }[] }[]): { itemId: string; count: number }[] {
+  if (!Array.isArray(group) || group.length === 0) return []
   // TODO: 多 group 语义待验证，当前取首 group
-  return group[0].map(g => ({ itemId: g.id, count: g.count }))
+  const first = group[0]?.group
+  if (!Array.isArray(first)) return []
+  return first.map(g => ({ itemId: g.id, count: g.count }))
 }
 
 export function adaptFactoryRecipe(raw: any): FactoryRecipe {
