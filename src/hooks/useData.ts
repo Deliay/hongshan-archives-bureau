@@ -658,7 +658,16 @@ export function useItems(): UseDataResult<Item[]> {
       getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
       getTableI18nDict('ItemTable', locale),
     ])
-    return Object.entries(rawData).map(([, v]) => adaptItem(v, i18nMap))
+    const seen = new Set<string>()
+    const items: Item[] = []
+    for (const [, v] of Object.entries(rawData)) {
+      const item = adaptItem(v, i18nMap)
+      if (!seen.has(item.id)) {
+        seen.add(item.id)
+        items.push(item)
+      }
+    }
+    return items
   }, [locale])
 }
 
