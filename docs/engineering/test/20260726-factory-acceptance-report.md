@@ -180,6 +180,38 @@ type: Fleeting
 
 ---
 
+### 2.9 左侧物品列表排序不符合预期
+
+**问题描述**：左侧物品列表按字母排序，未按稀有度排序。
+
+**根因**：`itemIds` 使用 `Array.from(ids).sort()` 做字母排序，未考虑 rarity。
+
+**修复方案**：改为按 `rarity` 倒序排列，相同 rarity 按名称字母排序。
+
+**涉及文件**：`src/pages/factory/FactoryRecipes.tsx`
+
+**提交**：`25aeb57 feat(factory): sort items by rarity desc, mobile collapsible item selector`
+
+---
+
+### 2.10 移动端物品选择体验差
+
+**问题描述**：移动端左侧物品列表占据大量垂直空间，选择物品不便。
+
+**根因**：左右结构在移动端直接堆叠，物品列表始终展开。
+
+**修复方案**：
+- 移动端将物品列表改为折叠+下拉选择器
+- 默认收起，显示当前选中物品（或引导文案）
+- 点击展开下拉列表，选择后自动收起
+- 桌面端保持原有侧边栏列表不变
+
+**涉及文件**：`src/pages/factory/FactoryRecipes.tsx`
+
+**提交**：`25aeb57 feat(factory): sort items by rarity desc, mobile collapsible item selector`
+
+---
+
 ## 3. 修复总览
 
 | # | 问题 | 根因 | 修复 commit |
@@ -192,6 +224,8 @@ type: Fleeting
 | 2.6 | 配方 ID 永远为空 | adapter 字段名错误 | `3847de7` |
 | 2.7 | 数据结构不匹配 | adapter 格式假设错误 | `92e5c0c` |
 | 2.8 | 配方展示逻辑错误 | 未按产品文档实现 | `2f785b6` |
+| 2.9 | 物品列表排序错误 | 按字母而非稀有度 | `25aeb57` |
+| 2.10 | 移动端选择体验差 | 列表始终展开 | `25aeb57` |
 
 ---
 
