@@ -116,6 +116,7 @@ export default function ActivityGantt({ activities, onSelect }: ActivityGanttPro
         {rows.map((a) => (
           <div
             key={a.id}
+            data-testid="activity-row"
             className="group flex border-b border-archive-border/50 last:border-b-0 transition-colors hover:bg-[#17181F]"
             style={{ height: ROW_HEIGHT }}
           >

@@ -16,7 +16,7 @@ const LOCALE_DATE_TAGS: Record<string, string> = {
 }
 
 export function formatActivityTime(ts: number): string {
-  const d = new Date(ts)
+  const d = new Date(ts + 8 * 3600_000)
   const hh = String(d.getUTCHours()).padStart(2, '0')
   const mm = String(d.getUTCMinutes()).padStart(2, '0')
   return `${d.getUTCFullYear()}/${d.getUTCMonth() + 1}/${d.getUTCDate()} ${hh}:${mm}`

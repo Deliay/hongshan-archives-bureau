@@ -36,6 +36,13 @@ function renderTooltip(activity: Activity, onClose = vi.fn()) {
   }
 }
 
+describe('formatActivityTime', () => {
+  it('displays wall clock in UTC+8', () => {
+    expect(formatActivityTime(Date.UTC(2025, 11, 8, 20, 0, 0))).toBe('2025/12/9 04:00')
+    expect(formatActivityTime(Date.UTC(2026, 6, 26, 16, 30, 0))).toBe('2026/7/27 00:30')
+  })
+})
+
 describe('ActivityTooltip', () => {
   afterEach(() => {
     cleanup()
