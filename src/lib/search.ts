@@ -250,15 +250,31 @@ async function buildItemEntityMap(locale: string): Promise<Record<string, Search
   ])
   const map: Record<string, SearchEntity> = {}
   for (const [, v] of Object.entries<any>(raw)) {
-    const id = v.itemId ?? v.$key ?? ''
+    const id = v.itemId ?? v.$key ?? v.id ?? ''
     map[id] = {
       type: 'item',
       id,
       name: resolveI18n(v.name, i18nMap) || id,
-      route: '',
+      route: '/archive/items',
       icon: v.iconId ?? id,
       rarity: v.rarity ?? 0,
     }
+  }
+  // Fetch ItemTypeTable separately — failure should not break entity map
+  try {
+    const [typeRaw, typeI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('ItemTypeTable', () => fetchTableAll('ItemTypeTable')),
+      getTableI18nDict('ItemTypeTable', locale),
+    ])
+    for (const entry of Object.values(map)) {
+      const rawEntry = Object.values<any>(raw).find((v: any) => (v.itemId ?? v.$key ?? v.id ?? '') === entry.id)
+      if (rawEntry) {
+        const typeName = resolveI18n(typeRaw[String(rawEntry.type)]?.name, typeI18n) || ''
+        if (typeName) entry.subInfo = typeName
+      }
+    }
+  } catch {
+    // ItemTypeTable fetch failed — items render without type info
   }
   return map
 }
