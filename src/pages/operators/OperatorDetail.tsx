@@ -234,6 +234,9 @@ export default function OperatorDetail() {
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium text-archive-ivory">{node.name || `突破节点`}</span>
                 </div>
+                {node.description && (
+                  <p className="text-xs text-archive-dust mt-1"><RichText text={node.description} /></p>
+                )}
                 {node.requiredItem.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {node.requiredItem.map((item) => (
