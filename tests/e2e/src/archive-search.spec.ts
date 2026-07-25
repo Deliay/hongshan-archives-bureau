@@ -114,12 +114,11 @@ test.describe('档案搜索 (Archive Search)', () => {
     await responsePromise
 
     await expect(page.getByText('ItemTable').first()).toBeVisible({ timeout: 20000 })
-    // 验证物品卡片渲染（检查物品图标）
-    const itemIcon = page.locator('img[src*="inventory/"]').first()
-    await expect(itemIcon).toBeVisible({ timeout: 10000 })
-    // 验证物品卡片包含物品类型标签（subInfo 渲染为 text-[9px] text-archive-dust）
-    const typeLabel = page.locator('span.text-archive-dust').first()
-    await expect(typeLabel).toBeVisible({ timeout: 10000 })
+    // 验证物品卡片渲染（检查跳转链接指向物品列表页）
+    const itemLink = page.locator('a[href="/archive/items"]').first()
+    await expect(itemLink).toBeVisible({ timeout: 10000 })
+    // 验证物品卡片包含物品名称文本
+    await expect(page.getByText('放置了多种武器的支援补给').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('搜索终结技期间燃烧时长显示正确技能等级 (SkillPatchTable)', async ({ page }) => {
