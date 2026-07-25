@@ -10,6 +10,11 @@ import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
 
+const ADMIN_OPERATOR_MAP: Record<string, string> = {
+  chr_0002_endminm: 'chr_9000_endmin',
+  chr_0003_endminf: 'chr_9000_endmin',
+}
+
 interface UseDataResult<T> {
   data: T | null
   loading: boolean
@@ -225,6 +230,8 @@ function getBlocMap(locale: string): Promise<Record<string, string>> {
   return blocMapCaches.get(locale)!
 }
 
+const ADMIN_DATA_SOURCE_ID = 'chr_9000_endmin'
+
 export function useOperators(): UseDataResult<Operator[]> {
   const { locale } = useLocale()
   return useData(async () => {
@@ -240,7 +247,9 @@ export function useOperators(): UseDataResult<Operator[]> {
       getRaceMap(locale),
       getBlocMap(locale),
     ])
-    return Object.entries(rawData).map(([, v]) => adaptOperator(v, i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap))
+    return Object.entries(rawData)
+      .filter(([key]) => key !== ADMIN_DATA_SOURCE_ID)
+      .map(([, v]) => adaptOperator(v, i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap))
   }, [locale])
 }
 
@@ -266,6 +275,8 @@ export function useOperator(id: string): UseDataResult<Operator> {
 export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData> {
   const { locale } = useLocale()
   return useData(async () => {
+    const dataId = ADMIN_OPERATOR_MAP[id] ?? id
+
     const [[rawData, i18nMap], profMap, elemMap, tagMap, attrMap, raceMap, blocMap] = await Promise.all([
       Promise.all([
         getCachedData<Record<string, any>>('CharacterTable', () => fetchTableAll('CharacterTable')),
@@ -278,13 +289,13 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
       getRaceMap(locale),
       getBlocMap(locale),
     ])
-    const raw = rawData[id]
+    const raw = rawData[dataId] ?? rawData[id]
     if (!raw) throw new Error(`Operator ${id} not found`)
 
     const [growthRaw, growthI18n, wpnRaw, skillPatchRaw, skillPatchI18n, spaceshipCharRaw, spaceshipSkillRaw, spaceshipI18n, skillConditionRaw, skillConditionI18n, potentialTalentEffectRaw, potentialTalentEffectI18n, potentialRaw, potentialI18n] = await Promise.all([
-      getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')).then(r => r[id]),
+      getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')).then(r => r[dataId]),
       getTableI18nDict('CharGrowthTable', locale).catch(() => ({}) as Record<string, string>),
-      getCachedData<Record<string, any>>('CharWpnRecommendTable', () => fetchTableAll('CharWpnRecommendTable')).then(r => r[id]).catch(() => null),
+      getCachedData<Record<string, any>>('CharWpnRecommendTable', () => fetchTableAll('CharWpnRecommendTable')).then(r => r[dataId]).catch(() => null),
       getCachedData<Record<string, any>>('SkillPatchTable', () => fetchTableAll('SkillPatchTable')).catch(() => ({}) as Record<string, any>),
       getTableI18nDict('SkillPatchTable', locale).catch(() => ({}) as Record<string, string>),
       getCachedData<Record<string, any>>('SpaceshipCharSkillTable', () => fetchTableAll('SpaceshipCharSkillTable')).catch(() => ({}) as Record<string, any>),
@@ -299,6 +310,11 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
     ])
 
     const op = adaptOperator(raw, i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap)
+
+    if (ADMIN_OPERATOR_MAP[id]) {
+      op.id = id
+      op.portrait = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${id}.png`
+    }
 
     const attributes: CharacterAttributeSet[] = (raw.attributes ?? []).map((a: any) => ({
       breakStage: a.breakStage ?? a.BreakStage ?? 0,
@@ -432,7 +448,7 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
       }
     }
 
-    const charSpaceshipSkills = spaceshipCharRaw[id] as { maxSkillCount?: number; skillList?: { charId: string; skillId: string; skillIndex: number; unlockHint: any }[] } | undefined
+    const charSpaceshipSkills = spaceshipCharRaw[dataId] as { maxSkillCount?: number; skillList?: { charId: string; skillId: string; skillIndex: number; unlockHint: any }[] } | undefined
     const factorySkills: FactorySkill[] = []
     if (growthRaw?.talentNodeMap && charSpaceshipSkills?.skillList) {
       for (const [, v] of Object.entries<any>(growthRaw.talentNodeMap)) {
