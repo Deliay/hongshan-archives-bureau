@@ -244,20 +244,24 @@ async function buildWeaponEntityMap(locale: string): Promise<Record<string, Sear
 }
 
 async function buildItemEntityMap(locale: string): Promise<Record<string, SearchEntity>> {
-  const [raw, i18nMap] = await Promise.all([
+  const [raw, i18nMap, typeRaw, typeI18n] = await Promise.all([
     getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
     getTableI18nDict('ItemTable', locale),
+    getCachedData<Record<string, any>>('ItemTypeTable', () => fetchTableAll('ItemTypeTable')),
+    getTableI18nDict('ItemTypeTable', locale),
   ])
   const map: Record<string, SearchEntity> = {}
   for (const [, v] of Object.entries<any>(raw)) {
     const id = v.itemId ?? v.$key ?? ''
+    const typeName = resolveI18n(typeRaw[String(v.type)]?.name, typeI18n) || ''
     map[id] = {
       type: 'item',
       id,
       name: resolveI18n(v.name, i18nMap) || id,
-      route: '',
+      route: '/archive/items',
       icon: v.iconId ?? id,
       rarity: v.rarity ?? 0,
+      subInfo: typeName || undefined,
     }
   }
   return map

@@ -89,7 +89,26 @@ function OperatorReferenceCard({ entity }: ReferenceCardProps) {
 }
 
 function ItemReferenceCard({ entity }: ReferenceCardProps) {
-  return <IconBar id={entity.id} href={entity.route} name={entity.name} rarity={entity.rarity ?? 0} />
+  return (
+    <ReferenceBar
+      href={entity.route}
+      left={
+        <div className="w-10 h-10 overflow-hidden rounded">
+          <RarityFrame rarity={entity.rarity ?? 0} size="sm" className="w-full h-full">
+            <ItemIcon itemId={entity.id} className="w-full h-full" />
+          </RarityFrame>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-0.5">
+        <span className="truncate text-xs text-archive-ivory">{entity.name}</span>
+        <Rarity level={entity.rarity ?? 0} />
+        {entity.subInfo && (
+          <span className="text-[9px] text-archive-dust">{entity.subInfo}</span>
+        )}
+      </div>
+    </ReferenceBar>
+  )
 }
 
 function EnemyReferenceCard({ entity }: ReferenceCardProps) {
