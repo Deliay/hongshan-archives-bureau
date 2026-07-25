@@ -4,7 +4,7 @@ import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem } from '../lib/types'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
@@ -281,7 +281,7 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
     const raw = rawData[id]
     if (!raw) throw new Error(`Operator ${id} not found`)
 
-    const [growthRaw, growthI18n, wpnRaw, skillPatchRaw, skillPatchI18n, spaceshipCharRaw, spaceshipSkillRaw, spaceshipI18n, skillConditionRaw, skillConditionI18n, potentialTalentEffectRaw, potentialTalentEffectI18n] = await Promise.all([
+    const [growthRaw, growthI18n, wpnRaw, skillPatchRaw, skillPatchI18n, spaceshipCharRaw, spaceshipSkillRaw, spaceshipI18n, skillConditionRaw, skillConditionI18n, potentialTalentEffectRaw, potentialTalentEffectI18n, potentialRaw, potentialI18n] = await Promise.all([
       getCachedData<Record<string, any>>('CharGrowthTable', () => fetchTableAll('CharGrowthTable')).then(r => r[id]),
       getTableI18nDict('CharGrowthTable', locale).catch(() => ({}) as Record<string, string>),
       getCachedData<Record<string, any>>('CharWpnRecommendTable', () => fetchTableAll('CharWpnRecommendTable')).then(r => r[id]).catch(() => null),
@@ -294,6 +294,8 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
       getTableI18nDict('SkillConditionTable', locale).catch(() => ({}) as Record<string, string>),
       getCachedData<Record<string, any>>('PotentialTalentEffectTable', () => fetchTableAll('PotentialTalentEffectTable')).catch(() => ({}) as Record<string, any>),
       getTableI18nDict('PotentialTalentEffectTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('CharacterPotentialTable', () => fetchTableAll('CharacterPotentialTable')).then(r => r[id]).catch(() => null),
+      getTableI18nDict('CharacterPotentialTable', locale).catch(() => ({}) as Record<string, string>),
     ])
 
     const op = adaptOperator(raw, i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap)
@@ -467,7 +469,43 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
       }
     }
 
-    return { op, attributes, breakCostMap, talentNodeMap, wpnRecommend, skillGroups, skillLevelUp, skillPatchMap, factorySkills, skillConditions }
+    const potentialLevels: PotentialLevel[] = []
+    if (potentialRaw?.potentialUnlockBundle) {
+      for (const bundle of potentialRaw.potentialUnlockBundle) {
+        const name = resolveI18n(bundle.name, potentialI18n) || ''
+        let description = ''
+        if (bundle.potentialEffectId && potentialTalentEffectRaw[bundle.potentialEffectId]) {
+          const entry = potentialTalentEffectRaw[bundle.potentialEffectId]
+          const raw = resolveI18n(entry.desc, potentialTalentEffectI18n)
+          if (raw) {
+            const bb: Record<string, number> = {}
+            for (const dl of entry.dataList ?? []) {
+              for (const b of dl.attachSkill?.blackboard ?? []) {
+                if (!(b.key in bb)) bb[b.key] = b.value
+              }
+              for (const b of dl.attachBuff?.blackboard ?? []) {
+                if (!(b.key in bb)) bb[b.key] = b.value
+              }
+              if (dl.skillBbModifier?.bbKey && dl.skillBbModifier.floatValue !== undefined) {
+                if (!(dl.skillBbModifier.bbKey in bb)) bb[dl.skillBbModifier.bbKey] = dl.skillBbModifier.floatValue
+              }
+            }
+            description = formatBlackboard(raw, bb)
+          }
+        }
+        const requiredItem = (bundle.itemIds ?? []).map((itemId: string, i: number) => ({
+          id: itemId,
+          count: bundle.itemCnts?.[i] ?? 1,
+        }))
+        const pics = bundle.unlockCharPictureItemList ?? []
+        const portraitUrl = pics.length > 0
+          ? `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/textures/spaceship/imageposter/largesize/pic_${bundle.level}_${id}.png`
+          : ''
+        potentialLevels.push({ level: bundle.level, name, description, requiredItem, portraitUrl })
+      }
+    }
+
+    return { op, attributes, breakCostMap, talentNodeMap, wpnRecommend, skillGroups, skillLevelUp, skillPatchMap, factorySkills, skillConditions, potentialLevels }
   }, [locale, id])
 }
 
