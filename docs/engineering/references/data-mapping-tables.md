@@ -55,6 +55,22 @@ type: Permanent
 | WikiGroupTable | `groupId` | `list[]` with `groupName`, `iconId` | 敌人分组定义 |
 | DistributionInfoTable | area ID | `areaName` | 敌人分布区域名 |
 
+## 活动相关
+
+| 表名 | 主键 | 关键字段 | 用途 |
+|---|---|---|---|
+| ActivityTable | `id` (string) | `name`, `desc`, `type`, `timeId`, `tagIds[]`, `tabImg`, `tabImgColor`, `sortId`, `rewardId`, `bgImg` | 活动主数据 |
+| TimeRangeTable | string key（活动以 `timeId` 关联） | `timeRangeList[]`（`openTime`, `closeTime`） | 活动开启/结束时段 |
+| ActivityTagTable | `tagId` | `name` | 活动标签显示名 |
+
+活动数据要点：
+
+- `ActivityData.timeId` 直接给出 TimeRangeTable 的 key，无需启发式猜测；查不到时按无时间信息处理。
+- 时间格式为字符串 `"yyyy/M/d H:mm:ss"`（UTC+8，不补零），需手写解析；`closeTime` 为空串表示常驻。
+- `timeRangeList` 可能含多个时段且存在重复，需去重。
+- `type` 为开放枚举（实测 31 种值且随版本增长），展示时必须做「大类归并 + 其他兜底」，禁止封闭枚举硬编码。
+- 图片路径：`ui/sprites/activity/{tabImg}.png`。
+
 ## 富文本相关
 
 | 表名 | 主键 | 关键字段 | 用途 |
