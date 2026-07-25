@@ -230,6 +230,8 @@ function getBlocMap(locale: string): Promise<Record<string, string>> {
   return blocMapCaches.get(locale)!
 }
 
+const ADMIN_DATA_SOURCE_ID = 'chr_9000_endmin'
+
 export function useOperators(): UseDataResult<Operator[]> {
   const { locale } = useLocale()
   return useData(async () => {
@@ -245,7 +247,9 @@ export function useOperators(): UseDataResult<Operator[]> {
       getRaceMap(locale),
       getBlocMap(locale),
     ])
-    return Object.entries(rawData).map(([, v]) => adaptOperator(v, i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap))
+    return Object.entries(rawData)
+      .filter(([key]) => key !== ADMIN_DATA_SOURCE_ID)
+      .map(([, v]) => adaptOperator(v, i18nMap, profMap, elemMap, tagMap, attrMap, raceMap, blocMap))
   }, [locale])
 }
 
