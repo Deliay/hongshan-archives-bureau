@@ -102,6 +102,26 @@ test.describe('档案搜索 (Archive Search)', () => {
     await expect(enemyIcon).toBeVisible({ timeout: 10000 })
   })
 
+  test('搜索放置了多种武器的支援补给显示物品卡片 (ItemTable)', async ({ page }) => {
+    await page.goto('/archive/search', { waitUntil: 'domcontentloaded' })
+    await page.waitForSelector('h2')
+    const input = page.getByPlaceholder('搜索档案关键词…')
+    await input.fill('放置了多种武器的支援补给')
+    const responsePromise = page.waitForResponse(resp =>
+      resp.url().includes('/i18n/search/all/') && resp.ok(),
+    )
+    await input.press('Enter')
+    await responsePromise
+
+    await expect(page.getByText('ItemTable').first()).toBeVisible({ timeout: 20000 })
+    // 验证物品卡片渲染（检查物品图标）
+    const itemIcon = page.locator('img[src*="inventory/"]').first()
+    await expect(itemIcon).toBeVisible({ timeout: 10000 })
+    // 验证物品卡片包含物品类型标签（subInfo 渲染为 text-[9px] text-archive-dust）
+    const typeLabel = page.locator('span.text-archive-dust').first()
+    await expect(typeLabel).toBeVisible({ timeout: 10000 })
+  })
+
   test('搜索终结技期间燃烧时长显示正确技能等级 (SkillPatchTable)', async ({ page }) => {
     await page.goto('/archive/search', { waitUntil: 'domcontentloaded' })
     await page.waitForSelector('h2')
