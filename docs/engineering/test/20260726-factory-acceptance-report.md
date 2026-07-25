@@ -227,6 +227,9 @@ type: Fleeting
 
 **提交**：`a6fdb27 fix(factory): make chain graph edges visible on dark theme`
 
+> **二次修复**：初次仅改颜色未解决问题，实际是 ReactFlow 默认 CSS 覆盖了边样式。追加全局 CSS 覆盖 `react-flow__edge path` 和 `react-flow__arrow polygon`，并补充连通性单测。
+> **追加提交**：`2e821ac`
+
 ---
 
 ## 3. 修复总览
@@ -243,7 +246,7 @@ type: Fleeting
 | 2.8 | 配方展示逻辑错误 | 未按产品文档实现 | `2f785b6` |
 | 2.9 | 物品列表排序错误 | 按字母而非稀有度 | `25aeb57` |
 | 2.10 | 移动端选择体验差 | 列表始终展开 | `25aeb57` |
-| 2.11 | 链路图连线不可见 | 边颜色与深色背景接近 | `a6fdb27` |
+| 2.11 | 链路图连线不可见 | ReactFlow 默认 CSS 覆盖边样式 | `a6fdb27` + `2e821ac` |
 
 ---
 
