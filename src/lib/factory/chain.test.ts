@@ -81,6 +81,26 @@ describe('buildChainGraph', () => {
     expect(graph.edges.length).toBeGreaterThan(0)
   })
 
+  it('edges connect valid node keys', () => {
+    const graph = buildChainGraph(['steel_ingot'], [ironOreRecipe, steelRecipe], index, sources, {})
+    const nodeKeys = new Set(graph.nodes.map(n => n.key))
+    for (const edge of graph.edges) {
+      expect(nodeKeys.has(edge.from)).toBe(true)
+      expect(nodeKeys.has(edge.to)).toBe(true)
+    }
+  })
+
+  it('chain has source→item→machine→item edge path', () => {
+    const graph = buildChainGraph(['steel_ingot'], [ironOreRecipe, steelRecipe], index, sources, {})
+    const edgePairs = graph.edges.map(e => `${e.from}→${e.to}`)
+    const hasSourceToItem = edgePairs.some(p => p.includes('source:') && p.includes('→item:'))
+    const hasItemToMachine = edgePairs.some(p => p.includes('item:') && p.includes('→machine:'))
+    const hasMachineToItem = edgePairs.some(p => p.includes('machine:') && p.includes('→item:'))
+    expect(hasSourceToItem).toBe(true)
+    expect(hasItemToMachine).toBe(true)
+    expect(hasMachineToItem).toBe(true)
+  })
+
   it('builds multi-level chain for steel_ingot', () => {
     const graph = buildChainGraph(['steel_ingot'], [ironOreRecipe, steelRecipe], index, sources, {})
     const itemKeys = graph.nodes.filter(n => n.kind === 'item').map(n => n.itemId)

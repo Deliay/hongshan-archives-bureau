@@ -61,3 +61,11 @@ a {
 .animate-fade-in-up {
   animation: fade-in-up 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+
+.react-flow__edge path {
+  stroke: #C9A96E !important;
+}
+
+.react-flow__arrow polygon {
+  fill: #C9A96E !important;
+}

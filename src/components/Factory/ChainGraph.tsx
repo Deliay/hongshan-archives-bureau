@@ -115,8 +115,8 @@ function layoutGraph(graph: ChainGraphData): { nodes: Node[]; edges: Edge[] } {
     source: e.from,
     target: e.to,
     type: e.isCycle ? 'smoothstep' : 'bezier',
-    style: e.isCycle ? { stroke: '#f59e0b', strokeDasharray: '5 5' } : { stroke: '#C9A96E', strokeWidth: 1.5 },
-    markerEnd: e.isCycle ? undefined : { type: 'arrowclosed', color: '#C9A96E', width: 16, height: 16 },
+    style: { stroke: e.isCycle ? '#f59e0b' : '#C9A96E', strokeWidth: e.isCycle ? 2 : 1.5, strokeDasharray: e.isCycle ? '5 5' : undefined },
+    markerEnd: e.isCycle ? undefined : { type: 'arrowclosed' as const, color: '#C9A96E', width: 20, height: 20 },
     label: e.isCycle ? '↻' : undefined,
     animated: e.isCycle,
   }))
