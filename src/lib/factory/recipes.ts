@@ -11,7 +11,7 @@ function flattenGroup(group: { group: { id: string; count: number }[] }[]): { it
 
 export function adaptFactoryRecipe(raw: any): FactoryRecipe {
   return {
-    id: raw.formulaId ?? raw.$key ?? '',
+    id: raw.formulaId ?? raw.id ?? raw.$key ?? '',
     machineId: raw.machineId ?? '',
     ingredients: flattenGroup(raw.ingredients ?? []),
     outcomes: flattenGroup(raw.outcomes ?? []),
