@@ -69,4 +69,42 @@ test.describe('物品图鉴 (Item Archive)', () => {
     const firstItem = page.locator('main .aspect-square').first()
     await expect(firstItem).toBeVisible({ timeout: 15000 })
   })
+
+  test('切换贵重标签后反复翻页不应出现重复装备', async ({ page }) => {
+    await waitForItemsReady(page)
+
+    const valuableTabSelect = page.locator('select').filter({ hasText: '全部贵重标签' })
+    await expect(valuableTabSelect).toBeVisible({ timeout: 10000 })
+
+    const options = await valuableTabSelect.locator('option').allTextContents()
+    const equipOption = options.find(o => o.includes('装备'))
+    expect(equipOption).toBeTruthy()
+
+    await valuableTabSelect.selectOption({ label: equipOption! })
+    await page.waitForTimeout(500)
+
+    const nextBtn = page.getByRole('button', { name: '下一页' })
+    const prevBtn = page.getByRole('button', { name: '上一页' })
+
+    for (let round = 0; round < 4; round++) {
+      while (!(await nextBtn.isDisabled())) {
+        await nextBtn.click()
+        await page.waitForTimeout(100)
+      }
+      while (!(await prevBtn.isDisabled())) {
+        await prevBtn.click()
+        await page.waitForTimeout(100)
+      }
+    }
+
+    while (!(await nextBtn.isDisabled())) {
+      await nextBtn.click()
+      await page.waitForTimeout(100)
+    }
+
+    const lastPageNames = await page.locator('main button.aspect-square').allTextContents()
+    expect(lastPageNames.length, '最后一页应有装备').toBeGreaterThan(0)
+    const integratedItems = lastPageNames.filter(n => /集成实训/.test(n))
+    expect(integratedItems, `最后一页不应出现「集成实训」相关装备，但发现了: ${integratedItems.join(', ')}`).toHaveLength(0)
+  })
 })
