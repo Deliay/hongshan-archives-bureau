@@ -10,6 +10,8 @@ import RecipeCard from '../../components/Craft/RecipeCard'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useEffect } from 'react'
 
+const PAGE_SIZE = 12
+
 export default function FactoryRecipes() {
   const { t } = useI18n()
   const { locale } = useLocale()
@@ -19,6 +21,13 @@ export default function FactoryRecipes() {
   const itemRecipes = useItemRecipes(selectedId)
   const [search, setSearch] = useState('')
   const [itemMeta, setItemMeta] = useState<Record<string, { name: string; rarity: number }>>({})
+  const [productPage, setProductPage] = useState(0)
+  const [materialPage, setMaterialPage] = useState(0)
+
+  useEffect(() => {
+    setProductPage(0)
+    setMaterialPage(0)
+  }, [selectedId])
 
   useEffect(() => {
     if (!factoryData) return
@@ -60,6 +69,13 @@ export default function FactoryRecipes() {
       return meta?.name.toLowerCase().includes(q) || id.toLowerCase().includes(q)
     })
   }, [itemIds, itemMeta, search])
+
+  const productRecipes = itemRecipes.asProduct
+  const materialRecipes = itemRecipes.asMaterial
+  const productTotalPages = Math.max(1, Math.ceil(productRecipes.length / PAGE_SIZE))
+  const materialTotalPages = Math.max(1, Math.ceil(materialRecipes.length / PAGE_SIZE))
+  const pagedProducts = productRecipes.slice(productPage * PAGE_SIZE, (productPage + 1) * PAGE_SIZE)
+  const pagedMaterials = materialRecipes.slice(materialPage * PAGE_SIZE, (materialPage + 1) * PAGE_SIZE)
 
   if (loading) return <ListSkeleton />
   if (error) return <div className="text-center py-12 text-archive-lead">{error}</div>
@@ -103,15 +119,38 @@ export default function FactoryRecipes() {
       <div className="flex-1 min-w-0">
         {!selectedId ? (
           <div className="text-center py-16 text-archive-lead text-sm">{t('factory.selectItemHint')}</div>
-        ) : itemRecipes.asProduct.length === 0 && itemRecipes.asMaterial.length === 0 ? (
+        ) : productRecipes.length === 0 && materialRecipes.length === 0 ? (
           <div className="text-center py-16 text-archive-lead text-sm">{t('factory.noRecipes')}</div>
         ) : (
           <div className="space-y-6">
-            {itemRecipes.asProduct.length > 0 && (
+            {productRecipes.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-archive-gold mb-3">{t('factory.asProduct')}</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-archive-gold">{t('factory.asProduct')} ({productRecipes.length})</h3>
+                  {productTotalPages > 1 && (
+                    <div className="flex items-center gap-1 text-xs">
+                      <button
+                        type="button"
+                        disabled={productPage === 0}
+                        onClick={() => setProductPage(p => p - 1)}
+                        className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        ‹
+                      </button>
+                      <span className="text-archive-lead px-1">{productPage + 1}/{productTotalPages}</span>
+                      <button
+                        type="button"
+                        disabled={productPage >= productTotalPages - 1}
+                        onClick={() => setProductPage(p => p + 1)}
+                        className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-3">
-                  {itemRecipes.asProduct.map(recipe => (
+                  {pagedProducts.map(recipe => (
                     <RecipeCard
                       key={recipe.id}
                       recipe={recipe}
@@ -122,11 +161,34 @@ export default function FactoryRecipes() {
                 </div>
               </div>
             )}
-            {itemRecipes.asMaterial.length > 0 && (
+            {materialRecipes.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-archive-lead mb-3">{t('factory.asMaterial')}</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-archive-lead">{t('factory.asMaterial')} ({materialRecipes.length})</h3>
+                  {materialTotalPages > 1 && (
+                    <div className="flex items-center gap-1 text-xs">
+                      <button
+                        type="button"
+                        disabled={materialPage === 0}
+                        onClick={() => setMaterialPage(p => p - 1)}
+                        className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        ‹
+                      </button>
+                      <span className="text-archive-lead px-1">{materialPage + 1}/{materialTotalPages}</span>
+                      <button
+                        type="button"
+                        disabled={materialPage >= materialTotalPages - 1}
+                        onClick={() => setMaterialPage(p => p + 1)}
+                        className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-3">
-                  {itemRecipes.asMaterial.map(recipe => (
+                  {pagedMaterials.map(recipe => (
                     <RecipeCard
                       key={recipe.id}
                       recipe={recipe}
