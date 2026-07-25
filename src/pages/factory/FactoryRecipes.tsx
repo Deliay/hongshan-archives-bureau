@@ -26,6 +26,7 @@ export default function FactoryRecipes() {
   const [itemMeta, setItemMeta] = useState<Record<string, { name: string; rarity: number }>>({})
   const [listPage, setListPage] = useState(0)
   const [recipePage, setRecipePage] = useState(0)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     setRecipePage(0)
@@ -64,8 +65,13 @@ export default function FactoryRecipes() {
       ...Object.keys(factoryData.index.asIngredient),
       ...Object.keys(factoryData.index.asOutcome),
     ])
-    return Array.from(ids).sort()
-  }, [factoryData])
+    return Array.from(ids).sort((a, b) => {
+      const ra = itemMeta[a]?.rarity ?? 0
+      const rb = itemMeta[b]?.rarity ?? 0
+      if (rb !== ra) return rb - ra
+      return (itemMeta[a]?.name || a).localeCompare(itemMeta[b]?.name || b)
+    })
+  }, [factoryData, itemMeta])
 
   const filteredIds = useMemo(() => {
     if (!search.trim()) return itemIds
@@ -99,6 +105,8 @@ export default function FactoryRecipes() {
   const recipeTotalPages = Math.max(1, Math.ceil(groupedByMachine.length / PAGE_SIZE))
   const pagedGroups = groupedByMachine.slice(recipePage * PAGE_SIZE, (recipePage + 1) * PAGE_SIZE)
 
+  const selectedMeta = selectedId ? itemMeta[selectedId] : null
+
   if (loading) return <ListSkeleton />
   if (error) return <div className="text-center py-12 text-archive-lead">{error}</div>
 
@@ -112,7 +120,75 @@ export default function FactoryRecipes() {
           placeholder={t('factory.searchItem')}
           className="w-full px-3 py-2 rounded border border-archive-border bg-archive-file text-sm text-archive-ivory placeholder:text-archive-lead focus:outline-none focus:border-archive-gold/40 mb-3"
         />
-        <div className="max-h-[70vh] overflow-y-auto space-y-0.5 pr-1">
+
+        <div className="md:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(v => !v)}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded border border-archive-border bg-archive-file text-sm text-archive-ivory"
+          >
+            {selectedMeta ? (
+              <>
+                <ItemTile itemId={selectedId!} size="sm" name={selectedMeta.name} rarity={selectedMeta.rarity} showTips={false} />
+                <span className="truncate flex-1 text-left">{selectedMeta.name}</span>
+              </>
+            ) : (
+              <span className="text-archive-lead flex-1 text-left">{t('factory.selectItemHint')}</span>
+            )}
+            <svg className={`w-4 h-4 text-archive-lead shrink-0 transition-transform ${mobileOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {mobileOpen && (
+            <div className="mt-1 max-h-[50vh] overflow-y-auto rounded border border-archive-border bg-archive-file">
+              {pagedList.map(id => {
+                const meta = itemMeta[id]
+                const isSelected = id === selectedId
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => { setSearchParams({ item: id }); setMobileOpen(false) }}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm transition-colors ${
+                      isSelected
+                        ? 'bg-archive-gold/10 text-archive-gold'
+                        : 'text-archive-dust hover:text-archive-ivory hover:bg-archive-border'
+                    }`}
+                  >
+                    <ItemTile itemId={id} size="sm" name={meta?.name} rarity={meta?.rarity} showTips={false} />
+                    <span className="truncate">{meta?.name || id}</span>
+                  </button>
+                )
+              })}
+              {filteredIds.length === 0 && (
+                <div className="text-sm text-archive-lead py-4 text-center">{t('factory.noRecipes')}</div>
+              )}
+            </div>
+          )}
+          {listTotalPages > 1 && mobileOpen && (
+            <div className="flex items-center justify-center gap-1 text-xs mt-2">
+              <button
+                type="button"
+                disabled={listPage === 0}
+                onClick={() => setListPage(p => p - 1)}
+                className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ‹
+              </button>
+              <span className="text-archive-lead px-1">{listPage + 1}/{listTotalPages}</span>
+              <button
+                type="button"
+                disabled={listPage >= listTotalPages - 1}
+                onClick={() => setListPage(p => p + 1)}
+                className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ›
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="hidden md:block max-h-[70vh] overflow-y-auto space-y-0.5 pr-1">
           {pagedList.map(id => {
             const meta = itemMeta[id]
             const isSelected = id === selectedId
@@ -137,7 +213,7 @@ export default function FactoryRecipes() {
           )}
         </div>
         {listTotalPages > 1 && (
-          <div className="flex items-center justify-center gap-1 text-xs mt-2">
+          <div className="hidden md:flex items-center justify-center gap-1 text-xs mt-2">
             <button
               type="button"
               disabled={listPage === 0}
