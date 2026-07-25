@@ -36,6 +36,7 @@ type: Fleeting
 | 文件路径 | 说明 |
 |----------|------|
 | `src/pages/operators/PotentialSection.tsx` | 潜能模块组件 |
+| `tests/e2e/src/operator-potential.spec.ts` | 潜能模块 E2E 测试 |
 
 ### 2.2 修改文件
 
@@ -250,6 +251,81 @@ import PotentialSection from './PotentialSection'
 
 运行 `node scripts/generate-i18n-dicts.ts` 生成 14 个字典文件。
 
+### 3.6 E2E 测试
+
+**`tests/e2e/src/operator-potential.spec.ts`**：
+
+```typescript
+import { test, expect } from '@playwright/test'
+
+test.describe('干员潜能模块 (Operator Potential)', () => {
+
+  test.beforeEach(async ({ page, context }) => {
+    await context.addInitScript(() => localStorage.setItem('hs_visited', 'true'))
+  })
+
+  async function waitForDetailReady(page: any, operatorId: string) {
+    await page.goto(`/archive/operators/${operatorId}`)
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('档案记录') || body.includes('未找到') || body.includes('加载失败')
+    }, { timeout: 20000 })
+  }
+
+  test('干员详情页显示「潜能」模块标题', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0005_chen')
+    await expect(page.getByText('潜能', { exact: true }).first()).toBeVisible({ timeout: 10000 })
+  })
+
+  test('潜能模块展示 5 级潜能卡片', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0005_chen')
+    await page.waitForTimeout(3000)
+
+    // 5 级潜能，每级应有等级数字标识
+    for (let i = 1; i <= 5; i++) {
+      const levelBadge = page.locator('span').filter({ hasText: new RegExp(`^${i}$`) }).first()
+      await expect(levelBadge).toBeVisible({ timeout: 5000 })
+    }
+  })
+
+  test('潜能卡片显示效果描述文字', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0005_chen')
+    await page.waitForTimeout(3000)
+
+    // 陈千语潜能 1 效果描述应包含黑板数值（20% 概率相关）
+    const bodyText = await page.locator('body').textContent() || ''
+    // 描述中应包含格式化后的数值，不含原始占位符
+    expect(bodyText).not.toContain('{extra_dmg')
+    expect(bodyText).not.toContain('{hp_remain')
+  })
+
+  test('有立绘的潜能等级显示图片', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0005_chen')
+    await page.waitForTimeout(3000)
+
+    // 潜能立绘图片应存在（陈千语在 1/3/5 级有立绘）
+    const potentialImages = page.locator('img[src*="imageposter/largesize/pic_"]')
+    const count = await potentialImages.count()
+    expect(count).toBeGreaterThanOrEqual(1)
+  })
+
+  test('潜能描述不含未解析的 {placeholder} 占位', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0005_chen')
+    await page.waitForTimeout(3000)
+
+    const bodyText = await page.locator('body').textContent() || ''
+    const unresolvedPattern = /\{[a-zA-Z_][a-zA-Z0-9_.]*:?\d/
+    const matches = bodyText.match(unresolvedPattern)
+    expect(matches).toBeNull()
+  })
+})
+```
+
+**要点**：
+- 复用 `operator-skills.spec.ts` 的 `waitForDetailReady` 模式。
+- 测试「陈千语」（`chr_0005_chen`），该干员 5 级潜能均有数据，1/3/5 级有立绘。
+- 验证：模块标题可见、5 级卡片渲染、效果描述无占位符、立绘图片存在。
+
 ## 4. 实现顺序
 
 ### 阶段一：类型与数据（第 1 轮提交）
@@ -269,6 +345,11 @@ import PotentialSection from './PotentialSection'
 1. `scripts/i18n-custom.json` — 新增 `operator.potential`。
 2. `node scripts/generate-i18n-dicts.ts` — 生成字典。
 3. 校验：`npm run lint && npm run test && npm run build`。
+
+### 阶段四：E2E 测试（第 4 轮提交）
+
+1. `tests/e2e/src/operator-potential.spec.ts` — 新增潜能模块 E2E 测试。
+2. 校验：`cd tests/e2e && npx playwright test operator-potential`。
 
 ## 5. 测试计划
 
@@ -290,6 +371,11 @@ import PotentialSection from './PotentialSection'
 - 无立绘的潜能等级（2/4）不显示图片区域。
 - 立绘加载失败时图片区域隐藏。
 
+### 5.4 E2E 测试
+
+- `cd tests/e2e && npx playwright test operator-potential` 全部通过。
+- 测试覆盖：模块标题可见、5 级卡片渲染、效果描述无占位符、立绘图片存在。
+
 ## 6. 验收标准
 
 - [ ] 干员详情页显示「潜能」模块，位于天赋与后勤技能之间。
@@ -298,7 +384,8 @@ import PotentialSection from './PotentialSection'
 - [ ] 无立绘的潜能等级（2/4）不显示图片区域。
 - [ ] 多语言环境下潜能名称和效果描述正确显示。
 - [ ] 立绘图片加载失败时优雅降级（隐藏图片区域）。
-- [ ] `npm run lint`、`npm run test`、`npm run build` 全部通过。
+- [ ] E2E 测试覆盖：模块标题、5 级卡片、效果描述无占位符、立绘图片存在。
+- [ ] `npm run lint`、`npm run test`、`npm run build`、E2E 全部通过。
 
 ## 7. 风险与回滚
 
