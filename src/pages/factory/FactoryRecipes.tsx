@@ -11,6 +11,7 @@ import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useEffect } from 'react'
 
 const PAGE_SIZE = 12
+const LIST_PAGE_SIZE = 50
 
 export default function FactoryRecipes() {
   const { t } = useI18n()
@@ -23,11 +24,16 @@ export default function FactoryRecipes() {
   const [itemMeta, setItemMeta] = useState<Record<string, { name: string; rarity: number }>>({})
   const [productPage, setProductPage] = useState(0)
   const [materialPage, setMaterialPage] = useState(0)
+  const [listPage, setListPage] = useState(0)
 
   useEffect(() => {
     setProductPage(0)
     setMaterialPage(0)
   }, [selectedId])
+
+  useEffect(() => {
+    setListPage(0)
+  }, [search])
 
   useEffect(() => {
     if (!factoryData) return
@@ -70,6 +76,9 @@ export default function FactoryRecipes() {
     })
   }, [itemIds, itemMeta, search])
 
+  const listTotalPages = Math.max(1, Math.ceil(filteredIds.length / LIST_PAGE_SIZE))
+  const pagedList = filteredIds.slice(listPage * LIST_PAGE_SIZE, (listPage + 1) * LIST_PAGE_SIZE)
+
   const productRecipes = itemRecipes.asProduct
   const materialRecipes = itemRecipes.asMaterial
   const productTotalPages = Math.max(1, Math.ceil(productRecipes.length / PAGE_SIZE))
@@ -91,7 +100,7 @@ export default function FactoryRecipes() {
           className="w-full px-3 py-2 rounded border border-archive-border bg-archive-file text-sm text-archive-ivory placeholder:text-archive-lead focus:outline-none focus:border-archive-gold/40 mb-3"
         />
         <div className="max-h-[70vh] overflow-y-auto space-y-0.5 pr-1">
-          {filteredIds.map(id => {
+          {pagedList.map(id => {
             const meta = itemMeta[id]
             const isSelected = id === selectedId
             return (
@@ -114,6 +123,27 @@ export default function FactoryRecipes() {
             <div className="text-sm text-archive-lead py-4 text-center">{t('factory.noRecipes')}</div>
           )}
         </div>
+        {listTotalPages > 1 && (
+          <div className="flex items-center justify-center gap-1 text-xs mt-2">
+            <button
+              type="button"
+              disabled={listPage === 0}
+              onClick={() => setListPage(p => p - 1)}
+              className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              ‹
+            </button>
+            <span className="text-archive-lead px-1">{listPage + 1}/{listTotalPages}</span>
+            <button
+              type="button"
+              disabled={listPage >= listTotalPages - 1}
+              onClick={() => setListPage(p => p + 1)}
+              className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              ›
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
