@@ -9,8 +9,10 @@ import ItemTile from '../../components/Items/ItemTile'
 import RecipeCard from '../../components/Craft/RecipeCard'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { useEffect } from 'react'
+import { ASSET_BASE } from '../../lib/adapter'
+import type { FactoryRecipe } from '../../lib/factory/types'
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 20
 const LIST_PAGE_SIZE = 50
 
 export default function FactoryRecipes() {
@@ -22,13 +24,11 @@ export default function FactoryRecipes() {
   const itemRecipes = useItemRecipes(selectedId)
   const [search, setSearch] = useState('')
   const [itemMeta, setItemMeta] = useState<Record<string, { name: string; rarity: number }>>({})
-  const [productPage, setProductPage] = useState(0)
-  const [materialPage, setMaterialPage] = useState(0)
   const [listPage, setListPage] = useState(0)
+  const [recipePage, setRecipePage] = useState(0)
 
   useEffect(() => {
-    setProductPage(0)
-    setMaterialPage(0)
+    setRecipePage(0)
   }, [selectedId])
 
   useEffect(() => {
@@ -79,12 +79,25 @@ export default function FactoryRecipes() {
   const listTotalPages = Math.max(1, Math.ceil(filteredIds.length / LIST_PAGE_SIZE))
   const pagedList = filteredIds.slice(listPage * LIST_PAGE_SIZE, (listPage + 1) * LIST_PAGE_SIZE)
 
-  const productRecipes = itemRecipes.asProduct
-  const materialRecipes = itemRecipes.asMaterial
-  const productTotalPages = Math.max(1, Math.ceil(productRecipes.length / PAGE_SIZE))
-  const materialTotalPages = Math.max(1, Math.ceil(materialRecipes.length / PAGE_SIZE))
-  const pagedProducts = productRecipes.slice(productPage * PAGE_SIZE, (productPage + 1) * PAGE_SIZE)
-  const pagedMaterials = materialRecipes.slice(materialPage * PAGE_SIZE, (materialPage + 1) * PAGE_SIZE)
+  const allRecipes = useMemo(() => {
+    const map = new Map<string, FactoryRecipe>()
+    for (const r of itemRecipes.asProduct) map.set(r.id, r)
+    for (const r of itemRecipes.asMaterial) map.set(r.id, r)
+    return Array.from(map.values())
+  }, [itemRecipes])
+
+  const groupedByMachine = useMemo(() => {
+    const groups = new Map<string, FactoryRecipe[]>()
+    for (const r of allRecipes) {
+      const key = r.machineId || '__unknown__'
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(r)
+    }
+    return Array.from(groups.entries())
+  }, [allRecipes])
+
+  const recipeTotalPages = Math.max(1, Math.ceil(groupedByMachine.length / PAGE_SIZE))
+  const pagedGroups = groupedByMachine.slice(recipePage * PAGE_SIZE, (recipePage + 1) * PAGE_SIZE)
 
   if (loading) return <ListSkeleton />
   if (error) return <div className="text-center py-12 text-archive-lead">{error}</div>
@@ -149,86 +162,65 @@ export default function FactoryRecipes() {
       <div className="flex-1 min-w-0">
         {!selectedId ? (
           <div className="text-center py-16 text-archive-lead text-sm">{t('factory.selectItemHint')}</div>
-        ) : productRecipes.length === 0 && materialRecipes.length === 0 ? (
+        ) : allRecipes.length === 0 ? (
           <div className="text-center py-16 text-archive-lead text-sm">{t('factory.noRecipes')}</div>
         ) : (
-          <div className="space-y-6">
-            {productRecipes.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-archive-gold">{t('factory.asProduct')} ({productRecipes.length})</h3>
-                  {productTotalPages > 1 && (
-                    <div className="flex items-center gap-1 text-xs">
-                      <button
-                        type="button"
-                        disabled={productPage === 0}
-                        onClick={() => setProductPage(p => p - 1)}
-                        className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        ‹
-                      </button>
-                      <span className="text-archive-lead px-1">{productPage + 1}/{productTotalPages}</span>
-                      <button
-                        type="button"
-                        disabled={productPage >= productTotalPages - 1}
-                        onClick={() => setProductPage(p => p + 1)}
-                        className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        ›
-                      </button>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-archive-lead">{allRecipes.length} {t('factory.recipes')}</span>
+              {recipeTotalPages > 1 && (
+                <div className="flex items-center gap-1 text-xs">
+                  <button
+                    type="button"
+                    disabled={recipePage === 0}
+                    onClick={() => setRecipePage(p => p - 1)}
+                    className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    ‹
+                  </button>
+                  <span className="text-archive-lead px-1">{recipePage + 1}/{recipeTotalPages}</span>
+                  <button
+                    type="button"
+                    disabled={recipePage >= recipeTotalPages - 1}
+                    onClick={() => setRecipePage(p => p + 1)}
+                    className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
+            </div>
+            {pagedGroups.map(([machineId, recipes]) => {
+              const machine = factoryData?.machines[machineId]
+              return (
+                <div key={machineId}>
+                  {machine && (
+                    <div className="flex items-center gap-2 mb-2">
+                      {machine.iconId && (
+                        <img
+                          src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${machine.iconId}.png`}
+                          alt=""
+                          className="w-5 h-5 object-contain"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                        />
+                      )}
+                      <span className="text-sm font-medium text-archive-ivory">{machine.name}</span>
+                      <span className="text-[10px] text-archive-lead">({recipes.length})</span>
                     </div>
                   )}
+                  <div className="space-y-1.5">
+                    {recipes.map(recipe => (
+                      <RecipeCard
+                        key={recipe.id}
+                        recipe={recipe}
+                        machine={machine}
+                        highlightItemId={selectedId ?? undefined}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {pagedProducts.map(recipe => (
-                    <RecipeCard
-                      key={recipe.id}
-                      recipe={recipe}
-                      machine={factoryData?.machines[recipe.machineId]}
-                      highlightItemId={selectedId ?? undefined}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            {materialRecipes.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-archive-lead">{t('factory.asMaterial')} ({materialRecipes.length})</h3>
-                  {materialTotalPages > 1 && (
-                    <div className="flex items-center gap-1 text-xs">
-                      <button
-                        type="button"
-                        disabled={materialPage === 0}
-                        onClick={() => setMaterialPage(p => p - 1)}
-                        className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        ‹
-                      </button>
-                      <span className="text-archive-lead px-1">{materialPage + 1}/{materialTotalPages}</span>
-                      <button
-                        type="button"
-                        disabled={materialPage >= materialTotalPages - 1}
-                        onClick={() => setMaterialPage(p => p + 1)}
-                        className="px-2 py-0.5 rounded border border-archive-border text-archive-dust hover:text-archive-ivory disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        ›
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {pagedMaterials.map(recipe => (
-                    <RecipeCard
-                      key={recipe.id}
-                      recipe={recipe}
-                      machine={factoryData?.machines[recipe.machineId]}
-                      highlightItemId={selectedId ?? undefined}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+              )
+            })}
           </div>
         )}
       </div>
