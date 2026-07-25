@@ -791,8 +791,8 @@ export function useActivities(): UseDataResult<Activity[]> {
   return useData(async () => {
     const [activitiesRaw, timeRangesRaw, tagsRaw, activityI18n, tagI18n] = await Promise.all([
       getCachedData<Record<string, any>>('ActivityTable', () => fetchTableAll('ActivityTable')),
-      getCachedData<Record<string, any>>('TimeRangeTable', () => fetchTableAll('TimeRangeTable')).catch(() => ({})),
-      getCachedData<Record<string, any>>('ActivityTagTable', () => fetchTableAll('ActivityTagTable')).catch(() => ({})),
+      getCachedData<Record<string, any>>('TimeRangeTable', () => fetchTableAll('TimeRangeTable')).catch((): Record<string, any> => ({})),
+      getCachedData<Record<string, any>>('ActivityTagTable', () => fetchTableAll('ActivityTagTable')).catch((): Record<string, any> => ({})),
       getTableI18nDict('ActivityTable', locale),
       getTableI18nDict('ActivityTagTable', locale).catch(() => ({})),
     ])
