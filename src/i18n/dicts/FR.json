@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "Archives des événements",
+    "filterType": "Type d'événement",
+    "filterStatus": "Statut de l'événement",
+    "groupCheckin": "Connexion",
+    "groupChallenge": "Défi",
+    "groupTrial": "Essai de personnage",
+    "groupWelfare": "Récompenses",
+    "groupReflow": "Retour",
+    "groupGuide": "Tutoriel",
+    "groupOther": "Autres",
+    "statusOngoing": "En cours",
+    "statusPermanent": "En permanence",
+    "statusUpcoming": "À venir",
+    "statusExpired": "Terminé",
+    "permanent": "En permanence",
+    "detailTime": "Période de l'événement",
+    "detailTags": "Étiquettes de l'événement",
+    "unknownTime": "Horaire inconnu",
+    "empty": "Aucun événement ne correspond",
+    "today": "Aujourd'hui"
+  },
   "common": {
     "all": "Tout afficher",
     "allRarity": "Toutes les raretés",
@@ -153,6 +175,7 @@
     "weaponSkill": "Compétence d'arme"
   },
   "nav": {
+    "activities": "Archives des événements",
     "archive": "Archive",
     "areas": "Géographie des zones",
     "areasDesc": "Explorer régions et zones",

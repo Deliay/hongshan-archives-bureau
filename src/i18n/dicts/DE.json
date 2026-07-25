@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "Eventarchiv",
+    "filterType": "Eventtyp",
+    "filterStatus": "Eventstatus",
+    "groupCheckin": "Anmeldung",
+    "groupChallenge": "Herausforderung",
+    "groupTrial": "Charakterprobe",
+    "groupWelfare": "Belohnungen",
+    "groupReflow": "Rückkehr",
+    "groupGuide": "Anleitung",
+    "groupOther": "Sonstiges",
+    "statusOngoing": "Laufend",
+    "statusPermanent": "Dauerhaft",
+    "statusUpcoming": "Bevorstehend",
+    "statusExpired": "Beendet",
+    "permanent": "Dauerhaft",
+    "detailTime": "Eventzeitraum",
+    "detailTags": "Event-Tags",
+    "unknownTime": "Zeit unbekannt",
+    "empty": "Keine passenden Events",
+    "today": "Heute"
+  },
   "common": {
     "all": "Alle zeigen",
     "allRarity": "Alle Seltenheiten",
@@ -153,6 +175,7 @@
     "weaponSkill": "Waffenfähigkeit"
   },
   "nav": {
+    "activities": "Eventarchiv",
     "archive": "Archiv",
     "areas": "Regionalgeografie",
     "areasDesc": "Regionen und Zonen erkunden",

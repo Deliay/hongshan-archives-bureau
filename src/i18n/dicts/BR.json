@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "Arquivo de eventos",
+    "filterType": "Tipo de evento",
+    "filterStatus": "Estado do evento",
+    "groupCheckin": "Login diário",
+    "groupChallenge": "Desafio",
+    "groupTrial": "Teste de personagem",
+    "groupWelfare": "Recompensas",
+    "groupReflow": "Retorno",
+    "groupGuide": "Guia",
+    "groupOther": "Outros",
+    "statusOngoing": "Em andamento",
+    "statusPermanent": "Permanente",
+    "statusUpcoming": "Em breve",
+    "statusExpired": "Encerrado",
+    "permanent": "Permanente",
+    "detailTime": "Período do evento",
+    "detailTags": "Tags do evento",
+    "unknownTime": "Horário desconhecido",
+    "empty": "Nenhum evento corresponde aos filtros",
+    "today": "Hoje"
+  },
   "common": {
     "all": "Mostrar tudo",
     "allRarity": "Todas as raridades",
@@ -153,6 +175,7 @@
     "weaponSkill": "Habilidade de arma"
   },
   "nav": {
+    "activities": "Arquivo de eventos",
     "archive": "Arquivo",
     "areas": "Geografia de áreas",
     "areasDesc": "Explorar regiões e zonas",

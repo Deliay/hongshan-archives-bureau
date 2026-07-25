@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "Архив событий",
+    "filterType": "Тип события",
+    "filterStatus": "Статус события",
+    "groupCheckin": "Вход",
+    "groupChallenge": "Испытание",
+    "groupTrial": "Пробный персонаж",
+    "groupWelfare": "Награды",
+    "groupReflow": "Возвращение",
+    "groupGuide": "Обучение",
+    "groupOther": "Другое",
+    "statusOngoing": "Идёт",
+    "statusPermanent": "Постоянно",
+    "statusUpcoming": "Скоро",
+    "statusExpired": "Завершено",
+    "permanent": "Постоянно",
+    "detailTime": "Время события",
+    "detailTags": "Теги события",
+    "unknownTime": "Время неизвестно",
+    "empty": "Нет событий, соответствующих условиям",
+    "today": "Сегодня"
+  },
   "common": {
     "all": "Показать все",
     "allRarity": "Все редкости",
@@ -153,6 +175,7 @@
     "weaponSkill": "Навык оружия"
   },
   "nav": {
+    "activities": "Архив событий",
     "archive": "Архивы",
     "areas": "География районов",
     "areasDesc": "Распределение районов и исследования",

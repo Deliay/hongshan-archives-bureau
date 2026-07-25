@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "イベントアーカイブ",
+    "filterType": "イベントタイプ",
+    "filterStatus": "イベント状態",
+    "groupCheckin": "ログイン",
+    "groupChallenge": "チャレンジ",
+    "groupTrial": "キャラお試し",
+    "groupWelfare": "特典報酬",
+    "groupReflow": "復帰",
+    "groupGuide": "ガイド",
+    "groupOther": "その他",
+    "statusOngoing": "開催中",
+    "statusPermanent": "常設",
+    "statusUpcoming": "開催予定",
+    "statusExpired": "終了",
+    "permanent": "常設",
+    "detailTime": "開催期間",
+    "detailTags": "イベントタグ",
+    "unknownTime": "時間不明",
+    "empty": "条件に合うイベントはありません",
+    "today": "今日"
+  },
   "common": {
     "all": "すべて",
     "allRarity": "すべてのレアリティ",
@@ -153,6 +175,7 @@
     "weaponSkill": "武器スキル"
   },
   "nav": {
+    "activities": "イベントアーカイブ",
     "archive": "檔案局",
     "areas": "地域地理",
     "areasDesc": "地域分布と探索",

@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "Lưu trữ sự kiện",
+    "filterType": "Loại sự kiện",
+    "filterStatus": "Trạng thái sự kiện",
+    "groupCheckin": "Điểm danh",
+    "groupChallenge": "Thử thách",
+    "groupTrial": "Dùng thử nhân vật",
+    "groupWelfare": "Phần thưởng phúc lợi",
+    "groupReflow": "Quay lại",
+    "groupGuide": "Hướng dẫn",
+    "groupOther": "Khác",
+    "statusOngoing": "Đang diễn ra",
+    "statusPermanent": "Thường trực",
+    "statusUpcoming": "Sắp diễn ra",
+    "statusExpired": "Đã kết thúc",
+    "permanent": "Thường trực",
+    "detailTime": "Thời gian sự kiện",
+    "detailTags": "Thẻ sự kiện",
+    "unknownTime": "Thời gian chưa rõ",
+    "empty": "Không có sự kiện phù hợp",
+    "today": "Hôm nay"
+  },
   "common": {
     "all": "Hiển Thị Tất Cả",
     "allRarity": "Tất cả độ hiếm",
@@ -153,6 +175,7 @@
     "weaponSkill": "Kỹ năng vũ khí"
   },
   "nav": {
+    "activities": "Lưu trữ sự kiện",
     "archive": "Tài liệu",
     "areas": "Địa lý khu vực",
     "areasDesc": "Khám phá khu vực và vùng",
