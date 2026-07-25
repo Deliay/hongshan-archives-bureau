@@ -244,16 +244,13 @@ async function buildWeaponEntityMap(locale: string): Promise<Record<string, Sear
 }
 
 async function buildItemEntityMap(locale: string): Promise<Record<string, SearchEntity>> {
-  const [raw, i18nMap, typeRaw, typeI18n] = await Promise.all([
+  const [raw, i18nMap] = await Promise.all([
     getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
     getTableI18nDict('ItemTable', locale),
-    getCachedData<Record<string, any>>('ItemTypeTable', () => fetchTableAll('ItemTypeTable')),
-    getTableI18nDict('ItemTypeTable', locale),
   ])
   const map: Record<string, SearchEntity> = {}
   for (const [, v] of Object.entries<any>(raw)) {
     const id = v.itemId ?? v.$key ?? ''
-    const typeName = resolveI18n(typeRaw[String(v.type)]?.name, typeI18n) || ''
     map[id] = {
       type: 'item',
       id,
@@ -261,8 +258,23 @@ async function buildItemEntityMap(locale: string): Promise<Record<string, Search
       route: '/archive/items',
       icon: v.iconId ?? id,
       rarity: v.rarity ?? 0,
-      subInfo: typeName || undefined,
     }
+  }
+  // Fetch ItemTypeTable separately — failure should not break entity map
+  try {
+    const [typeRaw, typeI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('ItemTypeTable', () => fetchTableAll('ItemTypeTable')),
+      getTableI18nDict('ItemTypeTable', locale),
+    ])
+    for (const entry of Object.values(map)) {
+      const rawEntry = Object.values<any>(raw).find((v: any) => (v.itemId ?? v.$key ?? '') === entry.id)
+      if (rawEntry) {
+        const typeName = resolveI18n(typeRaw[String(rawEntry.type)]?.name, typeI18n) || ''
+        if (typeName) entry.subInfo = typeName
+      }
+    }
+  } catch {
+    // ItemTypeTable fetch failed — items render without type info
   }
   return map
 }
