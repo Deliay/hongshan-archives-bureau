@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import type { SearchEntity } from '../../lib/types'
@@ -6,6 +7,7 @@ import { Skeleton } from '../ui/Skeleton'
 import Rarity from '../Rarity'
 import RarityFrame from '../RarityFrame'
 import ItemIcon from '../Items/ItemIcon'
+import ItemTooltipOverlay from '../Items/ItemTooltip'
 
 const ENEMY_STARS: Record<number, number> = { 0: 1, 1: 3, 2: 6, 3: 4, 4: 5 }
 
@@ -89,25 +91,34 @@ function OperatorReferenceCard({ entity }: ReferenceCardProps) {
 }
 
 function ItemReferenceCard({ entity }: ReferenceCardProps) {
+  const [showTooltip, setShowTooltip] = useState(false)
+
   return (
-    <ReferenceBar
-      href={entity.route}
-      left={
-        <div className="w-10 h-10 overflow-hidden rounded">
+    <>
+      <button
+        type="button"
+        onClick={() => setShowTooltip(v => !v)}
+        className="flex items-center gap-3 p-2 rounded border border-archive-border bg-archive-file hover:border-archive-gold/40 transition-colors min-w-0 cursor-pointer w-full text-left"
+      >
+        <div className="shrink-0 w-10 h-10 overflow-hidden rounded">
           <RarityFrame rarity={entity.rarity ?? 0} size="sm" className="w-full h-full">
             <ItemIcon itemId={entity.id} className="w-full h-full" />
           </RarityFrame>
         </div>
-      }
-    >
-      <div className="flex flex-col gap-0.5">
-        <span className="truncate text-xs text-archive-ivory">{entity.name}</span>
-        <Rarity level={entity.rarity ?? 0} />
-        {entity.subInfo && (
-          <span className="text-[9px] text-archive-dust">{entity.subInfo}</span>
-        )}
-      </div>
-    </ReferenceBar>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col gap-0.5">
+            <span className="truncate text-xs text-archive-ivory">{entity.name}</span>
+            <Rarity level={entity.rarity ?? 0} />
+            {entity.subInfo && (
+              <span className="text-[9px] text-archive-dust">{entity.subInfo}</span>
+            )}
+          </div>
+        </div>
+      </button>
+      {showTooltip && (
+        <ItemTooltipOverlay itemId={entity.id} onClose={() => setShowTooltip(false)} />
+      )}
+    </>
   )
 }
 

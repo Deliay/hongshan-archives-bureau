@@ -114,11 +114,15 @@ test.describe('档案搜索 (Archive Search)', () => {
     await responsePromise
 
     await expect(page.getByText('ItemTable').first()).toBeVisible({ timeout: 20000 })
-    // 验证搜索结果区域内有物品卡片链接（排除 sidebar）
+    // 验证搜索结果区域内有物品卡片按钮
     const main = page.locator('main')
-    await expect(main.locator('a[href="/archive/items"]').first()).toBeVisible({ timeout: 15000 })
-    const cardCount = await main.locator('a[href="/archive/items"]').count()
+    const cardButtons = main.locator('button').filter({ has: page.locator('img[src*="itemicon/"]') })
+    await expect(cardButtons.first()).toBeVisible({ timeout: 15000 })
+    const cardCount = await cardButtons.count()
     expect(cardCount).toBeGreaterThan(0)
+    // 点击第一个卡片，验证弹出 ItemTooltip
+    await cardButtons.first().click()
+    await expect(page.locator('[role="dialog"]').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('搜索终结技期间燃烧时长显示正确技能等级 (SkillPatchTable)', async ({ page }) => {
