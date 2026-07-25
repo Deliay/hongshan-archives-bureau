@@ -387,6 +387,29 @@ export interface SearchEntity {
   tags?: string[]
 }
 
+export type ActivityGroup = 'checkin' | 'challenge' | 'trial' | 'welfare' | 'reflow' | 'guide' | 'other'
+
+export type ActivityStatus = 'ongoing' | 'permanent' | 'upcoming' | 'expired'
+
+export interface ActivityTimeRange {
+  openTime: number
+  closeTime: number | null
+}
+
+export interface Activity {
+  id: string
+  name: string
+  desc: string
+  type: number
+  group: ActivityGroup
+  status: ActivityStatus | 'unknown'
+  timeRanges: ActivityTimeRange[]
+  tags: string[]
+  tabImg: string
+  tabImgColor: string
+  sortId: number
+}
+
 export interface UseArchiveSearchResult {
   results: SearchResult[]
   entities: Record<string, Record<string, SearchEntity>>

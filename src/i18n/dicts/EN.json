@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "Activity Archive",
+    "filterType": "Activity Type",
+    "filterStatus": "Activity Status",
+    "groupCheckin": "Check-in",
+    "groupChallenge": "Challenge",
+    "groupTrial": "Character Trial",
+    "groupWelfare": "Rewards",
+    "groupReflow": "Return",
+    "groupGuide": "Guide",
+    "groupOther": "Other",
+    "statusOngoing": "Ongoing",
+    "statusPermanent": "Permanent",
+    "statusUpcoming": "Upcoming",
+    "statusExpired": "Ended",
+    "permanent": "Permanent",
+    "detailTime": "Event Time",
+    "detailTags": "Event Tags",
+    "unknownTime": "Time Unknown",
+    "empty": "No activities match the filters",
+    "today": "Today"
+  },
   "common": {
     "all": "Show All",
     "allRarity": "All Rarities",
@@ -153,6 +175,8 @@
     "weaponSkill": "Weapon Skill"
   },
   "nav": {
+    "activities": "Activity Archive",
+    "activitiesDesc": "Chronicle of event schedules",
     "archive": "Archives",
     "areas": "Area Geography",
     "areasDesc": "Regional distribution and exploration",

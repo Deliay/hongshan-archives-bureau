@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "Arsip acara",
+    "filterType": "Tipe acara",
+    "filterStatus": "Status acara",
+    "groupCheckin": "Login",
+    "groupChallenge": "Tantangan",
+    "groupTrial": "Uji coba karakter",
+    "groupWelfare": "Hadiah bonus",
+    "groupReflow": "Kembali",
+    "groupGuide": "Panduan",
+    "groupOther": "Lainnya",
+    "statusOngoing": "Berlangsung",
+    "statusPermanent": "Permanen",
+    "statusUpcoming": "Akan datang",
+    "statusExpired": "Berakhir",
+    "permanent": "Permanen",
+    "detailTime": "Waktu acara",
+    "detailTags": "Tag acara",
+    "unknownTime": "Waktu tidak diketahui",
+    "empty": "Tidak ada acara yang cocok",
+    "today": "Hari ini"
+  },
   "common": {
     "all": "Perlihatkan Semua",
     "allRarity": "Semua kelangkaan",
@@ -153,6 +175,8 @@
     "weaponSkill": "Skill senjata"
   },
   "nav": {
+    "activities": "Arsip acara",
+    "activitiesDesc": "Lihat jadwal event",
     "archive": "Arsip",
     "areas": "Geografi area",
     "areasDesc": "Jelajahi wilayah dan zona",

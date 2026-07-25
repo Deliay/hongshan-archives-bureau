@@ -23,6 +23,7 @@ import EquipmentDetail from './pages/equipment/EquipmentDetail'
 import ItemList from './pages/items/ItemList'
 import FactoryOverview from './pages/factory/FactoryOverview'
 import StoryOverview from './pages/story/StoryOverview'
+import ActivityArchive from './pages/activities/ActivityArchive'
 import ArchiveSearch from './pages/search/ArchiveSearch'
 import UpdateHome from './pages/updates/UpdateHome'
 import UpdateSummary from './pages/updates/UpdateSummary'
@@ -56,6 +57,7 @@ function AppRoutes() {
             <Route path="items" element={<ItemList />} />
             <Route path="factory" element={<FactoryOverview />} />
             <Route path="story" element={<StoryOverview />} />
+            <Route path="activities" element={<ActivityArchive />} />
             <Route path="search" element={<ArchiveSearch />} />
             <Route path="updates" element={<UpdateHome />} />
             <Route path="updates/:versionName" element={<UpdateSummary />} />
