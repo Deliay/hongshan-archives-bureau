@@ -340,6 +340,9 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
                 for (const b of dl.attachBuff?.blackboard ?? []) {
                   if (!(b.key in bb)) bb[b.key] = b.value
                 }
+                if (dl.skillBbModifier?.bbKey && dl.skillBbModifier.floatValue !== undefined) {
+                  if (!(dl.skillBbModifier.bbKey in bb)) bb[dl.skillBbModifier.bbKey] = dl.skillBbModifier.floatValue
+                }
               }
               return formatBlackboard(raw, bb)
             })()
