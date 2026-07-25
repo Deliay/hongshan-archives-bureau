@@ -35,7 +35,7 @@ export default function PotentialSection({ levels }: PotentialSectionProps) {
             <img
               src={pl.portraitUrl}
               alt={pl.name}
-              className="w-full rounded mt-2"
+              className="w-full rounded mt-2 object-contain"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             />
           )}
