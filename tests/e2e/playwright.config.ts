@@ -9,7 +9,6 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     screenshot: 'only-on-failure',
     launchOptions: {
-      executablePath: '/home/ash/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome',
       args: ['--disable-web-security', '--no-sandbox'],
     },
   },
