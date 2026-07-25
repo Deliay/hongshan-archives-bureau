@@ -23,6 +23,7 @@ docs/engineering/
     diff-system.md           Diff 系统参考
   plans/                 开发计划与任务拆解（留空）
   proposal/              技术方案文档（留空）
+  test/                  验收问题报告
 ```
 
 ## 文档命名
@@ -38,6 +39,14 @@ docs/engineering/
 4. 如需接口契约，更新 `contract/`（如存在）。
 5. 创建开发分支并编写实现，可并行调用 subagent。
 6. 编排服务并运行 API / E2E 测试。
+
+## 验收问题处理
+
+收到验收问题反馈后，必须创建或更新 `test/` 目录下的验收报告：
+
+1. 命名格式：`YYYYMMDD-<feature-slug>-acceptance-report.md`
+2. 内容包含：关联 PRD/技术方案链接、每个问题的描述/根因/修复/commit、修复总览表、验证结果、经验总结
+3. 修复过程中实时更新文档，完成后随代码提交
 
 ## 编码前必读
 
