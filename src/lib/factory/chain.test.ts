@@ -182,3 +182,92 @@ describe('buildChainGraph', () => {
     expect(ironNodes.length).toBeGreaterThanOrEqual(1)
   })
 })
+
+describe('buildChainGraph with real data', () => {
+  const realRecipes: FactoryRecipe[] = [
+    {
+      id: 'component_activity_xiranite_cmpt_1',
+      machineId: 'component_mc_1',
+      totalProgress: 12000,
+      sortId: 6,
+      ingredients: [{ itemId: 'item_xiranite_powder', count: 1 }],
+      outcomes: [{ itemId: 'item_activity_xiranite_cmpt', count: 1 }],
+    },
+    {
+      id: 'tools_proc_activity_xiranite_hulu_1',
+      machineId: 'tools_assebling_mc_1',
+      totalProgress: 60000,
+      sortId: 12,
+      ingredients: [
+        { itemId: 'item_activity_xiranite_bottle', count: 5 },
+        { itemId: 'item_activity_xiranite_cmpt', count: 5 },
+      ],
+      outcomes: [{ itemId: 'item_activity_xiranite_hulu', count: 1 }],
+    },
+  ]
+
+  const realIndex: FactoryItemIndex = {
+    asIngredient: {
+      item_xiranite_powder: [realRecipes[0]],
+      item_activity_xiranite_bottle: [realRecipes[1]],
+      item_activity_xiranite_cmpt: [realRecipes[1]],
+    },
+    asOutcome: {
+      item_activity_xiranite_cmpt: [realRecipes[0]],
+      item_activity_xiranite_hulu: [realRecipes[1]],
+    },
+  }
+
+  it('builds chain: xiranite_hulu → xiranite_cmpt → xiranite_powder', () => {
+    const graph = buildChainGraph(
+      ['item_activity_xiranite_hulu'],
+      realRecipes,
+      realIndex,
+      [],
+      {},
+    )
+
+    const nodeKeys = graph.nodes.map(n => n.key)
+    const edgePairs = graph.edges.map(e => `${e.from}→${e.to}`)
+
+    expect(nodeKeys).toContain('item:item_activity_xiranite_hulu')
+    expect(nodeKeys).toContain('machine:tools_assebling_mc_1:tools_proc_activity_xiranite_hulu_1')
+    expect(nodeKeys).toContain('item:item_activity_xiranite_cmpt')
+    expect(nodeKeys).toContain('machine:component_mc_1:component_activity_xiranite_cmpt_1')
+    expect(nodeKeys).toContain('item:item_xiranite_powder')
+
+    const hasHuluMachine = edgePairs.some(p => p.includes('machine:tools_assebling_mc_1') && p.includes('→item:item_activity_xiranite_hulu'))
+    const hasCmptToHuluMachine = edgePairs.some(p => p.includes('item:item_activity_xiranite_cmpt') && p.includes('→machine:tools_assebling_mc_1'))
+    const hasCmptMachine = edgePairs.some(p => p.includes('machine:component_mc_1') && p.includes('→item:item_activity_xiranite_cmpt'))
+    const hasPowderToCmptMachine = edgePairs.some(p => p.includes('item:item_xiranite_powder') && p.includes('→machine:component_mc_1'))
+
+    expect(hasHuluMachine).toBe(true)
+    expect(hasCmptToHuluMachine).toBe(true)
+    expect(hasCmptMachine).toBe(true)
+    expect(hasPowderToCmptMachine).toBe(true)
+  })
+
+  it('marks target node correctly', () => {
+    const graph = buildChainGraph(
+      ['item_activity_xiranite_hulu'],
+      realRecipes,
+      realIndex,
+      [],
+      {},
+    )
+    const target = graph.nodes.find(n => n.itemId === 'item_activity_xiranite_hulu')
+    expect(target?.isTarget).toBe(true)
+  })
+
+  it('has correct per-minute values', () => {
+    const graph = buildChainGraph(
+      ['item_activity_xiranite_hulu'],
+      realRecipes,
+      realIndex,
+      [],
+      {},
+    )
+    const target = graph.nodes.find(n => n.itemId === 'item_activity_xiranite_hulu')
+    expect(target?.perMinute).toBeGreaterThan(0)
+  })
+})

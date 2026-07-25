@@ -96,12 +96,16 @@ export function buildChainGraph(
 
   for (const targetId of targets) {
     const targetKey = `item:${targetId}`
-    if (!allNodes.has(targetKey)) {
-      allNodes.set(targetKey, { key: targetKey, kind: 'item', itemId: targetId, perMinute: 0, isTarget: true })
-    }
     const recipe = resolveRecipe(targetId)
+    const pm = recipe ? perMinute(recipe.outcomes.find(o => o.itemId === targetId)?.count ?? 1, recipe.totalProgress) : 0
+    if (!allNodes.has(targetKey)) {
+      allNodes.set(targetKey, { key: targetKey, kind: 'item', itemId: targetId, perMinute: pm, isTarget: true })
+    } else {
+      const node = allNodes.get(targetKey)!
+      node.perMinute = pm
+      node.isTarget = true
+    }
     if (!recipe) continue
-    const pm = perMinute(recipe.outcomes.find(o => o.itemId === targetId)?.count ?? 1, recipe.totalProgress)
     const path = new Set<string>([targetId])
     expand(targetId, pm, path, targetKey)
   }
