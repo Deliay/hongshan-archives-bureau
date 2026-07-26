@@ -1227,7 +1227,7 @@ export function useCraftingChain(targets: string[]): UseDataResult<ChainGraph> {
 
   const graph = useMemo<ChainGraph>(() => {
     if (!factoryData || targets.length === 0) return { nodes: [], edges: [] }
-    return buildChainGraph(targets, factoryData.recipes, factoryData.index, chainData.sources, chainData.defaultCrafts)
+    return buildChainGraph(targets, factoryData.recipes, factoryData.index, chainData.sources, chainData.defaultCrafts, undefined, factoryData.machines)
   }, [factoryData, targets, chainData])
 
   return { data: graph, loading, error, refetch }

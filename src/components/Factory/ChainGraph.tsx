@@ -104,8 +104,8 @@ function layoutGraph(graph: ChainGraphData): { nodes: Node[]; edges: Edge[] } {
       data: {
         itemId: n.itemId,
         machineId: n.machineId,
-        machineName: '',
-        machineIcon: '',
+        machineName: n.machineName ?? '',
+        machineIcon: n.machineIcon ?? '',
         perMinute: n.perMinute,
         isTarget: n.isTarget,
       },

@@ -35,6 +35,8 @@ export interface ChainNode {
   kind: 'item' | 'machine' | 'source'
   itemId?: string
   machineId?: string
+  machineName?: string
+  machineIcon?: string
   perMinute: number
   isTarget?: boolean
 }

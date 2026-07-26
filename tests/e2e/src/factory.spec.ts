@@ -185,5 +185,36 @@ test.describe('工厂系统 (Factory System)', () => {
       const domEdgeCount = await page.locator('g.react-flow__edge').count()
       expect(domEdgeCount).toBeGreaterThan(10)
     })
+
+    test('机器节点渲染名字和图标', async ({ page }) => {
+      const TARGET = 'item_proc_battery_5'
+
+      await page.goto(`/archive/factory/chains?targets=${TARGET}`, { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return body.includes('已选产物') || body.includes('加载失败')
+      }, { timeout: 30000 })
+
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+
+      await page.waitForTimeout(3000)
+
+      const machineNodes = page.locator('.react-flow__node-machine')
+      const machineCount = await machineNodes.count()
+      expect(machineCount).toBeGreaterThan(0)
+
+      const firstMachine = machineNodes.first()
+      await expect(firstMachine).toBeVisible()
+
+      const machineText = await firstMachine.textContent()
+      expect(machineText).toBeTruthy()
+      expect(machineText!.trim().length).toBeGreaterThan(0)
+
+      const iconImg = firstMachine.locator('img')
+      const imgCount = await iconImg.count()
+      expect(imgCount).toBeGreaterThan(0)
+    })
   })
 })

@@ -15,6 +15,7 @@ export function buildChainGraph(
   sources: FactorySource[],
   defaultCrafts: Record<string, string>,
   recipeOverride?: Record<string, string>,
+  machines?: Record<string, { name: string; iconId: string }>,
 ): ChainGraph {
   const recipeById = new Map(recipes.map(r => [r.id, r]))
   const sourceByItem = new Map<string, FactorySource>()
@@ -61,10 +62,13 @@ export function buildChainGraph(
 
     const machineKey = `machine:${recipe.machineId}:${recipe.id}`
     if (!allNodes.has(machineKey)) {
+      const m = machines?.[recipe.machineId]
       allNodes.set(machineKey, {
         key: machineKey,
         kind: 'machine',
         machineId: recipe.machineId,
+        machineName: m?.name ?? '',
+        machineIcon: m?.iconId ?? '',
         perMinute: 0,
       })
     }
