@@ -290,7 +290,7 @@ type: Fleeting
 
 ## 3. 制作链路重构方案（待 Review）
 
-> **状态**: 🟡 第二轮评审
+> **状态**: 🟡 第三轮评审
 > **关联**: 制作链路图 `buildChainGraph` + `FactoryChains` 页面 UI
 
 ### 3.1 问题背景
@@ -298,19 +298,16 @@ type: Fleeting
 当前实现存在以下问题：
 
 1. **循环处理过于简单**：`expand()` 使用 DFS 路径检测，一律标记 `isCycle: true` 并跳过，无法区分有意义的循环和封闭回路
-2. **速率计算不完整**：仅按配方产出计算，未考虑上游供应瓶颈（如上游 4 秒才能提供 10 个原料，但配方要求 2 秒消耗 10 个）
+2. **速率计算不完整**：仅按配方产出计算，未考虑上游供应瓶颈
 3. **UI 不合理**：左侧列表选择物品效率低，无法调整目标产速
 4. **缺少机器数量**：图中未显示每种机器需要多少台
+5. **图结构不合理**：以物品节点为中心，应改为以机器节点为中心
 
 ### 3.2 循环规则集
 
 #### R0：循环定义
 
 **循环路径**：从物品 A 出发，经过若干配方和中间物品，最终回到 A 的路径。
-
-```
-A → [配方1] → B → [配方2] → C → ... → [配方N] → A
-```
 
 #### R1：净产出判定（核心规则）
 
@@ -322,8 +319,10 @@ A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 
 | 净产出 | 判定 | 行为 |
 |--------|------|------|
-| > 0 | **有效循环** | 标记 `isCycle: true`，循环边显示产出数量，继续向上游展开 |
+| > 0 | **有效循环** | 标记 `isCycle: true`，边上标注产出数量，继续向上游展开 |
 | ≤ 0 | **封闭回路** | 标记 `isCycle: true` + `cycleType: 'closed'`，停止展开，特殊视觉标记 |
+
+**净产出不做特殊节点标记**，但循环边上必须清晰标注产出数量（如 "×2 产出 / ×1 消耗"）。多层嵌套循环同理，只需标注清楚每层的产出数量。
 
 **示例 1（灌装 → 拆解，净产出=0）**：
 - 灌装机消耗 bottle1 ×1，产出 filled_bottle1 ×1
@@ -334,8 +333,6 @@ A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 - 采种机消耗 leaf1 ×1，产出 leaf_seed ×2
 - 种植机消耗 leaf_seed ×1，产出 leaf1 ×1
 - 净产出 = 2 - 1 = 1 → 有效循环，盈余 1 个 leaf_seed
-
-**净产出不做特殊节点标记**，但循环边上必须清晰标注产出数量（如 "×2 产出 / ×1 消耗"）。
 
 #### R2：配方比例分析
 
@@ -356,10 +353,8 @@ A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 当配方产出多种物品时，只有继续循环的那种产出参与循环判定。其他产出作为**副产物**处理：
 
 - 副产物不参与循环净产出计算
-- 副产物作为独立叶子节点显示
+- 副产物在机器节点内显示为产出列表的一部分
 - 副产物的速率按实际产出计算
-
-**示例**：采种机产出 leaf_seed ×2，其中 1 个用于循环（给种植机），另 1 个是副产物。
 
 #### R4：外部供应优先
 
@@ -367,18 +362,14 @@ A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 
 - 循环在有外部供应的节点处终止
 - 外部供应被视为该物品的"真实来源"
-- 循环内部不再展开
 
 #### R5：自消费防护
 
-一个配方不能在无外部供应的情况下消费自己的产出。如果检测到这种配置：
-
-- 标记为异常状态
-- 在图中用特殊样式（如红色虚线边）提示用户
+一个配方不能在无外部供应的情况下消费自己的产出。如果检测到这种配置，标记为异常状态。
 
 #### R6：循环深度限制
 
-为防止复杂链路中的无限递归，设置最大循环检测深度（建议值：10 层）。超过深度限制的路径视为终止。
+为防止复杂链路中的无限递归，设置最大循环检测深度（建议值：10 层）。
 
 ### 3.3 速率计算：供应瓶颈规则
 
@@ -412,16 +403,10 @@ function expand(itemId: string, availableRate: number, path: Set<string>, target
   const recipe = resolveRecipe(itemId)
   if (!recipe) { /* 叶子/源节点 */ return }
 
-  // 配方理论产出速率
   const theoryPm = perMinute(outcomeCount, recipe.totalProgress)
-
-  // 按实际供应折算的产出速率（取 min）
   const actualPm = Math.min(theoryPm, availableRate)
-
-  // 需要的机器数（向上取整）
   const machineCount = Math.ceil(actualPm / theoryPm)
 
-  // 对每个材料，传递实际消耗速率给下游
   for (const mat of recipe.ingredients) {
     const matConsumedPm = perMinute(mat.count, recipe.totalProgress) * machineCount
     expand(mat.itemId, matConsumedPm, newPath, matItemKey)
@@ -429,35 +414,97 @@ function expand(itemId: string, availableRate: number, path: Set<string>, target
 }
 ```
 
-### 3.4 机器数量显示
+### 3.4 传送带逻辑
 
-每个机器节点必须显示需要多少台该机器：
+#### 游戏内传送带数据
 
-#### 计算公式
+通过 API 查询 `FactoryGridBeltTable` 获取：
+
+| 字段 | 值 | 说明 |
+|------|-----|------|
+| `id` | `grid_belt_01` | 唯一传送带类型 |
+| `msPerRound` | 2000 | 每轮传输间隔 2 秒 |
+| 传输速率 | **30 个/min** | 1 个/2秒 × 60 秒 = 30 个/min |
+
+**当前游戏仅有一种传送带**（`grid_belt_01`），无升级版本。
+
+#### 传送带在图中的表达
+
+机器之间的连线代表传送带。边标签显示：
 
 ```
-机器数量 = ceil(实际产出速率 / 单台理论产出速率)
+传送带 ×3（90/min）
+```
+
+- **传送带 ×3** = 需要 3 条并行传送带
+- **90/min** = 3 × 30 个/min = 总吞吐量
+
+#### 传送带数量计算
+
+```
+传送带数量 = ceil(实际传输速率 / 单条传送带吞吐量)
 ```
 
 其中：
-- **实际产出速率** = 由 3.3 速率计算得出
-- **单台理论产出速率** = `perMinute(outcomeCount, totalProgress)`
+- **实际传输速率** = 两个机器之间的物品流量（个/min）
+- **单条传送带吞吐量** = 30 个/min
 
-#### 显示格式
+### 3.5 机器节点为中心的图结构
 
-在机器节点上显示：
+#### 现有结构（将废弃）
+
+以物品节点为中心：`物品 → 机器 → 物品 → 机器 → ...`
+
+#### 新结构：以机器节点为中心
 
 ```
-[机器图标] 精炼炉 ×3
-           ×6/min 产出
+[采种机 ×3] ──传送带×1──→ [种植机 ×2]
+     │                         │
+     └──砂叶种子──┘        └──砂叶──┘
 ```
 
-- **×3** = 需要 3 台该机器
-- **×6/min** = 该节点的总产出速率
+每个机器节点显示：
 
-多个相同机器的节点应汇总显示总数（如图中有 2 个精炼炉节点分别需要 2 台和 1 台，则总计显示 "精炼炉 ×3"）。
+```
+┌─────────────────────────┐
+│ [图标] 采种机 ×3         │  ← 机器名 + 数量
+│                         │
+│ 砂叶 → 砂叶种子 ×2      │  ← 配方摘要（输入 → 产出 ×数量）
+│                         │
+│ 总产出: 6/min           │  ← 总产出 = 机器数 × 单台产出
+│ 传送带: 2/min (输入)    │  ← 入口传送带需求
+│         6/min (输出)    │  ← 出口传送带需求
+└─────────────────────────┘
+```
 
-### 3.5 UI 重构：下拉选择 + 可调产速
+#### 副产物显示
+
+如果配方有多种产出（如采种机产出砂叶种子 + 砂叶），在节点内列出所有产出：
+
+```
+┌─────────────────────────┐
+│ [图标] 采种机 ×3         │
+│                         │
+│ 砂叶 → 砂叶种子 ×2      │  ← 主产出（用于循环）
+│            砂叶 ×1      │  ← 副产物（独立产出）
+│                         │
+│ 总产出: 砂叶种子 6/min   │
+│        砂叶 3/min       │
+└─────────────────────────┘
+```
+
+#### 封闭回路的视觉表达
+
+封闭回路（净产出 ≤ 0）需要特殊标记：
+
+| 元素 | 有效循环 | 封闭回路 |
+|------|----------|----------|
+| 边样式 | 金色实线 `#C9A96E` | 橙色虚线 `#f59e0b` + `strokeDasharray: '5 5'` |
+| 边标签 | 显示产出数量 | 显示 "↻ 封闭" + 产出数量 |
+| 动画 | 无 | 有（流动动画提示循环） |
+| 节点标记 | 无 | 封闭回路涉及的节点加锁图标 🔒 |
+
+### 3.6 UI 重构：下拉选择 + 多目标 + 可调产速
 
 #### 现有 UI（将废弃）
 
@@ -468,46 +515,46 @@ function expand(itemId: string, availableRate: number, path: Set<string>, target
 **布局**：顶部控制栏 + 全宽图
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  目标产物: [▼ 中容武陵电池     ]  需求产速: [6] 个/min  │
-│                                                     │
-│              [ReactFlow 链路图]                       │
-│                                                     │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  目标 1: [▼ 中容武陵电池     ] 产速: [6.0] 个/min  [×]  │
+│  目标 2: [▼ 高纯硅晶片       ] 产速: [3.5] 个/min  [×]  │
+│  [+ 添加目标产物]                                        │
+│                                                         │
+│                 [ReactFlow 链路图]                        │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
 **交互流程**：
 
 1. **选择目标产物**：下拉选择器，列出所有可制造物品（按 rarity 倒序），支持搜索
-2. **设置需求产速**：选择后自动填入配方默认产速（如 6 个/min），用户可修改
-3. **实时求解**：产速变化时自动重新计算链路图
-4. **URL 同步**：`?target=xxx&rate=6`，刷新后保持状态
+2. **设置需求产速**：选择后自动填入配方默认产速（如 6 个/min），用户可修改（允许非整数）
+3. **添加多个目标**：点击 "+ 添加目标产物" 增加新目标，每个目标独立设置产速
+4. **删除目标**：每个目标右侧有 [×] 按钮可删除
+5. **实时求解**：产速变化时自动重新计算链路图（所有目标合并求解）
+6. **URL 同步**：`?targets=xxx:6,yyy:3.5`，刷新后保持状态
+
+#### URL 参数设计
+
+```
+?targets=iron_ingot:10,steel_ingot:5
+```
+
+格式：`targets={itemId}:{rate},{itemId}:{rate},...`
+
+- 支持多个目标，逗号分隔
+- 每个目标格式为 `{itemId}:{rate}`
+- rate 为非负数，允许小数
 
 #### 数据流
 
 ```
-用户选择目标 → 设置需求产速 → buildChainGraph(target, demandRate)
-                                    ↓
-                              链路图渲染（含机器数量、循环标记）
+用户选择目标 → 设置产速 → buildChainGraph([{id, rate}, ...])
+                                  ↓
+                            合并求解所有目标
+                                  ↓
+                            链路图渲染（机器节点 + 传送带）
 ```
-
-#### URL 参数变更
-
-| 参数 | 旧 | 新 |
-|------|-----|-----|
-| `targets` | `targets=item1,item2`（多选） | `target=item1`（单选） |
-| `rate` | 无 | `rate=6`（需求产速，个/min） |
-
-### 3.6 封闭回路的视觉表达
-
-封闭回路（净产出 ≤ 0）需要特殊标记，与有效循环区分：
-
-| 元素 | 有效循环 | 封闭回路 |
-|------|----------|----------|
-| 边样式 | 金色实线 `#C9A96E` | 橙色虚线 `#f59e0b` + `strokeDasharray: '5 5'` |
-| 边标签 | 显示产出数量 | 显示 "↻ 封闭" + 产出数量 |
-| 动画 | 无 | 有（流动动画提示循环） |
-| 节点 | 正常显示 | 正常显示（循环节点本身不变） |
 
 ### 3.7 实现方案概要
 
@@ -515,21 +562,39 @@ function expand(itemId: string, availableRate: number, path: Set<string>, target
 
 ```typescript
 // types.ts
+interface ChainTarget {
+  itemId: string
+  rate: number        // 需求产速（个/min），允许非负数
+}
+
 interface ChainEdge {
-  from: string
-  to: string
-  perMinute: number
+  from: string        // 源机器节点 key
+  to: string          // 目标机器节点 key
+  itemIds: string[]   // 传送的物品 ID 列表
+  perMinute: number   // 传输速率（个/min）
+  beltCount: number   // 需要的传送带数量
   isCycle?: boolean
-  cycleType?: 'productive' | 'closed'  // 循环类型
-  cycleOutput?: number                  // 循环产出量
-  cycleInput?: number                   // 循环消耗量
+  cycleType?: 'productive' | 'closed'
+  cycleOutput?: number
+  cycleInput?: number
 }
 
 interface ChainNode {
-  // ... existing fields
-  machineCount?: number   // 需要的机器数量
-  actualPm?: number       // 实际产出速率
-  theoryPm?: number       // 理论产出速率
+  key: string
+  kind: 'machine' | 'source'
+  machineId: string
+  machineName: string
+  machineIcon: string
+  machineCount: number     // 需要的机器数量（向上取整）
+  recipe: {
+    id: string
+    inputs: { itemId: string; count: number; rate: number }[]
+    outputs: { itemId: string; count: number; rate: number }[]
+    totalProgress: number
+  }
+  actualPm: number         // 实际产出速率（所有产出的总和）
+  theoryPm: number         // 单台理论产出速率
+  isClosedLoop?: boolean   // 是否涉及封闭回路
 }
 ```
 
@@ -537,8 +602,7 @@ interface ChainNode {
 
 ```typescript
 function buildChainGraph(
-  target: string,           // 单个目标物品 ID（不再支持多选）
-  demandRate: number,       // 需求产速（个/min）
+  targets: ChainTarget[],          // 多目标 + 产速
   recipes: FactoryRecipe[],
   index: FactoryItemIndex,
   sources: FactorySource[],
@@ -553,7 +617,7 @@ function buildChainGraph(
 ```typescript
 function expand(
   itemId: string,
-  availableRate: number,    // 上游实际可用速率（不再是 demandRate）
+  availableRate: number,    // 上游实际可用速率
   path: Set<string>,
   targetKey: string,
 )
@@ -562,30 +626,33 @@ function expand(
 #### 新增函数
 
 ```typescript
-// 计算循环净产出
 function calcCycleOutput(
   cycleItems: string[],
   recipeById: Map<string, FactoryRecipe>,
 ): { netOutput: number; outputQty: number; inputQty: number }
 
-// 计算机器数量
 function calcMachineCount(actualPm: number, theoryPm: number): number {
   return Math.ceil(actualPm / theoryPm)
+}
+
+function calcBeltCount(rate: number, beltThroughput: number = 30): number {
+  return Math.ceil(rate / beltThroughput)
 }
 ```
 
 #### FactoryChains 页面重构
 
 - 移除左侧列表 + 分页逻辑
-- 新增顶部下拉选择器 + 产速输入框
-- URL 参数从 `targets` 改为 `target` + `rate`
+- 新增顶部多目标选择器 + 产速输入框
+- URL 参数从 `targets` 改为 `targets=id:rate,id:rate`
 - 移除 `LIST_PAGE_SIZE`、`listPage`、`mobileOpen` 等状态
 
 #### ChainGraph 组件变更
 
-- MachineNode 新增 `machineCount` 和 `actualPm` 显示
+- 节点类型从 `item` + `machine` 简化为 `machine` + `source`
+- MachineNode 显示：机器名、数量、配方摘要、总产出、传送带需求
 - 边渲染根据 `cycleType` 区分样式
-- 封闭回路边使用虚线 + 动画
+- 封闭回路边使用虚线 + 动画，节点加锁图标
 
 ### 3.8 规则总结表
 
@@ -600,26 +667,37 @@ function calcMachineCount(actualPm: number, theoryPm: number): number {
 | R6 | 循环深度限制 | 防止无限递归 | 安全 |
 | R7 | 供应瓶颈 | 实际产出 = min(理论产出, 上游供应) | 核心 |
 | R8 | 机器数量 | 每个节点显示所需机器台数 | 核心 |
+| R9 | 传送带数量 | 每条边显示所需传送带数 | 核心 |
 
 ### 3.9 涉及文件
 
 | 文件 | 变更 |
 |------|------|
-| `src/lib/factory/types.ts` | `ChainEdge` 新增 `cycleType`/`cycleOutput`/`cycleInput`；`ChainNode` 新增 `machineCount`/`actualPm`/`theoryPm` |
-| `src/lib/factory/chain.ts` | 重构 `buildChainGraph`（单目标+产速）、`expand`（供应瓶颈）、新增 `calcCycleOutput`/`calcMachineCount` |
-| `src/hooks/useData.ts` | `useCraftingChain` 签名变更（单目标+产速） |
-| `src/pages/factory/FactoryChains.tsx` | 移除左侧列表，新增下拉选择器+产速输入框 |
-| `src/components/Factory/ChainGraph.tsx` | MachineNode 显示机器数量；边渲染区分循环类型 |
-| `src/i18n/dicts/*.json` | 新增 i18n key（如 `factory.productionRate`、`factory.machineCount`） |
+| `src/lib/factory/types.ts` | `ChainTarget` 新增；`ChainEdge` 重构；`ChainNode` 重构 |
+| `src/lib/factory/chain.ts` | 重构 `buildChainGraph`（多目标+产速）、`expand`（供应瓶颈）、新增 `calcCycleOutput`/`calcMachineCount`/`calcBeltCount` |
+| `src/hooks/useData.ts` | `useCraftingChain` 签名变更（多目标+产速） |
+| `src/pages/factory/FactoryChains.tsx` | 移除左侧列表，新增多目标下拉选择器+产速输入框 |
+| `src/components/Factory/ChainGraph.tsx` | 重构为机器节点为中心；MachineNode 显示配方/数量/传送带；边渲染区分循环类型 |
+| `src/i18n/dicts/*.json` | 新增 i18n key |
 | `tests/e2e/src/factory.spec.ts` | 更新 E2E 测试适配新 UI |
-| `src/lib/factory/chain.test.ts` | 新增循环规则、供应瓶颈、机器数量的单元测试 |
+| `src/lib/factory/chain.test.ts` | 新增循环规则、供应瓶颈、机器数量、传送带数量的单元测试 |
 
-### 3.10 待确认问题
+### 3.10 传送带调研结果
 
-1. **多目标产物**：新方案改为单目标，是否需要支持多目标（多张图）？还是保持单目标？
-2. **产速输入验证**：产速输入框是否需要最小/最大值限制？非整数产速（如 2.5 个/min）是否允许？
-3. **封闭回路的"封闭"标记**：除了边的虚线+动画，节点本身是否需要标记（如加个锁图标）？
-4. **副产物的显示**：副产物是显示为独立叶子节点，还是折叠到父节点中？
+| 项目 | 值 |
+|------|-----|
+| 传送带类型 | 仅 `grid_belt_01`（无升级版本） |
+| `msPerRound` | 2000ms（2 秒/轮） |
+| 单条吞吐量 | 30 个/min |
+| 相关设施 | 分流器 `log_splitter`、合流器 `log_converger`、连接器 `log_connector`、调节器 `log_conditioner` |
+| 最大长度限制 | `singleConveyorLengthLimit`（常量，需查具体值） |
+
+### 3.11 待确认问题
+
+1. **传送带吞吐量确认**：`msPerRound: 2000` 是否确实对应 30 个/min？是否每轮恰好传输 1 个物品？
+2. **多目标图合并**：多个目标的链路图合并时，共享的中间机器如何处理？（节点数量取 max 还是 sum？）
+3. **传送带方向**：图中传送带边是否需要显示方向箭头？
+4. **液体管道**：游戏中有液体管道（`FactoryLiquidPipeTable`），是否需要在图中区分固体传送带和液体管道？
 
 ---
 
