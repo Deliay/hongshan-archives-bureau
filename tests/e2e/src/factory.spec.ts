@@ -183,8 +183,7 @@ test.describe('工厂系统 (Factory System)', () => {
       await page.waitForTimeout(3000)
 
       const domEdgeCount = await page.locator('g.react-flow__edge').count()
-      const customEdgeCount = await page.locator('.chain-custom-edges path').count()
-      expect(domEdgeCount + customEdgeCount).toBeGreaterThan(10)
+      expect(domEdgeCount).toBeGreaterThan(10)
     })
   })
 })

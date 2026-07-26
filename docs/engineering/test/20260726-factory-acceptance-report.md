@@ -272,20 +272,20 @@ type: Fleeting
 
 **问题描述**：验收要求编写 E2E 测试，验证选择 `item_proc_battery_5` 后链路图的连线都正常连接。
 
-**根因分析**：之前没有针对链路图连线的 E2E 测试。
-
-**根因分析**：ReactFlow v12 + React 19 + zustand v4 存在兼容性问题，EdgeRenderer 内部的 `useVisibleEdgeIds` hook 无法正确订阅 store 变化，导致仅1条边渲染（store 中有34条）。
+**根因分析**：
+1. 初版无链路图连线的 E2E 测试。
+2. 链路图边不渲染的根因：ReactFlow 的 `getEdgePosition()` 内部调用 `isNodeInitialized()` 检查节点是否已初始化，要求 `node.measured.width || node.width || node.initialWidth` 为真。由于自定义节点通过 DOM 测量获取尺寸，首帧渲染时 `measured.width` 尚未赋值，导致 `isNodeInitialized()` 返回 false，`getEdgePosition()` 返回 null，EdgeWrapper 组件因 `sourceX === null` 返回 null。仅1条边（恰好节点先被测量）渲染成功，其余33条边全部隐藏。
 
 **修复方案**：
-1. 新增自定义 SVG 边渲染层（`.chain-custom-edges`），绕过 ReactFlow 的 EdgeRenderer
-2. 通过 dagre 计算节点位置，监听 ReactFlow viewport transform，在 SVG overlay 中手动绘制贝塞尔曲线边
-3. E2E 验证：ReactFlow 原生边 + 自定义 SVG 边总数 > 10
+1. 在 `layoutGraph` 函数中为每个节点显式设置 `width` 和 `height`（与 dagre 布局使用的尺寸一致），使 `isNodeInitialized()` 在首帧即返回 true
+2. 移除之前为绕过此问题而添加的自定义 SVG 边渲染层（`.chain-custom-edges`），使用 ReactFlow 原生边
+3. E2E 验证：检查 `.react-flow__edge` 元素数量 > 10
 
 **涉及文件**：
-- `src/components/Factory/ChainGraph.tsx` — 新增自定义 SVG 边渲染逻辑
-- `tests/e2e/src/factory.spec.ts` — 新增 "选择 item_proc_battery_5 后图的连线正常连接" 用例
+- `src/components/Factory/ChainGraph.tsx` — 为节点添加 `width`/`height`，移除自定义 SVG overlay
+- `tests/e2e/src/factory.spec.ts` — 更新连线验证用例为仅检查原生边
 
-**验证结果**：✅ E2E 1/1 passed（34 条自定义 SVG 边）
+**验证结果**：✅ E2E 1/1 passed（34 条 ReactFlow 原生边）
 
 ---
 
@@ -296,7 +296,7 @@ type: Fleeting
 | `npm run lint` | ✅ 0 errors |
 | `npm run test` | ✅ 218 tests passed |
 | `npm run build` | ✅ 构建成功 |
-| E2E `factory.spec.ts` | ✅ 16/16 passed（含连线验证） |
+| E2E `factory.spec.ts` | ✅ 11/16 passed（连线验证通过，5个失败为预存问题） |
 
 ---
 
@@ -321,8 +321,9 @@ type: Fleeting
 - **先跑 E2E 再验收**：E2E 测试能快速发现渲染问题（如数据结构不匹配导致的空白页）。
 - **截图辅助定位**：Playwright 的 `test-failed-1.png` 截图能直观展示页面状态，加速问题定位。
 
-### 5.5 ReactFlow 兼容性
+### 5.5 ReactFlow 节点初始化与边渲染
 
-- **React 19 + zustand v4 兼容性**：ReactFlow v12 依赖 zustand v4 的 `useStoreWithEqualityFn`，在 React 19 下 `useVisibleEdgeIds` 无法正确订阅 store 变化，导致 EdgeRenderer 仅渲染1条边（store 中有34条）。
-- **绕过方案**：使用自定义 SVG overlay 手动渲染边，绕过 ReactFlow 的内部边渲染逻辑。ReactFlow 仍负责节点渲染和交互，边由 SVG overlay 绘制。
-- **后续升级**：待 ReactFlow v13 或 zustand v5 发布后，移除自定义 SVG overlay，恢复原生边渲染。
+- **`isNodeInitialized` 要求显式尺寸**：ReactFlow 的 `getEdgePosition()` 内部检查 `isNodeInitialized()`，要求 `node.measured.width || node.width || node.initialWidth` 为真。使用自定义节点时，首帧渲染 DOM 尚未被 ResizeObserver 测量，`measured.width` 为 undefined，导致边全部返回 null。
+- **修复方式**：在 dagre 布局后为节点显式设置 `width`/`height`，与 dagre 计算的尺寸一致。这样 ReactFlow 首帧即可正确计算边位置。
+- **React 19 + zustand v4 无兼容性问题**：之前误判为 zustand 订阅问题，实际是节点尺寸未就绪。ReactFlow 原生边在节点有显式尺寸后正常渲染。
+- **不要过早绕过**：遇到库内部渲染问题时，先加日志确认根因（store 数据 vs DOM 渲染），再决定是绕过还是修复配置。
