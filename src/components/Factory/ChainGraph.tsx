@@ -34,7 +34,7 @@ function MachineNode({ data }: { data: { machineId: string; machineName: string;
       <Handle type="target" position={Position.Left} className="!bg-archive-lead" />
       {data.machineIcon && (
         <img
-          src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${data.machineIcon}.png`}
+          src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/factory/buildingpanelicon/${data.machineIcon}.png`}
           alt=""
           className="w-8 h-8 object-contain"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

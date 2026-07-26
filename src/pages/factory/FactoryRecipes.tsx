@@ -274,7 +274,7 @@ export default function FactoryRecipes() {
                     <div className="flex items-center gap-2 mb-2">
                       {machine.iconId && (
                         <img
-                          src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${machine.iconId}.png`}
+                          src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/factory/buildingpanelicon/${machine.iconId}.png`}
                           alt=""
                           className="w-5 h-5 object-contain"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

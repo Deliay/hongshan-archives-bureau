@@ -34,7 +34,7 @@ export default function RecipeCard({ recipe, machine, highlightItemId }: RecipeR
           <div className="flex items-center gap-0.5">
             {machine.iconId && (
               <img
-                src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/${machine.iconId}.png`}
+                src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/factory/buildingpanelicon/${machine.iconId}.png`}
                 alt=""
                 className="w-3 h-3 object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
