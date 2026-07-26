@@ -353,23 +353,13 @@
   "factory": {
     "recipes": "Receitas de fábrica",
     "chains": "Cadeia de fabricação",
-    "asProduct": "Como produto",
-    "asMaterial": "Como material",
     "searchItem": "Buscar itens",
     "selectItemHint": "Selecione um item à esquerda para ver as receitas",
     "noRecipes": "Sem receitas relacionadas",
-    "machine": "Máquina",
-    "craftTime": "Tempo de fabricação",
-    "perMinute": "por min",
-    "outputPerMin": "produção/min",
-    "inputPerMin": "consumo/min",
     "addTarget": "Adicionar produto alvo",
     "selectedTargets": "Produtos selecionados",
     "clearAll": "Limpar tudo",
-    "cycleMark": "Ciclo",
     "sourceNode": "Coleta",
-    "switchRecipe": "Trocar receita",
-    "emptyChainHint": "Busque e adicione produtos alvo para gerar uma cadeia de fabricação",
-    "target": "Alvo"
+    "emptyChainHint": "Busque e adicione produtos alvo para gerar uma cadeia de fabricação"
   }
 }

@@ -353,23 +353,13 @@
   "factory": {
     "recipes": "工厂配方",
     "chains": "制作链路",
-    "asProduct": "作为产物",
-    "asMaterial": "作为材料",
     "searchItem": "搜索物品",
     "selectItemHint": "从左侧选择物品查看配方",
     "noRecipes": "暂无相关配方",
-    "machine": "所需机器",
-    "craftTime": "制作时长",
-    "perMinute": "每分钟",
-    "outputPerMin": "产出/分钟",
-    "inputPerMin": "消耗/分钟",
     "addTarget": "添加目标产物",
     "selectedTargets": "已选产物",
     "clearAll": "清空",
-    "cycleMark": "循环依赖",
     "sourceNode": "采集",
-    "switchRecipe": "切换配方",
-    "emptyChainHint": "搜索并添加目标产物以生成制作链路",
-    "target": "目标"
+    "emptyChainHint": "搜索并添加目标产物以生成制作链路"
   }
 }

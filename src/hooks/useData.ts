@@ -9,6 +9,9 @@ import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSui
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
+import type { FactoryRecipe, FactoryMachine, FactoryItemIndex, ChainGraph } from '../lib/factory/types'
+import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '../lib/factory/recipes'
+import { buildChainGraph } from '../lib/factory/chain'
 
 // AttributeType enum name → blackboard key (from TianShiTools Attributes.cs)
 const ATTRIBUTE_TYPE_MAP: Record<number, string> = {
@@ -1139,10 +1142,6 @@ export function useArchiveSearch(
 
 // ---------- Factory hooks ----------
 
-import type { FactoryRecipe, FactoryMachine, FactoryItemIndex, ChainGraph } from '../lib/factory/types'
-import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '../lib/factory/recipes'
-import { buildChainGraph } from '../lib/factory/chain'
-
 export function useFactoryData(): UseDataResult<{ recipes: FactoryRecipe[]; machines: Record<string, FactoryMachine>; itemIds: string[]; index: FactoryItemIndex }> {
   const { locale } = useLocale()
   return useData(async () => {
@@ -1151,12 +1150,6 @@ export function useFactoryData(): UseDataResult<{ recipes: FactoryRecipe[]; mach
       getCachedData<Record<string, any>>('FactoryBuildingTable', () => fetchTableAll('FactoryBuildingTable')),
       getTableI18nDict('FactoryBuildingTable', locale).catch(() => ({}) as Record<string, string>),
     ])
-    getCachedData<Record<string, any>>('FullBottleTable', () => fetchTableAll('FullBottleTable').catch(() => ({}))).catch(() => {})
-    Promise.all([
-      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
-      getTableI18nDict('ItemTable', locale),
-    ]).catch(() => {})
-
     const recipes = Object.values(craftRaw).map(v => adaptFactoryRecipe(v))
     const machines: Record<string, FactoryMachine> = {}
     for (const [k, v] of Object.entries(buildingRaw)) {
@@ -1183,6 +1176,34 @@ export function useFactoryData(): UseDataResult<{ recipes: FactoryRecipe[]; mach
 
     return { recipes, machines, itemIds, index }
   }, [locale])
+}
+
+export function useFactoryItemMeta(itemIds: string[]): Record<string, { name: string; rarity: number }> {
+  const { locale } = useLocale()
+  const [itemMeta, setItemMeta] = useState<Record<string, { name: string; rarity: number }>>({})
+  // 仅以 id 集合内容作为依赖，避免数组引用变化导致重复拉取
+  const idsKey = useMemo(() => itemIds.slice().sort().join(','), [itemIds])
+
+  useEffect(() => {
+    if (!idsKey) return
+    let cancelled = false
+    Promise.all([
+      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+      getTableI18nDict('ItemTable', locale),
+    ]).then(([raw, i18nMap]) => {
+      if (cancelled) return
+      const meta: Record<string, { name: string; rarity: number }> = {}
+      for (const id of idsKey.split(',')) {
+        const item = raw[id]
+        const name = item?.name ? (i18nMap[String(item.name.id)] || item.name.text || id) : id
+        meta[id] = { name, rarity: item?.rarity ?? 0 }
+      }
+      setItemMeta(meta)
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [idsKey, locale])
+
+  return itemMeta
 }
 
 export function useFactoryItemIds(): UseDataResult<string[]> {

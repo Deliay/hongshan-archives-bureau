@@ -353,23 +353,13 @@
   "factory": {
     "recipes": "工場レシピ",
     "chains": "クラフトチェーン",
-    "asProduct": "生産物として",
-    "asMaterial": "素材として",
     "searchItem": "アイテムを検索",
     "selectItemHint": "左のアイテムを選択してレシピを表示",
     "noRecipes": "関連レシピなし",
-    "machine": "必要マシン",
-    "craftTime": "製造時間",
-    "perMinute": "毎分",
-    "outputPerMin": "生産/分",
-    "inputPerMin": "消費/分",
     "addTarget": "目標生産物を追加",
     "selectedTargets": "選択された生産物",
     "clearAll": "すべてクリア",
-    "cycleMark": "循環",
     "sourceNode": "採取",
-    "switchRecipe": "レシピ切替",
-    "emptyChainHint": "目標生産物を検索して追加し、クラフトチェーンを生成",
-    "target": "ターゲット"
+    "emptyChainHint": "目標生産物を検索して追加し、クラフトチェーンを生成"
   }
 }

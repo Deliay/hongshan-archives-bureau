@@ -27,7 +27,7 @@ function ItemNode({ data }: { data: { itemId: string; perMinute: number; isTarge
   )
 }
 
-function MachineNode({ data }: { data: { machineId: string; machineName: string; machineIcon: string } }) {
+function MachineNode({ data }: { data: { machineId: string; machineName: string; machineIcon: string; machineCount?: number } }) {
   return (
     <div className="flex flex-col items-center">
       <Handle type="source" position={Position.Right} className="!bg-archive-lead" />
@@ -41,6 +41,9 @@ function MachineNode({ data }: { data: { machineId: string; machineName: string;
         />
       )}
       <div className="text-[10px] text-archive-dust mt-0.5 max-w-[80px] truncate text-center">{data.machineName}</div>
+      {data.machineCount != null && data.machineCount > 0 && (
+        <div className="text-[10px] text-archive-gold font-medium">×{data.machineCount.toFixed(1)}</div>
+      )}
     </div>
   )
 }
@@ -82,7 +85,7 @@ function layoutGraph(graph: ChainGraphData): { nodes: Node[]; edges: Edge[] } {
 
   for (const node of graph.nodes) {
     const width = node.kind === 'machine' ? 100 : 80
-    const height = node.kind === 'machine' ? 60 : 80
+    const height = node.kind === 'machine' ? 76 : 80
     g.setNode(node.key, { width, height })
   }
   for (const edge of graph.edges) {
@@ -94,10 +97,10 @@ function layoutGraph(graph: ChainGraphData): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = graph.nodes.map(n => {
     const pos = g.node(n.key)
     const width = n.kind === 'machine' ? 100 : 80
-    const height = n.kind === 'machine' ? 60 : 80
+    const height = n.kind === 'machine' ? 76 : 80
     return {
       id: n.key,
-      type: n.kind === 'item' ? (n.itemId && !graph.edges.some(e => e.from === `leaf:${n.itemId}` && e.to === n.key) ? 'item' : 'leaf') : n.kind === 'source' ? 'source' : 'machine',
+      type: n.kind === 'item' ? (n.key.startsWith('leaf:') ? 'leaf' : 'item') : n.kind === 'source' ? 'source' : 'machine',
       position: { x: (pos?.x ?? 0) - width / 2, y: (pos?.y ?? 0) - height / 2 },
       width,
       height,
@@ -106,6 +109,7 @@ function layoutGraph(graph: ChainGraphData): { nodes: Node[]; edges: Edge[] } {
         machineId: n.machineId,
         machineName: n.machineName ?? '',
         machineIcon: n.machineIcon ?? '',
+        machineCount: n.machineCount,
         perMinute: n.perMinute,
         isTarget: n.isTarget,
       },

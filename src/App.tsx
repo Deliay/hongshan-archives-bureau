@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LocaleProvider, useLocale } from './lib/locale'
 import { I18nProvider } from './i18n'
@@ -22,8 +23,10 @@ import EquipmentList from './pages/equipment/EquipmentList'
 import EquipmentDetail from './pages/equipment/EquipmentDetail'
 import ItemList from './pages/items/ItemList'
 import FactoryLayout from './pages/factory/FactoryLayout'
-import FactoryRecipes from './pages/factory/FactoryRecipes'
-import FactoryChains from './pages/factory/FactoryChains'
+import { ListSkeleton } from './components/ui/ListSkeleton'
+// 工厂子页面懒加载：将 @xyflow/react + @dagrejs/dagre 隔离出主 bundle
+const FactoryRecipes = lazy(() => import('./pages/factory/FactoryRecipes'))
+const FactoryChains = lazy(() => import('./pages/factory/FactoryChains'))
 import StoryOverview from './pages/story/StoryOverview'
 import ArchiveSearch from './pages/search/ArchiveSearch'
 import UpdateHome from './pages/updates/UpdateHome'
@@ -58,8 +61,8 @@ function AppRoutes() {
             <Route path="items" element={<ItemList />} />
             <Route path="factory" element={<FactoryLayout />}>
               <Route index element={<Navigate to="recipes" replace />} />
-              <Route path="recipes" element={<FactoryRecipes />} />
-              <Route path="chains" element={<FactoryChains />} />
+              <Route path="recipes" element={<Suspense fallback={<ListSkeleton />}><FactoryRecipes /></Suspense>} />
+              <Route path="chains" element={<Suspense fallback={<ListSkeleton />}><FactoryChains /></Suspense>} />
             </Route>
             <Route path="story" element={<StoryOverview />} />
             <Route path="search" element={<ArchiveSearch />} />

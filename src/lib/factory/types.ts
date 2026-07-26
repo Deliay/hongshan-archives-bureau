@@ -37,6 +37,7 @@ export interface ChainNode {
   machineId?: string
   machineName?: string
   machineIcon?: string
+  machineCount?: number
   perMinute: number
   isTarget?: boolean
 }

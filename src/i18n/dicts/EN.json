@@ -353,23 +353,13 @@
   "factory": {
     "recipes": "Factory Recipes",
     "chains": "Crafting Chain",
-    "asProduct": "As Product",
-    "asMaterial": "As Material",
     "searchItem": "Search items",
     "selectItemHint": "Select an item on the left to view recipes",
     "noRecipes": "No related recipes",
-    "machine": "Machine",
-    "craftTime": "Craft time",
-    "perMinute": "per min",
-    "outputPerMin": "output/min",
-    "inputPerMin": "consumed/min",
     "addTarget": "Add target product",
     "selectedTargets": "Selected products",
     "clearAll": "Clear all",
-    "cycleMark": "Cycle",
     "sourceNode": "Source",
-    "switchRecipe": "Switch recipe",
-    "emptyChainHint": "Search and add target products to generate a crafting chain",
-    "target": "Target"
+    "emptyChainHint": "Search and add target products to generate a crafting chain"
   }
 }

@@ -69,12 +69,15 @@ export function buildChainGraph(
         machineId: recipe.machineId,
         machineName: m?.name ?? '',
         machineIcon: m?.iconId ?? '',
+        machineCount: 0,
         perMinute: 0,
       })
     }
 
     const machinePm = perMinute(recipe.outcomes.find(o => o.itemId === itemId)?.count ?? 1, recipe.totalProgress)
     const machineCount = machinePm > 0 ? demandRate / machinePm : 0
+    // 同一机器节点可能被多条路径/多个目标共享，累计所需台数
+    allNodes.get(machineKey)!.machineCount = (allNodes.get(machineKey)!.machineCount ?? 0) + machineCount
 
     allEdges.push({ from: machineKey, to: targetKey, perMinute: demandRate })
 
@@ -114,5 +117,19 @@ export function buildChainGraph(
     expand(targetId, pm, path, targetKey)
   }
 
-  return { nodes: Array.from(allNodes.values()), edges: allEdges }
+  // 共享子图（多个目标或钻石路径依赖同一中间物品）会产生 from/to 完全相同的
+  // 重复边，这里按 from→to 合并：perMinute 累加（语义上即合计产能需求），isCycle 保留。
+  const edgeMap = new Map<string, ChainEdge>()
+  for (const edge of allEdges) {
+    const key = `${edge.from}→${edge.to}`
+    const existing = edgeMap.get(key)
+    if (existing) {
+      existing.perMinute += edge.perMinute
+      existing.isCycle = existing.isCycle || edge.isCycle
+    } else {
+      edgeMap.set(key, { ...edge })
+    }
+  }
+
+  return { nodes: Array.from(allNodes.values()), edges: Array.from(edgeMap.values()) }
 }
