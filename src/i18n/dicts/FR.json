@@ -373,5 +373,26 @@
     "recipeDefault": "Chemin par défaut",
     "recipeUnlock": "Conditions de déblocage",
     "viewDetail": "Voir le dossier"
+  },
+  "factory": {
+    "recipes": "Recettes d'usine",
+    "chains": "Chaîne de fabrication",
+    "searchItem": "Rechercher des objets",
+    "selectItemHint": "Sélectionnez un objet à gauche pour voir les recettes",
+    "noRecipes": "Aucune recette associée",
+    "addTarget": "Ajouter un produit cible",
+    "selectedTargets": "Produits sélectionnés",
+    "clearAll": "Tout effacer",
+    "sourceNode": "Collecte",
+    "emptyChainHint": "Recherchez et ajoutez des produits cibles pour générer une chaîne de fabrication",
+    "targetNode": "Cible",
+    "actualOutput": "Sortie réelle",
+    "supplyLimited": "Offre limitée",
+    "demand": "Demande",
+    "unitPerMin": "u/min",
+    "beltCount": "Convoyeur ×{{count}} ({{rate}}/min)",
+    "pipeCount": "Tuyau ×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ Fermé",
+    "productiveLoop": "↻ Rendement net ×{{ratio}}"
   }
 }

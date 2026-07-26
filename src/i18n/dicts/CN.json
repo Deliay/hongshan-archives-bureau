@@ -373,5 +373,26 @@
     "recipeDefault": "默认链路",
     "recipeUnlock": "解锁条件",
     "viewDetail": "查看卷宗"
+  },
+  "factory": {
+    "recipes": "工厂配方",
+    "chains": "制作链路",
+    "searchItem": "搜索物品",
+    "selectItemHint": "从左侧选择物品查看配方",
+    "noRecipes": "暂无相关配方",
+    "addTarget": "添加目标产物",
+    "selectedTargets": "已选产物",
+    "clearAll": "清空",
+    "sourceNode": "采集",
+    "emptyChainHint": "搜索并添加目标产物以生成制作链路",
+    "targetNode": "目标",
+    "actualOutput": "实际产出",
+    "supplyLimited": "供给受限",
+    "demand": "需求",
+    "unitPerMin": "个/min",
+    "beltCount": "传送带×{{count}} ({{rate}}/min)",
+    "pipeCount": "管道×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ 封闭",
+    "productiveLoop": "↻ 净产出 ×{{ratio}}"
   }
 }

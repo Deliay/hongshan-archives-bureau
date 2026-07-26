@@ -373,5 +373,26 @@
     "recipeDefault": "Percorso predefinito",
     "recipeUnlock": "Sblocca condizioni",
     "viewDetail": "Vedi scheda"
+  },
+  "factory": {
+    "recipes": "Ricette di fabbrica",
+    "chains": "Catena di produzione",
+    "searchItem": "Cerca oggetti",
+    "selectItemHint": "Seleziona un oggetto a sinistra per vedere le ricette",
+    "noRecipes": "Nessuna ricetta correlata",
+    "addTarget": "Aggiungi prodotto obiettivo",
+    "selectedTargets": "Prodotti selezionati",
+    "clearAll": "Cancella tutto",
+    "sourceNode": "Raccolta",
+    "emptyChainHint": "Cerca e aggiungi prodotti obiettivo per generare una catena di produzione",
+    "targetNode": "Obiettivo",
+    "actualOutput": "Output effettivo",
+    "supplyLimited": "Offerta limitata",
+    "demand": "Domanda",
+    "unitPerMin": "pz/min",
+    "beltCount": "Nastro ×{{count}} ({{rate}}/min)",
+    "pipeCount": "Tubatura ×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ Chiuso",
+    "productiveLoop": "↻ Resa netta ×{{ratio}}"
   }
 }

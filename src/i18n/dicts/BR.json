@@ -373,5 +373,26 @@
     "recipeDefault": "Caminho padrão",
     "recipeUnlock": "Condições de Desbloqueio",
     "viewDetail": "Ver arquivo"
+  },
+  "factory": {
+    "recipes": "Receitas de fábrica",
+    "chains": "Cadeia de fabricação",
+    "searchItem": "Buscar itens",
+    "selectItemHint": "Selecione um item à esquerda para ver as receitas",
+    "noRecipes": "Sem receitas relacionadas",
+    "addTarget": "Adicionar produto alvo",
+    "selectedTargets": "Produtos selecionados",
+    "clearAll": "Limpar tudo",
+    "sourceNode": "Coleta",
+    "emptyChainHint": "Busque e adicione produtos alvo para gerar uma cadeia de fabricação",
+    "targetNode": "Alvo",
+    "actualOutput": "Saída real",
+    "supplyLimited": "Oferta limitada",
+    "demand": "Demanda",
+    "unitPerMin": "un/min",
+    "beltCount": "Esteira ×{{count}} ({{rate}}/min)",
+    "pipeCount": "Tubulação ×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ Fechado",
+    "productiveLoop": "↻ Produção líquida ×{{ratio}}"
   }
 }

@@ -373,5 +373,26 @@
     "recipeDefault": "デフォルトパス",
     "recipeUnlock": "解放条件",
     "viewDetail": "巻宗を見る"
+  },
+  "factory": {
+    "recipes": "工場レシピ",
+    "chains": "クラフトチェーン",
+    "searchItem": "アイテムを検索",
+    "selectItemHint": "左のアイテムを選択してレシピを表示",
+    "noRecipes": "関連レシピなし",
+    "addTarget": "目標生産物を追加",
+    "selectedTargets": "選択された生産物",
+    "clearAll": "すべてクリア",
+    "sourceNode": "採取",
+    "emptyChainHint": "目標生産物を検索して追加し、クラフトチェーンを生成",
+    "targetNode": "目標",
+    "actualOutput": "実際の出力",
+    "supplyLimited": "供給制限",
+    "demand": "需要",
+    "unitPerMin": "個/分",
+    "beltCount": "ベルト×{{count}} ({{rate}}/分)",
+    "pipeCount": "パイプ×{{count}} ({{rate}}/分)",
+    "closedLoop": "↻ 閉鎖",
+    "productiveLoop": "↻ 正味産出 ×{{ratio}}"
   }
 }

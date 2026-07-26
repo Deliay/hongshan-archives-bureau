@@ -373,5 +373,26 @@
     "recipeDefault": "เส้นทางเริ่มต้น",
     "recipeUnlock": "เงื่อนไขปลดล็อก",
     "viewDetail": "ดูแฟ้ม"
+  },
+  "factory": {
+    "recipes": "สูตรโรงงาน",
+    "chains": "สายโซ่การผลิต",
+    "searchItem": "ค้นหาไอเทม",
+    "selectItemHint": "เลือกไอเทมทางด้านซ้ายเพื่อดูสูตร",
+    "noRecipes": "ยังไม่มีสูตรที่เกี่ยวข้อง",
+    "addTarget": "เพิ่มผลิตภัณฑ์เป้าหมาย",
+    "selectedTargets": "ผลิตภัณฑ์ที่เลือก",
+    "clearAll": "ล้างทั้งหมด",
+    "sourceNode": "เก็บเกี่ยว",
+    "emptyChainHint": "ค้นหาและเพิ่มผลิตภัณฑ์เป้าหมายเพื่อสร้างสายโซ่การผลิต",
+    "targetNode": "เป้าหมาย",
+    "actualOutput": "ผลผลิตจริง",
+    "supplyLimited": "Supply จำกัด",
+    "demand": "ความต้องการ",
+    "unitPerMin": "ชิ้น/นาที",
+    "beltCount": "สายพาน ×{{count}} ({{rate}}/นาที)",
+    "pipeCount": "ท่อ ×{{count}} ({{rate}}/นาที)",
+    "closedLoop": "↻ วงปิด",
+    "productiveLoop": "↻ ผลผลิตสุทธิ ×{{ratio}}"
   }
 }

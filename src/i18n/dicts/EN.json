@@ -373,5 +373,26 @@
     "recipeDefault": "Default path",
     "recipeUnlock": "Unlock Conditions",
     "viewDetail": "View Archive"
+  },
+  "factory": {
+    "recipes": "Factory Recipes",
+    "chains": "Crafting Chain",
+    "searchItem": "Search items",
+    "selectItemHint": "Select an item on the left to view recipes",
+    "noRecipes": "No related recipes",
+    "addTarget": "Add target product",
+    "selectedTargets": "Selected products",
+    "clearAll": "Clear all",
+    "sourceNode": "Source",
+    "emptyChainHint": "Search and add target products to generate a crafting chain",
+    "targetNode": "Target",
+    "actualOutput": "Actual Output",
+    "supplyLimited": "Supply Limited",
+    "demand": "Demand",
+    "unitPerMin": "pcs/min",
+    "beltCount": "Belt ×{{count}} ({{rate}}/min)",
+    "pipeCount": "Pipe ×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ Closed",
+    "productiveLoop": "↻ Net output ×{{ratio}}"
   }
 }

@@ -23,6 +23,7 @@ docs/engineering/
     diff-system.md           Diff 系统参考
   plans/                 开发计划与任务拆解（留空）
   proposal/              技术方案文档（留空）
+  test/                  验收问题报告
 ```
 
 ## 文档命名
@@ -39,6 +40,14 @@ docs/engineering/
 5. 创建开发分支并编写实现，可并行调用 subagent。
 6. 编排服务并运行 API / E2E 测试。
 
+## 验收问题处理
+
+收到验收问题反馈后，必须创建或更新 `test/` 目录下的验收报告：
+
+1. 命名格式：`YYYYMMDD-<feature-slug>-acceptance-report.md`
+2. 内容包含：关联 PRD/技术方案链接、每个问题的描述/根因/修复/commit、修复总览表、验证结果、经验总结
+3. 修复过程中实时更新文档，完成后随代码提交
+
 ## 编码前必读
 
 - 修改代码前，加载对应目录的 `AGENTS.md`。
@@ -47,6 +56,45 @@ docs/engineering/
 - 数据层、缓存、Diff 相关修改，加载 [[engineering-spec|工程架构规范]]。
 - 调试数据问题或实现新模块时，查阅 [数据表映射参考](./references/data-mapping-tables.md) 与 [数据层常见陷阱](./references/data-pitfalls.md)。
 - 处理富文本或 tooltip 时，查阅 [富文本规范参考](./references/rich-text-spec.md) 与 [UI 常见陷阱参考](./references/ui-pitfalls.md)。
+
+## 经验教训
+
+以下为工厂系统一期验收中总结的失败经验，后续开发需注意。
+
+### 数据适配层
+
+- **字段名假设需验证**：`adaptFactoryRecipe` 假设字段为 `formulaId`，实际为 `id`，导致全局性 bug（配方 ID 永远为空，点击任意物品总显示同一配方）。新模块上线前应先抽样验证原始数据结构，不可凭假设编码。
+- **数据格式需实际验证**：`flattenGroup` 假设 `ingredients` 格式为 `{ id, count }[][]`，实际为 `[{ group: [{ id, count }] }]`，导致页面报错无法渲染。应先 curl 抽样确认实际数据结构。
+- **字段来源需验证**：`useFactoryData` 从 `FactoryItemAsMachineCrafterIncomeTable` / `OutcomeTable` 获取物品 ID，但这些表的 key 不是 item ID。应直接从配方数据本身提取，而非依赖外部索引表。
+
+### 缓存策略
+
+- **in-flight 去重**：`getCachedData` 缺少请求去重，并发调用同一 key 会触发多次请求（如 `FullBottleTable` 被多个 `ItemIcon` 实例同时请求）。应在缓存层统一处理 in-flight 去重。
+- **预加载**：高频使用的表（`ItemTable`、`FullBottleTable`）应在数据 hook 中预加载，避免组件渲染时才触发请求。
+
+### 分页
+
+- **左列表 + 右配方都需分页**：物品数量（数百个）和配方数量都可能很大，两端都需要分页控制，不可假设数据量小而跳过分页。
+
+### 验收流程
+
+- **先跑 E2E 再验收**：E2E 测试能快速发现渲染问题（如数据结构不匹配导致的空白页），比人工验收效率高。
+- **截图辅助定位**：Playwright 的 `test-failed-1.png` 截图能直观展示页面状态，加速问题定位。
+
+### ReactFlow 节点初始化与边渲染
+
+- **`isNodeInitialized` 要求显式尺寸**：ReactFlow 的 `getEdgePosition()` 内部检查 `isNodeInitialized()`，要求 `node.measured.width || node.width || node.initialWidth` 为真。使用自定义节点时，首帧渲染 DOM 尚未被 ResizeObserver 测量，`measured.width` 为 undefined，导致边全部返回 null。
+- **修复方式**：在 dagre 布局后为节点显式设置 `width`/`height`，与 dagre 计算的尺寸一致。ReactFlow 首帧即可正确计算边位置。
+- **React 19 + zustand v4 无兼容性问题**：之前误判为 zustand 订阅问题，实际是节点尺寸未就绪。ReactFlow 原生边在节点有显式尺寸后正常渲染。
+- **不要过早绕过**：遇到库内部渲染问题时，先加日志确认根因（store 数据 vs DOM 渲染），再决定是绕过还是修复配置。
+
+### 资源路径
+
+- **机器图标路径与物品图标不同**：机器图标 `iconOnPanel` 值（如 `icon_port_furnance_1`）对应资源在 `factory/buildingpanelicon/` 目录，而非物品图标的 `itemicon/` 目录。通过 API 查询 `FactoryBuildingTable` 并搜索 asset bundle 确认正确路径。
+
+### 配方展示逻辑
+
+- **按机器分组而非按方向分组**：「作为产物」「作为材料」是外部工具的逻辑，产品需求是按机器分组，每个配方一行，材料在左、箭头指向产物。实现前需仔细阅读产品文档，不可照搬其他工具的设计。
 
 ## 相关技能
 
