@@ -9,6 +9,7 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     screenshot: 'only-on-failure',
     launchOptions: {
+      executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium',
       args: ['--disable-web-security', '--no-sandbox'],
     },
   },

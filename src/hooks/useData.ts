@@ -4,8 +4,8 @@ import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, resolveI18n, ASSET_BASE } from '../lib/adapter'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity } from '../lib/types'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, ASSET_BASE } from '../lib/adapter'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
@@ -661,7 +661,16 @@ export function useItems(): UseDataResult<Item[]> {
       getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
       getTableI18nDict('ItemTable', locale),
     ])
-    return Object.entries(rawData).map(([, v]) => adaptItem(v, i18nMap))
+    const seen = new Set<string>()
+    const items: Item[] = []
+    for (const [, v] of Object.entries(rawData)) {
+      const item = adaptItem(v, i18nMap)
+      if (!seen.has(item.id)) {
+        seen.add(item.id)
+        items.push(item)
+      }
+    }
+    return items
   }, [locale])
 }
 
@@ -778,6 +787,27 @@ export function useDocuments(): UseDataResult<StoryDocument[]> {
 
 export function useAreas(): UseDataResult<Area[]> {
   return useTableData('SceneAreaTable', adaptArea)
+}
+
+export function useActivities(): UseDataResult<Activity[]> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [activitiesRaw, timeRangesRaw, tagsRaw, activityI18n, tagI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('ActivityTable', () => fetchTableAll('ActivityTable')),
+      getCachedData<Record<string, any>>('TimeRangeTable', () => fetchTableAll('TimeRangeTable')).catch((): Record<string, any> => ({})),
+      getCachedData<Record<string, any>>('ActivityTagTable', () => fetchTableAll('ActivityTagTable')).catch((): Record<string, any> => ({})),
+      getTableI18nDict('ActivityTable', locale),
+      getTableI18nDict('ActivityTagTable', locale).catch(() => ({})),
+    ])
+    const tagNameMap: Record<string, string> = {}
+    for (const [, tag] of Object.entries<any>(tagsRaw)) {
+      const tagId: string = tag.tagId ?? ''
+      if (tagId) tagNameMap[tagId] = resolveI18n(tag.name, tagI18n) || tagId
+    }
+    return Object.entries(activitiesRaw).map(([, v]) =>
+      adaptActivity(v, timeRangesRaw[v?.timeId ?? ''], activityI18n, tagNameMap),
+    )
+  }, [locale])
 }
 
 export function useRaces(): UseDataResult<Race[]> {

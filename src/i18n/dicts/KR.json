@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "이벤트 아카이브",
+    "filterType": "이벤트 유형",
+    "filterStatus": "이벤트 상태",
+    "groupCheckin": "출석",
+    "groupChallenge": "도전",
+    "groupTrial": "캐릭터 체험",
+    "groupWelfare": "혜택 보상",
+    "groupReflow": "복귀",
+    "groupGuide": "가이드",
+    "groupOther": "기타",
+    "statusOngoing": "진행 중",
+    "statusPermanent": "상시",
+    "statusUpcoming": "예정",
+    "statusExpired": "종료됨",
+    "permanent": "상시",
+    "detailTime": "이벤트 기간",
+    "detailTags": "이벤트 태그",
+    "unknownTime": "시간 미정",
+    "empty": "조건에 맞는 이벤트가 없습니다",
+    "today": "오늘"
+  },
   "common": {
     "all": "모두 표시",
     "allRarity": "모든 희귀도",
@@ -153,6 +175,8 @@
     "weaponSkill": "무기 스킬"
   },
   "nav": {
+    "activities": "이벤트 아카이브",
+    "activitiesDesc": "이벤트 일정 연대기",
     "archive": "아카이브국",
     "areas": "지역 지리",
     "areasDesc": "지역 분포 및 탐사",

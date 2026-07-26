@@ -1,4 +1,26 @@
 {
+  "activity": {
+    "title": "活動檔案",
+    "filterType": "活動類型",
+    "filterStatus": "活動狀態",
+    "groupCheckin": "簽到",
+    "groupChallenge": "挑戰",
+    "groupTrial": "角色試用",
+    "groupWelfare": "福利獎勵",
+    "groupReflow": "回流",
+    "groupGuide": "引導",
+    "groupOther": "其他",
+    "statusOngoing": "進行中",
+    "statusPermanent": "常駐",
+    "statusUpcoming": "未開始",
+    "statusExpired": "已結束",
+    "permanent": "常駐",
+    "detailTime": "活動時間",
+    "detailTags": "活動標籤",
+    "unknownTime": "時間未知",
+    "empty": "沒有符合條件的活動",
+    "today": "今日"
+  },
   "common": {
     "all": "全部顯示",
     "allRarity": "全部稀有度",
@@ -153,6 +175,8 @@
     "weaponSkill": "武器技能"
   },
   "nav": {
+    "activities": "活動檔案",
+    "activitiesDesc": "活動排期編年長卷",
     "archive": "檔案局",
     "areas": "地區地理",
     "areasDesc": "地域分佈與探索",

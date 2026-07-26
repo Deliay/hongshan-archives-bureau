@@ -1,4 +1,5 @@
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry } from './types'
+import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange } from './types'
+import { ACTIVITY_TYPE_GROUPS } from '../data/constants'
 
 export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
 
@@ -208,6 +209,68 @@ export function adaptArea(raw: any): Area {
     name: raw.name?.text ?? raw.areaName?.text ?? raw.$key ?? '',
     description: '',
     faction: '',
+  }
+}
+
+export function parseActivityTime(raw: string): number | null {
+  if (!raw) return null
+  const m = raw.match(/(\d+)\/(\d+)\/(\d+) (\d+):(\d+):(\d+)/)
+  if (!m) return null
+  const [, y, mo, d, h, mi, s] = m
+  return Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h) - 8, Number(mi), Number(s))
+}
+
+export function getActivityGroup(type: number): ActivityGroup {
+  for (const [group, types] of Object.entries(ACTIVITY_TYPE_GROUPS)) {
+    if (types.includes(type)) return group as ActivityGroup
+  }
+  return 'other'
+}
+
+export function getActivityStatus(ranges: ActivityTimeRange[], now: number): ActivityStatus | 'unknown' {
+  if (ranges.length === 0) return 'unknown'
+  if (ranges.some((r) => r.closeTime === null)) return 'permanent'
+  if (ranges.some((r) => r.openTime <= now && r.closeTime !== null && now < r.closeTime)) return 'ongoing'
+  if (ranges.some((r) => r.openTime > now)) return 'upcoming'
+  return 'expired'
+}
+
+export function adaptActivity(
+  raw: any,
+  timeRaw: any,
+  i18nMap?: Record<string, string>,
+  tagNameMap?: Record<string, string>,
+): Activity {
+  const id: string = raw?.id ?? raw?.$key ?? ''
+  const type: number = raw?.type ?? 0
+  const seen = new Set<string>()
+  const timeRanges: ActivityTimeRange[] = []
+  for (const entry of timeRaw?.timeRangeList ?? []) {
+    const openTime = parseActivityTime(entry?.openTime ?? '')
+    if (openTime === null) continue
+    const closeRaw = entry?.closeTime ?? ''
+    const closeTime = closeRaw ? parseActivityTime(closeRaw) : null
+    const key = `${openTime}:${closeTime}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    timeRanges.push({ openTime, closeTime })
+  }
+  timeRanges.sort((a, b) => a.openTime - b.openTime)
+
+  const tabImg: string = raw?.tabImg ?? ''
+  return {
+    id,
+    name: resolveI18n(raw?.name, i18nMap) || id,
+    desc: resolveI18n(raw?.desc, i18nMap),
+    type,
+    group: getActivityGroup(type),
+    status: getActivityStatus(timeRanges, Date.now()),
+    timeRanges,
+    tags: (raw?.tagIds ?? []).map((tagId: string) => tagNameMap?.[tagId] ?? tagId),
+    tabImg: tabImg ? `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/activity/${tabImg}.png` : '',
+    tabImgColor: raw?.tabImgColor ?? '',
+    rewardId: raw?.rewardId ?? '',
+    sortId: raw?.sortId ?? 0,
   }
 }
 

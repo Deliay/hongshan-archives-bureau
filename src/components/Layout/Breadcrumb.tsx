@@ -19,6 +19,7 @@ function useListLabel(): Record<string, string> {
     chains: t('factory.chains'),
     search: t('nav.search'),
     story: t('nav.story'),
+    activities: t('nav.activities'),
     updates: t('nav.updates'),
     professions: t('profession.title'),
   }
