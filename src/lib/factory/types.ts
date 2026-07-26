@@ -54,6 +54,7 @@ export interface ChainNode {
   theoryPm?: number
   supplyLimited?: boolean
   isClosedLoop?: boolean
+  truncated?: boolean
 }
 
 export interface ChainEdge {

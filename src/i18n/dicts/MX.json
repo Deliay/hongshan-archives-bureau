@@ -365,6 +365,10 @@
     "actualOutput": "Salida real",
     "supplyLimited": "Suministro limitado",
     "demand": "Demanda",
-    "unitPerMin": "uds/min"
+    "unitPerMin": "uds/min",
+    "beltCount": "Cinta ×{{count}} ({{rate}}/min)",
+    "pipeCount": "Tubería ×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ Cerrado",
+    "productiveLoop": "↻ Producción neta ×{{ratio}}"
   }
 }

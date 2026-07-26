@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useI18n } from '../../i18n'
@@ -15,18 +15,35 @@ export default function FactoryChains() {
 
   const [targets, setTargets] = useState<ChainTarget[]>(() => {
     if (!targetsParam) return []
-    return targetsParam.split(',').filter(Boolean).map(part => {
+    // 重复 itemId 后者覆盖前者；非法/缺省 rate 先存 NaN，待数据加载后回退默认理论产速
+    const map = new Map<string, number>()
+    for (const part of targetsParam.split(',').filter(Boolean)) {
       const [itemId, rateStr] = part.split(':')
-      const rate = parseFloat(rateStr)
-      return {
-        itemId,
-        rate: isNaN(rate) || rate < 0 ? 0 : rate,
-      }
-    }).filter(t => t.itemId)
+      if (!itemId) continue
+      map.set(itemId, parseFloat(rateStr))
+    }
+    return Array.from(map, ([itemId, rate]) => ({ itemId, rate }))
   })
 
   const { data: factoryData, loading, error } = useFactoryData()
   const { data: graph } = useCraftingChain(targets)
+
+  const defaultRateOf = useCallback((itemId: string): number => {
+    const recipe = factoryData?.index.asOutcome[itemId]?.[0]
+    const outcome = recipe?.outcomes.find(o => o.itemId === itemId)
+    return recipe ? (outcome?.count ?? 1) * 60000 / recipe.totalProgress : 0
+  }, [factoryData])
+
+  // 非法（NaN、负数）rate 回退为该物品默认配方的理论产出速率
+  useEffect(() => {
+    if (!factoryData) return
+    if (!targets.some(t => !Number.isFinite(t.rate) || t.rate < 0)) return
+    const fixed = targets.map(t =>
+      !Number.isFinite(t.rate) || t.rate < 0 ? { ...t, rate: defaultRateOf(t.itemId) } : t,
+    )
+    updateTargets(fixed)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [factoryData])
 
   const baseIds = useMemo(() => {
     if (!factoryData) return []
@@ -55,10 +72,7 @@ export default function FactoryChains() {
 
   function addTarget(itemId: string) {
     if (targets.some(t => t.itemId === itemId)) return
-    const recipe = factoryData?.index.asOutcome[itemId]?.[0]
-    const outcome = recipe?.outcomes.find(o => o.itemId === itemId)
-    const defaultRate = recipe ? (outcome?.count ?? 1) * 60000 / recipe.totalProgress : 0
-    updateTargets([...targets, { itemId, rate: defaultRate }])
+    updateTargets([...targets, { itemId, rate: defaultRateOf(itemId) }])
   }
 
   function removeTarget(itemId: string) {

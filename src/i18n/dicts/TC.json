@@ -365,6 +365,10 @@
     "actualOutput": "實際產出",
     "supplyLimited": "供給受限",
     "demand": "需求",
-    "unitPerMin": "個/min"
+    "unitPerMin": "個/min",
+    "beltCount": "傳送帶×{{count}} ({{rate}}/min)",
+    "pipeCount": "管道×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ 封閉",
+    "productiveLoop": "↻ 淨產出 ×{{ratio}}"
   }
 }

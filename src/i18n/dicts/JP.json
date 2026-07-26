@@ -365,6 +365,10 @@
     "actualOutput": "実際の出力",
     "supplyLimited": "供給制限",
     "demand": "需要",
-    "unitPerMin": "個/分"
+    "unitPerMin": "個/分",
+    "beltCount": "ベルト×{{count}} ({{rate}}/分)",
+    "pipeCount": "パイプ×{{count}} ({{rate}}/分)",
+    "closedLoop": "↻ 閉鎖",
+    "productiveLoop": "↻ 正味産出 ×{{ratio}}"
   }
 }

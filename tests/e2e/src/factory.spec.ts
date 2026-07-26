@@ -149,6 +149,21 @@ test.describe('工厂系统 (Factory System)', () => {
       await expect(targetRow).toBeVisible({ timeout: 10000 })
     })
 
+    test('非法 rate 回退默认理论产速', async ({ page }) => {
+      await page.goto('/archive/factory/chains?targets=item_proc_battery_5:abc', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+      const rateInput = page.locator('input[type="number"]').first()
+      await expect(rateInput).toBeVisible({ timeout: 10000 })
+      // 非法 rate 应回退为默认配方理论产速（正数），而不是 0/空
+      await page.waitForFunction(() => {
+        const input = document.querySelector('input[type="number"]') as HTMLInputElement | null
+        return input && parseFloat(input.value) > 0
+      }, { timeout: 10000 })
+    })
+
     test('清空已选产物', async ({ page }) => {
       await page.goto('/archive/factory/chains?targets=iron_ingot:6', { waitUntil: 'domcontentloaded' })
       await page.waitForFunction(() => {
@@ -184,6 +199,12 @@ test.describe('工厂系统 (Factory System)', () => {
 
       const domEdgeCount = await page.locator('g.react-flow__edge').count()
       expect(domEdgeCount).toBeGreaterThan(5)
+
+      // 回归（TargetNode handle 类型错误导致 target 入边静默丢失）：
+      // 树状链路中每个非源节点至少有一条入边
+      const nodeCount = await page.locator('.react-flow__node').count()
+      const sourceCount = await page.locator('.react-flow__node-source').count()
+      expect(domEdgeCount).toBeGreaterThanOrEqual(nodeCount - sourceCount)
     })
 
     test('机器节点渲染名字和图标', async ({ page }) => {
@@ -301,9 +322,18 @@ test.describe('工厂系统 (Factory System)', () => {
       const edgeCount = await edges.count()
       expect(edgeCount).toBeGreaterThan(0)
 
-      const firstEdgeLabel = await edges.first().locator('.react-flow__edge-text').textContent().catch(() => '')
-      const hasTransportInfo = firstEdgeLabel.includes('传送带') || firstEdgeLabel.includes('管道') || firstEdgeLabel.includes('/min')
-      expect(hasTransportInfo).toBe(true)
+      const edgeLabels = page.locator('g.react-flow__edge .react-flow__edge-text')
+      const labelCount = await edgeLabels.count()
+      expect(labelCount).toBeGreaterThan(0)
+
+      const firstEdgeLabel = await edgeLabels.first().textContent().catch(() => '') || ''
+      // 边标签带速率和物流数量（i18n 文案，断言格式不断言具体语言）
+      expect(firstEdgeLabel).toContain('/min')
+      // 回归（maxThroughput 丢 volume 导致吞吐量 0）：所有边物流数量必须 > 0
+      for (let i = 0; i < labelCount; i++) {
+        const label = (await edgeLabels.nth(i).textContent().catch(() => '')) || ''
+        expect(label).not.toContain('×0')
+      }
     })
   })
 })

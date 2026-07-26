@@ -365,6 +365,10 @@
     "actualOutput": "ผลผลิตจริง",
     "supplyLimited": "Supply จำกัด",
     "demand": "ความต้องการ",
-    "unitPerMin": "ชิ้น/นาที"
+    "unitPerMin": "ชิ้น/นาที",
+    "beltCount": "สายพาน ×{{count}} ({{rate}}/นาที)",
+    "pipeCount": "ท่อ ×{{count}} ({{rate}}/นาที)",
+    "closedLoop": "↻ วงปิด",
+    "productiveLoop": "↻ ผลผลิตสุทธิ ×{{ratio}}"
   }
 }

@@ -365,6 +365,10 @@
     "actualOutput": "Output aktual",
     "supplyLimited": "Pasokan terbatas",
     "demand": "Permintaan",
-    "unitPerMin": "bjt/mnt"
+    "unitPerMin": "bjt/mnt",
+    "beltCount": "Konveyor ×{{count}} ({{rate}}/mnt)",
+    "pipeCount": "Pipa ×{{count}} ({{rate}}/mnt)",
+    "closedLoop": "↻ Tertutup",
+    "productiveLoop": "↻ Hasil bersih ×{{ratio}}"
   }
 }

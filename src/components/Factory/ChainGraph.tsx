@@ -16,7 +16,7 @@ function TargetNode({ data }: { data: ChainNode }) {
   const { t } = useI18n()
   return (
     <div className="relative ring-2 ring-archive-gold rounded p-2">
-      <Handle type="source" position={Position.Right} className="!bg-archive-gold" />
+      <Handle type="target" position={Position.Left} className="!bg-archive-gold" />
       <div className="flex flex-col items-center">
         <ItemTile itemId={data.itemId} size="sm" showTips={true} />
         <div className="text-[10px] text-archive-gold mt-0.5 font-medium">
@@ -92,7 +92,7 @@ const nodeTypes = {
   source: SourceNode,
 }
 
-function layoutGraph(graph: ChainGraphData): { nodes: Node[]; edges: Edge[] } {
+function layoutGraph(graph: ChainGraphData, t: (key: string, vars?: Record<string, string | number>) => string): { nodes: Node[]; edges: Edge[] } {
   const g = new dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
   g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 80 })
@@ -137,16 +137,16 @@ function layoutGraph(graph: ChainGraphData): { nodes: Node[]; edges: Edge[] } {
       strokeColor = '#f59e0b'
       strokeDasharray = '5 5'
       animated = true
-      label = '↻ 封闭'
+      label = t('factory.closedLoop')
     } else if (e.cycleType === 'productive') {
       strokeColor = '#C9A96E'
       animated = true
-      label = `净产出 ${(e.cycleRatio ?? 0).toFixed(1)}`
+      label = t('factory.productiveLoop', { ratio: (e.cycleRatio ?? 0).toFixed(1) })
     }
 
     const transportLabel = e.isPipe
-      ? `管道×${e.beltCount} (${e.perMinute.toFixed(0)}/min)`
-      : `传送带×${e.beltCount} (${e.perMinute.toFixed(0)}/min)`
+      ? t('factory.pipeCount', { count: e.beltCount, rate: e.perMinute.toFixed(0) })
+      : t('factory.beltCount', { count: e.beltCount, rate: e.perMinute.toFixed(0) })
 
     return {
       id: `e-${i}`,
@@ -164,7 +164,8 @@ function layoutGraph(graph: ChainGraphData): { nodes: Node[]; edges: Edge[] } {
 }
 
 export default function ChainGraph({ graph }: ChainGraphProps) {
-  const { nodes: initialNodes, edges: initialEdges } = useMemo(() => layoutGraph(graph), [graph])
+  const { t } = useI18n()
+  const { nodes: initialNodes, edges: initialEdges } = useMemo(() => layoutGraph(graph, t), [graph, t])
   const [nodes, setNodes] = useState(initialNodes)
   const [edges, setEdges] = useState(initialEdges)
 

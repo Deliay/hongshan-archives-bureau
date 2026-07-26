@@ -365,6 +365,10 @@
     "actualOutput": "Output effettivo",
     "supplyLimited": "Offerta limitata",
     "demand": "Domanda",
-    "unitPerMin": "pz/min"
+    "unitPerMin": "pz/min",
+    "beltCount": "Nastro ×{{count}} ({{rate}}/min)",
+    "pipeCount": "Tubatura ×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ Chiuso",
+    "productiveLoop": "↻ Resa netta ×{{ratio}}"
   }
 }

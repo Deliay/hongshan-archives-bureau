@@ -365,6 +365,10 @@
     "actualOutput": "Tatsächliche Ausgabe",
     "supplyLimited": "Angebot begrenzt",
     "demand": "Nachfrage",
-    "unitPerMin": "Stk/Min"
+    "unitPerMin": "Stk/Min",
+    "beltCount": "Förderband ×{{count}} ({{rate}}/Min)",
+    "pipeCount": "Rohrleitung ×{{count}} ({{rate}}/Min)",
+    "closedLoop": "↻ Geschlossen",
+    "productiveLoop": "↻ Nettoertrag ×{{ratio}}"
   }
 }

@@ -365,6 +365,10 @@
     "actualOutput": "Actual Output",
     "supplyLimited": "Supply Limited",
     "demand": "Demand",
-    "unitPerMin": "pcs/min"
+    "unitPerMin": "pcs/min",
+    "beltCount": "Belt ×{{count}} ({{rate}}/min)",
+    "pipeCount": "Pipe ×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ Closed",
+    "productiveLoop": "↻ Net output ×{{ratio}}"
   }
 }

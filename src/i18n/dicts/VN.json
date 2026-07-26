@@ -365,6 +365,10 @@
     "actualOutput": "Sản lượng thực tế",
     "supplyLimited": "Nguồn cung hạn chế",
     "demand": "Nhu cầu",
-    "unitPerMin": "cái/phút"
+    "unitPerMin": "cái/phút",
+    "beltCount": "Băng chuyền ×{{count}} ({{rate}}/phút)",
+    "pipeCount": "Ống dẫn ×{{count}} ({{rate}}/phút)",
+    "closedLoop": "↻ Khép kín",
+    "productiveLoop": "↻ Sản lượng ròng ×{{ratio}}"
   }
 }

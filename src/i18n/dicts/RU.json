@@ -365,6 +365,10 @@
     "actualOutput": "Фактический вывод",
     "supplyLimited": "Ограничение предложения",
     "demand": "Спрос",
-    "unitPerMin": "шт/мин"
+    "unitPerMin": "шт/мин",
+    "beltCount": "Конвейер ×{{count}} ({{rate}}/мин)",
+    "pipeCount": "Труба ×{{count}} ({{rate}}/мин)",
+    "closedLoop": "↻ Замкнуто",
+    "productiveLoop": "↻ Чистый выход ×{{ratio}}"
   }
 }

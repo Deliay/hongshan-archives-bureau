@@ -365,6 +365,10 @@
     "actualOutput": "实际产出",
     "supplyLimited": "供给受限",
     "demand": "需求",
-    "unitPerMin": "个/min"
+    "unitPerMin": "个/min",
+    "beltCount": "传送带×{{count}} ({{rate}}/min)",
+    "pipeCount": "管道×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ 封闭",
+    "productiveLoop": "↻ 净产出 ×{{ratio}}"
   }
 }

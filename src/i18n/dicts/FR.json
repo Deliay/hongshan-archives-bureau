@@ -365,6 +365,10 @@
     "actualOutput": "Sortie réelle",
     "supplyLimited": "Offre limitée",
     "demand": "Demande",
-    "unitPerMin": "u/min"
+    "unitPerMin": "u/min",
+    "beltCount": "Convoyeur ×{{count}} ({{rate}}/min)",
+    "pipeCount": "Tuyau ×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ Fermé",
+    "productiveLoop": "↻ Rendement net ×{{ratio}}"
   }
 }
