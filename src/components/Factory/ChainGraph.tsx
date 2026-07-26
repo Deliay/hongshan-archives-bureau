@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
-import { ReactFlow, Handle, Position, useNodesState, useEdgesState } from '@xyflow/react'
-import type { Node, Edge } from '@xyflow/react'
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
+import { ReactFlow, Handle, Position, applyNodeChanges, applyEdgeChanges } from '@xyflow/react'
+import type { Node, Edge, OnNodesChange, OnEdgesChange } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import dagre from '@dagrejs/dagre'
 import ItemTile from '../Items/ItemTile'
@@ -124,15 +124,120 @@ function layoutGraph(graph: ChainGraphData): { nodes: Node[]; edges: Edge[] } {
   return { nodes, edges }
 }
 
-export default function ChainGraph({ graph }: ChainGraphProps) {
-  const { nodes: layoutNodes, edges: layoutEdges } = useMemo(() => layoutGraph(graph), [graph])
-  const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutEdges)
+function renderEdges(svg: SVGSVGElement, nodes: Node[], edges: Edge[]) {
+  svg.innerHTML = ''
 
-  useMemo(() => {
-    setNodes(layoutNodes)
-    setEdges(layoutEdges)
-  }, [layoutNodes, layoutEdges, setNodes, setEdges])
+  const rfContainer = document.querySelector('.react-flow')
+  if (!rfContainer) return
+  const viewport = rfContainer.querySelector('.react-flow__viewport')
+  if (!viewport) return
+  const viewportStyle = window.getComputedStyle(viewport)
+  const matrix = viewportStyle.transform.match(/matrix\(([^)]+)\)/)
+  if (!matrix) return
+  const values = matrix[1].split(',').map(Number)
+  const scale = values[0]
+  const tx = values[4]
+  const ty = values[5]
+
+  const nodePositions = new Map<string, { x: number; y: number }>()
+  for (const node of nodes) {
+    const el = rfContainer.querySelector(`[data-id="${node.id}"]`)
+    if (el) {
+      const rect = el.getBoundingClientRect()
+      const containerRect = rfContainer.getBoundingClientRect()
+      nodePositions.set(node.id, {
+        x: (rect.left - containerRect.left - tx) / scale + rect.width / scale / 2,
+        y: (rect.top - containerRect.top - ty) / scale + rect.height / scale / 2,
+      })
+    }
+  }
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs')
+  svg.appendChild(defs)
+
+  for (const edge of edges) {
+    const source = nodePositions.get(edge.source)
+    const target = nodePositions.get(edge.target)
+    if (!source || !target) continue
+
+    const markerId = `arrow-${edge.id}`
+    const color = (edge.style?.stroke as string) || '#C9A96E'
+
+    if (edge.markerEnd) {
+      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker')
+      marker.setAttribute('id', markerId)
+      marker.setAttribute('viewBox', '0 0 10 10')
+      marker.setAttribute('refX', '10')
+      marker.setAttribute('refY', '5')
+      marker.setAttribute('markerWidth', '8')
+      marker.setAttribute('markerHeight', '8')
+      marker.setAttribute('orient', 'auto-start-reverse')
+      const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
+      polygon.setAttribute('points', '0 0, 10 5, 0 10')
+      polygon.setAttribute('fill', color)
+      marker.appendChild(polygon)
+      defs.appendChild(marker)
+    }
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    const dx = Math.abs(target.x - source.x) * 0.4
+    const d = `M ${source.x} ${source.y} C ${source.x + dx} ${source.y}, ${target.x - dx} ${target.y}, ${target.x} ${target.y}`
+    path.setAttribute('d', d)
+    path.setAttribute('fill', 'none')
+    path.setAttribute('stroke', color)
+    path.setAttribute('stroke-width', String(edge.style?.strokeWidth || 1.5))
+    if (edge.style?.strokeDasharray) {
+      path.setAttribute('stroke-dasharray', edge.style.strokeDasharray)
+    }
+    if (edge.markerEnd) {
+      path.setAttribute('marker-end', `url(#${markerId})`)
+    }
+    svg.appendChild(path)
+  }
+}
+
+export default function ChainGraph({ graph }: ChainGraphProps) {
+  const { nodes: initialNodes, edges: initialEdges } = useMemo(() => layoutGraph(graph), [graph])
+  const [nodes, setNodes] = useState(initialNodes)
+  const [edges, setEdges] = useState(initialEdges)
+  const svgRef = useRef<SVGSVGElement | null>(null)
+
+  useEffect(() => {
+    setNodes(initialNodes)
+    setEdges(initialEdges)
+  }, [initialNodes, initialEdges])
+
+  const onNodesChange: OnNodesChange = useCallback(
+    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    [],
+  )
+  const onEdgesChange: OnEdgesChange = useCallback(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [],
+  )
+
+  useEffect(() => {
+    const rfContainer = document.querySelector('.react-flow')
+    if (!rfContainer) return
+
+    let existingSvg = rfContainer.querySelector('.chain-custom-edges') as SVGSVGElement | null
+    if (!existingSvg) {
+      existingSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      existingSvg.classList.add('chain-custom-edges')
+      existingSvg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1000'
+      rfContainer.appendChild(existingSvg)
+    }
+    svgRef.current = existingSvg
+
+    return () => { existingSvg?.remove() }
+  }, [])
+
+  useEffect(() => {
+    if (!svgRef.current) return
+    requestAnimationFrame(() => {
+      if (svgRef.current) renderEdges(svgRef.current, nodes, edges)
+    })
+  }, [nodes, edges])
 
   if (graph.nodes.length === 0) return null
 

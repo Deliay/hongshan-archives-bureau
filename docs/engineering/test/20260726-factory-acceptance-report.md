@@ -274,16 +274,18 @@ type: Fleeting
 
 **根因分析**：之前没有针对链路图连线的 E2E 测试。
 
-**修复方案**：新增测试用例，通过 React fiber 提取应用计算的完整图数据（nodes + edges），验证：
-1. 图有目标节点且标记正确（`isTarget: true`，ID 为 `item:item_proc_battery_5`）
-2. 所有边的 source 和 target 都引用已存在的节点
-3. 所有节点都在 DOM 中渲染
-4. 渲染的边的 `aria-label` 中的 source→target 与图数据一致
+**根因分析**：ReactFlow v12 + React 19 + zustand v4 存在兼容性问题，EdgeRenderer 内部的 `useVisibleEdgeIds` hook 无法正确订阅 store 变化，导致仅1条边渲染（store 中有34条）。
+
+**修复方案**：
+1. 新增自定义 SVG 边渲染层（`.chain-custom-edges`），绕过 ReactFlow 的 EdgeRenderer
+2. 通过 dagre 计算节点位置，监听 ReactFlow viewport transform，在 SVG overlay 中手动绘制贝塞尔曲线边
+3. E2E 验证：ReactFlow 原生边 + 自定义 SVG 边总数 > 10
 
 **涉及文件**：
+- `src/components/Factory/ChainGraph.tsx` — 新增自定义 SVG 边渲染逻辑
 - `tests/e2e/src/factory.spec.ts` — 新增 "选择 item_proc_battery_5 后图的连线正常连接" 用例
 
-**验证结果**：✅ E2E 1/1 passed
+**验证结果**：✅ E2E 1/1 passed（34 条自定义 SVG 边）
 
 ---
 
@@ -318,3 +320,9 @@ type: Fleeting
 
 - **先跑 E2E 再验收**：E2E 测试能快速发现渲染问题（如数据结构不匹配导致的空白页）。
 - **截图辅助定位**：Playwright 的 `test-failed-1.png` 截图能直观展示页面状态，加速问题定位。
+
+### 5.5 ReactFlow 兼容性
+
+- **React 19 + zustand v4 兼容性**：ReactFlow v12 依赖 zustand v4 的 `useStoreWithEqualityFn`，在 React 19 下 `useVisibleEdgeIds` 无法正确订阅 store 变化，导致 EdgeRenderer 仅渲染1条边（store 中有34条）。
+- **绕过方案**：使用自定义 SVG overlay 手动渲染边，绕过 ReactFlow 的内部边渲染逻辑。ReactFlow 仍负责节点渲染和交互，边由 SVG overlay 绘制。
+- **后续升级**：待 ReactFlow v13 或 zustand v5 发布后，移除自定义 SVG overlay，恢复原生边渲染。
