@@ -124,3 +124,22 @@ export const ITEM_TYPE = {
 } as const
 
 export type ItemType = (typeof ITEM_TYPE)[keyof typeof ITEM_TYPE]
+
+export const ACTIVITY_TYPE_GROUPS: Record<string, number[]> = {
+  checkin: [2],
+  challenge: [7, 8, 17],
+  trial: [9],
+  welfare: [1, 3, 5, 16],
+  reflow: [11],
+  guide: [13],
+}
+
+export const ACTIVITY_GROUP_COLORS: Record<string, string> = {
+  checkin: '#2AA8A0',
+  challenge: '#D64545',
+  trial: '#8F6FD0',
+  welfare: '#C9A96E',
+  reflow: '#4A7FBD',
+  guide: '#5FA35F',
+  other: '#6E6E78',
+}
