@@ -360,6 +360,15 @@
     "selectedTargets": "Выбранные продукты",
     "clearAll": "Очистить",
     "sourceNode": "Добыча",
-    "emptyChainHint": "Найдите и добавьте целевые продукты для построения цепочки крафта"
+    "emptyChainHint": "Найдите и добавьте целевые продукты для построения цепочки крафта",
+    "targetNode": "Цель",
+    "actualOutput": "Фактический вывод",
+    "supplyLimited": "Ограничение предложения",
+    "demand": "Спрос",
+    "unitPerMin": "шт/мин",
+    "beltCount": "Конвейер ×{{count}} ({{rate}}/мин)",
+    "pipeCount": "Труба ×{{count}} ({{rate}}/мин)",
+    "closedLoop": "↻ Замкнуто",
+    "productiveLoop": "↻ Чистый выход ×{{ratio}}"
   }
 }

@@ -360,6 +360,15 @@
     "selectedTargets": "已選產物",
     "clearAll": "清空",
     "sourceNode": "採集",
-    "emptyChainHint": "搜尋並添加目標產物以生成製作鏈路"
+    "emptyChainHint": "搜尋並添加目標產物以生成製作鏈路",
+    "targetNode": "目標",
+    "actualOutput": "實際產出",
+    "supplyLimited": "供給受限",
+    "demand": "需求",
+    "unitPerMin": "個/min",
+    "beltCount": "傳送帶×{{count}} ({{rate}}/min)",
+    "pipeCount": "管道×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ 封閉",
+    "productiveLoop": "↻ 淨產出 ×{{ratio}}"
   }
 }

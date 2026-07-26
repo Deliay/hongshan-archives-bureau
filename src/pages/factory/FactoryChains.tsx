@@ -1,20 +1,49 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useI18n } from '../../i18n'
 import { useFactoryData, useCraftingChain, useFactoryItemMeta } from '../../hooks/useData'
 import ItemTile from '../../components/Items/ItemTile'
 import ChainGraph from '../../components/Factory/ChainGraph'
-import FactoryItemSidebar from '../../components/Factory/FactoryItemSidebar'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
+import type { ChainTarget } from '../../lib/factory/types'
 
 export default function FactoryChains() {
   const { t } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
   const targetsParam = searchParams.get('targets')
-  const targets = useMemo(() => targetsParam ? targetsParam.split(',').filter(Boolean) : [], [targetsParam])
+
+  const [targets, setTargets] = useState<ChainTarget[]>(() => {
+    if (!targetsParam) return []
+    // 重复 itemId 后者覆盖前者；非法/缺省 rate 先存 NaN，待数据加载后回退默认理论产速
+    const map = new Map<string, number>()
+    for (const part of targetsParam.split(',').filter(Boolean)) {
+      const [itemId, rateStr] = part.split(':')
+      if (!itemId) continue
+      map.set(itemId, parseFloat(rateStr))
+    }
+    return Array.from(map, ([itemId, rate]) => ({ itemId, rate }))
+  })
+
   const { data: factoryData, loading, error } = useFactoryData()
   const { data: graph } = useCraftingChain(targets)
+
+  const defaultRateOf = useCallback((itemId: string): number => {
+    const recipe = factoryData?.index.asOutcome[itemId]?.[0]
+    const outcome = recipe?.outcomes.find(o => o.itemId === itemId)
+    return recipe ? (outcome?.count ?? 1) * 60000 / recipe.totalProgress : 0
+  }, [factoryData])
+
+  // 非法（NaN、负数）rate 回退为该物品默认配方的理论产出速率
+  useEffect(() => {
+    if (!factoryData) return
+    if (!targets.some(t => !Number.isFinite(t.rate) || t.rate < 0)) return
+    const fixed = targets.map(t =>
+      !Number.isFinite(t.rate) || t.rate < 0 ? { ...t, rate: defaultRateOf(t.itemId) } : t,
+    )
+    updateTargets(fixed)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [factoryData])
 
   const baseIds = useMemo(() => {
     if (!factoryData) return []
@@ -32,77 +61,102 @@ export default function FactoryChains() {
     })
   }, [baseIds, itemMeta])
 
-  function addTarget(id: string) {
-    if (targets.includes(id)) return
-    const next = [...targets, id]
-    setSearchParams({ targets: next.join(',') })
-  }
-
-  function removeTarget(id: string) {
-    const next = targets.filter(t => t !== id)
-    if (next.length === 0) {
+  const updateTargets = useCallback((newTargets: ChainTarget[]) => {
+    setTargets(newTargets)
+    if (newTargets.length === 0) {
       setSearchParams({})
     } else {
-      setSearchParams({ targets: next.join(',') })
+      setSearchParams({ targets: newTargets.map(t => `${t.itemId}:${t.rate}`).join(',') })
     }
+  }, [setSearchParams])
+
+  function addTarget(itemId: string) {
+    if (targets.some(t => t.itemId === itemId)) return
+    updateTargets([...targets, { itemId, rate: defaultRateOf(itemId) }])
+  }
+
+  function removeTarget(itemId: string) {
+    updateTargets(targets.filter(t => t.itemId !== itemId))
+  }
+
+  function updateRate(itemId: string, rate: number) {
+    updateTargets(targets.map(t => t.itemId === itemId ? { ...t, rate } : t))
   }
 
   function clearTargets() {
-    setSearchParams({})
+    updateTargets([])
   }
 
   if (loading) return <ListSkeleton />
   if (error) return <div className="text-center py-12 text-archive-lead">{error}</div>
 
   return (
-    <div className="flex flex-col md:flex-row gap-6">
-      <FactoryItemSidebar
-        itemIds={itemIds}
-        itemMeta={itemMeta}
-        searchPlaceholder={t('factory.addTarget')}
-        toggleLabel={
-          <span className="text-archive-lead">
-            {targets.length > 0
-              ? `${targets.length} ${t('factory.selectedTargets')}`
-              : t('factory.addTarget')}
-          </span>
-        }
-        isSelected={id => targets.includes(id)}
-        onSelect={addTarget}
-        disableSelected
-        clearSearchOnSelect
-      />
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-archive-lead">{t('factory.addTarget')}:</span>
+          <select
+            onChange={(e) => {
+              if (e.target.value) {
+                addTarget(e.target.value)
+                e.target.value = ''
+              }
+            }}
+            className="bg-archive-ink border border-archive-border rounded px-2 py-1 text-sm text-archive-ivory"
+          >
+            <option value="">--</option>
+            {itemIds.map(id => (
+              <option key={id} value={id}>{itemMeta[id]?.name || id}</option>
+            ))}
+          </select>
+        </div>
 
-      <div className="flex-1 min-w-0">
+        {targets.map(target => {
+          const meta = itemMeta[target.itemId]
+          return (
+            <div key={target.itemId} className="flex items-center gap-2 bg-archive-gold/10 rounded px-3 py-2">
+              <ItemTile itemId={target.itemId} size="sm" name={meta?.name} rarity={meta?.rarity} showTips={false} />
+              <span className="text-sm text-archive-gold">{meta?.name || target.itemId}</span>
+              <input
+                type="number"
+                value={target.rate}
+                onChange={(e) => updateRate(target.itemId, parseFloat(e.target.value) || 0)}
+                className="w-20 bg-archive-ink border border-archive-border rounded px-2 py-1 text-sm text-archive-ivory"
+                min="0"
+                step="0.1"
+              />
+              <span className="text-xs text-archive-lead">{t('factory.unitPerMin')}</span>
+              <button
+                type="button"
+                onClick={() => removeTarget(target.itemId)}
+                className="text-archive-lead hover:text-archive-ivory ml-2"
+              >
+                ×
+              </button>
+            </div>
+          )
+        })}
+
         {targets.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className="text-xs text-archive-lead">{t('factory.selectedTargets')}:</span>
-            {targets.map(id => {
-              const meta = itemMeta[id]
-              return (
-                <div key={id} className="flex items-center gap-1 bg-archive-gold/10 rounded px-2 py-0.5">
-                  <ItemTile itemId={id} size="sm" name={meta?.name} rarity={meta?.rarity} showTips={false} />
-                  <span className="text-xs text-archive-gold">{meta?.name || id}</span>
-                  <button type="button" onClick={() => removeTarget(id)}
-                    className="text-archive-lead hover:text-archive-ivory ml-1">×</button>
-                </div>
-              )
-            })}
-            <button type="button" onClick={clearTargets}
-              className="text-xs text-archive-lead hover:text-archive-ivory">{t('factory.clearAll')}</button>
-          </div>
-        )}
-
-        {targets.length === 0 ? (
-          <div className="text-center py-16 text-archive-lead text-sm">{t('factory.emptyChainHint')}</div>
-        ) : graph && graph.nodes.length > 0 ? (
-          <ReactFlowProvider>
-            <ChainGraph graph={graph} />
-          </ReactFlowProvider>
-        ) : (
-          <ListSkeleton />
+          <button
+            type="button"
+            onClick={clearTargets}
+            className="text-xs text-archive-lead hover:text-archive-ivory self-start"
+          >
+            {t('factory.clearAll')}
+          </button>
         )}
       </div>
+
+      {targets.length === 0 ? (
+        <div className="text-center py-16 text-archive-lead text-sm">{t('factory.emptyChainHint')}</div>
+      ) : graph && graph.nodes.length > 0 ? (
+        <ReactFlowProvider>
+          <ChainGraph graph={graph} />
+        </ReactFlowProvider>
+      ) : (
+        <ListSkeleton />
+      )}
     </div>
   )
 }

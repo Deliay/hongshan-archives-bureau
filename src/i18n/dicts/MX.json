@@ -360,6 +360,15 @@
     "selectedTargets": "Productos seleccionados",
     "clearAll": "Limpiar todo",
     "sourceNode": "Recolección",
-    "emptyChainHint": "Busca y agrega productos objetivo para generar una cadena de fabricación"
+    "emptyChainHint": "Busca y agrega productos objetivo para generar una cadena de fabricación",
+    "targetNode": "Objetivo",
+    "actualOutput": "Salida real",
+    "supplyLimited": "Suministro limitado",
+    "demand": "Demanda",
+    "unitPerMin": "uds/min",
+    "beltCount": "Cinta ×{{count}} ({{rate}}/min)",
+    "pipeCount": "Tubería ×{{count}} ({{rate}}/min)",
+    "closedLoop": "↻ Cerrado",
+    "productiveLoop": "↻ Producción neta ×{{ratio}}"
   }
 }

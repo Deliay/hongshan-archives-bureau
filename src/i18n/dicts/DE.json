@@ -360,6 +360,15 @@
     "selectedTargets": "Ausgewählte Produkte",
     "clearAll": "Alle löschen",
     "sourceNode": "Gewinnung",
-    "emptyChainHint": "Suchen und fügen Sie Zielprodukte hinzu, um eine Herstellungskette zu erstellen"
+    "emptyChainHint": "Suchen und fügen Sie Zielprodukte hinzu, um eine Herstellungskette zu erstellen",
+    "targetNode": "Ziel",
+    "actualOutput": "Tatsächliche Ausgabe",
+    "supplyLimited": "Angebot begrenzt",
+    "demand": "Nachfrage",
+    "unitPerMin": "Stk/Min",
+    "beltCount": "Förderband ×{{count}} ({{rate}}/Min)",
+    "pipeCount": "Rohrleitung ×{{count}} ({{rate}}/Min)",
+    "closedLoop": "↻ Geschlossen",
+    "productiveLoop": "↻ Nettoertrag ×{{ratio}}"
   }
 }

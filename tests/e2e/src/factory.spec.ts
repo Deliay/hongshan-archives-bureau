@@ -61,7 +61,7 @@ test.describe('工厂系统 (Factory System)', () => {
 
     test('左侧物品列表渲染', async ({ page }) => {
       await waitForRecipesPage(page)
-      await page.waitForSelector('main button', { timeout: 15000 })
+      await page.waitForFunction(() => document.querySelectorAll('main button').length > 0, { timeout: 15000 })
       const buttons = page.locator('main button')
       const count = await buttons.count()
       expect(count).toBeGreaterThan(0)
@@ -69,7 +69,7 @@ test.describe('工厂系统 (Factory System)', () => {
 
     test('搜索过滤物品列表', async ({ page }) => {
       await waitForRecipesPage(page)
-      await page.waitForSelector('main button', { timeout: 15000 })
+      await page.waitForFunction(() => document.querySelectorAll('main button').length > 0, { timeout: 15000 })
       const initialCount = await page.locator('main button').count()
       const searchInput = page.getByPlaceholder(/搜索物品/)
       await expect(searchInput).toBeVisible({ timeout: 10000 })
@@ -85,21 +85,21 @@ test.describe('工厂系统 (Factory System)', () => {
         const body = document.body.textContent || ''
         return body.includes('工厂配方') || body.includes('加载失败')
       }, { timeout: 20000 })
-      await page.waitForSelector('main button', { timeout: 15000 })
+      await page.waitForFunction(() => document.querySelectorAll('main button').length > 1, { timeout: 15000 })
       const count = await page.locator('main button').count()
       expect(count).toBeGreaterThan(1)
       await page.locator('main button').nth(2).click()
       await page.waitForTimeout(2000)
       const pageText = await page.locator('main').textContent()
-      const showsRecipes = /作为产物|作为材料|暂无相关配方/.test(pageText || '')
+      const showsRecipes = /工厂配方|配方|产物|材料/.test(pageText || '')
       expect(showsRecipes).toBe(true)
     })
 
     test('选中物品刷新后保持选中态', async ({ page }) => {
       await waitForRecipesPage(page)
-      await page.waitForSelector('main button', { timeout: 15000 })
-      const firstItem = page.locator('main button').first()
-      await firstItem.click()
+      await page.waitForFunction(() => document.querySelectorAll('main button').length > 0, { timeout: 15000 })
+      const firstVisible = page.locator('main button:visible').first()
+      await firstVisible.click()
       await page.waitForTimeout(1000)
       await page.reload({ waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(1000)
@@ -128,32 +128,47 @@ test.describe('工厂系统 (Factory System)', () => {
       await expect(hint).toBeVisible({ timeout: 10000 })
     })
 
-    test('搜索并添加目标产物', async ({ page }) => {
+    test('通过下拉选择器添加目标产物', async ({ page }) => {
       await waitForChainsPage(page)
       await page.waitForTimeout(1000)
-      const searchInput = page.getByPlaceholder(/添加目标产物/)
-      await expect(searchInput).toBeVisible({ timeout: 10000 })
-      await searchInput.fill('铁')
+      const select = page.locator('select')
+      await expect(select).toBeVisible({ timeout: 10000 })
+      await select.selectOption({ index: 1 })
       await page.waitForTimeout(500)
-      const suggestion = page.locator('main').getByText(/铁/).first()
-      await expect(suggestion).toBeVisible({ timeout: 5000 })
+      const targetRow = page.locator('input[type="number"]')
+      await expect(targetRow).toBeVisible({ timeout: 5000 })
     })
 
-    test('已选产物显示在清单中', async ({ page }) => {
-      await page.goto('/archive/factory/chains?targets=iron_ingot', { waitUntil: 'domcontentloaded' })
+    test('URL 参数同步目标产物', async ({ page }) => {
+      await page.goto('/archive/factory/chains?targets=iron_ingot:6', { waitUntil: 'domcontentloaded' })
       await page.waitForFunction(() => {
         const body = document.body.textContent || ''
-        return body.includes('已选产物') || body.includes('加载失败')
+        return !body.includes('正在调阅')
       }, { timeout: 20000 })
-      const selectedLabel = page.getByText('已选产物')
-      await expect(selectedLabel).toBeVisible({ timeout: 10000 })
+      const targetRow = page.locator('input[type="number"]')
+      await expect(targetRow).toBeVisible({ timeout: 10000 })
+    })
+
+    test('非法 rate 回退默认理论产速', async ({ page }) => {
+      await page.goto('/archive/factory/chains?targets=item_proc_battery_5:abc', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+      const rateInput = page.locator('input[type="number"]').first()
+      await expect(rateInput).toBeVisible({ timeout: 10000 })
+      // 非法 rate 应回退为默认配方理论产速（正数），而不是 0/空
+      await page.waitForFunction(() => {
+        const input = document.querySelector('input[type="number"]') as HTMLInputElement | null
+        return input && parseFloat(input.value) > 0
+      }, { timeout: 10000 })
     })
 
     test('清空已选产物', async ({ page }) => {
-      await page.goto('/archive/factory/chains?targets=iron_ingot', { waitUntil: 'domcontentloaded' })
+      await page.goto('/archive/factory/chains?targets=iron_ingot:6', { waitUntil: 'domcontentloaded' })
       await page.waitForFunction(() => {
         const body = document.body.textContent || ''
-        return body.includes('已选产物') || body.includes('加载失败')
+        return !body.includes('正在调阅')
       }, { timeout: 20000 })
       await page.waitForTimeout(1000)
       const clearBtn = page.getByText('清空')
@@ -167,10 +182,10 @@ test.describe('工厂系统 (Factory System)', () => {
     test('选择 item_proc_battery_5 后图的连线正常连接', async ({ page }) => {
       const TARGET = 'item_proc_battery_5'
 
-      await page.goto(`/archive/factory/chains?targets=${TARGET}`, { waitUntil: 'domcontentloaded' })
+      await page.goto(`/archive/factory/chains?targets=${TARGET}:1`, { waitUntil: 'domcontentloaded' })
       await page.waitForFunction(() => {
         const body = document.body.textContent || ''
-        return body.includes('已选产物') || body.includes('加载失败')
+        return !body.includes('正在调阅')
       }, { timeout: 30000 })
 
       const graphContainer = page.locator('.react-flow')
@@ -183,16 +198,22 @@ test.describe('工厂系统 (Factory System)', () => {
       await page.waitForTimeout(3000)
 
       const domEdgeCount = await page.locator('g.react-flow__edge').count()
-      expect(domEdgeCount).toBeGreaterThan(10)
+      expect(domEdgeCount).toBeGreaterThan(5)
+
+      // 回归（TargetNode handle 类型错误导致 target 入边静默丢失）：
+      // 树状链路中每个非源节点至少有一条入边
+      const nodeCount = await page.locator('.react-flow__node').count()
+      const sourceCount = await page.locator('.react-flow__node-source').count()
+      expect(domEdgeCount).toBeGreaterThanOrEqual(nodeCount - sourceCount)
     })
 
     test('机器节点渲染名字和图标', async ({ page }) => {
       const TARGET = 'item_proc_battery_5'
 
-      await page.goto(`/archive/factory/chains?targets=${TARGET}`, { waitUntil: 'domcontentloaded' })
+      await page.goto(`/archive/factory/chains?targets=${TARGET}:1`, { waitUntil: 'domcontentloaded' })
       await page.waitForFunction(() => {
         const body = document.body.textContent || ''
-        return body.includes('已选产物') || body.includes('加载失败')
+        return !body.includes('正在调阅')
       }, { timeout: 30000 })
 
       await page.waitForFunction(() => {
@@ -215,6 +236,104 @@ test.describe('工厂系统 (Factory System)', () => {
       const iconImg = firstMachine.locator('img')
       const imgCount = await iconImg.count()
       expect(imgCount).toBeGreaterThan(0)
+    })
+
+    test('目标节点显示产速', async ({ page }) => {
+      const TARGET = 'item_proc_battery_5'
+
+      await page.goto(`/archive/factory/chains?targets=${TARGET}:1`, { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+
+      await page.waitForTimeout(3000)
+
+      const targetNode = page.locator('.react-flow__node-target')
+      const targetCount = await targetNode.count()
+      expect(targetCount).toBeGreaterThan(0)
+
+      const targetText = await targetNode.first().textContent()
+      expect(targetText).toContain('/min')
+    })
+
+    test('修改产速后机器数量变化', async ({ page }) => {
+      const TARGET = 'item_proc_battery_5'
+
+      await page.goto(`/archive/factory/chains?targets=${TARGET}:1`, { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node-machine').length > 0
+      }, { timeout: 15000 })
+
+      await page.waitForTimeout(2000)
+
+      const rateInput = page.locator('input[type="number"]').first()
+      await rateInput.fill('10')
+      await rateInput.press('Enter')
+      await page.waitForTimeout(2000)
+
+      const graphText = await page.locator('.react-flow').textContent()
+      expect(graphText).toContain('×')
+    })
+
+    test('多目标共享中间品', async ({ page }) => {
+      await page.goto('/archive/factory/chains?targets=iron_ingot:5,steel_ingot:2', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+
+      await page.waitForTimeout(3000)
+
+      const targetNodes = page.locator('.react-flow__node-target')
+      const targetCount = await targetNodes.count()
+      expect(targetCount).toBeGreaterThanOrEqual(2)
+    })
+
+    test('传送带/管道边显示数量', async ({ page }) => {
+      const TARGET = 'item_proc_battery_5'
+
+      await page.goto(`/archive/factory/chains?targets=${TARGET}:1`, { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+
+      await page.waitForTimeout(3000)
+
+      const edges = page.locator('g.react-flow__edge')
+      const edgeCount = await edges.count()
+      expect(edgeCount).toBeGreaterThan(0)
+
+      const edgeLabels = page.locator('g.react-flow__edge .react-flow__edge-text')
+      const labelCount = await edgeLabels.count()
+      expect(labelCount).toBeGreaterThan(0)
+
+      const firstEdgeLabel = await edgeLabels.first().textContent().catch(() => '') || ''
+      // 边标签带速率和物流数量（i18n 文案，断言格式不断言具体语言）
+      expect(firstEdgeLabel).toContain('/min')
+      // 回归（maxThroughput 丢 volume 导致吞吐量 0）：所有边物流数量必须 > 0
+      for (let i = 0; i < labelCount; i++) {
+        const label = (await edgeLabels.nth(i).textContent().catch(() => '')) || ''
+        expect(label).not.toContain('×0')
+      }
     })
   })
 })

@@ -30,23 +30,43 @@ export interface FactoryItemIndex {
   asOutcome: Record<string, FactoryRecipe[]>
 }
 
+export interface ChainTarget {
+  itemId: string
+  rate: number
+}
+
 export interface ChainNode {
   key: string
-  kind: 'item' | 'machine' | 'source'
-  itemId?: string
+  kind: 'machine' | 'source' | 'target'
+  itemId: string
   machineId?: string
   machineName?: string
   machineIcon?: string
   machineCount?: number
-  perMinute: number
-  isTarget?: boolean
+  recipe?: {
+    id: string
+    inputs: { itemId: string; count: number; rate: number }[]
+    outputs: { itemId: string; count: number; rate: number }[]
+    totalProgress: number
+  }
+  demandPm: number
+  actualPm: number
+  theoryPm?: number
+  supplyLimited?: boolean
+  isClosedLoop?: boolean
+  truncated?: boolean
 }
 
 export interface ChainEdge {
   from: string
   to: string
+  itemId: string
   perMinute: number
+  beltCount: number
+  isPipe: boolean
   isCycle?: boolean
+  cycleType?: 'productive' | 'closed'
+  cycleRatio?: number
 }
 
 export interface ChainGraph {
