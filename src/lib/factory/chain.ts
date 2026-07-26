@@ -180,6 +180,7 @@ export function buildChainGraph(
         cycleType: 'productive',
         cycleRatio: netRatio,
       })
+      return 0
     }
 
     if (path.size > 10) return 0
