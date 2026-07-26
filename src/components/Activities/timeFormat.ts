@@ -22,6 +22,11 @@ export function formatActivityTime(ts: number): string {
   return `${d.getUTCFullYear()}/${d.getUTCMonth() + 1}/${d.getUTCDate()} ${hh}:${mm}`
 }
 
+export function formatActivityDate(ts: number): string {
+  const d = new Date(ts + 8 * 3600_000)
+  return `${d.getUTCFullYear()}/${d.getUTCMonth() + 1}/${d.getUTCDate()}`
+}
+
 export function formatMonthLabel(ts: number, locale: string): string {
   const tag = LOCALE_DATE_TAGS[locale] ?? 'en-US'
   return new Date(ts).toLocaleDateString(tag, { year: 'numeric', month: 'numeric', timeZone: 'UTC' })

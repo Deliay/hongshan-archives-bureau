@@ -77,6 +77,25 @@ describe('ActivityGantt', () => {
   })
 
 
+  it('shows date range on non-permanent bars', () => {
+    const a = makeActivity({
+      id: 'dated',
+      timeRanges: [{ openTime: Date.UTC(2025, 11, 8, 20, 0, 0), closeTime: Date.UTC(2026, 1, 7, 4, 0, 0) }],
+    })
+    renderGantt([a])
+    expect(screen.getByText('2025/12/9 ~ 2026/2/7')).toBeTruthy()
+  })
+
+  it('does not show date range on permanent bars', () => {
+    const a = makeActivity({
+      id: 'perm',
+      status: 'permanent',
+      timeRanges: [{ openTime: Date.now() - 10 * DAY, closeTime: null }],
+    })
+    renderGantt([a])
+    expect(screen.queryByText(/~/)).toBeNull()
+  })
+
   it('renders today line when now is within axis', () => {
     renderGantt([makeActivity({ id: 'a1' })])
     expect(screen.getByTestId('gantt-today-line')).toBeTruthy()
