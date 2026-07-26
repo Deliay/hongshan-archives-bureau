@@ -64,7 +64,7 @@ export default function ActivityGantt({ activities, onSelect }: ActivityGanttPro
       if (sa !== sb) return sa - sb
       const oa = a.timeRanges[0]?.openTime ?? 0
       const ob = b.timeRanges[0]?.openTime ?? 0
-      if (oa !== ob) return oa - ob
+      if (oa !== ob) return sa === STATUS_ORDER.permanent ? ob - oa : oa - ob
       return a.sortId - b.sortId
     })
   }, [activities])

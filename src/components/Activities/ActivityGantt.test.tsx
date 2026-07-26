@@ -77,6 +77,17 @@ describe('ActivityGantt', () => {
     expect(rowIds).toEqual(['gantt-bar-a_up', 'gantt-bar-a_ong', 'gantt-bar-a_exp'])
   })
 
+  it('sorts permanent rows by openTime descending', () => {
+    const now = Date.now()
+    const early = makeActivity({ id: 'p_early', status: 'permanent', timeRanges: [{ openTime: now - 200 * DAY, closeTime: null }] })
+    const late = makeActivity({ id: 'p_late', status: 'permanent', timeRanges: [{ openTime: now - 30 * DAY, closeTime: null }] })
+    renderGantt([early, late])
+    const rowIds = screen.getAllByTestId('activity-row').map(
+      (row) => row.querySelector('[data-testid^="gantt-bar-"]')?.getAttribute('data-testid'),
+    )
+    expect(rowIds).toEqual(['gantt-bar-p_late', 'gantt-bar-p_early'])
+  })
+
 
   it('shows date range on non-permanent bars', () => {
     const a = makeActivity({
