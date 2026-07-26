@@ -249,6 +249,45 @@ type: Fleeting
 
 ---
 
+### 2.13 机器节点缺少名字和图标
+
+**问题描述**：制作链路图中机器节点虽然存在，但名字和图标均为空白。
+
+**根因**：`buildChainGraph` 未接收机器数据（`machines`），`layoutGraph` 中 `machineName` 和 `machineIcon` 被硬编码为空字符串 `''`。`ChainNode` 类型也缺少这两个字段。
+
+**修复方案**：
+- `ChainNode` 类型新增 `machineName` 和 `machineIcon` 可选字段
+- `buildChainGraph` 新增可选 `machines` 参数，创建机器节点时填充名称和图标
+- `useCraftingChain` 将 `factoryData.machines` 传入 `buildChainGraph`
+- `layoutGraph` 从节点数据读取而非硬编码空值
+
+**涉及文件**：
+- `src/lib/factory/types.ts` — `ChainNode` 新增字段
+- `src/lib/factory/chain.ts` — `buildChainGraph` 接收并使用 `machines`
+- `src/hooks/useData.ts` — 传递 `factoryData.machines`
+- `src/components/Factory/ChainGraph.tsx` — `layoutGraph` 使用节点数据
+
+**提交**：`769a3b7 fix(factory): populate machine node name and icon in chain graph rendering`
+
+---
+
+### 2.14 机器图标资源路径错误
+
+**问题描述**：机器图标使用 `itemicon/` 路径加载，实际应为 `factory/buildingpanelicon/`。
+
+**根因**：`iconOnPanel` 字段值（如 `icon_port_furnance_1`）对应的资源位于 `factory/buildingpanelicon/` 目录，而非 `itemicon/`。代码中错误地沿用了物品图标的路径模式。
+
+**修复方案**：将三处机器图标 URL 从 `itemicon/` 改为 `factory/buildingpanelicon/`。
+
+**涉及文件**：
+- `src/components/Factory/ChainGraph.tsx` — 链路图机器节点
+- `src/pages/factory/FactoryRecipes.tsx` — 配方列表机器图标
+- `src/components/Craft/RecipeCard.tsx` — 配方卡片机器图标
+
+**提交**：`0cf0ef6 fix(factory): correct machine icon asset path to buildingpanelicon`
+
+---
+
 ## 3. 修复总览
 
 | # | 问题 | 根因 | 修复 commit |
@@ -265,6 +304,8 @@ type: Fleeting
 | 2.10 | 移动端选择体验差 | 列表始终展开 | `25aeb57` |
 | 2.11 | 链路图连线不可见 | ReactFlow 默认 CSS 覆盖边样式 | `a6fdb27` + `2e821ac` |
 | 2.12 | 链路页选品 UI 与配方页不一致 | 链路页用搜索弹窗，配方页用侧边栏 | `159ca08` |
+| 2.13 | 机器节点缺少名字和图标 | buildChainGraph 未传入 machines 数据 | `769a3b7` |
+| 2.14 | 机器图标资源路径错误 | 使用 itemicon/ 而非 buildingpanelicon/ | `0cf0ef6` |
 
 ---
 
@@ -289,6 +330,45 @@ type: Fleeting
 
 ---
 
+### 问题 13：机器节点渲染名字和图标
+
+**问题描述**：制作链路图中机器节点存在但无名字和图标内容。
+
+**根因分析**：
+1. `ChainNode` 类型缺少 `machineName` 和 `machineIcon` 字段
+2. `buildChainGraph` 未接收 `machines` 数据
+3. `layoutGraph` 中 `machineName` 和 `machineIcon` 硬编码为空字符串
+
+**修复方案**：
+1. `ChainNode` 新增 `machineName` 和 `machineIcon` 可选字段
+2. `buildChainGraph` 新增可选 `machines` 参数，创建机器节点时从 `machines[recipe.machineId]` 填充
+3. `useCraftingChain` 传递 `factoryData.machines` 到 `buildChainGraph`
+4. `layoutGraph` 从节点数据读取而非硬编码空值
+5. E2E 验证：检查 `.react-flow__node-machine` 存在、文本非空、包含 `<img>` 元素
+
+**涉及文件**：
+- `src/lib/factory/types.ts`、`src/lib/factory/chain.ts`、`src/hooks/useData.ts`、`src/components/Factory/ChainGraph.tsx`
+- `tests/e2e/src/factory.spec.ts` — 新增 `'机器节点渲染名字和图标'` 用例
+
+**验证结果**：✅ E2E 1/1 passed
+
+---
+
+### 问题 14：机器图标资源路径错误
+
+**问题描述**：机器图标加载 404，URL 使用 `itemicon/` 路径。
+
+**根因分析**：`iconOnPanel` 值（如 `icon_port_furnance_1`）对应资源在 `factory/buildingpanelicon/` 目录。通过 API 查询 `FactoryBuildingTable` 并搜索 asset bundle 确认正确路径为 `assets/beyond/dynamicassets/gameplay/ui/sprites/factory/buildingpanelicon/{iconOnPanel}.png`。
+
+**修复方案**：三处机器图标 URL 从 `itemicon/` 改为 `factory/buildingpanelicon/`。
+
+**涉及文件**：
+- `src/components/Factory/ChainGraph.tsx`、`src/pages/factory/FactoryRecipes.tsx`、`src/components/Craft/RecipeCard.tsx`
+
+**验证结果**：✅ lint/build/test 全部通过
+
+---
+
 ## 4. 最终验证
 
 | 验证项 | 结果 |
@@ -296,7 +376,7 @@ type: Fleeting
 | `npm run lint` | ✅ 0 errors |
 | `npm run test` | ✅ 218 tests passed |
 | `npm run build` | ✅ 构建成功 |
-| E2E `factory.spec.ts` | ✅ 11/16 passed（连线验证通过，5个失败为预存问题） |
+| E2E `factory.spec.ts` | ✅ 13/17 passed（连线验证 + 机器节点验证通过，5个失败为预存问题） |
 
 ---
 
