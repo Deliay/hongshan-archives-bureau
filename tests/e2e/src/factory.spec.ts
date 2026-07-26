@@ -163,5 +163,90 @@ test.describe('工厂系统 (Factory System)', () => {
         await expect(page).not.toHaveURL(/targets=/)
       }
     })
+
+    test('选择 item_proc_battery_5 后图的连线正常连接', async ({ page }) => {
+      const TARGET = 'item_proc_battery_5'
+
+      await page.goto(`/archive/factory/chains?targets=${TARGET}`, { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return body.includes('已选产物') || body.includes('加载失败')
+      }, { timeout: 30000 })
+
+      const graphContainer = page.locator('.react-flow')
+      await expect(graphContainer).toBeVisible({ timeout: 30000 })
+
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0 && document.querySelectorAll('.react-flow__edge').length > 0
+      }, { timeout: 15000 })
+
+      const graphData = await page.evaluate(() => {
+        const container = document.querySelector('.react-flow')
+        if (!container) return null
+        const fiberKey = Object.keys(container).find(k => k.startsWith('__reactFiber$'))
+        if (!fiberKey) return null
+        let fiber = (container as any)[fiberKey]
+        while (fiber) {
+          const props = fiber.memoizedProps
+          if (props?.nodes && props?.edges) {
+            return {
+              nodes: props.nodes.map((n: any) => ({
+                id: n.id,
+                type: n.type,
+                data: n.data,
+              })),
+              edges: props.edges.map((e: any) => ({
+                id: e.id,
+                source: e.source,
+                target: e.target,
+              })),
+            }
+          }
+          fiber = fiber.return
+        }
+        return null
+      })
+
+      expect(graphData).not.toBeNull()
+      expect(graphData!.nodes.length).toBeGreaterThan(0)
+      expect(graphData!.edges.length).toBeGreaterThan(0)
+
+      const nodeIds = new Set(graphData!.nodes.map(n => n.id))
+
+      const targetNode = graphData!.nodes.find(n => n.data?.isTarget === true)
+      expect(targetNode).toBeDefined()
+      expect(targetNode!.id).toBe(`item:${TARGET}`)
+
+      for (const edge of graphData!.edges) {
+        expect(nodeIds.has(edge.source)).toBe(true)
+        expect(nodeIds.has(edge.target)).toBe(true)
+      }
+
+      const renderedNodeIds = await page.evaluate(() => {
+        return Array.from(document.querySelectorAll('.react-flow__node')).map(n => n.getAttribute('data-id')!)
+      })
+      const renderedNodeSet = new Set(renderedNodeIds)
+      for (const node of graphData!.nodes) {
+        expect(renderedNodeSet.has(node.id)).toBe(true)
+      }
+
+      const renderedEdgeCount = await page.locator('.react-flow__edge').count()
+      expect(renderedEdgeCount).toBeGreaterThan(0)
+
+      const renderedEdgeLabels = await page.evaluate(() => {
+        return Array.from(document.querySelectorAll('.react-flow__edge')).map(e => {
+          const label = e.getAttribute('aria-label') || ''
+          const match = label.match(/Edge from (.+) to (.+)/)
+          return match ? { source: match[1], target: match[2] } : null
+        }).filter(Boolean)
+      })
+
+      for (const edge of renderedEdgeLabels) {
+        expect(nodeIds.has(edge!.source)).toBe(true)
+        expect(nodeIds.has(edge!.target)).toBe(true)
+        const found = graphData!.edges.some(ge => ge.source === edge!.source && ge.target === edge!.target)
+        expect(found).toBe(true)
+      }
+    })
   })
 })

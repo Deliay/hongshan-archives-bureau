@@ -268,14 +268,33 @@ type: Fleeting
 
 ---
 
+### 问题 12：编写制作链路连线 E2E 测试
+
+**问题描述**：验收要求编写 E2E 测试，验证选择 `item_proc_battery_5` 后链路图的连线都正常连接。
+
+**根因分析**：之前没有针对链路图连线的 E2E 测试。
+
+**修复方案**：新增测试用例，通过 React fiber 提取应用计算的完整图数据（nodes + edges），验证：
+1. 图有目标节点且标记正确（`isTarget: true`，ID 为 `item:item_proc_battery_5`）
+2. 所有边的 source 和 target 都引用已存在的节点
+3. 所有节点都在 DOM 中渲染
+4. 渲染的边的 `aria-label` 中的 source→target 与图数据一致
+
+**涉及文件**：
+- `tests/e2e/src/factory.spec.ts` — 新增 "选择 item_proc_battery_5 后图的连线正常连接" 用例
+
+**验证结果**：✅ E2E 1/1 passed
+
+---
+
 ## 4. 最终验证
 
 | 验证项 | 结果 |
 |--------|------|
 | `npm run lint` | ✅ 0 errors |
-| `npm run test` | ✅ 213 tests passed |
+| `npm run test` | ✅ 218 tests passed |
 | `npm run build` | ✅ 构建成功 |
-| E2E `factory.spec.ts` | ✅ 15/15 passed |
+| E2E `factory.spec.ts` | ✅ 16/16 passed（含连线验证） |
 
 ---
 
