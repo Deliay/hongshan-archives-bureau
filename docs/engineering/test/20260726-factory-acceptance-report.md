@@ -416,27 +416,29 @@ function expand(itemId: string, availableRate: number, path: Set<string>, target
 
 ### 3.4 物流设施：传送带与液体管道
 
-#### 固体传送带
+#### 数据来源
 
-通过 API 查询 `FactoryGridBeltTable` 获取：
+物流设施的吞吐量数据必须从游戏 API 动态读取，**禁止硬编码**：
 
-| 字段 | 值 | 说明 |
-|------|-----|------|
-| `id` | `grid_belt_01` | 唯一传送带类型 |
-| `msPerRound` | 2000 | 每轮传输间隔 2 秒 |
-| 每轮传输量 | 1 个物品 | 已确认 |
-| 传输速率 | **30 个/min** | 1 个/2秒 × 60 秒 = 30 个/min |
+| 表名 | 用途 | API |
+|------|------|-----|
+| `FactoryGridBeltTable` | 固体传送带 | `fetchTableAll('FactoryGridBeltTable')` |
+| `FactoryLiquidPipeTable` | 液体管道 | `fetchTableAll('FactoryLiquidPipeTable')` |
 
-#### 液体管道
+读取后构建查找表：
 
-通过 API 查询 `FactoryLiquidPipeTable` 获取：
+```typescript
+const beltData = await fetchTableAll('FactoryGridBeltTable')
+// → { grid_belt_01: { beltData: { msPerRound: 2000, ... } } }
 
-| 字段 | 值 | 说明 |
-|------|-----|------|
-| `id` | `log_pipe_01` | 唯一管道类型 |
-| `msPerRound` | 500 | 每轮传输间隔 0.5 秒 |
-| `volume` | 1 | 每轮传输 1 单位 |
-| 传输速率 | **120 单位/min** | 1 单位/0.5秒 × 60 秒 = 120 单位/min |
+const pipeData = await fetchTableAll('FactoryLiquidPipeTable')
+// → { log_pipe_01: { pipeData: { msPerRound: 500, volume: 1, ... } } }
+
+// 计算吞吐量（个/min 或 单位/min）
+function calcThroughput(msPerRound: number, volume: number = 1): number {
+  return msPerRound > 0 ? (volume * 60000) / msPerRound : 0
+}
+```
 
 #### 物流设施在图中的表达
 
@@ -461,9 +463,11 @@ function expand(itemId: string, availableRate: number, path: Set<string>, target
 #### 数量计算
 
 ```
-传送带数量 = ceil(实际传输速率 / 30)    // 固体物品
-管道数量 = ceil(实际传输速率 / 120)     // 液体
+传送带数量 = ceil(实际传输速率 / 固体传送带吞吐量)
+管道数量 = ceil(实际传输速率 / 液体管道吞吐量)
 ```
+
+其中吞吐量从上述 API 数据动态计算，不硬编码。
 
 #### 物品类型判断
 
@@ -634,6 +638,8 @@ function buildChainGraph(
   defaultCrafts: Record<string, string>,
   recipeOverride?: Record<string, string>,
   machines?: Record<string, { name: string; iconId: string }>,
+  beltTable?: Record<string, any>,  // FactoryGridBeltTable 数据
+  pipeTable?: Record<string, any>,  // FactoryLiquidPipeTable 数据
 ): ChainGraph
 ```
 
@@ -660,9 +666,22 @@ function calcMachineCount(actualPm: number, theoryPm: number): number {
   return Math.ceil(actualPm / theoryPm)
 }
 
-function calcTransportCount(rate: number, isPipe: boolean): number {
-  const throughput = isPipe ? 120 : 30  // 液体管道 120/min，固体传送带 30/min
-  return Math.ceil(rate / throughput)
+// 从 API 数据动态计算吞吐量
+function calcThroughput(msPerRound: number, volume: number = 1): number {
+  return msPerRound > 0 ? (volume * 60000) / msPerRound : 0
+}
+
+// 计算所需运输设施数量（传送带或管道）
+function calcTransportCount(
+  rate: number,
+  transportTable: Record<string, any>,  // FactoryGridBeltTable 或 FactoryLiquidPipeTable
+  isPipe: boolean,
+): number {
+  // 取第一个设施的吞吐量（当前游戏只有一种传送带/管道）
+  const entry = Object.values(transportTable)[0]
+  const data = isPipe ? entry.pipeData : entry.beltData
+  const throughput = calcThroughput(data.msPerRound, data.volume ?? 1)
+  return throughput > 0 ? Math.ceil(rate / throughput) : 0
 }
 ```
 
@@ -693,7 +712,7 @@ function calcTransportCount(rate: number, isPipe: boolean): number {
 | R6 | 循环深度限制 | 防止无限递归 | 安全 |
 | R7 | 供应瓶颈 | 实际产出 = min(理论产出, 上游供应) | 核心 |
 | R8 | 机器数量 | 每个节点显示所需机器台数 | 核心 |
-| R9 | 传送带/管道数量 | 每条边显示所需传送带或管道数 | 核心 |
+| R9 | 传送带/管道数量 | 每条边显示所需传送带或管道数（从 API 动态计算） | 核心 |
 | R10 | 液体管道区分 | 根据物品类型自动选择边样式 | 核心 |
 
 ### 3.9 涉及文件
@@ -702,7 +721,7 @@ function calcTransportCount(rate: number, isPipe: boolean): number {
 |------|------|
 | `src/lib/factory/types.ts` | `ChainTarget` 新增；`ChainEdge` 重构；`ChainNode` 重构 |
 | `src/lib/factory/chain.ts` | 重构 `buildChainGraph`（多目标+产速）、`expand`（供应瓶颈）、新增 `calcCycleOutput`/`calcMachineCount`/`calcTransportCount` |
-| `src/hooks/useData.ts` | `useCraftingChain` 签名变更（多目标+产速） |
+| `src/hooks/useData.ts` | `useCraftingChain` 签名变更（多目标+产速）；新增加载 `FactoryGridBeltTable`、`FactoryLiquidPipeTable` |
 | `src/pages/factory/FactoryChains.tsx` | 移除左侧列表，新增多目标下拉选择器+产速输入框 |
 | `src/components/Factory/ChainGraph.tsx` | 重构为机器节点为中心；MachineNode 显示配方/数量/传送带；边渲染区分循环类型 |
 | `src/i18n/dicts/*.json` | 新增 i18n key |
