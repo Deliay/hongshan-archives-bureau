@@ -360,6 +360,11 @@
     "selectedTargets": "ผลิตภัณฑ์ที่เลือก",
     "clearAll": "ล้างทั้งหมด",
     "sourceNode": "เก็บเกี่ยว",
-    "emptyChainHint": "ค้นหาและเพิ่มผลิตภัณฑ์เป้าหมายเพื่อสร้างสายโซ่การผลิต"
+    "emptyChainHint": "ค้นหาและเพิ่มผลิตภัณฑ์เป้าหมายเพื่อสร้างสายโซ่การผลิต",
+    "targetNode": "เป้าหมาย",
+    "actualOutput": "ผลผลิตจริง",
+    "supplyLimited": "Supply จำกัด",
+    "demand": "ความต้องการ",
+    "unitPerMin": "ชิ้น/นาที"
   }
 }

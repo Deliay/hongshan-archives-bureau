@@ -9,7 +9,7 @@ import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSui
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
-import type { FactoryRecipe, FactoryMachine, FactoryItemIndex, ChainGraph } from '../lib/factory/types'
+import type { FactoryRecipe, FactoryMachine, FactoryItemIndex, ChainGraph, ChainTarget } from '../lib/factory/types'
 import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '../lib/factory/recipes'
 import { buildChainGraph } from '../lib/factory/chain'
 
@@ -1222,9 +1222,12 @@ export function useItemRecipes(itemId: string | null): { asProduct: FactoryRecip
   }, [data, itemId])
 }
 
-export function useCraftingChain(targets: string[]): UseDataResult<ChainGraph> {
+export function useCraftingChain(targets: ChainTarget[]): UseDataResult<ChainGraph> {
   const { data: factoryData, loading, error, refetch } = useFactoryData()
   const [chainData, setChainData] = useState<{ defaultCrafts: Record<string, string>; sources: import('../lib/factory/types').FactorySource[] }>({ defaultCrafts: {}, sources: [] })
+  const [beltTable, setBeltTable] = useState<Record<string, any> | null>(null)
+  const [pipeTable, setPipeTable] = useState<Record<string, any> | null>(null)
+  const [liquids, setLiquids] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (targets.length === 0 || !factoryData) return
@@ -1234,7 +1237,10 @@ export function useCraftingChain(targets: string[]): UseDataResult<ChainGraph> {
       getCachedData<Record<string, any>>('FactoryMinerTable', () => fetchTableAll('FactoryMinerTable').catch(() => ({}))),
       getCachedData<Record<string, any>>('FactoryGasMinerTable', () => fetchTableAll('FactoryGasMinerTable').catch(() => ({}))),
       getCachedData<Record<string, any>>('FactoryFluidPumpInTable', () => fetchTableAll('FactoryFluidPumpInTable').catch(() => ({}))),
-    ]).then(([defaultCraftRaw, minerRaw, gasMinerRaw, pumpRaw]) => {
+      getCachedData<Record<string, any>>('FactoryGridBeltTable', () => fetchTableAll('FactoryGridBeltTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('FactoryLiquidPipeTable', () => fetchTableAll('FactoryLiquidPipeTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('LiquidTable', () => fetchTableAll('LiquidTable').catch(() => ({}))),
+    ]).then(([defaultCraftRaw, minerRaw, gasMinerRaw, pumpRaw, beltRaw, pipeRaw, liquidRaw]) => {
       if (cancelled) return
       const defaultCrafts: Record<string, string> = {}
       for (const [itemId, entry] of Object.entries<any>(defaultCraftRaw)) {
@@ -1242,14 +1248,17 @@ export function useCraftingChain(targets: string[]): UseDataResult<ChainGraph> {
       }
       const sources = adaptFactorySources(minerRaw, gasMinerRaw, pumpRaw)
       setChainData({ defaultCrafts, sources })
+      setBeltTable(beltRaw)
+      setPipeTable(pipeRaw)
+      setLiquids(new Set(Object.keys(liquidRaw)))
     }).catch(() => {})
     return () => { cancelled = true }
   }, [factoryData, targets.length])
 
   const graph = useMemo<ChainGraph>(() => {
     if (!factoryData || targets.length === 0) return { nodes: [], edges: [] }
-    return buildChainGraph(targets, factoryData.recipes, factoryData.index, chainData.sources, chainData.defaultCrafts, undefined, factoryData.machines)
-  }, [factoryData, targets, chainData])
+    return buildChainGraph(targets, factoryData.recipes, factoryData.index, chainData.sources, chainData.defaultCrafts, undefined, factoryData.machines, liquids, beltTable ?? undefined, pipeTable ?? undefined)
+  }, [factoryData, targets, chainData, liquids, beltTable, pipeTable])
 
   return { data: graph, loading, error, refetch }
 }

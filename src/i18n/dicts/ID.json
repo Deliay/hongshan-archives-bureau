@@ -360,6 +360,11 @@
     "selectedTargets": "Produk yang dipilih",
     "clearAll": "Hapus semua",
     "sourceNode": "Sumber",
-    "emptyChainHint": "Cari dan tambahkan produk target untuk membuat rantai krafted"
+    "emptyChainHint": "Cari dan tambahkan produk target untuk membuat rantai krafted",
+    "targetNode": "Sasaran",
+    "actualOutput": "Output aktual",
+    "supplyLimited": "Pasokan terbatas",
+    "demand": "Permintaan",
+    "unitPerMin": "bjt/mnt"
   }
 }

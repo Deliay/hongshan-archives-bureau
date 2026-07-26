@@ -360,6 +360,11 @@
     "selectedTargets": "선택된 제품",
     "clearAll": "모두 지우기",
     "sourceNode": "채집",
-    "emptyChainHint": "목표 제품을 검색하여 추가하면 제작 체인이 생성됩니다"
+    "emptyChainHint": "목표 제품을 검색하여 추가하면 제작 체인이 생성됩니다",
+    "targetNode": "목표",
+    "actualOutput": "실제 출력",
+    "supplyLimited": "공급 제한",
+    "demand": "수요",
+    "unitPerMin": "개/분"
   }
 }

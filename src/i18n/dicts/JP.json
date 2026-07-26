@@ -360,6 +360,11 @@
     "selectedTargets": "選択された生産物",
     "clearAll": "すべてクリア",
     "sourceNode": "採取",
-    "emptyChainHint": "目標生産物を検索して追加し、クラフトチェーンを生成"
+    "emptyChainHint": "目標生産物を検索して追加し、クラフトチェーンを生成",
+    "targetNode": "目標",
+    "actualOutput": "実際の出力",
+    "supplyLimited": "供給制限",
+    "demand": "需要",
+    "unitPerMin": "個/分"
   }
 }

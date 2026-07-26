@@ -360,6 +360,11 @@
     "selectedTargets": "Ausgewählte Produkte",
     "clearAll": "Alle löschen",
     "sourceNode": "Gewinnung",
-    "emptyChainHint": "Suchen und fügen Sie Zielprodukte hinzu, um eine Herstellungskette zu erstellen"
+    "emptyChainHint": "Suchen und fügen Sie Zielprodukte hinzu, um eine Herstellungskette zu erstellen",
+    "targetNode": "Ziel",
+    "actualOutput": "Tatsächliche Ausgabe",
+    "supplyLimited": "Angebot begrenzt",
+    "demand": "Nachfrage",
+    "unitPerMin": "Stk/Min"
   }
 }

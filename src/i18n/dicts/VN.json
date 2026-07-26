@@ -360,6 +360,11 @@
     "selectedTargets": "Sản phẩm đã chọn",
     "clearAll": "Xóa tất cả",
     "sourceNode": "Thu thập",
-    "emptyChainHint": "Tìm kiếm và thêm sản phẩm mục tiêu để tạo chuỗi chế tạo"
+    "emptyChainHint": "Tìm kiếm và thêm sản phẩm mục tiêu để tạo chuỗi chế tạo",
+    "targetNode": "Mục tiêu",
+    "actualOutput": "Sản lượng thực tế",
+    "supplyLimited": "Nguồn cung hạn chế",
+    "demand": "Nhu cầu",
+    "unitPerMin": "cái/phút"
   }
 }

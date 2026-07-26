@@ -360,6 +360,11 @@
     "selectedTargets": "已选产物",
     "clearAll": "清空",
     "sourceNode": "采集",
-    "emptyChainHint": "搜索并添加目标产物以生成制作链路"
+    "emptyChainHint": "搜索并添加目标产物以生成制作链路",
+    "targetNode": "目标",
+    "actualOutput": "实际产出",
+    "supplyLimited": "供给受限",
+    "demand": "需求",
+    "unitPerMin": "个/min"
   }
 }

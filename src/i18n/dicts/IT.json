@@ -360,6 +360,11 @@
     "selectedTargets": "Prodotti selezionati",
     "clearAll": "Cancella tutto",
     "sourceNode": "Raccolta",
-    "emptyChainHint": "Cerca e aggiungi prodotti obiettivo per generare una catena di produzione"
+    "emptyChainHint": "Cerca e aggiungi prodotti obiettivo per generare una catena di produzione",
+    "targetNode": "Obiettivo",
+    "actualOutput": "Output effettivo",
+    "supplyLimited": "Offerta limitata",
+    "demand": "Domanda",
+    "unitPerMin": "pz/min"
   }
 }

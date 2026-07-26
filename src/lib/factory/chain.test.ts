@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { perMinute, sourcePerMinute, buildChainGraph } from './chain'
-import type { FactoryRecipe, FactoryItemIndex, FactorySource } from './types'
+import type { FactoryRecipe, FactoryItemIndex, FactorySource, ChainTarget } from './types'
 
 describe('perMinute', () => {
   it('calculates output per minute correctly', () => {
@@ -73,16 +73,17 @@ describe('buildChainGraph', () => {
   })
 
   it('builds simple chain for iron_ingot', () => {
-    const graph = buildChainGraph(['iron_ingot'], [ironOreRecipe], index, sources, {})
-    const itemKeys = graph.nodes.filter(n => n.kind === 'item').map(n => n.itemId)
-    expect(itemKeys).toContain('iron_ingot')
-    expect(itemKeys).toContain('iron_ore')
+    const targets: ChainTarget[] = [{ itemId: 'iron_ingot', rate: 1 }]
+    const graph = buildChainGraph(targets, [ironOreRecipe], index, sources, {})
+    const targetNodes = graph.nodes.filter(n => n.kind === 'target')
+    expect(targetNodes.some(n => n.itemId === 'iron_ingot')).toBe(true)
     expect(graph.nodes.some(n => n.kind === 'machine')).toBe(true)
     expect(graph.edges.length).toBeGreaterThan(0)
   })
 
   it('edges connect valid node keys', () => {
-    const graph = buildChainGraph(['steel_ingot'], [ironOreRecipe, steelRecipe], index, sources, {})
+    const targets: ChainTarget[] = [{ itemId: 'steel_ingot', rate: 1 }]
+    const graph = buildChainGraph(targets, [ironOreRecipe, steelRecipe], index, sources, {})
     const nodeKeys = new Set(graph.nodes.map(n => n.key))
     for (const edge of graph.edges) {
       expect(nodeKeys.has(edge.from)).toBe(true)
@@ -90,24 +91,21 @@ describe('buildChainGraph', () => {
     }
   })
 
-  it('chain has source→item→machine→item edge path', () => {
-    const graph = buildChainGraph(['steel_ingot'], [ironOreRecipe, steelRecipe], index, sources, {})
+  it('chain has source→machine→target edge path', () => {
+    const targets: ChainTarget[] = [{ itemId: 'steel_ingot', rate: 1 }]
+    const graph = buildChainGraph(targets, [ironOreRecipe, steelRecipe], index, sources, {})
     const edgePairs = graph.edges.map(e => `${e.from}→${e.to}`)
-    const hasSourceToItem = edgePairs.some(p => p.includes('source:') && p.includes('→item:'))
-    const hasItemToMachine = edgePairs.some(p => p.includes('item:') && p.includes('→machine:'))
-    const hasMachineToItem = edgePairs.some(p => p.includes('machine:') && p.includes('→item:'))
-    expect(hasSourceToItem).toBe(true)
-    expect(hasItemToMachine).toBe(true)
-    expect(hasMachineToItem).toBe(true)
+    const hasSourceToMachine = edgePairs.some(p => p.includes('source:') && p.includes('→machine:'))
+    const hasMachineToTarget = edgePairs.some(p => p.includes('machine:') && p.includes('→target:'))
+    expect(hasSourceToMachine).toBe(true)
+    expect(hasMachineToTarget).toBe(true)
   })
 
   it('builds multi-level chain for steel_ingot', () => {
-    const graph = buildChainGraph(['steel_ingot'], [ironOreRecipe, steelRecipe], index, sources, {})
-    const itemKeys = graph.nodes.filter(n => n.kind === 'item').map(n => n.itemId)
-    expect(itemKeys).toContain('steel_ingot')
-    expect(itemKeys).toContain('iron_ingot')
-    expect(itemKeys).toContain('iron_ore')
-    expect(itemKeys).toContain('coal')
+    const targets: ChainTarget[] = [{ itemId: 'steel_ingot', rate: 1 }]
+    const graph = buildChainGraph(targets, [ironOreRecipe, steelRecipe], index, sources, {})
+    const machineNodes = graph.nodes.filter(n => n.kind === 'machine')
+    expect(machineNodes.length).toBeGreaterThanOrEqual(2)
     expect(graph.nodes.some(n => n.kind === 'source')).toBe(true)
   })
 
@@ -138,16 +136,18 @@ describe('buildChainGraph', () => {
         glass_bottle: [emptyBottleRecipe],
       },
     }
-    const graph = buildChainGraph(['water_bottle'], [bottleRecipe, emptyBottleRecipe], cycleIndex, [], {})
+    const targets: ChainTarget[] = [{ itemId: 'water_bottle', rate: 1 }]
+    const graph = buildChainGraph(targets, [bottleRecipe, emptyBottleRecipe], cycleIndex, [], {})
     const cycleEdges = graph.edges.filter(e => e.isCycle)
     expect(cycleEdges.length).toBeGreaterThan(0)
     expect(graph.nodes.length).toBeLessThan(20)
   })
 
   it('marks target nodes', () => {
-    const graph = buildChainGraph(['steel_ingot'], [ironOreRecipe, steelRecipe], index, sources, {})
-    const targetNode = graph.nodes.find(n => n.itemId === 'steel_ingot')
-    expect(targetNode?.isTarget).toBe(true)
+    const targets: ChainTarget[] = [{ itemId: 'steel_ingot', rate: 1 }]
+    const graph = buildChainGraph(targets, [ironOreRecipe, steelRecipe], index, sources, {})
+    const targetNode = graph.nodes.find(n => n.itemId === 'steel_ingot' && n.kind === 'target')
+    expect(targetNode).toBeDefined()
   })
 
   it('uses default craft when available', () => {
@@ -159,8 +159,9 @@ describe('buildChainGraph', () => {
       totalProgress: 20000,
       sortId: 1,
     }
+    const targets: ChainTarget[] = [{ itemId: 'iron_ingot', rate: 1 }]
     const graph = buildChainGraph(
-      ['iron_ingot'],
+      targets,
       [ironOreRecipe, altRecipe],
       index,
       sources,
@@ -171,15 +172,19 @@ describe('buildChainGraph', () => {
   })
 
   it('merges nodes for multi-target', () => {
+    const targets: ChainTarget[] = [
+      { itemId: 'iron_ingot', rate: 1 },
+      { itemId: 'steel_ingot', rate: 1 },
+    ]
     const graph = buildChainGraph(
-      ['iron_ingot', 'steel_ingot'],
+      targets,
       [ironOreRecipe, steelRecipe],
       index,
       sources,
       {},
     )
-    const ironNodes = graph.nodes.filter(n => n.itemId === 'iron_ingot')
-    expect(ironNodes.length).toBeGreaterThanOrEqual(1)
+    const ironMachines = graph.nodes.filter(n => n.kind === 'machine' && n.itemId === 'iron_ingot')
+    expect(ironMachines.length).toBeGreaterThanOrEqual(1)
   })
 })
 
@@ -219,8 +224,9 @@ describe('buildChainGraph with real data', () => {
   }
 
   it('builds chain: xiranite_hulu → xiranite_cmpt → xiranite_powder', () => {
+    const targets: ChainTarget[] = [{ itemId: 'item_activity_xiranite_hulu', rate: 1 }]
     const graph = buildChainGraph(
-      ['item_activity_xiranite_hulu'],
+      targets,
       realRecipes,
       realIndex,
       [],
@@ -230,44 +236,40 @@ describe('buildChainGraph with real data', () => {
     const nodeKeys = graph.nodes.map(n => n.key)
     const edgePairs = graph.edges.map(e => `${e.from}→${e.to}`)
 
-    expect(nodeKeys).toContain('item:item_activity_xiranite_hulu')
+    expect(nodeKeys).toContain('target:item_activity_xiranite_hulu')
     expect(nodeKeys).toContain('machine:tools_assebling_mc_1:tools_proc_activity_xiranite_hulu_1')
-    expect(nodeKeys).toContain('item:item_activity_xiranite_cmpt')
     expect(nodeKeys).toContain('machine:component_mc_1:component_activity_xiranite_cmpt_1')
-    expect(nodeKeys).toContain('item:item_xiranite_powder')
 
-    const hasHuluMachine = edgePairs.some(p => p.includes('machine:tools_assebling_mc_1') && p.includes('→item:item_activity_xiranite_hulu'))
-    const hasCmptToHuluMachine = edgePairs.some(p => p.includes('item:item_activity_xiranite_cmpt') && p.includes('→machine:tools_assebling_mc_1'))
-    const hasCmptMachine = edgePairs.some(p => p.includes('machine:component_mc_1') && p.includes('→item:item_activity_xiranite_cmpt'))
-    const hasPowderToCmptMachine = edgePairs.some(p => p.includes('item:item_xiranite_powder') && p.includes('→machine:component_mc_1'))
+    const hasHuluMachine = edgePairs.some(p => p.includes('machine:tools_assebling_mc_1') && p.includes('→target:item_activity_xiranite_hulu'))
+    const hasCmptMachine = edgePairs.some(p => p.includes('machine:component_mc_1') && p.includes('→machine:tools_assebling_mc_1'))
 
     expect(hasHuluMachine).toBe(true)
-    expect(hasCmptToHuluMachine).toBe(true)
     expect(hasCmptMachine).toBe(true)
-    expect(hasPowderToCmptMachine).toBe(true)
   })
 
   it('marks target node correctly', () => {
+    const targets: ChainTarget[] = [{ itemId: 'item_activity_xiranite_hulu', rate: 1 }]
     const graph = buildChainGraph(
-      ['item_activity_xiranite_hulu'],
+      targets,
       realRecipes,
       realIndex,
       [],
       {},
     )
-    const target = graph.nodes.find(n => n.itemId === 'item_activity_xiranite_hulu')
-    expect(target?.isTarget).toBe(true)
+    const target = graph.nodes.find(n => n.itemId === 'item_activity_xiranite_hulu' && n.kind === 'target')
+    expect(target).toBeDefined()
   })
 
-  it('has correct per-minute values', () => {
+  it('has correct actualPm values', () => {
+    const targets: ChainTarget[] = [{ itemId: 'item_activity_xiranite_hulu', rate: 1 }]
     const graph = buildChainGraph(
-      ['item_activity_xiranite_hulu'],
+      targets,
       realRecipes,
       realIndex,
       [],
       {},
     )
-    const target = graph.nodes.find(n => n.itemId === 'item_activity_xiranite_hulu')
-    expect(target?.perMinute).toBeGreaterThan(0)
+    const target = graph.nodes.find(n => n.itemId === 'item_activity_xiranite_hulu' && n.kind === 'target')
+    expect(target?.actualPm).toBeGreaterThan(0)
   })
 })

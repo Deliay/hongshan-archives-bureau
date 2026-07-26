@@ -360,6 +360,11 @@
     "selectedTargets": "Produits sélectionnés",
     "clearAll": "Tout effacer",
     "sourceNode": "Collecte",
-    "emptyChainHint": "Recherchez et ajoutez des produits cibles pour générer une chaîne de fabrication"
+    "emptyChainHint": "Recherchez et ajoutez des produits cibles pour générer une chaîne de fabrication",
+    "targetNode": "Cible",
+    "actualOutput": "Sortie réelle",
+    "supplyLimited": "Offre limitée",
+    "demand": "Demande",
+    "unitPerMin": "u/min"
   }
 }

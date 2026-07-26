@@ -360,6 +360,11 @@
     "selectedTargets": "Produtos selecionados",
     "clearAll": "Limpar tudo",
     "sourceNode": "Coleta",
-    "emptyChainHint": "Busque e adicione produtos alvo para gerar uma cadeia de fabricação"
+    "emptyChainHint": "Busque e adicione produtos alvo para gerar uma cadeia de fabricação",
+    "targetNode": "Alvo",
+    "actualOutput": "Saída real",
+    "supplyLimited": "Oferta limitada",
+    "demand": "Demanda",
+    "unitPerMin": "un/min"
   }
 }
