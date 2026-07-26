@@ -288,41 +288,23 @@ type: Fleeting
 
 ---
 
-## 3. 循环链路规则集方案（待 Review）
+## 3. 制作链路重构方案（待 Review）
 
-> **状态**: 🟡 待评审
-> **关联**: 制作链路图 `buildChainGraph` 循环检测逻辑
+> **状态**: 🟡 第二轮评审
+> **关联**: 制作链路图 `buildChainGraph` + `FactoryChains` 页面 UI
 
 ### 3.1 问题背景
 
-当前 `chain.ts` 的 `expand()` 函数使用简单的 DFS 路径检测来识别循环：当材料已在 `path` 中时，标记 `isCycle: true` 并停止展开。这种"一刀切"的方式无法区分有意义的循环和无意义的死循环。
+当前实现存在以下问题：
 
-**需要解决的核心问题**：哪些循环应该被标记为有效循环并继续展开，哪些应该被视为封闭回路并停止？
+1. **循环处理过于简单**：`expand()` 使用 DFS 路径检测，一律标记 `isCycle: true` 并跳过，无法区分有意义的循环和封闭回路
+2. **速率计算不完整**：仅按配方产出计算，未考虑上游供应瓶颈（如上游 4 秒才能提供 10 个原料，但配方要求 2 秒消耗 10 个）
+3. **UI 不合理**：左侧列表选择物品效率低，无法调整目标产速
+4. **缺少机器数量**：图中未显示每种机器需要多少台
 
-### 3.2 用户提供的场景
+### 3.2 循环规则集
 
-| 场景 | 配方 | 循环物品 | 产出/消耗比 | 判定 |
-|------|------|----------|-------------|------|
-| 灌装机 → 拆解机 | 灌装机: liquid1 + bottle1 → filled_bottle1; 拆解机: filled_bottle1 → liquid1 + bottle1 | filled_bottle1 | 1:1 (产出=消耗) | ❌ 不允许作为循环 |
-| 采种机 → 种植机 | 采种机: leaf1 → leaf_seed ×2; 种植机: leaf_seed ×1 → leaf1 | leaf_seed | 2:1 (产出>消耗) | ✅ 允许作为循环 |
-
-**关键区分**：循环中被回传物品的**净产出**是否大于零。
-
-### 3.3 现有代码分析
-
-```typescript
-// 当前逻辑 (chain.ts:88-91)
-if (path.has(mat.itemId)) {
-  allEdges.push({ from: matItemKey, to: machineKey, perMinute: matDemand, isCycle: true })
-  continue  // 停止展开，不区分循环类型
-}
-```
-
-问题：无论循环是否有净产出，一律标记为 cycle 并跳过。无法表达"这个循环有盈余，可以继续"的语义。
-
-### 3.4 提议的循环规则集
-
-#### 规则 0：循环定义
+#### R0：循环定义
 
 **循环路径**：从物品 A 出发，经过若干配方和中间物品，最终回到 A 的路径。
 
@@ -330,7 +312,7 @@ if (path.has(mat.itemId)) {
 A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 ```
 
-#### 规则 1：净产出判定（核心规则）
+#### R1：净产出判定（核心规则）
 
 对于检测到的循环，计算循环中被回传物品的**净产出**：
 
@@ -338,15 +320,10 @@ A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 净产出 = 循环产出量 - 循环消耗量
 ```
 
-其中：
-- **循环产出量** = 循环末端配方产出的回传物品数量（per cycle）
-- **循环消耗量** = 循环起始配方消耗的回传物品数量（per cycle）
-
 | 净产出 | 判定 | 行为 |
 |--------|------|------|
-| > 0 | **有效循环**（Productive Cycle） | 标记 `isCycle: true`，循环的净产出作为"虚拟源"继续向上游展开 |
-| = 0 | **封闭回路**（Closed Loop） | 标记 `isCycle: true`，停止展开循环内部材料 |
-| < 0 | **亏缺回路**（Deficit Loop） | 标记 `isCycle: true`，停止展开，亏缺部分需要外部供应 |
+| > 0 | **有效循环** | 标记 `isCycle: true`，循环边显示产出数量，继续向上游展开 |
+| ≤ 0 | **封闭回路** | 标记 `isCycle: true` + `cycleType: 'closed'`，停止展开，特殊视觉标记 |
 
 **示例 1（灌装 → 拆解，净产出=0）**：
 - 灌装机消耗 bottle1 ×1，产出 filled_bottle1 ×1
@@ -356,9 +333,11 @@ A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 **示例 2（采种 → 种植，净产出>0）**：
 - 采种机消耗 leaf1 ×1，产出 leaf_seed ×2
 - 种植机消耗 leaf_seed ×1，产出 leaf1 ×1
-- 净产出 = 2 - 1 = 1 → 有效循环，每轮盈余 1 个 leaf_seed
+- 净产出 = 2 - 1 = 1 → 有效循环，盈余 1 个 leaf_seed
 
-#### 规则 2：配方比例分析
+**净产出不做特殊节点标记**，但循环边上必须清晰标注产出数量（如 "×2 产出 / ×1 消耗"）。
+
+#### R2：配方比例分析
 
 对循环路径上的每个配方，分析输入/输出比例：
 
@@ -368,11 +347,11 @@ A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 
 | 比例 | 含义 | 处理 |
 |------|------|------|
-| = 1 | 等量替换 | 可能是封闭回路（需结合规则1判定） |
+| = 1 | 等量替换 | 可能是封闭回路（需结合 R1 判定） |
 | > 1 | 产出 > 消耗 | 循环有盈余 |
 | < 1 | 产出 < 消耗 | 循环有亏缺，需外部补给 |
 
-#### 规则 3：副产物隔离
+#### R3：副产物隔离
 
 当配方产出多种物品时，只有继续循环的那种产出参与循环判定。其他产出作为**副产物**处理：
 
@@ -382,7 +361,7 @@ A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 
 **示例**：采种机产出 leaf_seed ×2，其中 1 个用于循环（给种植机），另 1 个是副产物。
 
-#### 规则 4：外部供应优先
+#### R4：外部供应优先
 
 如果循环中的某个物品同时有外部供应（如矿机采集），则在该点**打断循环**：
 
@@ -390,73 +369,257 @@ A → [配方1] → B → [配方2] → C → ... → [配方N] → A
 - 外部供应被视为该物品的"真实来源"
 - 循环内部不再展开
 
-#### 规则 5：自消费防护
+#### R5：自消费防护
 
 一个配方不能在无外部供应的情况下消费自己的产出。如果检测到这种配置：
 
 - 标记为异常状态
 - 在图中用特殊样式（如红色虚线边）提示用户
 
-#### 规则 6：循环深度限制
+#### R6：循环深度限制
 
 为防止复杂链路中的无限递归，设置最大循环检测深度（建议值：10 层）。超过深度限制的路径视为终止。
 
-### 3.5 实现方案概要
+### 3.3 速率计算：供应瓶颈规则
+
+**核心原则**：节点的实际产出 = min(配方理论产出, 上游实际供应量)。
+
+当上游链路的供应速率低于配方需求时，当前节点的产出必须按实际供应量结算。
+
+#### 计算公式
 
 ```
-buildChainGraph
-  └─ expand(itemId, demandRate, path, targetKey)
-       ├─ resolveRecipe(itemId) → 找到配方
-       ├─ 计算 machinePm, machineCount
-       ├─ 对每个材料 mat:
-       │    ├─ if path.has(mat.itemId):
-       │    │    ├─ 构建循环路径，计算净产出 (calcCycleNetOutput)
-       │    │    ├─ if 净产出 > 0:
-       │    │    │    ├─ 标记 isCycle: true
-       │    │    │    ├─ 创建"虚拟源"节点，速率 = 净产出
-       │    │    │    └─ 继续向上游展开（以净产出为需求）
-       │    │    └─ if 净产出 ≤ 0:
-       │    │         ├─ 标记 isCycle: true
-       │    │         └─ 停止展开（封闭回路）
-       │    └─ else: 正常展开
-       └─ 返回
+节点实际产出 = min(
+  配方理论产出速率,
+  上游实际供应总量 / 配方单位消耗量 × 配方单位产出量
+)
 ```
 
-**新增函数**：
+#### 示例
+
+假设配方：10 个 X → 1 个 Y，耗时 2 秒（即每秒消耗 5 个 X，产出 0.5 个 Y）
+
+| 上游供应 X 的速率 | 配方需求 X 的速率 | 实际产出 Y 的速率 | 说明 |
+|-------------------|-------------------|-------------------|------|
+| 10 个/2秒 = 5/秒 | 5/秒 | 0.5/秒 | 供需平衡，满产 |
+| 10 个/4秒 = 2.5/秒 | 5/秒 | 0.25/秒 | 供应不足，半产 |
+| 20 个/2秒 = 10/秒 | 5/秒 | 0.5/秒 | 供应过剩，仍满产 |
+
+**实现方式**：`expand()` 函数在递归展开材料时，将上游的实际供应速率传递下去。当前节点计算产出时，取 min(理论产出, 按实际供应折算的产出)。
+
 ```typescript
-function calcCycleNetOutput(
-  cyclePath: string[],      // 循环路径上的物品 ID 列表
-  recipes: FactoryRecipe[],  // 所有配方
-  recipeById: Map<string, FactoryRecipe>,
-): { netOutput: number; surplusItem: string; surplusRate: number }
-```
+function expand(itemId: string, availableRate: number, path: Set<string>, targetKey: string) {
+  const recipe = resolveRecipe(itemId)
+  if (!recipe) { /* 叶子/源节点 */ return }
 
-**新增 ChainEdge 字段**：
-```typescript
-interface ChainEdge {
-  // ... existing fields
-  cycleType?: 'productive' | 'closed' | 'deficit'  // 循环类型标记
+  // 配方理论产出速率
+  const theoryPm = perMinute(outcomeCount, recipe.totalProgress)
+
+  // 按实际供应折算的产出速率（取 min）
+  const actualPm = Math.min(theoryPm, availableRate)
+
+  // 需要的机器数（向上取整）
+  const machineCount = Math.ceil(actualPm / theoryPm)
+
+  // 对每个材料，传递实际消耗速率给下游
+  for (const mat of recipe.ingredients) {
+    const matConsumedPm = perMinute(mat.count, recipe.totalProgress) * machineCount
+    expand(mat.itemId, matConsumedPm, newPath, matItemKey)
+  }
 }
 ```
 
-### 3.6 规则总结表
+### 3.4 机器数量显示
+
+每个机器节点必须显示需要多少台该机器：
+
+#### 计算公式
+
+```
+机器数量 = ceil(实际产出速率 / 单台理论产出速率)
+```
+
+其中：
+- **实际产出速率** = 由 3.3 速率计算得出
+- **单台理论产出速率** = `perMinute(outcomeCount, totalProgress)`
+
+#### 显示格式
+
+在机器节点上显示：
+
+```
+[机器图标] 精炼炉 ×3
+           ×6/min 产出
+```
+
+- **×3** = 需要 3 台该机器
+- **×6/min** = 该节点的总产出速率
+
+多个相同机器的节点应汇总显示总数（如图中有 2 个精炼炉节点分别需要 2 台和 1 台，则总计显示 "精炼炉 ×3"）。
+
+### 3.5 UI 重构：下拉选择 + 可调产速
+
+#### 现有 UI（将废弃）
+
+左侧分页列表 + 移动端折叠下拉，点击添加为目标产物。
+
+#### 新 UI 设计
+
+**布局**：顶部控制栏 + 全宽图
+
+```
+┌─────────────────────────────────────────────────────┐
+│  目标产物: [▼ 中容武陵电池     ]  需求产速: [6] 个/min  │
+│                                                     │
+│              [ReactFlow 链路图]                       │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**交互流程**：
+
+1. **选择目标产物**：下拉选择器，列出所有可制造物品（按 rarity 倒序），支持搜索
+2. **设置需求产速**：选择后自动填入配方默认产速（如 6 个/min），用户可修改
+3. **实时求解**：产速变化时自动重新计算链路图
+4. **URL 同步**：`?target=xxx&rate=6`，刷新后保持状态
+
+#### 数据流
+
+```
+用户选择目标 → 设置需求产速 → buildChainGraph(target, demandRate)
+                                    ↓
+                              链路图渲染（含机器数量、循环标记）
+```
+
+#### URL 参数变更
+
+| 参数 | 旧 | 新 |
+|------|-----|-----|
+| `targets` | `targets=item1,item2`（多选） | `target=item1`（单选） |
+| `rate` | 无 | `rate=6`（需求产速，个/min） |
+
+### 3.6 封闭回路的视觉表达
+
+封闭回路（净产出 ≤ 0）需要特殊标记，与有效循环区分：
+
+| 元素 | 有效循环 | 封闭回路 |
+|------|----------|----------|
+| 边样式 | 金色实线 `#C9A96E` | 橙色虚线 `#f59e0b` + `strokeDasharray: '5 5'` |
+| 边标签 | 显示产出数量 | 显示 "↻ 封闭" + 产出数量 |
+| 动画 | 无 | 有（流动动画提示循环） |
+| 节点 | 正常显示 | 正常显示（循环节点本身不变） |
+
+### 3.7 实现方案概要
+
+#### 类型变更
+
+```typescript
+// types.ts
+interface ChainEdge {
+  from: string
+  to: string
+  perMinute: number
+  isCycle?: boolean
+  cycleType?: 'productive' | 'closed'  // 循环类型
+  cycleOutput?: number                  // 循环产出量
+  cycleInput?: number                   // 循环消耗量
+}
+
+interface ChainNode {
+  // ... existing fields
+  machineCount?: number   // 需要的机器数量
+  actualPm?: number       // 实际产出速率
+  theoryPm?: number       // 理论产出速率
+}
+```
+
+#### 核心函数重构
+
+```typescript
+function buildChainGraph(
+  target: string,           // 单个目标物品 ID（不再支持多选）
+  demandRate: number,       // 需求产速（个/min）
+  recipes: FactoryRecipe[],
+  index: FactoryItemIndex,
+  sources: FactorySource[],
+  defaultCrafts: Record<string, string>,
+  recipeOverride?: Record<string, string>,
+  machines?: Record<string, { name: string; iconId: string }>,
+): ChainGraph
+```
+
+#### expand 函数签名变更
+
+```typescript
+function expand(
+  itemId: string,
+  availableRate: number,    // 上游实际可用速率（不再是 demandRate）
+  path: Set<string>,
+  targetKey: string,
+)
+```
+
+#### 新增函数
+
+```typescript
+// 计算循环净产出
+function calcCycleOutput(
+  cycleItems: string[],
+  recipeById: Map<string, FactoryRecipe>,
+): { netOutput: number; outputQty: number; inputQty: number }
+
+// 计算机器数量
+function calcMachineCount(actualPm: number, theoryPm: number): number {
+  return Math.ceil(actualPm / theoryPm)
+}
+```
+
+#### FactoryChains 页面重构
+
+- 移除左侧列表 + 分页逻辑
+- 新增顶部下拉选择器 + 产速输入框
+- URL 参数从 `targets` 改为 `target` + `rate`
+- 移除 `LIST_PAGE_SIZE`、`listPage`、`mobileOpen` 等状态
+
+#### ChainGraph 组件变更
+
+- MachineNode 新增 `machineCount` 和 `actualPm` 显示
+- 边渲染根据 `cycleType` 区分样式
+- 封闭回路边使用虚线 + 动画
+
+### 3.8 规则总结表
 
 | 规则 | 名称 | 作用 | 优先级 |
 |------|------|------|--------|
 | R0 | 循环定义 | 定义什么构成循环 | 基础 |
-| R1 | 净产出判定 | 决定循环是否有效 | 核心 |
+| R1 | 净产出判定 | 决定循环是否有效，≤0 为封闭回路 | 核心 |
 | R2 | 配方比例分析 | 分析单个配方的输入输出比 | 辅助 |
 | R3 | 副产物隔离 | 处理多产出配方 | 辅助 |
 | R4 | 外部供应优先 | 打断有外部来源的循环 | 优先 |
 | R5 | 自消费防护 | 检测不可能的配置 | 优先 |
 | R6 | 循环深度限制 | 防止无限递归 | 安全 |
+| R7 | 供应瓶颈 | 实际产出 = min(理论产出, 上游供应) | 核心 |
+| R8 | 机器数量 | 每个节点显示所需机器台数 | 核心 |
 
-### 3.7 待确认问题
+### 3.9 涉及文件
 
-1. **净产出的"虚拟源"如何展示**：是显示为特殊节点（如"循环盈余"），还是合并到已有节点中？
-2. **封闭回路的视觉表达**：除了虚线边，是否需要额外标记（如循环图标、颜色区分）？
-3. **多层嵌套循环**：如果循环 A→B→C→A 中 B→C→B 本身也是循环，如何处理？
-4. **循环中的速率计算**：有效循环的净产出如何影响上游机器数量计算？
+| 文件 | 变更 |
+|------|------|
+| `src/lib/factory/types.ts` | `ChainEdge` 新增 `cycleType`/`cycleOutput`/`cycleInput`；`ChainNode` 新增 `machineCount`/`actualPm`/`theoryPm` |
+| `src/lib/factory/chain.ts` | 重构 `buildChainGraph`（单目标+产速）、`expand`（供应瓶颈）、新增 `calcCycleOutput`/`calcMachineCount` |
+| `src/hooks/useData.ts` | `useCraftingChain` 签名变更（单目标+产速） |
+| `src/pages/factory/FactoryChains.tsx` | 移除左侧列表，新增下拉选择器+产速输入框 |
+| `src/components/Factory/ChainGraph.tsx` | MachineNode 显示机器数量；边渲染区分循环类型 |
+| `src/i18n/dicts/*.json` | 新增 i18n key（如 `factory.productionRate`、`factory.machineCount`） |
+| `tests/e2e/src/factory.spec.ts` | 更新 E2E 测试适配新 UI |
+| `src/lib/factory/chain.test.ts` | 新增循环规则、供应瓶颈、机器数量的单元测试 |
+
+### 3.10 待确认问题
+
+1. **多目标产物**：新方案改为单目标，是否需要支持多目标（多张图）？还是保持单目标？
+2. **产速输入验证**：产速输入框是否需要最小/最大值限制？非整数产速（如 2.5 个/min）是否允许？
+3. **封闭回路的"封闭"标记**：除了边的虚线+动画，节点本身是否需要标记（如加个锁图标）？
+4. **副产物的显示**：副产物是显示为独立叶子节点，还是折叠到父节点中？
 
 ---
 
