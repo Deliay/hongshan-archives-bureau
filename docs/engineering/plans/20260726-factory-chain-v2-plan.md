@@ -6,11 +6,23 @@ type: Fleeting
 # 制作链路图 v2 - 实现方案
 
 **对应产品文档**: [[20260726-factory-chain-v2|制作链路图 v2]]
-**对应技术方案**: [[20260726-factory-chain-v2|制作链路图 v2 技术提案]]
-**实现方案版本**: v1.0
+**对应技术方案**: [[20260726-factory-chain-v2-tech|制作链路图 v2 技术提案]]
+**实现方案版本**: v1.1
 **创建日期**: 2026-07-26
 **作者**: 前端工程
-**开发分支**: `feat/factory-archive-impl`
+**开发分支**: `feat/factory-chain-v2-impl`
+
+## 修订记录
+
+- v1.1 (2026-07-26): 按 PR #38 code review 修订，与技术提案 v1.1 对齐：
+  - 核心算法伪代码修正维度错误（demandPm 总量 / theoryPm 单台 / supplyCap 采集源产能）；
+  - 多目标共享中间品合并由 max 改为 sum（需求累加）；
+  - 液体判断改为加载 `LiquidTable` 成员查询；
+  - `ChainEdge` 改为单物品边；循环净产出改为 `calcCycleNetRatio`（无需速率入参）；
+  - `calcTransportCount` 拆分为 `maxThroughput`（显式取最高档位）+ `calcTransportCount`；
+  - 修正阶段一验证语句（项目无 `typecheck` 脚本，tsc 在 `npm run build` 中）；
+  - 开发分支改为 `feat/factory-chain-v2-impl`；
+  - 补充 URL 参数非法值处理与 i18n key 清单。
 
 ## 1. 概述
 
@@ -22,10 +34,10 @@ type: Fleeting
 
 - **做**:
   - `src/lib/factory/types.ts` 类型重构（ChainTarget / ChainEdge / ChainNode）。
-  - `src/lib/factory/chain.ts` 算法重构（expand、循环检测、供应瓶颈、物流计算）。
+  - `src/lib/factory/chain.ts` 算法重构（expand、循环检测、供给封顶、物流计算）。
   - `src/pages/factory/FactoryChains.tsx` UI 重构（多目标选择器 + 产速输入）。
   - `src/components/Factory/ChainGraph.tsx` 渲染重构（机器节点 + 物流边 + 循环样式）。
-  - `src/hooks/useData.ts` hook 签名变更 + 物流表加载。
+  - `src/hooks/useData.ts` hook 签名变更 + 物流表/液体表加载。
   - 单元测试与 E2E 测试。
 - **不做**:
   - 配方切换交互。
@@ -37,13 +49,13 @@ type: Fleeting
 
 | 文件路径 | 变更内容 |
 |----------|----------|
-| `src/lib/factory/types.ts` | `ChainTarget` 新增；`ChainEdge` 重构（beltCount/isPipe/cycleType）；`ChainNode` 重构（machineName/machineIcon/machineCount/recipe/actualPm/theoryPm） |
-| `src/lib/factory/chain.ts` | 重构 `buildChainGraph`（多目标+产速）、`expand`（供应瓶颈）；新增 `calcCycleOutput`/`calcMachineCount`/`calcTransportCount`/`calcThroughput` |
-| `src/lib/factory/chain.test.ts` | 新增循环规则、供应瓶颈、机器数量、传送带数量、多目标等测试用例 |
-| `src/hooks/useData.ts` | `useCraftingChain` 签名变更（`ChainTarget[]`）；新增加载 `FactoryGridBeltTable`/`FactoryLiquidPipeTable` |
-| `src/pages/factory/FactoryChains.tsx` | 移除左侧列表+分页；新增顶部多目标选择器+产速输入框+URL同步 |
-| `src/components/Factory/ChainGraph.tsx` | 重构 layoutGraph（机器节点）；新增 MachineNode（名称/台数/配方摘要/传送带）；边渲染区分循环类型+液体管道 |
-| `src/i18n/dicts/*.json` | 新增 i18n key |
+| `src/lib/factory/types.ts` | `ChainTarget` 新增；`ChainEdge` 重构（单物品 `itemId`/`beltCount`/`isPipe`/`cycleType`/`cycleRatio`）；`ChainNode` 重构（kind 增 `'target'`、`demandPm`/`actualPm`/`theoryPm`/`supplyLimited`/`isClosedLoop`） |
+| `src/lib/factory/chain.ts` | 重构 `buildChainGraph`（多目标+产速+供给封顶）、`expand`（返回 actualPm）；新增 `calcCycleNetRatio`/`calcMachineCount`/`calcTransportCount`/`calcThroughput`/`maxThroughput` |
+| `src/lib/factory/chain.test.ts` | 新增循环规则、供给封顶、机器数量、传送带数量、多目标等测试用例 |
+| `src/hooks/useData.ts` | `useCraftingChain` 签名变更（`ChainTarget[]`）；新增加载 `FactoryGridBeltTable`/`FactoryLiquidPipeTable`/`LiquidTable` |
+| `src/pages/factory/FactoryChains.tsx` | 移除左侧列表+分页；新增顶部多目标选择器+产速输入框+URL 同步（含非法值回退） |
+| `src/components/Factory/ChainGraph.tsx` | 重构 layoutGraph（机器/源/目标三类节点）；MachineNode 显示配方/台数/实际产出/副产物；边渲染区分固液与循环类型 |
+| `scripts/i18n-custom.json` → `src/i18n/dicts/*.json` | 新增 i18n key（14 语言，走 `node scripts/generate-i18n-dicts.ts` 生成流程） |
 | `tests/e2e/src/factory.spec.ts` | 更新 E2E 测试适配新 UI |
 
 ## 3. 详细实现
@@ -54,12 +66,12 @@ type: Fleeting
 
 **文件**: `src/lib/factory/types.ts`
 
-1. 新增 `ChainTarget` 接口
-2. 重构 `ChainEdge`：新增 `itemIds`/`beltCount`/`isPipe`/`cycleType`/`cycleOutput`/`cycleInput`；移除 `label`
-3. 重构 `ChainNode`：新增 `machineName`/`machineIcon`/`machineCount`/`recipe`（含 inputs/outputs）/`actualPm`/`theoryPm`/`isClosedLoop`；移除 `label`/ `isTarget`
-4. 更新 `ChainGraph` 类型（无结构变更）
+1. 新增 `ChainTarget` 接口（`itemId` + `rate`，rate 允许非负非整数）
+2. 重构 `ChainEdge`：单物品 `itemId: string`；新增 `beltCount`/`isPipe`/`cycleType`/`cycleRatio`；移除 `label`
+3. 重构 `ChainNode`：`kind` 改为 `'machine' | 'source' | 'target'`；新增 `machineName`/`machineIcon`/`machineCount`/`recipe`（含 inputs/outputs 的 rate）/`demandPm`/`actualPm`/`theoryPm`/`supplyLimited`/`isClosedLoop`；移除 `label`/`isTarget`/`perMinute`
+4. `ChainGraph` 无结构变更
 
-**验证**: `npm run typecheck` 通过（预期编译错误，因 chain.ts / ChainGraph.tsx 尚未适配新类型）。
+**验证**: 本阶段只改类型，`npm run build`（含 tsc）**预期报错**（chain.ts / ChainGraph.tsx 尚未适配新类型），属正常现象；错误将在阶段二/六逐一消除，阶段六完成后必须编译通过。
 
 ### 3.2 阶段二：核心算法重构
 
@@ -67,75 +79,90 @@ type: Fleeting
 
 **文件**: `src/lib/factory/chain.ts`
 
-#### 3.2.1 新增辅助函数
+#### 3.2.1 三个速率概念（实现时务必区分）
+
+| 概念 | 含义 | 维度 |
+|------|------|------|
+| `theoryPm` | **单台**机器理论产出 = `perMinute(outcomeCount, totalProgress)` | 每台/min |
+| `demandPm` | 下游需求合计（多目标、多父节点**累加**） | 总量/min |
+| `supplyCap` | 采集源产能之和；无外部供给为 +∞ | 总量/min |
+
+禁止跨维度运算（如 `min(theoryPm, demandPm)`）。
+
+#### 3.2.2 新增辅助函数
 
 ```typescript
-// 吞吐量计算（R9/R10）
-export function calcThroughput(msPerRound: number, volume: number = 1): number
+// 速率换算
+const perMinute = (count: number, totalProgress: number) => ...
+const sourcePerMinute = (produceRate: number, msPerRound: number) => ...
 
-// 物流设施数量计算（R9/R10）
-export function calcTransportCount(
-  rate: number,
-  transportTable: Record<string, any>,
-  isPipe: boolean,
+// 循环净产出比（R1）：无量纲，无需速率入参
+export function calcCycleNetRatio(
+  stages: { inputQty: number; outputQty: number }[],
 ): number
 
-// 机器数量计算（R8）
+// 机器数量（R8）
 export function calcMachineCount(actualPm: number, theoryPm: number): number
 
-// 循环净产出计算（R1）
-export function calcCycleOutput(
-  cycleItems: string[],
-  recipeById: Map<string, FactoryRecipe>,
-): { netOutput: number; outputQty: number; inputQty: number }
+// 吞吐量（R9/R10）
+export function calcThroughput(msPerRound: number, volume: number = 1): number
+
+// 从物流表显式选择最大吞吐量（当前各表仅 1 条目；未来多级取最高档位，不依赖键序）
+export function maxThroughput(
+  transportTable: Record<string, any>,
+  dataKey: 'beltData' | 'pipeData',
+): number
+
+// 物流设施数量（R9/R10）
+export function calcTransportCount(rate: number, throughput: number): number
 ```
 
-#### 3.2.2 重构 `buildChainGraph`
+#### 3.2.3 重构 `buildChainGraph`
 
-签名变更：
 ```typescript
 function buildChainGraph(
-  targets: ChainTarget[],           // 改为 ChainTarget[]（含 rate）
+  targets: ChainTarget[],
   recipes: FactoryRecipe[],
   index: FactoryItemIndex,
   sources: FactorySource[],
   defaultCrafts: Record<string, string>,
   recipeOverride?: Record<string, string>,
   machines?: Record<string, { name: string; iconId: string }>,
-  beltTable?: Record<string, any>,  // 新增
-  pipeTable?: Record<string, any>,  // 新增
+  liquids?: Set<string>,              // 新增：LiquidTable key 集合
+  beltTable?: Record<string, any>,    // 新增：FactoryGridBeltTable
+  pipeTable?: Record<string, any>,    // 新增：FactoryLiquidPipeTable
 ): ChainGraph
 ```
 
 实现要点：
-1. 构建 `recipeById` Map 和 `asOutcome` 反查
-2. 对每个 target 调用 `expand(itemId, target.rate, new Set(), nodeKey)`
-3. 合并多目标的 nodes/edges（按 key 去重，machineCount 取 max）
-4. 处理循环边的视觉属性（cycleType / cycleOutput / cycleInput）
+1. 构建 `recipeById` Map、`asOutcome` 反查
+2. 构建 `supplyCapByItem`：遍历 `sources`，`supplyCap[itemId] += sourcePerMinute(produceRate, msPerRound)`；无源物品 +∞
+3. 对每个 `rate > 0` 的 target：生成 `target:{itemId}` 节点，`expand(itemId, target.rate, new Set(), targetKey)`
+4. **合并**（先聚合后结算）：同 key 节点 `demandPm` 累加 → 统一重算 `actualPm = min(demandPm, supplyCap)`、`machineCount = ceil(actualPm / theoryPm)`；同 `(from,to,itemId)` 边 `perMinute` 累加 → 统一重算 `beltCount`
+5. 处理循环边的视觉属性（cycleType / cycleRatio）
 
-#### 3.2.3 重构 `expand`
+#### 3.2.4 重构 `expand`
 
 ```typescript
 function expand(
   itemId: string,
-  availableRate: number,      // 新增：上游实际可用速率
+  demandPm: number,           // 下游需求速率（总量维度）
   path: Set<string>,          // DFS 路径（环检测）
-  targetKey: string,
+  parentKey: string,
   nodes: Map<string, ChainNode>,
   edges: Map<string, ChainEdge>,
-): void
+): number                     // 返回 actualPm 供父节点结算
 ```
 
 实现要点：
-1. 查找配方（优先级：override > default > first）
-2. 计算理论产出 `theoryPm = perMinute(outcomeCount, recipe.totalProgress)`
-3. 计算实际产出 `actualPm = min(theoryPm, availableRate)` — R7 供应瓶颈
-4. 计算机器台数 `machineCount = ceil(actualPm / theoryPm)` — R8
-5. 生成/合并机器节点
-6. 遍历材料，计算需求速率，递归 `expand(mat.itemId, matConsumedPm, newPath, ...)`
-7. 循环检测：若 `path.has(itemId)`，计算净产出（R1），决定有效循环/封闭回路
-8. 外部供应打断（R4）：若 `sources` 中有该物品，打断循环
-9. 物流边生成：计算传输速率，确定 isPipe，计算 beltCount — R9/R10
+1. **R4 外部供给优先**：`supplyCapByItem[itemId]` 有限 → 生成/合并源节点，`actualPm = min(demandPm, supplyCap)`，标记 `supplyLimited`，返回（不再展开配方）
+2. 查找配方（优先级：override > default > first）；无配方 → 叶子，返回 0
+3. **循环检测**：`path.has(itemId)` → 沿 path 收集各级 `{inputQty, outputQty}`，`calcCycleNetRatio` 判定（R1/R2/R3）；>1 有效循环继续展开，≤1 封闭回路停止并标记（R5 自消费按长度 1 循环统一处理）；path 长度 >10 截断（R6）
+4. `theoryPm = perMinute(outcomeCount, totalProgress)`（单台维度）
+5. `actualPm = min(demandPm, supplyCap[itemId] ?? +∞)`（R7，总量维度）
+6. `machineCount = calcMachineCount(actualPm, theoryPm)`（R8）
+7. 生成/合并机器节点
+8. 遍历材料：`matDemand = actualPm × (mat.count / outcomeCount)`，递归 expand，生成单物品物流边：`isPipe = liquids.has(mat.itemId)`（R10），`beltCount = calcTransportCount(perMinute, maxThroughput(...))`（R9）
 
 ### 3.3 阶段三：单元测试
 
@@ -147,27 +174,27 @@ function expand(
 
 | 测试组 | 用例数（估） | 关键验证 |
 |--------|-------------|----------|
-| 循环规则 R0-R6 | 6-8 | 封闭回路/有效循环/副产物/外部供应/深度限制 |
-| 供应瓶颈 R7 | 3-4 | 满产/减产/过剩/级联 |
-| 机器数量 R8 | 3-4 | 单台/多台/取整 |
-| 传送带/管道数量 R9 | 3-4 | 固体/液体/取整 |
-| 液体管道区分 R10 | 2-3 | ID 前缀检测 |
-| 多目标 | 3-4 | 共享/独立/产速影响 |
-| 非整数产速 | 2-3 | 小数/零值 |
-| 吞吐量计算 | 2-3 | 传送带/管道/零值 |
+| 循环规则 R0-R6 | 6-8 | 采种/种植 netRatio=2 有效；瓶装/倒空 netRatio=1 封闭；副产物隔离；外部供应打断；自消费（长度 1）并入 R1；深度限制 10 层 |
+| 供给封顶 R7 | 3-4 | 源充足满产；需求超源产能封顶 + supplyLimited 标记；瓶颈逐级传导；无源物品不封顶 |
+| 机器数量 R8 | 3-4 | 单台；需求 100/min ÷ 单台 30/min = 4 台；小数取整；actualPm=0 → 0 台 |
+| 传送带/管道数量 R9 | 3-4 | 固体；液体；小数取整；多条目取最大吞吐量 |
+| 液体区分 R10 | 2-3 | LiquidTable 成员 → 管道；非成员 → 传送带；空集合降级全固体 |
+| 多目标 | 3-4 | 共享中间品需求**累加**（30+20=50，台数按 50 算）；独立子图；目标产速影响 |
+| 非整数产速 | 2-3 | 小数；零值不展开 |
+| 吞吐量计算 | 2-3 | 传送带；管道；零值；缺 volume 默认 1 |
 
 **验证**: `npm run test` 全绿。
 
 ### 3.4 阶段四：Hook 重构
 
-**目标**: 适配新类型签名，加载物流数据。
+**目标**: 适配新类型签名，加载物流与液体数据。
 
 **文件**: `src/hooks/useData.ts`
 
 1. `useCraftingChain` 签名改为 `ChainTarget[]`
-2. 新增加载 `FactoryGridBeltTable` 和 `FactoryLiquidPipeTable`（`fetchTableAll`）
-3. 传递 `machines`、`beltTable`、`pipeTable` 到 `buildChainGraph`
-4. 物流表 `.catch(() => ({}))` 容错
+2. 新增加载 `FactoryGridBeltTable`、`FactoryLiquidPipeTable`、`LiquidTable`（`fetchTableAll`），均 `.catch(() => ({}))` 容错
+3. `LiquidTable` 的 key 集合转 `Set<string>`；加载失败时为空集合（降级全固体）
+4. 传递 `machines`、`liquids`、`beltTable`、`pipeTable` 到 `buildChainGraph`
 
 ### 3.5 阶段五：页面 UI 重构
 
@@ -177,13 +204,13 @@ function expand(
 
 实现要点：
 1. 移除左侧物品列表 + `LIST_PAGE_SIZE` + `listPage` + `mobileOpen` 等状态
-2. 新增 `ChainTarget[]` state（从 URL `?targets=xxx:rate` 解析）
-3. 新增顶部目标选择器 UI：
+2. 新增 `ChainTarget[]` state（从 URL `?targets={itemId}:{rate},...` 解析）
+3. URL 解析容错：rate 缺省/NaN/负数/非数值 → 回退为该物品默认配方理论产出；rate=0 保留目标行但不展开；重复 itemId 后者覆盖前者
+4. 新增顶部目标选择器 UI：
    - 每行：下拉选择器（搜索 + rarity 排序） + 产速输入框（number） + 删除按钮（×）
    - 底部："+ 添加目标产物" 按钮
-4. 产速变化时自动更新 URL 并触发 `useMemo` 重算
-5. URL 同步：`targets={itemId}:{rate},{itemId}:{rate},...`
-6. i18n：新增 `factory.addTarget` / `factory.targetRate` 等 key
+5. 产速变化时自动更新 URL 并触发 `useMemo` 重算
+6. i18n：新增 key（见阶段七）
 
 ### 3.6 阶段六：图渲染重构
 
@@ -194,27 +221,28 @@ function expand(
 实现要点：
 
 #### layoutGraph 变更
-- 移除物品节点的 dagre 节点
-- 机器节点：label 使用 machineName，尺寸增大以容纳更多信息
-- 源节点：label 使用 machineName + "采集" 标识
+- 节点类型：`machine`（机器）/ `source`（采集）/ `target`（目标终点）
+- 机器节点尺寸增大以容纳配方摘要与台数；注意自定义节点必须显式 width/height（一期经验：否则 isNodeInitialized 为 false，首帧边不渲染）
+- 目标节点：物品图标 + 名称 + 需求/实际产速
 
 #### MachineNode 自定义节点
 ```tsx
 // 节点内容：
 // [图标] 机器名 ×N
 // 输入物品 → 输出物品 ×数量
-// 总产出: XX/min
-// 传送带: XX/min (输入) / XX/min (输出)
+// 实际产出: XX/min（供给受限时：需求 X / 实际 Y，高亮标记）
+// 副产物: ...（如有，独立列出）
 ```
 
 #### 边渲染
-- 根据 `edge.isPipe` 选择颜色和线型
-- 根据 `edge.cycleType` 选择循环样式
-- 标签显示传送带/管道数量和吞吐量
+- `edge.isPipe`：液体蓝色虚线 `#3b82f6` + `strokeDasharray: '8 4'`；固体金色实线 `#C9A96E`
+- `edge.cycleType === 'closed'`：橙色虚线 `#f59e0b` + `↻ 封闭`；`'productive'`：金色实线 + 净产出比
+- 标签：传送带/管道数量 + 吞吐量（`传送带×N (XX/min)`）
+- 禁止在 index.css 加全局 `!important` 边样式（一期教训：会压掉循环边内联样式），样式全部内联
 
 ### 3.7 阶段七：i18n
 
-新增 key（在 `scripts/i18n-custom.json` 中）：
+在 `scripts/i18n-custom.json` 新增 key（全部 14 语言，运行 `node scripts/generate-i18n-dicts.ts` 生成，禁止直接改 dicts）：
 
 | key | CN 文案 |
 |-----|---------|
@@ -225,10 +253,15 @@ function expand(
 | `factory.pipeCount` | 管道 |
 | `factory.closedLoop` | ↻ 封闭 |
 | `factory.productiveLoop` | 有效循环 |
+| `factory.cycleNetRatio` | 净产出 |
 | `factory.machineCount` | 台 |
-| `factory.totalOutput` | 总产出 |
+| `factory.totalOutput` | 实际产出 |
+| `factory.demandRate` | 需求 |
+| `factory.supplyLimited` | 供给受限 |
 | `factory.inputRate` | 输入 |
 | `factory.outputRate` | 输出 |
+
+同时清理一期遗留但新 UI 不再使用的 key（如有），生成后确认 `npm run lint` 无未使用 key 警告。
 
 ### 3.8 阶段八：E2E 测试
 
@@ -237,7 +270,7 @@ function expand(
 更新用例：
 1. 多目标添加/删除后链路图更新
 2. 产速修改后机器数量变化
-3. URL 参数同步与刷新还原
+3. URL 参数同步与刷新还原（含非法 rate 回退）
 4. 封闭回路视觉标记验证
 
 ## 4. 实现顺序
@@ -247,7 +280,7 @@ gantt
     title 制作链路图 v2 实现计划
     dateFormat YYYY-MM-DD
     section 数据层
-    类型重构 (types.ts)           :a1, 2026-07-26, 1d
+    类型重构 (types.ts)           :a1, 2026-07-27, 1d
     核心算法重构 (chain.ts)        :a2, after a1, 2d
     单元测试 (chain.test.ts)       :a3, after a2, 1d
     section UI层
@@ -279,7 +312,7 @@ gantt
 ### 5.2 E2E 测试
 
 - 多目标交互流程
-- URL 同步
+- URL 同步（含非法值回退）
 - 循环视觉标记
 
 ### 5.3 手动验证
@@ -292,9 +325,10 @@ gantt
 
 - [ ] 类型定义完整，编译通过
 - [ ] `buildChainGraph` 支持多目标 + 产速输入
-- [ ] 供应瓶颈计算正确（满产/减产/级联）
-- [ ] 机器数量 = ceil(实际产出/理论产出)
-- [ ] 传送带/管道数量从 API 动态计算
+- [ ] 机器台数 = ceil(实际产出 / 单台理论产出)（需求 100/min、单台 30/min → 4 台）
+- [ ] 共享中间品需求累加结算
+- [ ] 供给封顶正确（满产/受限标记/逐级传导）
+- [ ] 传送带/管道数量从 API 动态计算，液体从 LiquidTable 判断
 - [ ] 封闭回路/有效循环视觉区分
 - [ ] 机器节点显示完整信息
 - [ ] 单元测试覆盖 R0-R10
@@ -304,17 +338,18 @@ gantt
 
 | 风险 | 影响 | 缓解措施 |
 |------|------|----------|
-| 液体 ID 前缀判断不准 | 边样式错误 | 先验证 LiquidTable，必要时使用白名单 |
-| 多目标共享中间品机器数量合并逻辑 | 数量不准 | 取 max 而非 sum，单测覆盖 |
+| 多目标合并后节点重算顺序 | 台数/边速率不准 | 先聚合 demandPm/perMinute 再统一重算；单测覆盖 |
+| 源供给封顶与循环组合场景 | 结算复杂 | R4 优先于循环检测，源点直接打断；单测覆盖 |
 | 超大链路图性能 | 渲染卡顿 | xyflow 视窗渲染 + fitView |
-| 新类型导致编译错误扩散 | 开发阻塞 | 阶段一完成后统一修复编译错误 |
+| 新类型导致编译错误扩散 | 开发阻塞 | 阶段一完成后按阶段统一修复编译错误 |
+| 物流表未来出现多级条目 | 选错吞吐量 | `maxThroughput` 显式取最高档位 |
 
 回滚策略：全部为文件内重构，可通过 git revert 回退到一期状态。
 
 ## 8. 相关文档
 
 - [[20260726-factory-chain-v2|制作链路图 v2 PRD]]
-- [[20260726-factory-chain-v2|制作链路图 v2 技术提案]]
+- [[20260726-factory-chain-v2-tech|制作链路图 v2 技术提案]]
 - [[20260725-factory-system|工厂系统技术提案（一期）]]
 - [[20260725-factory-system-plan|工厂系统实现方案（一期）]]
 - [工程架构规范](../engineering-spec.md)
