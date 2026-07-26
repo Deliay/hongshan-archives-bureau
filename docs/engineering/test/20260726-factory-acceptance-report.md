@@ -414,9 +414,9 @@ function expand(itemId: string, availableRate: number, path: Set<string>, target
 }
 ```
 
-### 3.4 传送带逻辑
+### 3.4 物流设施：传送带与液体管道
 
-#### 游戏内传送带数据
+#### 固体传送带
 
 通过 API 查询 `FactoryGridBeltTable` 获取：
 
@@ -424,30 +424,54 @@ function expand(itemId: string, availableRate: number, path: Set<string>, target
 |------|-----|------|
 | `id` | `grid_belt_01` | 唯一传送带类型 |
 | `msPerRound` | 2000 | 每轮传输间隔 2 秒 |
+| 每轮传输量 | 1 个物品 | 已确认 |
 | 传输速率 | **30 个/min** | 1 个/2秒 × 60 秒 = 30 个/min |
 
-**当前游戏仅有一种传送带**（`grid_belt_01`），无升级版本。
+#### 液体管道
 
-#### 传送带在图中的表达
+通过 API 查询 `FactoryLiquidPipeTable` 获取：
 
-机器之间的连线代表传送带。边标签显示：
+| 字段 | 值 | 说明 |
+|------|-----|------|
+| `id` | `log_pipe_01` | 唯一管道类型 |
+| `msPerRound` | 500 | 每轮传输间隔 0.5 秒 |
+| `volume` | 1 | 每轮传输 1 单位 |
+| 传输速率 | **120 单位/min** | 1 单位/0.5秒 × 60 秒 = 120 单位/min |
+
+#### 物流设施在图中的表达
+
+机器之间的连线代表物流设施，需要区分固体传送带和液体管道：
+
+**固体传送带边**：
+```
+──传送带×3 (90/min)──→
+```
+- 金色实线 `#C9A96E`
+- 方向箭头（`markerEnd`）
+- 标签显示：传送带数量 + 总吞吐量
+
+**液体管道边**：
+```
+──管道×2 (240/min)──→
+```
+- 蓝色虚线 `#3b82f6` + `strokeDasharray: '8 4'`
+- 方向箭头（`markerEnd`）
+- 标签显示：管道数量 + 总吞吐量
+
+#### 数量计算
 
 ```
-传送带 ×3（90/min）
+传送带数量 = ceil(实际传输速率 / 30)    // 固体物品
+管道数量 = ceil(实际传输速率 / 120)     // 液体
 ```
 
-- **传送带 ×3** = 需要 3 条并行传送带
-- **90/min** = 3 × 30 个/min = 总吞吐量
+#### 物品类型判断
 
-#### 传送带数量计算
+根据配方数据判断传输的是固体还是液体：
 
-```
-传送带数量 = ceil(实际传输速率 / 单条传送带吞吐量)
-```
-
-其中：
-- **实际传输速率** = 两个机器之间的物品流量（个/min）
-- **单条传送带吞吐量** = 30 个/min
+- **液体物品 ID 前缀**：`liquid_`、`acid`、`water`、`oil` 等（需从 `LiquidTable` 确认）
+- **固体物品**：其他所有物品
+- 边的样式根据传输物品类型自动选择
 
 ### 3.5 机器节点为中心的图结构
 
@@ -570,9 +594,10 @@ interface ChainTarget {
 interface ChainEdge {
   from: string        // 源机器节点 key
   to: string          // 目标机器节点 key
-  itemIds: string[]   // 传送的物品 ID 列表
-  perMinute: number   // 传输速率（个/min）
-  beltCount: number   // 需要的传送带数量
+  itemIds: string[]   // 传输的物品 ID 列表
+  perMinute: number   // 传输速率（个/min 或 单位/min）
+  beltCount: number   // 需要的传送带数量（固体）或管道数量（液体）
+  isPipe: boolean     // 是否为液体管道
   isCycle?: boolean
   cycleType?: 'productive' | 'closed'
   cycleOutput?: number
@@ -635,8 +660,9 @@ function calcMachineCount(actualPm: number, theoryPm: number): number {
   return Math.ceil(actualPm / theoryPm)
 }
 
-function calcBeltCount(rate: number, beltThroughput: number = 30): number {
-  return Math.ceil(rate / beltThroughput)
+function calcTransportCount(rate: number, isPipe: boolean): number {
+  const throughput = isPipe ? 120 : 30  // 液体管道 120/min，固体传送带 30/min
+  return Math.ceil(rate / throughput)
 }
 ```
 
@@ -667,14 +693,15 @@ function calcBeltCount(rate: number, beltThroughput: number = 30): number {
 | R6 | 循环深度限制 | 防止无限递归 | 安全 |
 | R7 | 供应瓶颈 | 实际产出 = min(理论产出, 上游供应) | 核心 |
 | R8 | 机器数量 | 每个节点显示所需机器台数 | 核心 |
-| R9 | 传送带数量 | 每条边显示所需传送带数 | 核心 |
+| R9 | 传送带/管道数量 | 每条边显示所需传送带或管道数 | 核心 |
+| R10 | 液体管道区分 | 根据物品类型自动选择边样式 | 核心 |
 
 ### 3.9 涉及文件
 
 | 文件 | 变更 |
 |------|------|
 | `src/lib/factory/types.ts` | `ChainTarget` 新增；`ChainEdge` 重构；`ChainNode` 重构 |
-| `src/lib/factory/chain.ts` | 重构 `buildChainGraph`（多目标+产速）、`expand`（供应瓶颈）、新增 `calcCycleOutput`/`calcMachineCount`/`calcBeltCount` |
+| `src/lib/factory/chain.ts` | 重构 `buildChainGraph`（多目标+产速）、`expand`（供应瓶颈）、新增 `calcCycleOutput`/`calcMachineCount`/`calcTransportCount` |
 | `src/hooks/useData.ts` | `useCraftingChain` 签名变更（多目标+产速） |
 | `src/pages/factory/FactoryChains.tsx` | 移除左侧列表，新增多目标下拉选择器+产速输入框 |
 | `src/components/Factory/ChainGraph.tsx` | 重构为机器节点为中心；MachineNode 显示配方/数量/传送带；边渲染区分循环类型 |
@@ -682,22 +709,45 @@ function calcBeltCount(rate: number, beltThroughput: number = 30): number {
 | `tests/e2e/src/factory.spec.ts` | 更新 E2E 测试适配新 UI |
 | `src/lib/factory/chain.test.ts` | 新增循环规则、供应瓶颈、机器数量、传送带数量的单元测试 |
 
-### 3.10 传送带调研结果
+### 3.10 物流设施调研结果
+
+#### 固体传送带
 
 | 项目 | 值 |
 |------|-----|
 | 传送带类型 | 仅 `grid_belt_01`（无升级版本） |
 | `msPerRound` | 2000ms（2 秒/轮） |
-| 单条吞吐量 | 30 个/min |
+| 每轮传输量 | 1 个物品 |
+| 单条吞吐量 | **30 个/min** |
 | 相关设施 | 分流器 `log_splitter`、合流器 `log_converger`、连接器 `log_connector`、调节器 `log_conditioner` |
-| 最大长度限制 | `singleConveyorLengthLimit`（常量，需查具体值） |
 
-### 3.11 待确认问题
+#### 液体管道
 
-1. **传送带吞吐量确认**：`msPerRound: 2000` 是否确实对应 30 个/min？是否每轮恰好传输 1 个物品？
-2. **多目标图合并**：多个目标的链路图合并时，共享的中间机器如何处理？（节点数量取 max 还是 sum？）
-3. **传送带方向**：图中传送带边是否需要显示方向箭头？
-4. **液体管道**：游戏中有液体管道（`FactoryLiquidPipeTable`），是否需要在图中区分固体传送带和液体管道？
+| 项目 | 值 |
+|------|-----|
+| 管道类型 | 仅 `log_pipe_01`（无升级版本） |
+| `msPerRound` | 500ms（0.5 秒/轮） |
+| 每轮传输量 | 1 单位（`volume: 1`） |
+| 单条吞吐量 | **120 单位/min** |
+| 地下管道 | `udpipe_loader_1/2`、`udpipe_unloader_1/2`（用于穿越地形） |
+
+#### 固体 vs 液体对比
+
+| 属性 | 传送带 | 液体管道 |
+|------|--------|----------|
+| 传输间隔 | 2000ms | 500ms |
+| 单条吞吐量 | 30 个/min | 120 单位/min |
+| 传输物品类型 | 固体物品 | 液体（酸液、水、油等） |
+| 图中边样式 | 实线 + 方向箭头 | 蓝色虚线 + 方向箭头 |
+
+### 3.11 确认结论
+
+| 问题 | 结论 |
+|------|------|
+| 传送带吞吐量 | ✅ 确认：每轮传输 1 个物品，30 个/min |
+| 多目标图合并 | ✅ 在一张图内完成多目标计算，不考虑图合并 |
+| 传送带方向 | ✅ 需要显示机器的传送带方向箭头 |
+| 液体管道 | ✅ 需要支持液体管道的展示，与固体传送带区分 |
 
 ---
 
