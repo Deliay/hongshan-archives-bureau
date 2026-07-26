@@ -22,6 +22,7 @@ pnpm-debug.log*
 *.sw?
 test-results/
 tests/e2e/*.png
+docs/compose/
 .vscode/*
 !.vscode/extensions.json
 yarn-debug.log*
