@@ -69,3 +69,17 @@ npm run lint                   # oxlint
 npm run test                   # vitest
 node scripts/generate-i18n-dicts.ts  # regenerate i18n dictionaries from scripts/i18n-custom.json
 ```
+
+## 验收问题处理流程
+
+收到验收问题反馈后，必须创建或更新对应的验收问题文档：
+
+1. **创建文档**：在 `docs/engineering/test/` 下按日期创建文档，命名格式 `YYYYMMDD-<feature-slug>-acceptance-report.md`。
+2. **文档内容**：
+   - 关联 PRD / 技术方案 / 实现方案的引用链接
+   - 每个验收问题的：问题描述、根因分析、修复方案、涉及文件、对应 commit
+   - 修复总览表格
+   - 最终验证结果（lint / test / build / E2E）
+   - 经验总结
+3. **实时更新**：修复每个问题后，同步更新文档中的对应条目（commit hash、验证结果等）。
+4. **提交文档**：验收完成后随代码一起提交。

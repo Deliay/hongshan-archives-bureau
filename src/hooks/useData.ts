@@ -1136,3 +1136,99 @@ export function useArchiveSearch(
     refetch: load,
   }
 }
+
+// ---------- Factory hooks ----------
+
+import type { FactoryRecipe, FactoryMachine, FactoryItemIndex, ChainGraph } from '../lib/factory/types'
+import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '../lib/factory/recipes'
+import { buildChainGraph } from '../lib/factory/chain'
+
+export function useFactoryData(): UseDataResult<{ recipes: FactoryRecipe[]; machines: Record<string, FactoryMachine>; itemIds: string[]; index: FactoryItemIndex }> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [craftRaw, buildingRaw, buildingI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('FactoryMachineCraftTable', () => fetchTableAll('FactoryMachineCraftTable')),
+      getCachedData<Record<string, any>>('FactoryBuildingTable', () => fetchTableAll('FactoryBuildingTable')),
+      getTableI18nDict('FactoryBuildingTable', locale).catch(() => ({}) as Record<string, string>),
+    ])
+    getCachedData<Record<string, any>>('FullBottleTable', () => fetchTableAll('FullBottleTable').catch(() => ({}))).catch(() => {})
+    Promise.all([
+      getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable')),
+      getTableI18nDict('ItemTable', locale),
+    ]).catch(() => {})
+
+    const recipes = Object.values(craftRaw).map(v => adaptFactoryRecipe(v))
+    const machines: Record<string, FactoryMachine> = {}
+    for (const [k, v] of Object.entries(buildingRaw)) {
+      machines[k] = adaptFactoryMachine(v, buildingI18n)
+    }
+
+    const itemIdSet = new Set<string>()
+    const asIngredient: Record<string, FactoryRecipe[]> = {}
+    const asOutcome: Record<string, FactoryRecipe[]> = {}
+    for (const recipe of recipes) {
+      for (const ing of recipe.ingredients) {
+        itemIdSet.add(ing.itemId)
+        if (!asIngredient[ing.itemId]) asIngredient[ing.itemId] = []
+        asIngredient[ing.itemId].push(recipe)
+      }
+      for (const out of recipe.outcomes) {
+        itemIdSet.add(out.itemId)
+        if (!asOutcome[out.itemId]) asOutcome[out.itemId] = []
+        asOutcome[out.itemId].push(recipe)
+      }
+    }
+    const itemIds = Array.from(itemIdSet).sort()
+    const index: FactoryItemIndex = { asIngredient, asOutcome }
+
+    return { recipes, machines, itemIds, index }
+  }, [locale])
+}
+
+export function useFactoryItemIds(): UseDataResult<string[]> {
+  const { data, loading, error, refetch } = useFactoryData()
+  return { data: data?.itemIds ?? [], loading, error, refetch }
+}
+
+export function useItemRecipes(itemId: string | null): { asProduct: FactoryRecipe[]; asMaterial: FactoryRecipe[] } {
+  const { data } = useFactoryData()
+  return useMemo(() => {
+    if (!data || !itemId) return { asProduct: [], asMaterial: [] }
+    return {
+      asProduct: data.index.asOutcome[itemId] ?? [],
+      asMaterial: data.index.asIngredient[itemId] ?? [],
+    }
+  }, [data, itemId])
+}
+
+export function useCraftingChain(targets: string[]): UseDataResult<ChainGraph> {
+  const { data: factoryData, loading, error, refetch } = useFactoryData()
+  const [chainData, setChainData] = useState<{ defaultCrafts: Record<string, string>; sources: import('../lib/factory/types').FactorySource[] }>({ defaultCrafts: {}, sources: [] })
+
+  useEffect(() => {
+    if (targets.length === 0 || !factoryData) return
+    let cancelled = false
+    Promise.all([
+      getCachedData<Record<string, any>>('WikiDefaultCraftTable', () => fetchTableAll('WikiDefaultCraftTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('FactoryMinerTable', () => fetchTableAll('FactoryMinerTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('FactoryGasMinerTable', () => fetchTableAll('FactoryGasMinerTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('FactoryFluidPumpInTable', () => fetchTableAll('FactoryFluidPumpInTable').catch(() => ({}))),
+    ]).then(([defaultCraftRaw, minerRaw, gasMinerRaw, pumpRaw]) => {
+      if (cancelled) return
+      const defaultCrafts: Record<string, string> = {}
+      for (const [itemId, entry] of Object.entries<any>(defaultCraftRaw)) {
+        if (entry?.craftId) defaultCrafts[itemId] = entry.craftId
+      }
+      const sources = adaptFactorySources(minerRaw, gasMinerRaw, pumpRaw)
+      setChainData({ defaultCrafts, sources })
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [factoryData, targets.length])
+
+  const graph = useMemo<ChainGraph>(() => {
+    if (!factoryData || targets.length === 0) return { nodes: [], edges: [] }
+    return buildChainGraph(targets, factoryData.recipes, factoryData.index, chainData.sources, chainData.defaultCrafts, undefined, factoryData.machines)
+  }, [factoryData, targets, chainData])
+
+  return { data: graph, loading, error, refetch }
+}

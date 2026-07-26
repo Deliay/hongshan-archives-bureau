@@ -349,5 +349,27 @@
     "recipeDefault": "Jalur default",
     "recipeUnlock": "Syarat Membuka",
     "viewDetail": "Lihat arsip"
+  },
+  "factory": {
+    "recipes": "Resep Pabrik",
+    "chains": "Rantai Krafted",
+    "asProduct": "Sebagai Produk",
+    "asMaterial": "Sebagai Bahan",
+    "searchItem": "Cari item",
+    "selectItemHint": "Pilih item di sebelah kiri untuk melihat resep",
+    "noRecipes": "Belum ada resep terkait",
+    "machine": "Mesin",
+    "craftTime": "Waktu pembuatan",
+    "perMinute": "per menit",
+    "outputPerMin": "hasil/menit",
+    "inputPerMin": "konsumsi/menit",
+    "addTarget": "Tambahkan produk target",
+    "selectedTargets": "Produk yang dipilih",
+    "clearAll": "Hapus semua",
+    "cycleMark": "Siklus",
+    "sourceNode": "Sumber",
+    "switchRecipe": "Ganti resep",
+    "emptyChainHint": "Cari dan tambahkan produk target untuk membuat rantai krafted",
+    "target": "Sasaran"
   }
 }

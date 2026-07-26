@@ -97,6 +97,8 @@ async function idbClear(): Promise<void> {
 
 // ---------- Public API ----------
 
+const inflight = new Map<string, Promise<unknown>>()
+
 export function initCache(): Promise<string> {
   if (!versionPromise) {
     versionPromise = (async () => {
@@ -125,15 +127,28 @@ export async function getCachedData<T>(
   const mem = memoryCache.get<T>(idbKey)
   if (mem) return mem
 
-  const persisted = await idbGet<CacheEntry<T>>(idbKey)
-  if (persisted && Date.now() - persisted.timestamp <= persisted.ttl) {
-    memoryCache.set(idbKey, persisted.data, persisted.ttl)
-    return persisted.data
+  if (inflight.has(idbKey)) {
+    return inflight.get(idbKey)! as Promise<T>
   }
 
-  const data = await fetcher()
-  const entry: CacheEntry<T> = { data, timestamp: Date.now(), ttl: DEFAULT_TTL }
-  memoryCache.set(idbKey, data)
-  await idbSet(idbKey, entry)
-  return data
+  const promise = (async () => {
+    const persisted = await idbGet<CacheEntry<T>>(idbKey)
+    if (persisted && Date.now() - persisted.timestamp <= persisted.ttl) {
+      memoryCache.set(idbKey, persisted.data, persisted.ttl)
+      return persisted.data
+    }
+
+    const data = await fetcher()
+    const entry: CacheEntry<T> = { data, timestamp: Date.now(), ttl: DEFAULT_TTL }
+    memoryCache.set(idbKey, data)
+    await idbSet(idbKey, entry)
+    return data
+  })()
+
+  inflight.set(idbKey, promise)
+  try {
+    return await promise
+  } finally {
+    inflight.delete(idbKey)
+  }
 }

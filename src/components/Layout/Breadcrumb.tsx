@@ -15,6 +15,8 @@ function useListLabel(): Record<string, string> {
     equipment: t('nav.equipment'),
     items: t('nav.items'),
     factory: t('nav.factory'),
+    recipes: t('factory.recipes'),
+    chains: t('factory.chains'),
     search: t('nav.search'),
     story: t('nav.story'),
     updates: t('nav.updates'),
@@ -81,13 +83,15 @@ export default function Breadcrumb() {
   const listKey = segments[1]
   const detailId = segments[2]
 
+  const isSubRoute = listKey === 'factory' && detailId && listLabel[detailId]
+
   return (
     <nav className="text-sm text-archive-dust mb-4 flex items-center flex-wrap gap-1">
       <Link to="/archive" className="hover:text-archive-gold transition-colors">{t('nav.archive')}</Link>
       {segments.length >= 2 && (
         <>
           <span className="mx-1 text-archive-lead">›</span>
-          {segments.length === 2 ? (
+          {segments.length === 2 && !isSubRoute ? (
             <Badge variant="ghost">{listLabel[listKey] ?? listKey}</Badge>
           ) : (
             <Link to={`/archive/${listKey}`} className="hover:text-archive-gold transition-colors">{listLabel[listKey] ?? listKey}</Link>
@@ -97,7 +101,11 @@ export default function Breadcrumb() {
       {segments.length >= 3 && (
         <>
           <span className="mx-1 text-archive-lead">›</span>
-          <DetailLabel listKey={listKey} id={detailId} />
+          {isSubRoute ? (
+            <Badge variant="ghost">{listLabel[detailId] ?? detailId}</Badge>
+          ) : (
+            <DetailLabel listKey={listKey} id={detailId} />
+          )}
         </>
       )}
     </nav>

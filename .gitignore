@@ -21,6 +21,7 @@ pnpm-debug.log*
 *.suo
 *.sw?
 test-results/
+tests/e2e/*.png
 .vscode/*
 !.vscode/extensions.json
 yarn-debug.log*

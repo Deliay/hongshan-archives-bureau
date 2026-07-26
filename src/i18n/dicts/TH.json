@@ -349,5 +349,27 @@
     "recipeDefault": "เส้นทางเริ่มต้น",
     "recipeUnlock": "เงื่อนไขปลดล็อก",
     "viewDetail": "ดูแฟ้ม"
+  },
+  "factory": {
+    "recipes": "สูตรโรงงาน",
+    "chains": "สายโซ่การผลิต",
+    "asProduct": "ในฐานะผลิตภัณฑ์",
+    "asMaterial": "ในฐานะวัสดุ",
+    "searchItem": "ค้นหาไอเทม",
+    "selectItemHint": "เลือกไอเทมทางด้านซ้ายเพื่อดูสูตร",
+    "noRecipes": "ยังไม่มีสูตรที่เกี่ยวข้อง",
+    "machine": "เครื่องจักร",
+    "craftTime": "เวลาผลิต",
+    "perMinute": "ต่อนาที",
+    "outputPerMin": "ผลผลิต/นาที",
+    "inputPerMin": "การใช้/นาที",
+    "addTarget": "เพิ่มผลิตภัณฑ์เป้าหมาย",
+    "selectedTargets": "ผลิตภัณฑ์ที่เลือก",
+    "clearAll": "ล้างทั้งหมด",
+    "cycleMark": "วงจร",
+    "sourceNode": "เก็บเกี่ยว",
+    "switchRecipe": "เปลี่ยนสูตร",
+    "emptyChainHint": "ค้นหาและเพิ่มผลิตภัณฑ์เป้าหมายเพื่อสร้างสายโซ่การผลิต",
+    "target": "เป้าหมาย"
   }
 }
