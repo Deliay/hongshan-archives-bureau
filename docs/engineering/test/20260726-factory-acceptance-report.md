@@ -715,7 +715,276 @@ function calcTransportCount(
 | R9 | 传送带/管道数量 | 每条边显示所需传送带或管道数（从 API 动态计算） | 核心 |
 | R10 | 液体管道区分 | 根据物品类型自动选择边样式 | 核心 |
 
-### 3.9 涉及文件
+### 3.9 单元测试用例设计
+
+所有测试写入 `src/lib/factory/chain.test.ts`，按功能模块分组。
+
+#### 3.9.1 循环规则测试
+
+```typescript
+describe('cycle rules', () => {
+  // --- R1: 净产出判定 ---
+
+  describe('R1: net output determination', () => {
+    it('closed loop: filling→dismantling (1:1 ratio, net=0)', () => {
+      // 灌装机: liquid1 + bottle1 → filled_bottle1
+      // 拆解机: filled_bottle1 → liquid1 + bottle1
+      // 净产出 = 1 - 1 = 0 → 封闭回路
+      const graph = buildChainGraph(...)
+      const cycleEdges = graph.edges.filter(e => e.isCycle)
+      expect(cycleEdges.some(e => e.cycleType === 'closed')).toBe(true)
+      // 封闭回路不应继续展开上游
+    })
+
+    it('productive loop: seed_collector→planter (2:1 ratio, net>0)', () => {
+      // 采种机: leaf1 → leaf_seed ×2
+      // 种植机: leaf_seed ×1 → leaf1 ×1
+      // 净产出 = 2 - 1 = 1 → 有效循环
+      const graph = buildChainGraph(...)
+      const cycleEdges = graph.edges.filter(e => e.isCycle)
+      expect(cycleEdges.some(e => e.cycleType === 'productive')).toBe(true)
+      // 有效循环应继续展开，盈余部分作为需求
+    })
+
+    it('deficit loop: net output < 0 stops expansion', () => {
+      // 配方 A→B ×1, 配方 B→A ×0.5
+      // 净产出 = 1 - 0.5 = 0.5 > 0 → 有效循环
+      // 但如果反过来：A→B ×0.5, B→A ×1
+      // 净产出 = 0.5 - 1 = -0.5 < 0 → 亏缺回路
+    })
+
+    it('cycle edge displays output/input quantities', () => {
+      // 验证 cycleOutput 和 cycleInput 字段正确标注
+      const graph = buildChainGraph(...)
+      const cycleEdge = graph.edges.find(e => e.isCycle)
+      expect(cycleEdge!.cycleOutput).toBeGreaterThan(0)
+      expect(cycleEdge!.cycleInput).toBeGreaterThan(0)
+    })
+  })
+
+  // --- R2: 配方比例分析 ---
+
+  describe('R2: recipe ratio analysis', () => {
+    it('1:1 ratio detects as potential closed loop', () => {})
+    it('2:1 ratio detects as productive cycle', () => {})
+    it('1:2 ratio detects as deficit cycle', () => {})
+  })
+
+  // --- R3: 副产物隔离 ---
+
+  describe('R3: byproduct isolation', () => {
+    it('multi-output recipe: only cycle output counted for net output', () => {
+      // 采种机产出 leaf_seed ×2 + leaf ×1
+      // 只有 leaf_seed 参与循环判定
+      // leaf 作为副产物独立显示
+    })
+
+    it('byproduct appears in node output list', () => {
+      // 验证 node.recipe.outputs 包含副产物
+    })
+  })
+
+  // --- R4: 外部供应优先 ---
+
+  describe('R4: external supply priority', () => {
+    it('cycle broken at node with external source', () => {
+      // 物品 A 既有循环产出，又有矿机供应
+      // 循环在 A 处终止，矿机作为真实来源
+    })
+  })
+
+  // --- R5: 自消费防护 ---
+
+  describe('R5: self-consumption prevention', () => {
+    it('recipe consuming its own output without external supply', () => {
+      // 配方 A→A，无外部供应
+      // 应标记为异常
+    })
+  })
+
+  // --- R6: 循环深度限制 ---
+
+  describe('R6: cycle depth limit', () => {
+    it('stops expansion at max depth (10)', () => {
+      // 构建深度 > 10 的链路
+      // 验证不超过 10 层
+    })
+  })
+})
+```
+
+#### 3.9.2 供应瓶颈测试
+
+```typescript
+describe('supply bottleneck (R7)', () => {
+  it('full production when supply meets demand', () => {
+    // 配方: 10X → 1Y, 2秒
+    // 上游供应 X: 5/秒 (刚好满足)
+    // 预期: Y 产出 = 0.5/秒 (满产)
+  })
+
+  it('reduced production when supply insufficient', () => {
+    // 配方: 10X → 1Y, 2秒
+    // 上游供应 X: 2.5/秒 (只有一半)
+    // 预期: Y 产出 = 0.25/秒 (半产)
+  })
+
+  it('production capped at theory even with excess supply', () => {
+    // 配方: 10X → 1Y, 2秒
+    // 上游供应 X: 10/秒 (过剩)
+    // 预期: Y 产出 = 0.5/秒 (仍满产，不会超产)
+  })
+
+  it('machine count reflects actual production', () => {
+    // 实际产出 0.25/秒，理论产出 0.5/秒
+    // 需要 1 台机器 (ceil(0.25/0.5) = 1)
+  })
+
+  it('cascading bottleneck: multi-level supply chain', () => {
+    // A→B→C，每级都有供应瓶颈
+    // 验证最终产出正确结算
+  })
+})
+```
+
+#### 3.9.3 机器数量测试
+
+```typescript
+describe('machine count (R8)', () => {
+  it('single machine when demand equals theory rate', () => {
+    // 理论产出 1/min，需求 1/min → 1 台
+  })
+
+  it('multiple machines when demand exceeds single machine', () => {
+    // 理论产出 1/min，需求 3/min → 3 台
+  })
+
+  it('ceiling rounding for fractional machines', () => {
+    // 理论产出 1/min，需求 2.5/min → 3 台 (ceil)
+  })
+
+  it('machine count displayed on node', () => {
+    // 验证 node.machineCount 字段
+  })
+
+  it('total output = machineCount × theoryPm', () => {
+    // 验证 node.actualPm = machineCount × theoryPm
+  })
+})
+```
+
+#### 3.9.4 传送带/管道数量测试
+
+```typescript
+describe('transport count (R9)', () => {
+  const mockBeltTable = {
+    grid_belt_01: { beltData: { msPerRound: 2000 } }
+  }
+  const mockPipeTable = {
+    log_pipe_01: { pipeData: { msPerRound: 500, volume: 1 } }
+  }
+
+  it('belt count: 30/min throughput', () => {
+    // 传输速率 60/min → 需要 2 条传送带 (ceil(60/30))
+  })
+
+  it('pipe count: 120/min throughput', () => {
+    // 传输速率 200/min → 需要 2 条管道 (ceil(200/120))
+  })
+
+  it('fractional belt count rounds up', () => {
+    // 传输速率 31/min → 需要 2 条传送带 (ceil(31/30))
+  })
+
+  it('edge.isPipe flag set correctly for liquid items', () => {
+    // 液体物品的边 isPipe = true
+    // 固体物品的边 isPipe = false
+  })
+})
+```
+
+#### 3.9.5 液体管道区分测试
+
+```typescript
+describe('liquid pipe distinction (R10)', () => {
+  it('liquid item detected by ID prefix', () => {
+    // liquid_acid, water, oil → isPipe = true
+  })
+
+  it('solid item has isPipe = false', () => {
+    // iron_ore, coal → isPipe = false
+  })
+
+  it('pipe edge uses different visual style', () => {
+    // 验证 isPipe 影响边样式（通过 edge 属性间接验证）
+  })
+})
+```
+
+#### 3.9.6 多目标测试
+
+```typescript
+describe('multi-target support', () => {
+  it('single target works as before', () => {
+    // 单目标回归测试
+  })
+
+  it('two targets share intermediate machines', () => {
+    // 目标 A 和 B 都需要 iron_ingot
+    // 验证 iron_ingot 节点的机器数量取 max（而非 sum）
+  })
+
+  it('independent targets produce separate subgraphs', () => {
+    // 两个无关联的目标
+    // 验证图中包含两个独立的子图
+  })
+
+  it('target rate affects machine count', () => {
+    // 目标 rate=6 → 需要 N 台机器
+    // 目标 rate=12 → 需要 2N 台机器
+  })
+})
+```
+
+#### 3.9.7 非整数产速测试
+
+```typescript
+describe('non-integer rates', () => {
+  it('accepts fractional target rate', () => {
+    // rate=2.5 → 正确计算
+  })
+
+  it('zero rate produces empty chain', () => {
+    // rate=0 → 无节点
+  })
+
+  it('very small rate still produces valid chain', () => {
+    // rate=0.1 → 机器数量 ceil(0.1/theoryPm)
+  })
+})
+```
+
+#### 3.9.8 calcThroughput 测试
+
+```typescript
+describe('calcThroughput', () => {
+  it('calculates belt throughput from msPerRound', () => {
+    // msPerRound=2000 → 30/min
+    expect(calcThroughput(2000)).toBe(30)
+  })
+
+  it('calculates pipe throughput from msPerRound and volume', () => {
+    // msPerRound=500, volume=1 → 120/min
+    expect(calcThroughput(500, 1)).toBe(120)
+  })
+
+  it('returns 0 for zero msPerRound', () => {
+    expect(calcThroughput(0)).toBe(0)
+  })
+})
+```
+
+### 3.10 涉及文件
 
 | 文件 | 变更 |
 |------|------|
@@ -728,7 +997,7 @@ function calcTransportCount(
 | `tests/e2e/src/factory.spec.ts` | 更新 E2E 测试适配新 UI |
 | `src/lib/factory/chain.test.ts` | 新增循环规则、供应瓶颈、机器数量、传送带数量的单元测试 |
 
-### 3.10 物流设施调研结果
+### 3.11 物流设施调研结果
 
 #### 固体传送带
 
@@ -759,7 +1028,7 @@ function calcTransportCount(
 | 传输物品类型 | 固体物品 | 液体（酸液、水、油等） |
 | 图中边样式 | 实线 + 方向箭头 | 蓝色虚线 + 方向箭头 |
 
-### 3.11 确认结论
+### 3.12 确认结论
 
 | 问题 | 结论 |
 |------|------|
