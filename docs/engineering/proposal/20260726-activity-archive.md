@@ -180,7 +180,7 @@ const [activitiesRaw, timeRangesRaw, tagsRaw, activityI18n, tagI18n] = await Pro
 - 多时段：同一行渲染多个 bar。
 - 今日线：红色/金色竖线贯穿时间轴区，`top: 0; bottom: 0`。
 - 默认轴范围：取可见活动（筛选后）的 `[min(openTime), max(closeTime ?? now)]` 并向前后各 pad 15 天；若包含「进行中/常驻/未开始」，保证今日落在可视区前 1/3 处（初始 scrollLeft 定位到今日）。
-- 行排序：状态优先级（进行中 > 常驻 > 未开始 > 已结束）→ 最近/最早 openTime → `sortId`。
+- 行排序：状态优先级（未开始 > 进行中 > 常驻 > 已结束）→ openTime → `sortId`。
 
 ### 6.2 `ActivityFilters.tsx`
 

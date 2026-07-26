@@ -74,7 +74,7 @@ describe('ActivityGantt', () => {
     const rowIds = screen.getAllByTestId('activity-row').map(
       (row) => row.querySelector('[data-testid^="gantt-bar-"]')?.getAttribute('data-testid'),
     )
-    expect(rowIds).toEqual(['gantt-bar-a_ong', 'gantt-bar-a_up', 'gantt-bar-a_exp'])
+    expect(rowIds).toEqual(['gantt-bar-a_up', 'gantt-bar-a_ong', 'gantt-bar-a_exp'])
   })
 
 

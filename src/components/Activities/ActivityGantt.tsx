@@ -16,9 +16,9 @@ const SHOW_DATE_WIDTH = 200
 const LABEL_MIN_SPACE = 72
 
 const STATUS_ORDER: Record<string, number> = {
-  ongoing: 0,
-  permanent: 1,
-  upcoming: 2,
+  upcoming: 0,
+  ongoing: 1,
+  permanent: 2,
   expired: 3,
 }
 
