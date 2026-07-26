@@ -3,7 +3,10 @@ import type { Activity } from '../../lib/types'
 import { ACTIVITY_GROUP_COLORS } from '../../data/constants'
 import { useI18n } from '../../i18n'
 import { RichText } from '../../lib/richText'
+import { getCachedData } from '../../lib/cache'
+import { fetchTableAll } from '../../lib/api'
 import { Badge } from '../ui/Badge'
+import RewardPanel from '../Items/RewardPanel'
 import { formatActivityTime } from './timeFormat'
 import { ACTIVITY_GROUP_LABEL_KEYS, ACTIVITY_STATUS_LABEL_KEYS } from './activityMeta'
 
@@ -25,6 +28,16 @@ export default function ActivityTooltip({ activity, onClose }: ActivityTooltipPr
   const { t } = useI18n()
   const panelRef = useRef<HTMLDivElement>(null)
   const [imgFailed, setImgFailed] = useState(false)
+  const [rewardTable, setRewardTable] = useState<Record<string, any> | null>(null)
+
+  useEffect(() => {
+    if (!activity.rewardId) return
+    let cancelled = false
+    getCachedData<Record<string, any>>('RewardTable', () => fetchTableAll('RewardTable'))
+      .then((raw) => { if (!cancelled) setRewardTable(raw) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [activity.rewardId])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -113,6 +126,10 @@ export default function ActivityTooltip({ activity, onClose }: ActivityTooltipPr
             <div className="text-xs text-archive-ivory leading-relaxed">
               <RichText text={activity.desc} />
             </div>
+          )}
+
+          {activity.rewardId && rewardTable && (
+            <RewardPanel rewardIds={[activity.rewardId]} rewardTable={rewardTable} />
           )}
 
           {activity.tags.length > 0 && (

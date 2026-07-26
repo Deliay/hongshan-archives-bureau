@@ -407,6 +407,7 @@ export interface Activity {
   tags: string[]
   tabImg: string
   tabImgColor: string
+  rewardId: string
   sortId: number
 }
 

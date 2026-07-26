@@ -19,6 +19,7 @@ function makeActivity(overrides: Partial<Activity>): Activity {
     tags: [],
     tabImg: '',
     tabImgColor: '',
+    rewardId: '',
     sortId: 1,
     ...overrides,
   }

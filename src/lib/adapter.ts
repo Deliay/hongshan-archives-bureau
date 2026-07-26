@@ -269,6 +269,7 @@ export function adaptActivity(
     tags: (raw?.tagIds ?? []).map((tagId: string) => tagNameMap?.[tagId] ?? tagId),
     tabImg: tabImg ? `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/activity/${tabImg}.png` : '',
     tabImgColor: raw?.tabImgColor ?? '',
+    rewardId: raw?.rewardId ?? '',
     sortId: raw?.sortId ?? 0,
   }
 }

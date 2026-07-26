@@ -5,6 +5,16 @@ import type { Activity } from '../../lib/types'
 import ActivityTooltip from './ActivityTooltip'
 import { formatActivityTime } from './timeFormat'
 
+vi.mock('../../lib/cache', () => ({
+  getCachedData: (_table: string, fetcher: () => Promise<unknown>) => fetcher(),
+}))
+vi.mock('../../lib/api', () => ({
+  fetchTableAll: () => Promise.resolve({ reward_x: { itemBundles: [{ id: 'item_x', count: 5 }] } }),
+}))
+vi.mock('../Items/RewardPanel', () => ({
+  default: ({ rewardIds }: { rewardIds: string[] }) => <div data-testid="reward-panel">{rewardIds.join(',')}</div>,
+}))
+
 const DAY = 86400000
 
 function makeActivity(overrides: Partial<Activity>): Activity {
@@ -20,6 +30,7 @@ function makeActivity(overrides: Partial<Activity>): Activity {
     tags: ['限时签到'],
     tabImg: 'https://example.com/tab.png',
     tabImgColor: '',
+    rewardId: '',
     sortId: 1,
     ...overrides,
   }
@@ -78,6 +89,17 @@ describe('ActivityTooltip', () => {
     renderTooltip(a)
     expect(screen.queryByText('活动描述文本')).toBeNull()
     expect(screen.queryByText('活动标签')).toBeNull()
+  })
+
+  it('renders reward panel when activity has rewardId', async () => {
+    renderTooltip(makeActivity({ id: 'a8', rewardId: 'reward_x' }))
+    expect(await screen.findByTestId('reward-panel')).toBeTruthy()
+    expect(screen.getByTestId('reward-panel').textContent).toBe('reward_x')
+  })
+
+  it('does not render reward panel without rewardId', () => {
+    renderTooltip(makeActivity({ id: 'a9', rewardId: '' }))
+    expect(screen.queryByTestId('reward-panel')).toBeNull()
   })
 
   it('calls onClose when close button is clicked', () => {
