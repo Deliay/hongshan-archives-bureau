@@ -71,9 +71,9 @@ describe('getActivityStatus', () => {
     expect(getActivityStatus(ranges, now)).toBe('ongoing')
   })
 
-  it('should return ongoing for permanent range already open', () => {
+  it('should return permanent for permanent range already open', () => {
     const ranges: ActivityTimeRange[] = [{ openTime: now - 1000, closeTime: null }]
-    expect(getActivityStatus(ranges, now)).toBe('ongoing')
+    expect(getActivityStatus(ranges, now)).toBe('permanent')
   })
 
   it('should return ongoing when openTime equals now', () => {
@@ -91,12 +91,12 @@ describe('getActivityStatus', () => {
     expect(getActivityStatus(ranges, now)).toBe('permanent')
   })
 
-  it('should prefer ongoing over permanent', () => {
+  it('should prefer permanent over ongoing', () => {
     const ranges: ActivityTimeRange[] = [
       { openTime: now + 1000, closeTime: null },
       { openTime: now - 1000, closeTime: now + 500 },
     ]
-    expect(getActivityStatus(ranges, now)).toBe('ongoing')
+    expect(getActivityStatus(ranges, now)).toBe('permanent')
   })
 
   it('should return upcoming when all ranges open in the future', () => {

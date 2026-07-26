@@ -229,8 +229,8 @@ export function getActivityGroup(type: number): ActivityGroup {
 
 export function getActivityStatus(ranges: ActivityTimeRange[], now: number): ActivityStatus | 'unknown' {
   if (ranges.length === 0) return 'unknown'
-  if (ranges.some((r) => r.openTime <= now && (r.closeTime === null || now < r.closeTime))) return 'ongoing'
   if (ranges.some((r) => r.closeTime === null)) return 'permanent'
+  if (ranges.some((r) => r.openTime <= now && r.closeTime !== null && now < r.closeTime)) return 'ongoing'
   if (ranges.some((r) => r.openTime > now)) return 'upcoming'
   return 'expired'
 }

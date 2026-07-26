@@ -99,9 +99,9 @@ type: Permanent
 
 对每个活动取去重后的时段列表，按优先级判定（当前时间 `now`）：
 
-1. **进行中 `ongoing`**：任一时段 `openTime <= now < closeTime`，或时段 `closeTime` 为空且 `openTime <= now`
-2. **常驻 `permanent`**：无「进行中」时段，但存在 `closeTime` 为空的时段（尚未开启的常驻）
-3. **未开始 `upcoming`**：所有时段 `openTime > now`
+1. **常驻 `permanent`**：任一时段 `closeTime` 为空（无结束时间即为常驻，不论是否已开启）
+2. **进行中 `ongoing`**：任一时段 `openTime <= now < closeTime`
+3. **未开始 `upcoming`**：存在 `openTime > now` 的时段
 4. **已结束 `expired`**：所有时段 `closeTime <= now`
 5. 无时间信息：`unknown`，不进入甘特图
 
