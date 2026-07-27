@@ -76,6 +76,12 @@ function MachineNode({ data }: { data: ChainNode }) {
           {t('factory.demand')}: {data.demandPm.toFixed(1)}/min
         </div>
       )}
+      {data.priming && (
+        <div className="flex items-center gap-1 mt-1">
+          <span className="text-[9px] text-amber-400">{t('factory.priming')}</span>
+          <ItemTile itemId={data.priming.itemId} amount={data.priming.count} size="sm" showTips={true} />
+        </div>
+      )}
     </div>
   )
 }
@@ -122,7 +128,8 @@ function nodeSize(n: ChainNode): { width: number; height: number } {
   if (n.kind !== 'machine') return { width: 80, height: 80 }
   const tiles = (n.recipe?.inputs.length ?? 0) + (n.recipe?.outputs.length ?? 0)
   const width = Math.max(120, tiles * 52 + 40)
-  return { width, height: 180 }
+  // 预填充标识额外占一行（文本 + 物品 tile）
+  return { width, height: n.priming ? 236 : 180 }
 }
 
 function layoutGraph(graph: ChainGraphData, t: (key: string, vars?: Record<string, string | number>) => string): { nodes: Node[]; edges: Edge[] } {

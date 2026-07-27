@@ -980,3 +980,175 @@ describe('液体泵源无限采集', () => {
     expect(source?.supplyLimited).toBe(false)
   })
 })
+
+
+describe('区域资源上限与多路线分配', () => {
+  // 息壤链路：气泵采集息壤气 → 固气转化机 → 息壤粉末；或 天有洪炉 碳块+水 → 粉末
+  const transmuterSolid: FactoryRecipe = {
+    id: 'transmuter_solid', machineId: 'transmuter_2',
+    ingredients: [{ itemId: 'item_gas_xiranite', count: 1 }],
+    outcomes: [{ itemId: 'item_xiranite_powder', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const oven: FactoryRecipe = {
+    id: 'oven_powder', machineId: 'xiranite_oven_1',
+    ingredients: [{ itemId: 'item_carbon_mtl', count: 1 }, { itemId: 'item_liquid_water', count: 1 }],
+    outcomes: [{ itemId: 'item_xiranite_powder', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const gasFromPowder: FactoryRecipe = {
+    id: 'gas_from_powder', machineId: 'transmuter_2',
+    ingredients: [{ itemId: 'item_xiranite_powder', count: 1 }],
+    outcomes: [{ itemId: 'item_gas_xiranite', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const xiRecipes = [transmuterSolid, oven, gasFromPowder]
+  const xiIndex: FactoryItemIndex = {
+    asIngredient: {
+      item_gas_xiranite: [transmuterSolid],
+      item_carbon_mtl: [oven],
+      item_liquid_water: [oven],
+      item_xiranite_powder: [gasFromPowder],
+    },
+    asOutcome: {
+      item_xiranite_powder: [transmuterSolid, oven],
+      item_gas_xiranite: [gasFromPowder],
+    },
+  }
+  const xiSources: FactorySource[] = [
+    { machineId: 'gas_pump_1', itemId: 'item_gas_xiranite', produceRate: 1, msPerRound: 3000 }, // 机台 20/min
+    { machineId: 'pump_1', itemId: 'item_liquid_water', produceRate: 1, msPerRound: 1000, uncapped: true },
+  ]
+  const xiDefaultCrafts = { item_xiranite_powder: 'oven_powder' }
+
+  it('武陵地区：气泵采集用满区域上限 100/min，剩余 50/min 由洪炉生产', () => {
+    const graph = buildChainGraph(
+      [{ itemId: 'item_xiranite_powder', rate: 150 }],
+      xiRecipes, xiIndex, xiSources, xiDefaultCrafts,
+      undefined, undefined, undefined, undefined, undefined,
+      { item_gas_xiranite: 100 },
+    )
+    const transmuter = graph.nodes.find(n => n.machineId === 'transmuter_2' && n.itemId === 'item_xiranite_powder')
+    const ovenNode = graph.nodes.find(n => n.machineId === 'xiranite_oven_1')
+    expect(transmuter?.actualPm).toBe(100)
+    expect(ovenNode?.actualPm).toBe(50)
+    const gasSource = graph.nodes.find(n => n.kind === 'source' && n.itemId === 'item_gas_xiranite')
+    expect(gasSource?.actualPm).toBe(100)
+    expect(gasSource?.supplyLimited).toBe(false)
+  })
+
+  it('四号谷地：息壤气不可采集（上限 0），全部走洪炉且不展示气泵源节点', () => {
+    const graph = buildChainGraph(
+      [{ itemId: 'item_xiranite_powder', rate: 150 }],
+      xiRecipes, xiIndex, xiSources, xiDefaultCrafts,
+      undefined, undefined, undefined, undefined, undefined,
+      {}, // 四号谷地未列出息壤气
+    )
+    expect(graph.nodes.some(n => n.machineId === 'transmuter_2')).toBe(false)
+    const ovenNode = graph.nodes.find(n => n.machineId === 'xiranite_oven_1')
+    expect(ovenNode?.actualPm).toBe(150)
+    expect(graph.nodes.some(n => n.kind === 'source' && n.itemId === 'item_gas_xiranite')).toBe(false)
+  })
+
+  it('机台上限（无区域）：受限路线用满后剩余需求落到不受限路线', () => {
+    const graph = buildChainGraph(
+      [{ itemId: 'item_xiranite_powder', rate: 150 }],
+      xiRecipes, xiIndex, xiSources, xiDefaultCrafts,
+    )
+    const transmuter = graph.nodes.find(n => n.machineId === 'transmuter_2' && n.itemId === 'item_xiranite_powder')
+    const ovenNode = graph.nodes.find(n => n.machineId === 'xiranite_oven_1')
+    expect(transmuter?.actualPm).toBe(20) // 气泵机台 20/min
+    expect(ovenNode?.actualPm).toBe(130)
+  })
+
+  it('采集源达上限后超额需求转配方路线', () => {
+    // 目标直接是息壤气：泵采 20/min + 超额 80/min 由粉末转化（粉末走洪炉，不构成回路）
+    const graph = buildChainGraph(
+      [{ itemId: 'item_gas_xiranite', rate: 100 }],
+      xiRecipes, xiIndex, xiSources, xiDefaultCrafts,
+    )
+    const gasSource = graph.nodes.find(n => n.kind === 'source' && n.itemId === 'item_gas_xiranite')
+    expect(gasSource?.actualPm).toBe(20)
+    const gasMachine = graph.nodes.find(n => n.machineId === 'transmuter_2' && n.itemId === 'item_gas_xiranite')
+    expect(gasMachine?.actualPm).toBe(80)
+    const ovenNode = graph.nodes.find(n => n.machineId === 'xiranite_oven_1')
+    expect(ovenNode?.actualPm).toBe(80)
+    expect(graph.edges.every(e => e.cycleType !== 'closed')).toBe(true)
+  })
+
+  it('区域内未列出资源不可采集且无配方：源节点零供给并标记供应受限', () => {
+    const ingotRecipe: FactoryRecipe = {
+      id: 'iron_ingot', machineId: 'furnace',
+      ingredients: [{ itemId: 'item_iron_ore', count: 2 }],
+      outcomes: [{ itemId: 'item_iron_ingot', count: 1 }],
+      totalProgress: 12000, sortId: 0,
+    }
+    const idx: FactoryItemIndex = {
+      asIngredient: { item_iron_ore: [ingotRecipe] },
+      asOutcome: { item_iron_ingot: [ingotRecipe] },
+    }
+    const srcs: FactorySource[] = [
+      { machineId: 'miner_1', itemId: 'item_iron_ore', produceRate: 1, msPerRound: 1000 },
+    ]
+    const graph = buildChainGraph(
+      [{ itemId: 'item_iron_ingot', rate: 20 }],
+      [ingotRecipe], idx, srcs, {},
+      undefined, undefined, undefined, undefined, undefined,
+      {}, // 区域未列出蓝铁矿
+    )
+    const source = graph.nodes.find(n => n.kind === 'source')
+    expect(source?.demandPm).toBe(40)
+    expect(source?.actualPm).toBe(0)
+    expect(source?.supplyLimited).toBe(true)
+    const machine = graph.nodes.find(n => n.kind === 'machine')
+    expect(machine?.supplyLimited).toBe(true)
+  })
+
+  it('多目标共享同一受限采集源：全局余量先到先得', () => {
+    const graph = buildChainGraph(
+      [{ itemId: 'item_xiranite_powder', rate: 120 }, { itemId: 'item_gas_xiranite', rate: 50 }],
+      xiRecipes, xiIndex, xiSources, xiDefaultCrafts,
+      undefined, undefined, undefined, undefined, undefined,
+      { item_gas_xiranite: 100 },
+    )
+    // 粉末先用满 100 泵采 + 20 洪炉；随后息壤气目标泵采余量为 0，50 全部转粉末路线
+    const gasSource = graph.nodes.find(n => n.kind === 'source' && n.itemId === 'item_gas_xiranite')
+    expect(gasSource?.actualPm).toBe(100)
+    const gasMachine = graph.nodes.find(n => n.machineId === 'transmuter_2' && n.itemId === 'item_gas_xiranite')
+    expect(gasMachine?.actualPm).toBe(50)
+  })
+})
+
+describe('有效循环预填充标识', () => {
+  const plantRecipe: FactoryRecipe = {
+    id: 'plant', machineId: 'planter',
+    ingredients: [{ itemId: 'seed', count: 1 }],
+    outcomes: [{ itemId: 'crop', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const seedRecipe: FactoryRecipe = {
+    id: 'seed', machineId: 'seeder',
+    ingredients: [{ itemId: 'crop', count: 1 }],
+    outcomes: [{ itemId: 'seed', count: 2 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const plantIndex: FactoryItemIndex = {
+    asIngredient: { seed: [plantRecipe], crop: [seedRecipe] },
+    asOutcome: { crop: [plantRecipe], seed: [seedRecipe] },
+  }
+
+  it('作物目标：采种机节点标记需预填充作物 ×1', () => {
+    const graph = buildChainGraph([{ itemId: 'crop', rate: 10 }], [plantRecipe, seedRecipe], plantIndex, [], {})
+    const seeder = graph.nodes.find(n => n.machineId === 'seeder')
+    expect(seeder?.priming).toEqual({ itemId: 'crop', count: 1 })
+    // 生产方（种植机）不标记
+    const planter = graph.nodes.find(n => n.machineId === 'planter')
+    expect(planter?.priming).toBeUndefined()
+  })
+
+  it('种子目标：种植机节点标记需预填充种子 ×1', () => {
+    const graph = buildChainGraph([{ itemId: 'seed', rate: 10 }], [plantRecipe, seedRecipe], plantIndex, [], {})
+    const planter = graph.nodes.find(n => n.machineId === 'planter')
+    expect(planter?.priming).toEqual({ itemId: 'seed', count: 1 })
+  })
+})

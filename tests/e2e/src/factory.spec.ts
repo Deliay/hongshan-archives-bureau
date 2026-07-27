@@ -380,6 +380,51 @@ test.describe('工厂系统 (Factory System)', () => {
       expect(graphText).toContain('种植机')
       expect(graphText).toContain('采种机')
       expect(graphText).toContain('20.0/min')
+      // 有效循环需预填充：采种机节点标记需预填充作物
+      expect(graphText).toContain('需预填充')
+    })
+
+    test('息壤粉末链路综合气泵采集与洪炉生产（武陵）', async ({ page }) => {
+      // 供给需求综合考虑：气泵采集息壤气用满区域上限 100/min（经固气转化机），
+      // 剩余 50/min 由天有洪炉（碳块+水）生产
+      await page.goto('/archive/factory/chains?targets=item_xiranite_powder:150', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+      await page.waitForTimeout(3000)
+
+      const graphText = await page.locator('.react-flow').textContent()
+      expect(graphText).toContain('固气转化机')
+      expect(graphText).toContain('天有洪炉')
+      expect(graphText).toContain('气体收集泵')
+      expect(graphText).toContain('100.0/min')
+      expect(graphText).toContain('50.0/min')
+    })
+
+    test('切换四号谷地后息壤全部由洪炉生产', async ({ page }) => {
+      // 四号谷地无息壤气矿点（区域未列出 = 不可采集），需求全部改走洪炉路线
+      await page.goto('/archive/factory/chains?targets=item_xiranite_powder:150', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+      await page.waitForTimeout(2000)
+
+      await page.getByRole('button', { name: '四号谷地' }).click()
+      await expect(page).toHaveURL(/region=valley4/)
+      await page.waitForTimeout(2000)
+
+      const graphText = await page.locator('.react-flow').textContent()
+      expect(graphText).toContain('天有洪炉')
+      expect(graphText).not.toContain('气体收集泵')
+      expect(graphText).not.toContain('固气转化机')
     })
 
     test('传送带/管道边显示数量', async ({ page }) => {

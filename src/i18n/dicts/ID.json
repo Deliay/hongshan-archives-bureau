@@ -393,6 +393,10 @@
     "beltCount": "Konveyor ×{{count}} ({{rate}}/mnt)",
     "pipeCount": "Pipa ×{{count}} ({{rate}}/mnt)",
     "closedLoop": "↻ Tertutup",
-    "productiveLoop": "↻ Hasil bersih ×{{ratio}}"
+    "productiveLoop": "↻ Hasil bersih ×{{ratio}}",
+    "region": "Wilayah",
+    "regionWuling": "Wilayah Wuling",
+    "regionValley4": "Lembah IV",
+    "priming": "Perlu isian awal"
   }
 }

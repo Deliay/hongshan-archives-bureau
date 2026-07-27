@@ -57,6 +57,8 @@ export interface ChainNode {
   supplyLimited?: boolean
   isClosedLoop?: boolean
   truncated?: boolean
+  /** 有效循环的预填充提示：循环消费方启动前需预填的物品与数量（如采种机需预填作物） */
+  priming?: { itemId: string; count: number }
 }
 
 export interface ChainEdge {

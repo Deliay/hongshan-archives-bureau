@@ -393,6 +393,10 @@
     "beltCount": "Nastro ×{{count}} ({{rate}}/min)",
     "pipeCount": "Tubatura ×{{count}} ({{rate}}/min)",
     "closedLoop": "↻ Chiuso",
-    "productiveLoop": "↻ Resa netta ×{{ratio}}"
+    "productiveLoop": "↻ Resa netta ×{{ratio}}",
+    "region": "Regione",
+    "regionWuling": "Regione di Wuling",
+    "regionValley4": "Valle IV",
+    "priming": "Pre-caricamento richiesto"
   }
 }

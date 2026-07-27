@@ -393,6 +393,10 @@
     "beltCount": "벨트×{{count}} ({{rate}}/분)",
     "pipeCount": "파이프×{{count}} ({{rate}}/분)",
     "closedLoop": "↻ 폐쇄",
-    "productiveLoop": "↻ 순산출 ×{{ratio}}"
+    "productiveLoop": "↻ 순산출 ×{{ratio}}",
+    "region": "지역",
+    "regionWuling": "무릉 지구",
+    "regionValley4": "제4계곡",
+    "priming": "사전 투입 필요"
   }
 }

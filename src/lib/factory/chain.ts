@@ -71,6 +71,7 @@ export function buildChainGraph(
   liquids?: Set<string>,
   beltTable?: Record<string, any>,
   pipeTable?: Record<string, any>,
+  regionCaps?: Record<string, number>,
 ): ChainGraph {
   const recipeById = new Map(recipes.map(r => [r.id, r]))
   // 同物品多台采集机器时保留首个（基础机型）用于源节点展示
@@ -80,9 +81,25 @@ export function buildChainGraph(
   }
 
   const supplyCapByItem = new Map<string, number>()
+  const uncappedSourceItems = new Set<string>()
   for (const s of sources) {
     const cap = s.uncapped ? Number.POSITIVE_INFINITY : sourcePerMinute(s.produceRate, s.msPerRound)
+    if (s.uncapped) uncappedSourceItems.add(s.itemId)
     supplyCapByItem.set(s.itemId, (supplyCapByItem.get(s.itemId) ?? 0) + cap)
+  }
+  // 区域模式：列出资源应用区域上限，未列出资源不可采集（上限 0）；液体泵采不受区域限制
+  if (regionCaps) {
+    for (const itemId of Array.from(supplyCapByItem.keys())) {
+      if (uncappedSourceItems.has(itemId)) continue
+      supplyCapByItem.set(itemId, regionCaps[itemId] ?? 0)
+    }
+  }
+  /** 采集源全局消耗（多消费方共享区域/机台上限，先到先得） */
+  const consumedByItem = new Map<string, number>()
+  function remainingCap(itemId: string): number {
+    const cap = supplyCapByItem.get(itemId)
+    if (cap === undefined) return 0
+    return Math.max(0, cap - (consumedByItem.get(itemId) ?? 0))
   }
 
   const beltThroughput = (beltTable ? maxThroughput(beltTable, 'beltData') : 0) || DEFAULT_BELT_THROUGHPUT
@@ -105,8 +122,8 @@ export function buildChainGraph(
   const productiveLoops = new Map<string, ProductiveLoop>()
   let settling = false
 
-  /** 规划阶段为物品选定的配方（消除封闭回路后的回溯结果） */
-  const assignment = new Map<string, string>()
+  /** 规划阶段为物品选定的有序可行配方路线（消除封闭回路后的回溯结果，可多路线） */
+  const assignment = new Map<string, string[]>()
 
   /** 候选配方有序列表：用户指定 > Wiki 默认 > 配方表键序；用户指定为强制项不参与回退 */
   function candidateRecipes(itemId: string): FactoryRecipe[] {
@@ -137,7 +154,7 @@ export function buildChainGraph(
     for (let i = 0; i < cycleItems.length; i++) {
       const cycleItem = cycleItems[i]
       const nextItem = i + 1 < cycleItems.length ? cycleItems[i + 1] : itemId
-      const recipe = recipeById.get(assignment.get(cycleItem) ?? '')
+      const recipe = recipeById.get(assignment.get(cycleItem)?.[0] ?? '')
       if (!recipe) continue
       const output = recipe.outcomes.find(o => o.itemId === cycleItem)
       const input = recipe.ingredients.find(g => g.itemId === nextItem)
@@ -149,12 +166,13 @@ export function buildChainGraph(
   const PLAN_DEPTH_LIMIT = 12
 
   /**
-   * 配方规划（带回溯的 DFS）：为每个物品选定配方，保证展开后不出现净产出比 ≤ 1 的
-   * 封闭回路（如灌装机↔拆解机互喂的零产出自环）；有效循环（如采种/种植增产）允许。
-   * 无可行配方时返回 false，构建阶段回退旧解析并保留封闭回路标记。
+   * 配方规划（带回溯的 DFS）：为每个物品收集全部可行配方路线，保证按序展开后不出现
+   * 净产出比 ≤ 1 的封闭回路（如灌装机↔拆解机互喂的零产出自环）；有效循环（如采种/
+   * 种植增产）允许。采集源物品同样收集路线（供「源达上限后超额转配方」使用），但源
+   * 优先且不参与循环判定。无可行路线时：非源物品返回 false，构建阶段回退旧解析并保
+   * 留封闭回路标记。
    */
   function planItem(itemId: string, path: string[]): boolean {
-    if (supplyCapByItem.has(itemId)) return true // R4 外部供给优先，无需配方
     if (path.length > PLAN_DEPTH_LIMIT) return true // 深度外交由 R6 截断处理
     if (assignment.has(itemId)) {
       if (!path.includes(itemId)) return true // 已规划且不在当前路径
@@ -162,8 +180,11 @@ export function buildChainGraph(
     }
     const candidates = candidateRecipes(itemId)
     if (candidates.length === 0) return true // 无配方叶子
+    const sourced = supplyCapByItem.has(itemId)
+    const routes: string[] = []
     for (const recipe of candidates) {
-      assignment.set(itemId, recipe.id)
+      // 让循环检查看到「已收集路线 + 当前候选」的组合
+      assignment.set(itemId, [...routes, recipe.id])
       path.push(itemId)
       let ok = true
       for (const ing of recipe.ingredients) {
@@ -173,10 +194,15 @@ export function buildChainGraph(
         }
       }
       path.pop()
-      if (ok) return true
+      if (ok) routes.push(recipe.id)
+    }
+    if (routes.length > 0) {
+      assignment.set(itemId, routes)
+    } else {
       assignment.delete(itemId)
     }
-    return false
+    // 采集源物品无路线也可接受（纯源供给）；非源物品无路线则规划失败
+    return sourced || routes.length > 0
   }
 
   for (const target of targets) {
@@ -184,8 +210,8 @@ export function buildChainGraph(
   }
 
   function resolveRecipe(itemId: string): FactoryRecipe | null {
-    const assignedId = assignment.get(itemId)
-    if (assignedId && recipeById.has(assignedId)) return recipeById.get(assignedId)!
+    const routes = assignment.get(itemId)
+    if (routes?.length && recipeById.has(routes[0])) return recipeById.get(routes[0])!
     const overrideId = recipeOverride?.[itemId]
     if (overrideId && recipeById.has(overrideId)) return recipeById.get(overrideId)!
     const defaultId = defaultCrafts[itemId]
@@ -195,6 +221,43 @@ export function buildChainGraph(
       return outcomeRecipes[0]
     }
     return null
+  }
+
+  /** 物品的可行配方路线（规划结果）；规划失败时回退单路线旧解析 */
+  function assignedRoutes(itemId: string): FactoryRecipe[] {
+    const routes = assignment.get(itemId)
+    if (routes?.length) {
+      return routes.map(id => recipeById.get(id)).filter((r): r is FactoryRecipe => !!r)
+    }
+    const r = resolveRecipe(itemId)
+    return r ? [r] : []
+  }
+
+  /** 路线天花板：直接材料中有采集上限的物品决定该路线最大可用速率（共享余量，先到先得） */
+  function routeCeiling(recipe: FactoryRecipe, itemId: string): number {
+    const outCount = recipe.outcomes.find(o => o.itemId === itemId)?.count ?? 1
+    let ceiling = Number.POSITIVE_INFINITY
+    for (const ing of recipe.ingredients) {
+      if (!supplyCapByItem.has(ing.itemId)) continue
+      const cap = remainingCap(ing.itemId)
+      if (!Number.isFinite(cap)) continue
+      ceiling = Math.min(ceiling, ing.count > 0 ? (cap * outCount) / ing.count : 0)
+    }
+    return ceiling
+  }
+
+  /** 路线排序：受采集上限约束的路线优先（先用满天然供给），天花板低者更先；不受限路线保持原序 */
+  function orderRoutesByCeiling(routes: FactoryRecipe[], itemId: string): FactoryRecipe[] {
+    return routes
+      .map((recipe, idx) => ({ recipe, idx, ceiling: routeCeiling(recipe, itemId) }))
+      .sort((a, b) => {
+        const fa = Number.isFinite(a.ceiling)
+        const fb = Number.isFinite(b.ceiling)
+        if (fa !== fb) return fa ? -1 : 1
+        if (fa && fb) return a.ceiling - b.ceiling
+        return a.idx - b.idx
+      })
+      .map(x => x.recipe)
   }
 
   function isLiquid(itemId: string): boolean {
@@ -260,69 +323,120 @@ export function buildChainGraph(
     return { ratio: calcCycleNetRatio(qtyStages), stages }
   }
 
+  /** 循环检测处理（R0-R5）：净产出比 > 1 为有效循环，≤ 1 为封闭回路 */
+  function handleCycle(itemId: string, demandPm: number, path: Set<string>, parentKey: string, recipe: FactoryRecipe): void {
+    if (settling) return // 结算阶段的补展开遇到循环直接跳过，由主结算统一处理
+    const machineKey = `machine:${recipe.machineId}:${recipe.id}`
+    const { ratio, stages } = analyzeCycle(itemId, path, machineKey)
+    if (ratio <= 1) {
+      pushEdge(parentKey, machineKey, itemId, demandPm, { type: 'closed', ratio })
+      const machineNode = allNodes.get(machineKey)
+      if (machineNode) machineNode.isClosedLoop = true
+    } else if (stages.length > 0) {
+      // 有效循环（如采种 1→2 配合种植增产）：记录，构建结束后统一结算回流量
+      productiveLoops.set(`${parentKey}→${machineKey}:${itemId}`, {
+        itemId,
+        ratio,
+        stages,
+        consumerKey: parentKey,
+        producerKey: machineKey,
+      })
+    } else {
+      pushEdge(parentKey, machineKey, itemId, demandPm, { type: 'productive', ratio })
+    }
+  }
+
   function expand(
     itemId: string,
     demandPm: number,
     path: Set<string>,
     parentKey: string,
   ): number {
-    // R4 外部供给优先：有采集源的物品由源节点直接供给，不再展开机器配方
+    // R4 外部供给优先：采集源按全局余量分配；达区域/机台上限后，超额部分改走配方路线
     const supplyCap = supplyCapByItem.get(itemId)
     if (supplyCap !== undefined) {
-      const source = sourceByItem.get(itemId)
-      const sourceKey = `source:${source?.machineId}:${itemId}`
-      const actualPm = Math.min(demandPm, supplyCap)
+      const allocated = Math.min(demandPm, remainingCap(itemId))
+      consumedByItem.set(itemId, (consumedByItem.get(itemId) ?? 0) + allocated)
+      const excess = demandPm - allocated
+      const routes = assignedRoutes(itemId)
 
-      const existing = allNodes.get(sourceKey)
-      if (existing) {
-        existing.demandPm += demandPm
-        existing.actualPm = Math.min(existing.demandPm, supplyCap)
-        existing.supplyLimited = existing.demandPm > supplyCap
-      } else {
-        allNodes.set(sourceKey, {
-          key: sourceKey,
-          kind: 'source',
-          itemId,
-          machineId: source?.machineId,
-          machineName: machines?.[source?.machineId ?? '']?.name,
-          machineIcon: machines?.[source?.machineId ?? '']?.iconId,
-          demandPm,
-          actualPm,
-          supplyLimited: demandPm > supplyCap,
-        })
+      // 分配为 0 且存在配方路线时源节点不展示（需求全部走配方）；无路线时保留节点呈现缺口
+      if (allocated > 0 || routes.length === 0) {
+        const source = sourceByItem.get(itemId)
+        const sourceKey = `source:${source?.machineId}:${itemId}`
+        const existing = allNodes.get(sourceKey)
+        if (existing) {
+          existing.demandPm += demandPm
+          existing.actualPm += allocated
+          existing.supplyLimited = existing.demandPm > existing.actualPm
+        } else {
+          allNodes.set(sourceKey, {
+            key: sourceKey,
+            kind: 'source',
+            itemId,
+            machineId: source?.machineId,
+            machineName: machines?.[source?.machineId ?? '']?.name,
+            machineIcon: machines?.[source?.machineId ?? '']?.iconId,
+            demandPm,
+            actualPm: allocated,
+            supplyLimited: excess > 0,
+          })
+        }
+        if (allocated > 0) pushEdge(sourceKey, parentKey, itemId, allocated)
       }
 
-      pushEdge(sourceKey, parentKey, itemId, actualPm)
-      return actualPm
+      if (excess <= 0 || routes.length === 0) {
+        if (excess > 0 && allocated === 0) {
+          // 区域不可采集且无配方路线：标记消费方机器供应受限
+          const parentNode = allNodes.get(parentKey)
+          if (parentNode?.kind === 'machine') parentNode.supplyLimited = true
+        }
+        return allocated
+      }
+      if (path.has(itemId)) {
+        // 源已耗尽且处于循环路径：超额部分按循环规则处理
+        const recipe = resolveRecipe(itemId)
+        if (recipe) handleCycle(itemId, excess, path, parentKey, recipe)
+        return allocated
+      }
+      expandRoutes(itemId, excess, path, parentKey, routes)
+      return allocated
     }
 
     const recipe = resolveRecipe(itemId)
     if (!recipe) return 0
 
-    // 循环检测（R0-R5）：净产出比 > 1 为有效循环，≤ 1 为封闭回路
+    // 循环检测（R0-R5）
     if (path.has(itemId)) {
-      if (settling) return 0 // 结算阶段的补展开遇到循环直接跳过，由主结算统一处理
-      const machineKey = `machine:${recipe.machineId}:${recipe.id}`
-      const { ratio, stages } = analyzeCycle(itemId, path, machineKey)
-      if (ratio <= 1) {
-        pushEdge(parentKey, machineKey, itemId, demandPm, { type: 'closed', ratio })
-        const machineNode = allNodes.get(machineKey)
-        if (machineNode) machineNode.isClosedLoop = true
-      } else if (stages.length > 0) {
-        // 有效循环（如采种 1→2 配合种植增产）：记录，构建结束后统一结算回流量
-        productiveLoops.set(`${parentKey}→${machineKey}:${itemId}`, {
-          itemId,
-          ratio,
-          stages,
-          consumerKey: parentKey,
-          producerKey: machineKey,
-        })
-      } else {
-        pushEdge(parentKey, machineKey, itemId, demandPm, { type: 'productive', ratio })
-      }
+      handleCycle(itemId, demandPm, path, parentKey, recipe)
       return 0
     }
 
+    return expandRoutes(itemId, demandPm, path, parentKey, assignedRoutes(itemId))
+  }
+
+  /** 多路线分配：受采集上限约束的路线优先用满至天花板，剩余需求依次落到后续路线 */
+  function expandRoutes(itemId: string, demandPm: number, path: Set<string>, parentKey: string, routes: FactoryRecipe[]): number {
+    const overrideForced = recipeOverride?.[itemId] !== undefined
+    const ordered = overrideForced ? routes : orderRoutesByCeiling(routes, itemId)
+    let remaining = demandPm
+    let supplied = 0
+    for (const recipe of ordered) {
+      if (remaining <= 0) break
+      const ceiling = overrideForced ? Number.POSITIVE_INFINITY : routeCeiling(recipe, itemId)
+      const take = Math.min(remaining, ceiling)
+      if (take <= 0) continue
+      supplied += expandRoute(recipe, itemId, take, path, parentKey)
+      remaining -= take
+    }
+    if (remaining > 0 && ordered.length > 0) {
+      // 所有路线均达采集上限仍有缺口：压给末条路线，上游采集源将以供应受限呈现
+      supplied += expandRoute(ordered[ordered.length - 1], itemId, remaining, path, parentKey)
+    }
+    return supplied
+  }
+
+  function expandRoute(recipe: FactoryRecipe, itemId: string, demandPm: number, path: Set<string>, parentKey: string): number {
     const outcome = recipe.outcomes.find(o => o.itemId === itemId)
     const outcomeCount = outcome?.count ?? 1
     const theoryPm = perMinute(outcomeCount, recipe.totalProgress)
@@ -449,6 +563,12 @@ export function buildChainGraph(
     const feedback = gross[0] - externals[0]
     if (feedback > 0) {
       pushEdge(loop.consumerKey, loop.producerKey, loop.itemId, feedback, { type: 'productive', ratio: r })
+    }
+    // 预填充标识：循环消费方启动前需预填循环基准物品（如采种机需预填作物）
+    const lastStage = loop.stages[loop.stages.length - 1]
+    const consumerNode = lastStage ? allNodes.get(loop.consumerKey) : undefined
+    if (consumerNode && lastStage) {
+      consumerNode.priming = { itemId: loop.itemId, count: lastStage.nextInCount }
     }
   }
 

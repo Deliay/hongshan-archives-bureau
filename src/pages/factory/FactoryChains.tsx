@@ -7,6 +7,7 @@ import ItemTile from '../../components/Items/ItemTile'
 import ChainGraph from '../../components/Factory/ChainGraph'
 import FactoryItemPickerDialog from '../../components/Factory/FactoryItemPickerDialog'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
+import { FACTORY_REGIONS, DEFAULT_REGION_ID, getFactoryRegion } from '../../lib/factory/regions'
 import type { ChainTarget } from '../../lib/factory/types'
 
 export default function FactoryChains() {
@@ -26,8 +27,11 @@ export default function FactoryChains() {
     return Array.from(map, ([itemId, rate]) => ({ itemId, rate }))
   })
 
+  const regionParam = searchParams.get('region')
+  const [regionId, setRegionId] = useState(() => getFactoryRegion(regionParam)?.id ?? DEFAULT_REGION_ID)
+
   const { data: factoryData, loading, error } = useFactoryData()
-  const { data: graph } = useCraftingChain(targets)
+  const { data: graph } = useCraftingChain(targets, regionId)
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const defaultRateOf = useCallback((itemId: string): number => {
@@ -63,14 +67,23 @@ export default function FactoryChains() {
     })
   }, [baseIds, itemMeta])
 
+  const updateSearch = useCallback((newTargets: ChainTarget[], nextRegion: string) => {
+    const params: Record<string, string> = { region: nextRegion }
+    if (newTargets.length > 0) {
+      params.targets = newTargets.map(t => `${t.itemId}:${t.rate}`).join(',')
+    }
+    setSearchParams(params)
+  }, [setSearchParams])
+
   const updateTargets = useCallback((newTargets: ChainTarget[]) => {
     setTargets(newTargets)
-    if (newTargets.length === 0) {
-      setSearchParams({})
-    } else {
-      setSearchParams({ targets: newTargets.map(t => `${t.itemId}:${t.rate}`).join(',') })
-    }
-  }, [setSearchParams])
+    updateSearch(newTargets, regionId)
+  }, [updateSearch, regionId])
+
+  function updateRegion(nextRegion: string) {
+    setRegionId(nextRegion)
+    updateSearch(targets, nextRegion)
+  }
 
   function addTarget(itemId: string) {
     if (targets.some(t => t.itemId === itemId)) return
@@ -144,15 +157,34 @@ export default function FactoryChains() {
         </button>
       </div>
 
-      {targets.length > 0 && (
-        <button
-          type="button"
-          onClick={clearTargets}
-          className="text-xs text-archive-lead hover:text-archive-ivory self-start"
-        >
-          {t('factory.clearAll')}
-        </button>
-      )}
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-archive-lead">{t('factory.region')}</span>
+        <div className="flex gap-1">
+          {FACTORY_REGIONS.map(region => (
+            <button
+              key={region.id}
+              type="button"
+              onClick={() => updateRegion(region.id)}
+              className={`text-xs px-2 py-1 rounded border transition-colors ${
+                regionId === region.id
+                  ? 'border-archive-gold bg-archive-gold/10 text-archive-gold'
+                  : 'border-archive-border text-archive-lead hover:text-archive-ivory'
+              }`}
+            >
+              {t(region.nameKey)}
+            </button>
+          ))}
+        </div>
+        {targets.length > 0 && (
+          <button
+            type="button"
+            onClick={clearTargets}
+            className="text-xs text-archive-lead hover:text-archive-ivory ml-auto"
+          >
+            {t('factory.clearAll')}
+          </button>
+        )}
+      </div>
 
       {targets.length === 0 ? (
         <div className="text-center py-16 text-archive-lead text-sm">{t('factory.emptyChainHint')}</div>

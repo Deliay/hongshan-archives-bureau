@@ -12,6 +12,7 @@ import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
 import type { FactoryRecipe, FactoryMachine, FactoryItemIndex, ChainGraph, ChainTarget } from '../lib/factory/types'
 import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '../lib/factory/recipes'
 import { buildChainGraph } from '../lib/factory/chain'
+import { getFactoryRegion } from '../lib/factory/regions'
 
 // AttributeType enum name → blackboard key (from TianShiTools Attributes.cs)
 const ATTRIBUTE_TYPE_MAP: Record<number, string> = {
@@ -1252,7 +1253,7 @@ export function useItemRecipes(itemId: string | null): { asProduct: FactoryRecip
   }, [data, itemId])
 }
 
-export function useCraftingChain(targets: ChainTarget[]): UseDataResult<ChainGraph> {
+export function useCraftingChain(targets: ChainTarget[], regionId?: string): UseDataResult<ChainGraph> {
   const { data: factoryData, loading, error, refetch } = useFactoryData()
   const [chainData, setChainData] = useState<{ defaultCrafts: Record<string, string>; sources: import('../lib/factory/types').FactorySource[] }>({ defaultCrafts: {}, sources: [] })
   const [beltTable, setBeltTable] = useState<Record<string, any> | null>(null)
@@ -1289,8 +1290,9 @@ export function useCraftingChain(targets: ChainTarget[]): UseDataResult<ChainGra
 
   const graph = useMemo<ChainGraph>(() => {
     if (!factoryData || targets.length === 0) return { nodes: [], edges: [] }
-    return buildChainGraph(targets, factoryData.recipes, factoryData.index, chainData.sources, chainData.defaultCrafts, undefined, factoryData.machines, liquids, beltTable ?? undefined, pipeTable ?? undefined)
-  }, [factoryData, targets, chainData, liquids, beltTable, pipeTable])
+    const regionCaps = regionId ? getFactoryRegion(regionId)?.caps : undefined
+    return buildChainGraph(targets, factoryData.recipes, factoryData.index, chainData.sources, chainData.defaultCrafts, undefined, factoryData.machines, liquids, beltTable ?? undefined, pipeTable ?? undefined, regionCaps)
+  }, [factoryData, targets, chainData, liquids, beltTable, pipeTable, regionId])
 
   return { data: graph, loading, error, refetch }
 }

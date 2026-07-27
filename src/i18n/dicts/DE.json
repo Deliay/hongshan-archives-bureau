@@ -393,6 +393,10 @@
     "beltCount": "Förderband ×{{count}} ({{rate}}/Min)",
     "pipeCount": "Rohrleitung ×{{count}} ({{rate}}/Min)",
     "closedLoop": "↻ Geschlossen",
-    "productiveLoop": "↻ Nettoertrag ×{{ratio}}"
+    "productiveLoop": "↻ Nettoertrag ×{{ratio}}",
+    "region": "Gebiet",
+    "regionWuling": "Region Wuling",
+    "regionValley4": "Tal IV",
+    "priming": "Vorbefüllung nötig"
   }
 }
