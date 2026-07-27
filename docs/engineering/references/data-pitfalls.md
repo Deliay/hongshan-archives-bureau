@@ -100,6 +100,30 @@ Dummy/training 敌人常见配置：`attrType:1, attrValue:1000, modifierType:1`
 
 当干员完全新增时，差异卡片需展示完整信息：基础信息、技能（从 `CharGrowthTable` + `SkillPatchTable`）、基建技能、档案与语音。卡片使用蓝色边框与「新增」徽章。
 
+## 工厂数据表
+
+### WikiDefaultCraftTable 值为纯字符串
+
+该表 value 是 craftId **纯字符串**（如 `"item_gas_copper": "liquid_transmuter_2_gas_gas_copper_1"`），不是 `{ craftId }` 对象。按 `entry.craftId` 解析会静默得到空表，导致链路图丢失官方默认配方、回退到配方表键序首个配方（气态赤铜/空罐/赤铜块的首个均为拆解机/转化机反向配方，必然构成净产出为 0 的封闭回路）。解析必须兼容字符串：
+
+```ts
+const craftId = typeof entry === 'string' ? entry : entry?.craftId
+```
+
+另外表内液体/气体的“默认 craft”是指向泵的伪配方 ID（如 `item_liquid_water_pump_1`、`item_gas_inert_gas_pump_1`），不存在于 `FactoryMachineCraftTable`，仅表达「该资源来自哪台泵」。
+
+### FactoryFluidPumpInTable 结构不同于矿机表
+
+`FactoryMinerTable`/`FactoryGasMinerTable` 用 `mineable[{miningItemId, produceRate}]`；而 `FactoryFluidPumpInTable` 用 `enableLiquidIds: string[]` 列举可泵采液体（无 `mineable`、无 `produceRate`，隐含每 `msPerRound` 1 单位）。按 `mineable` 解析会静默得到空数组，导致液体永远没有采集源头。`pump_2`（二型耐酸水泵）是 `item_liquid_acid` 的唯一泵采来源。
+
+### 采种/种植配方在 FactoryMachineCraftTable
+
+采种机（`seedcollector_1`，多为 1 作物 → 2 种子）与种植机（`planter_1`，1 种子 → 1 作物）的配方就是普通机器配方，没有独立配方表。二者构成净产出比 = 2 的有效循环（增产），链路求解时不能按封闭回路剪枝；种草例外（采种 1→1，种植需额外清水）。另有未加载的 `SpaceshipGrowCabinSeedFormulaTable`（飞船培育舱 1 作物 → 3 种子）勿与采种机混淆。
+
+### FactoryMinerTable 的 consumeItem
+
+矿机 `mineable[]` 条目可能带 `consumeItem`（如 `miner_4` 水驱矿机采矿消耗清水），adapter 目前丢弃该字段，评估矿机真实成本时需注意。
+
 ## 相关文档
 
 - [工程架构规范](../engineering-spec.md)

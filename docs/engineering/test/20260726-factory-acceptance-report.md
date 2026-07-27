@@ -426,6 +426,37 @@ type: Fleeting
 
 ---
 
+### 2.22 链路图出现零产出封闭子图（左脚踩右脚）＋输入来源细化
+
+**问题描述**：构建链路图时仍会出现净产出为 0 的无用子图——例如 1 个灌装机输入到 2 个拆解机（输入=输出，系统无产出）。以「气态赤铜」为例，正确解应输入赤铜矿，实际却走灌装机↔拆解机互喂回路。同时输入来源需细化：矿机（FactoryMinerTable）/气泵（FactoryGasMinerTable）/水泵（液体硬编码酸+水、耐酸泵抽酸）/种植（采种 1→2 + 种植增产循环）均需在链路图中体现对应机器。
+
+**根因分析**（三层叠加）：
+1. `WikiDefaultCraftTable` 的值为 craftId **纯字符串**（如 `"item_gas_copper": "liquid_transmuter_2_gas_gas_copper_1"`），但 `useCraftingChain` 按 `entry.craftId` 对象解析 → `defaultCrafts` 恒为空，官方指定默认配方被静默丢弃；
+2. 回退策略 `asOutcome[0]` 按配方表 JSON 键序取首个，气态赤铜/空罐/赤铜块的首个配方恰好都是拆解机/转化机反向配方 → 必然构成净产出比 = 1 的封闭回路；且循环检测只打标记、不回溯尝试备选配方；
+3. `FactoryFluidPumpInTable` 实际结构为 `enableLiquidIds: string[]`（不是矿机表的 `mineable[]`），adapter 按 `mineable` 解析 → 水泵来源恒为空，液体永远没有采集源头。
+
+**修复方案**：
+- **defaultCrafts 解析**：兼容字符串值（`typeof entry === 'string' ? entry : entry?.craftId`）
+- **配方规划回溯**（chain.ts 新增规划阶段）：构建前先以带回溯的 DFS 为每个物品选定配方——候选顺序 用户 override > Wiki 默认 > 表键序；展开中遇到净产出比 ≤ 1 的封闭回路即失败回溯、尝试下一候选；有效循环（netRatio > 1，如采种/种植）允许；无可行配方时回退旧解析并保留封闭回路标记；override 为强制项不参与回溯
+- **有效循环产能结算**：构建期循环点只记录不回流；构建结束后统一按稳态结算——循环机器总产 = 外部需求 × netRatio/(netRatio−1)（如目标作物 10/min → 种植机 20/min：10 交付 + 10 回流采种），机器台数/配方速率/物流边按增量补齐，非循环材料（如种植用水）按增量补展开；多目标合并基于「外部需求」一次性放大，不重复翻倍
+- **水泵适配修复**：按 `enableLiquidIds` 解析，硬编码白名单 `item_liquid_acid`/`item_liquid_water` 无限采集（uncapped 不封顶）；酸仅 `pump_2` 耐酸水泵支持（表数据自然表达）
+- **源节点机器展示**：SourceNode 渲染采集机器图标+名称（矿机/气泵/水泵），nodeSize 相应调整；同物品多台采集机器时保留首个（基础机型）展示
+
+**涉及文件**：
+- `src/lib/factory/chain.ts` — 配方规划回溯（planItem/candidateRecipes）、有效循环结算（analyzeCycle + 结算阶段）、uncapped 源
+- `src/lib/factory/recipes.ts` — 水泵表 enableLiquidIds 适配 + PUMPABLE_LIQUIDS 白名单
+- `src/lib/factory/types.ts` — `FactorySource.uncapped`
+- `src/hooks/useData.ts` — defaultCrafts 字符串解析
+- `src/components/Factory/ChainGraph.tsx` — SourceNode 机器图标/名称、nodeSize
+- `src/lib/factory/chain.test.ts` / `recipes.test.ts` — 新增 10 个单测
+- `tests/e2e/src/factory.spec.ts` — 新增 2 个用例（气态赤铜→赤铜矿、种植循环）
+
+**验证结果**：✅ lint / test（323 passed）/ build 通过；E2E 制作链路页 16/16 passed
+
+**提交**：`3b10eb0 fix(factory): 链路求解回溯消除封闭回路并细化采集源头`
+
+---
+
 ## 3. 制作链路重构方案（待 Review）
 
 > **状态**: 🟡 第三轮评审
@@ -1202,6 +1233,7 @@ describe('calcThroughput', () => {
 | 2.19 | 目标产物与添加入口各占一行 | 纵向 flex 容器 | `5c71ff3` |
 | 2.20 | 机器节点配方渲染为原始 itemId | 配方以纯文本拼接渲染 | `bf57442` |
 | 2.21 | 链路图 ItemTile 未显示名称 | 配方 ItemTile 误传 showName={false} | `bf57442` |
+| 2.22 | 链路图零产出封闭子图；输入来源未细化 | defaultCrafts 字符串值被丢弃 + 键序回退选中拆解机 + 闭环不回溯；水泵表结构误配 | `3b10eb0` |
 
 ---
 
