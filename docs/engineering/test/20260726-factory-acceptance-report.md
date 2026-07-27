@@ -389,6 +389,43 @@ type: Fleeting
 
 ---
 
+### 2.20 机器节点配方渲染为原始 itemId 文本
+
+**问题描述**：链路图画布中，机器节点渲染配方时直接显示原始 itemId 文本（如 `item_xxx + item_yyy → item_zzz×2`），而非物品图标。
+
+**根因**：`MachineNode` 中配方以纯文本拼接渲染（`inputs.map(i => i.itemId).join(' + ')`），未使用 ItemTile。
+
+**修复方案**：
+- 机器节点配方改为类似「工厂配方」页的展示形式：输入 ItemTile（带数量角标）→ 输出 ItemTile（带数量角标）
+- 机器节点宽度随配方物品数动态计算（新增 `nodeSize()`，输入+输出每个 tile 52px + 箭头/边距 40px，最小 120px，高度 180px），dagre 布局与 ReactFlow 显式尺寸统一走该函数
+- 新增 E2E「机器节点以物品图标渲染配方」：断言节点文本不含 `item_` 原始 ID、包含 `→`、含多个 `<img>`
+
+**涉及文件**：
+- `src/components/Factory/ChainGraph.tsx` — `MachineNode` 配方渲染、新增 `nodeSize()`
+- `tests/e2e/src/factory.spec.ts` — 新增用例
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 14/14 passed
+
+**提交**：`bf57442 fix(factory): 链路图机器节点配方改用 ItemTile 渲染并显示名称`
+
+---
+
+### 2.21 链路图中 ItemTile 未显示名称
+
+**问题描述**：链路图机器节点配方中的 ItemTile 未显示物品名称。
+
+**根因**：2.20 实现时配方 ItemTile 传了 `showName={false}`。
+
+**修复方案**：移除机器节点配方 ItemTile 的 `showName={false}`，恢复默认的名称覆盖层展示（名称渲染在 tile 内部底部，不影响节点尺寸）。
+
+**涉及文件**：`src/components/Factory/ChainGraph.tsx`
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 14/14 passed
+
+**提交**：`bf57442 fix(factory): 链路图机器节点配方改用 ItemTile 渲染并显示名称`
+
+---
+
 ## 3. 制作链路重构方案（待 Review）
 
 > **状态**: 🟡 第三轮评审
@@ -1163,6 +1200,8 @@ describe('calcThroughput', () => {
 | 2.17 | 添加入口与目标列表分离且样式不一 | 占位按钮在独立左侧栏 | `5c71ff3` |
 | 2.18 | 目标产物组件占满整行、名称产速同行 | 块级行布局 + 单行排列 | `5c71ff3` |
 | 2.19 | 目标产物与添加入口各占一行 | 纵向 flex 容器 | `5c71ff3` |
+| 2.20 | 机器节点配方渲染为原始 itemId | 配方以纯文本拼接渲染 | `bf57442` |
+| 2.21 | 链路图 ItemTile 未显示名称 | 配方 ItemTile 误传 showName={false} | `bf57442` |
 
 ---
 
