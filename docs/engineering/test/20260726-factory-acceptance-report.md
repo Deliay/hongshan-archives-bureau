@@ -553,6 +553,31 @@ type: Fleeting
 
 ---
 
+### 2.27 配方制作时间单位误解，机器台数放大 6 倍
+
+**问题描述**：中容武陵电池的配方是封装机 10s 生产 1 个，要求 6/min 的产量正好 1 台封装机即可满足；但链路图显示 6 台。
+
+**根因**：`perMinute()` 把 `FactoryMachineCraftTable.totalProgress` 当作毫秒（`count × 60000 / totalProgress`）。实际该字段不是时间毫秒数：全部 6 个数据版本、305 条配方均满足 `totalProgress = progressRound × 6000`，即 **6000 进度单位 = 1 秒**（`progressRound` 字段即为制作秒数；中容武陵电池 `progressRound=10` → 10s/个 → 单台 6/min）。误按毫秒计算使所有机器理论产速被低估 6 倍、台数被放大 6 倍。矿机/泵机的 `msPerRound` 字段名自带 ms，为真实毫秒，不受影响。
+
+**修复方案**：
+- `perMinute(count, totalProgress)` 改为 `count × 360000 / totalProgress`，并注明单位语义（6000 进度 = 1 秒）
+- `FactoryChains.tsx` 中重复的内联理论产速公式改为复用 `perMinute()`（消除重复实现）
+- 单元测试 fixture 的 `totalProgress` 统一 ×6 缩放（保持各用例「单台理论产出」语义不变），`perMinute` 直接测试改为新单位语义
+
+**涉及文件**：
+- `src/lib/factory/chain.ts` — `perMinute()` 公式与单位注释
+- `src/pages/factory/FactoryChains.tsx` — 默认理论产速回退改用 `perMinute()`
+- `src/lib/factory/chain.test.ts` — fixture 缩放 + perMinute 用例更新
+- `src/lib/factory/chain.integration.test.ts` — 新增真实数据回归：中容武陵电池 6/min → 封装机 theoryPm=6、machineCount=1
+- `tests/e2e/src/factory.spec.ts` — 新增 E2E：中容武陵电池 6/min 封装机 ×1
+- `docs/engineering/references/data-pitfalls.md` — 记录 totalProgress 单位语义
+
+**验证结果**：✅ lint / test（340 passed）/ build 通过；E2E 制作链路页 20/20 passed
+
+**提交**：`86fef65 fix(factory): 配方 totalProgress 单位修正（6000 进度=1 秒），机器台数不再放大 6 倍`
+
+---
+
 ## 3. 制作链路重构方案（待 Review）
 
 > **状态**: 🟡 第三轮评审
@@ -1334,6 +1359,7 @@ describe('calcThroughput', () => {
 | 2.24 | 缺少区域资源上限与区域切换 | 无区域概念，采集上限仅来自机台产能 | `96680cc` |
 | 2.25 | 有效循环缺少预填充标识 | 未提示循环消费方冷启动需预填物品 | `96680cc` |
 | 2.26 | 扩容反应池未支持多配方共炉与炉内级联 | 每配方独立机器节点，无缓存区概念 | `f5eaaa7` |
+| 2.27 | 配方制作时间单位误解，机器台数放大 6 倍 | totalProgress 误当毫秒（实为 6000 进度=1 秒） | `86fef65` |
 
 ---
 
