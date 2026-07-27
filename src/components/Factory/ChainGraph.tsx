@@ -51,8 +51,18 @@ function MachineNode({ data }: { data: ChainNode }) {
         </div>
       )}
       {data.recipe && (
-        <div className="text-[8px] text-archive-lead mt-1 max-w-[100px] truncate">
-          {data.recipe.inputs.map(i => i.itemId).join(' + ')} → {data.recipe.outputs.map(o => `${o.itemId}×${o.count}`).join(', ')}
+        <div className="flex items-center gap-1 mt-1">
+          <div className="flex flex-wrap items-center justify-center gap-1">
+            {data.recipe.inputs.map(i => (
+              <ItemTile key={i.itemId} itemId={i.itemId} amount={i.count} size="sm" showTips={false} />
+            ))}
+          </div>
+          <span className="text-archive-gold text-[10px] shrink-0">→</span>
+          <div className="flex flex-wrap items-center justify-center gap-1">
+            {data.recipe.outputs.map(o => (
+              <ItemTile key={o.itemId} itemId={o.itemId} amount={o.count} size="sm" showTips={false} />
+            ))}
+          </div>
         </div>
       )}
       <div className="text-[9px] text-archive-dust mt-0.5">
@@ -92,15 +102,21 @@ const nodeTypes = {
   source: SourceNode,
 }
 
+// 机器节点宽度随配方物品数（输入+输出）变化，与 dagre 布局和 ReactFlow 显式尺寸保持一致
+function nodeSize(n: ChainNode): { width: number; height: number } {
+  if (n.kind !== 'machine') return { width: 80, height: 80 }
+  const tiles = (n.recipe?.inputs.length ?? 0) + (n.recipe?.outputs.length ?? 0)
+  const width = Math.max(120, tiles * 52 + 40)
+  return { width, height: 180 }
+}
+
 function layoutGraph(graph: ChainGraphData, t: (key: string, vars?: Record<string, string | number>) => string): { nodes: Node[]; edges: Edge[] } {
   const g = new dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
   g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 80 })
 
   for (const node of graph.nodes) {
-    const width = node.kind === 'machine' ? 120 : 80
-    const height = node.kind === 'machine' ? 100 : 80
-    g.setNode(node.key, { width, height })
+    g.setNode(node.key, nodeSize(node))
   }
   for (const edge of graph.edges) {
     g.setEdge(edge.from, edge.to)
@@ -110,8 +126,7 @@ function layoutGraph(graph: ChainGraphData, t: (key: string, vars?: Record<strin
 
   const nodes: Node[] = graph.nodes.map(n => {
     const pos = g.node(n.key)
-    const width = n.kind === 'machine' ? 120 : 80
-    const height = n.kind === 'machine' ? 100 : 80
+    const { width, height } = nodeSize(n)
     return {
       id: n.key,
       type: n.kind,

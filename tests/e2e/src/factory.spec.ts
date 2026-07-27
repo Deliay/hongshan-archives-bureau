@@ -245,6 +245,34 @@ test.describe('工厂系统 (Factory System)', () => {
       expect(imgCount).toBeGreaterThan(0)
     })
 
+    test('机器节点以物品图标渲染配方', async ({ page }) => {
+      const TARGET = 'item_proc_battery_5'
+
+      await page.goto(`/archive/factory/chains?targets=${TARGET}:1`, { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node-machine').length > 0
+      }, { timeout: 15000 })
+
+      await page.waitForTimeout(3000)
+
+      const firstMachine = page.locator('.react-flow__node-machine').first()
+      await expect(firstMachine).toBeVisible()
+
+      // 不再渲染原始 itemId 文本，配方以 输入ItemTile → 输出ItemTile 形式展示
+      const machineText = await firstMachine.textContent()
+      expect(machineText).not.toMatch(/item_[a-z0-9_]+/i)
+      expect(machineText).toContain('→')
+
+      // 机器图标 + 配方物品 ItemTile，应有多个 <img>
+      const imgCount = await firstMachine.locator('img').count()
+      expect(imgCount).toBeGreaterThan(1)
+    })
+
     test('目标节点显示产速', async ({ page }) => {
       const TARGET = 'item_proc_battery_5'
 
