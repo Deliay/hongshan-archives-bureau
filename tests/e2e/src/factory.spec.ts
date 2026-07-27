@@ -128,13 +128,20 @@ test.describe('工厂系统 (Factory System)', () => {
       await expect(hint).toBeVisible({ timeout: 10000 })
     })
 
-    test('通过下拉选择器添加目标产物', async ({ page }) => {
+    test('通过弹窗添加目标产物', async ({ page }) => {
       await waitForChainsPage(page)
       await page.waitForTimeout(1000)
-      const select = page.locator('select')
-      await expect(select).toBeVisible({ timeout: 10000 })
-      await select.selectOption({ index: 1 })
+      // 点击原列表处的占位按钮，弹出选择 dialog
+      await page.getByRole('button', { name: /添加目标产物/ }).click()
+      const dialog = page.locator('[role="dialog"]').first()
+      await expect(dialog).toBeVisible({ timeout: 10000 })
+      // dialog 内物品列表使用 ItemTile 展示（包含物品图标 <img>）
+      const itemButton = dialog.locator('button', { has: page.locator('img') }).first()
+      await expect(itemButton).toBeVisible({ timeout: 10000 })
+      await itemButton.click()
       await page.waitForTimeout(500)
+      // 选择后 dialog 关闭，目标产物出现在已选列表
+      await expect(dialog).toBeHidden({ timeout: 5000 })
       const targetRow = page.locator('input[type="number"]')
       await expect(targetRow).toBeVisible({ timeout: 5000 })
     })
