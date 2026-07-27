@@ -120,6 +120,14 @@ const craftId = typeof entry === 'string' ? entry : entry?.craftId
 
 采种机（`seedcollector_1`，多为 1 作物 → 2 种子）与种植机（`planter_1`，1 种子 → 1 作物）的配方就是普通机器配方，没有独立配方表。二者构成净产出比 = 2 的有效循环（增产），链路求解时不能按封闭回路剪枝；种草例外（采种 1→1，种植需额外清水）。另有未加载的 `SpaceshipGrowCabinSeedFormulaTable`（飞船培育舱 1 作物 → 3 种子）勿与采种机混淆。
 
+### FactoryMachineCraftTable 产出多 group = 副产物
+
+配方的 `ingredients` 恒为单 group（组内多物品皆必需，全表 0 个多材料组配方）；但 `outcomes` 的**多 group 语义为「每组一个副产物」**（全表 8 个配方，如反应池的 污水、惰性壤晶废液）。对 outcomes 只取首 group 会静默丢弃副产物——影响副产物物品的路线候选与反应池缓存区物质计数。适配时必须展开全部产出组。
+
+### 反应池缓存区（slot）数量不在结构化表中
+
+反应池（`mix_pool_1`）/ 扩容反应池（`mix_pool_2`）的缓存区数量在结构化数据表中**不存在**（FactoryBuildingTable / FactoryFluidReactionTable / CraftGroupTable / GlobalConst 等均已排查，该部分游戏数据尚未解包）。数值仅见于教学文案（I18nTextTable）：「扩容反应池拥有8个缓存区」→ mix_pool_2 = 8；「仅有5个缓存区的反应池…」→ mix_pool_1 = 5。缓存区占用 = 共炉配方涉及的不同物质种数（投入∪产出，产物也占缓存区，共享物质只算一次，见「3个配方一共涉及8种不同的物质」「将产出的芽针溶液存储在最后一个缓存区中」）。代码中以常量维护于 `chain.ts` 的 `REACTOR_BUFFER_SLOTS` 并注明出处；若未来游戏结构化该数据应切换为动态加载。
+
 ### FactoryMinerTable 的 consumeItem
 
 矿机 `mineable[]` 条目可能带 `consumeItem`（如 `miner_4` 水驱矿机采矿消耗清水），adapter 目前丢弃该字段，评估矿机真实成本时需注意。
