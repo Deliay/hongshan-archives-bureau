@@ -23,6 +23,8 @@ export interface FactorySource {
   itemId: string
   produceRate: number
   msPerRound: number
+  /** 无限采集（如水泵抽酸/水）：不封顶、不标记 supplyLimited */
+  uncapped?: boolean
 }
 
 export interface FactoryItemIndex {

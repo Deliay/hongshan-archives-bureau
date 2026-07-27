@@ -78,14 +78,29 @@ describe('adaptFactorySources', () => {
     const gasMinerRaw = {
       gas_pump: { mineable: [{ miningItemId: 'gas', produceRate: 2 }], msPerRound: 2000 },
     }
+    // FactoryFluidPumpInTable 真实结构：enableLiquidIds 列举可泵采液体（无 mineable/produceRate）
     const pumpRaw = {
-      water_pump: { mineable: [{ miningItemId: 'water', produceRate: 3 }], msPerRound: 1500 },
+      pump_1: { enableLiquidIds: ['item_liquid_water'], msPerRound: 1000 },
     }
     const sources = adaptFactorySources(minerRaw, gasMinerRaw, pumpRaw)
     expect(sources).toHaveLength(3)
     expect(sources.find(s => s.itemId === 'iron_ore')?.machineId).toBe('mining_iron')
     expect(sources.find(s => s.itemId === 'gas')?.produceRate).toBe(2)
-    expect(sources.find(s => s.itemId === 'water')?.msPerRound).toBe(1500)
+    expect(sources.find(s => s.itemId === 'item_liquid_water')?.machineId).toBe('pump_1')
+  })
+
+  it('泵采液体白名单：仅酸/水，标记为无限采集（uncapped）', () => {
+    const pumpRaw = {
+      pump_1: { enableLiquidIds: ['item_liquid_water', 'item_liquid_sewage', 'item_liquid_copper'], msPerRound: 1000 },
+      pump_2: { enableLiquidIds: ['item_liquid_water', 'item_liquid_acid'], msPerRound: 500 },
+    }
+    const sources = adaptFactorySources({}, {}, pumpRaw)
+    // 污水/铜液不在白名单；水由两台泵提供，酸仅耐酸泵 pump_2
+    expect(sources).toHaveLength(3)
+    expect(sources.every(s => s.uncapped)).toBe(true)
+    expect(sources.filter(s => s.itemId === 'item_liquid_water').map(s => s.machineId)).toEqual(['pump_1', 'pump_2'])
+    expect(sources.find(s => s.itemId === 'item_liquid_acid')?.machineId).toBe('pump_2')
+    expect(sources.some(s => s.itemId === 'item_liquid_sewage')).toBe(false)
   })
 
   it('handles empty inputs', () => {

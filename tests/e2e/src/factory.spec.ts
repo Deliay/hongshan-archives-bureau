@@ -338,6 +338,50 @@ test.describe('工厂系统 (Factory System)', () => {
       expect(targetCount).toBeGreaterThanOrEqual(2)
     })
 
+    test('气态赤铜链路以赤铜矿为源头且无封闭回路', async ({ page }) => {
+      // 回归（配方表键序选中拆解机 → 灌装↔拆解零产出封闭子图）：
+      // 正确解为 固气转化机 + 精炼炉，源头是赤铜矿（矿机）与清水（水泵）
+      await page.goto('/archive/factory/chains?targets=item_gas_copper:10', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+      await page.waitForTimeout(3000)
+
+      const graphText = await page.locator('.react-flow').textContent()
+      expect(graphText).toContain('固气转化机')
+      expect(graphText).toContain('精炼炉')
+      // 源头节点体现采集机器：矿机 / 水泵
+      expect(graphText).toContain('赤铜矿')
+      expect(graphText).toContain('矿机')
+      expect(graphText).toContain('水泵')
+      // 不得出现净产出为 0 的灌装↔拆解封闭子图
+      expect(graphText).not.toContain('拆解机')
+      expect(graphText).not.toContain('灌装机')
+    })
+
+    test('种植链路包含种植机与采种机的有效循环', async ({ page }) => {
+      // 采种机 1 作物 → 2 种子、种植机 1 种子 → 1 作物，netRatio=2 增产：
+      // 外部需求 10/min 时种植机稳态总产 20/min（10 交付 + 10 回流采种）
+      await page.goto('/archive/factory/chains?targets=item_plant_bbflower_1:10', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+      await page.waitForTimeout(3000)
+
+      const graphText = await page.locator('.react-flow').textContent()
+      expect(graphText).toContain('种植机')
+      expect(graphText).toContain('采种机')
+      expect(graphText).toContain('20.0/min')
+    })
+
     test('传送带/管道边显示数量', async ({ page }) => {
       const TARGET = 'item_proc_battery_5'
 

@@ -739,3 +739,244 @@ describe('循环规则 R0-R6', () => {
     expect(graph.nodes.some(n => n.itemId === 'item_12')).toBe(false)
   })
 })
+
+
+describe('封闭回路消除（配方规划回溯）', () => {
+  // 真实数据结构简化：气态赤铜/赤铜罐链路
+  // 键序陷阱：气态赤铜/空罐/赤铜块的首个配方均为拆解机/转化机反向配方，必然成环
+  const dismantler: FactoryRecipe = {
+    id: 'dismantler_copperjar_gas_copper_1', machineId: 'dismantler_1',
+    ingredients: [{ itemId: 'item_gasjar_copper_gas_copper', count: 1 }],
+    outcomes: [{ itemId: 'item_copper_jar', count: 1 }, { itemId: 'item_gas_copper', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const transmuterGas: FactoryRecipe = {
+    id: 'liquid_transmuter_2_gas_gas_copper_1', machineId: 'transmuter_2',
+    ingredients: [{ itemId: 'item_copper_nugget', count: 2 }],
+    outcomes: [{ itemId: 'item_gas_copper', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const transmuterSolid: FactoryRecipe = {
+    id: 'liquid_transmuter_2_solid_copper_nugget_1', machineId: 'transmuter_2',
+    ingredients: [{ itemId: 'item_gas_copper', count: 1 }],
+    outcomes: [{ itemId: 'item_copper_nugget', count: 2 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const furnace: FactoryRecipe = {
+    id: 'furnance_copper_nugget_1', machineId: 'furnance_1',
+    ingredients: [{ itemId: 'item_copper_ore', count: 1 }, { itemId: 'item_liquid_water', count: 1 }],
+    outcomes: [{ itemId: 'item_copper_nugget', count: 1 }, { itemId: 'item_liquid_sewage', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const filling: FactoryRecipe = {
+    id: 'filling_copperjar_gas_copper_1', machineId: 'filling_1',
+    ingredients: [{ itemId: 'item_copper_jar', count: 1 }, { itemId: 'item_gas_copper', count: 1 }],
+    outcomes: [{ itemId: 'item_gasjar_copper_gas_copper', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const shaper: FactoryRecipe = {
+    id: 'shaper_gas_copper_jar_1', machineId: 'shaper_1',
+    ingredients: [{ itemId: 'item_copper_nugget', count: 2 }, { itemId: 'item_gas_inert', count: 1 }],
+    outcomes: [{ itemId: 'item_copper_jar', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const cuRecipes = [dismantler, transmuterGas, transmuterSolid, furnace, filling, shaper]
+  const cuIndex: FactoryItemIndex = {
+    asIngredient: {
+      item_gasjar_copper_gas_copper: [dismantler],
+      item_copper_nugget: [transmuterGas, shaper],
+      item_copper_ore: [furnace],
+      item_liquid_water: [furnace],
+      item_copper_jar: [filling],
+      item_gas_copper: [filling, transmuterSolid],
+      item_gas_inert: [shaper],
+    },
+    asOutcome: {
+      // 配方表键序：拆解机/转化机反向配方排在前面（封闭回路陷阱）
+      item_gas_copper: [dismantler, transmuterGas],
+      item_copper_jar: [dismantler, shaper],
+      item_copper_nugget: [transmuterSolid, furnace],
+      item_liquid_sewage: [furnace],
+      item_gasjar_copper_gas_copper: [filling],
+    },
+  }
+  const cuSources: FactorySource[] = [
+    { machineId: 'miner_1', itemId: 'item_copper_ore', produceRate: 1, msPerRound: 1000 },
+    { machineId: 'pump_1', itemId: 'item_liquid_water', produceRate: 1, msPerRound: 1000, uncapped: true },
+    { machineId: 'gas_pump_1', itemId: 'item_gas_inert', produceRate: 1, msPerRound: 3000 },
+  ]
+
+  function assertCopperChain(graph: ReturnType<typeof buildChainGraph>) {
+    const machineIds = graph.nodes.filter(n => n.kind === 'machine').map(n => n.machineId)
+    // 正确解：固气转化机 + 熔炉，输入赤铜矿 + 清水；无拆解机/灌装机零产出子图
+    expect(machineIds).toContain('transmuter_2')
+    expect(machineIds).toContain('furnance_1')
+    expect(machineIds).not.toContain('dismantler_1')
+    expect(machineIds).not.toContain('filling_1')
+    const sourceItems = graph.nodes.filter(n => n.kind === 'source').map(n => n.itemId)
+    expect(sourceItems).toContain('item_copper_ore')
+    expect(sourceItems).toContain('item_liquid_water')
+    expect(graph.edges.every(e => e.cycleType !== 'closed')).toBe(true)
+  }
+
+  it('气态赤铜：Wiki 默认配方（字符串值）指向固气转化机', () => {
+    const graph = buildChainGraph(
+      [{ itemId: 'item_gas_copper', rate: 10 }],
+      cuRecipes, cuIndex, cuSources,
+      { item_gas_copper: 'liquid_transmuter_2_gas_gas_copper_1' },
+    )
+    assertCopperChain(graph)
+  })
+
+  it('气态赤铜：无默认配方时回溯消除灌装↔拆解封闭回路', () => {
+    const graph = buildChainGraph(
+      [{ itemId: 'item_gas_copper', rate: 10 }],
+      cuRecipes, cuIndex, cuSources, {},
+    )
+    assertCopperChain(graph)
+  })
+
+  it('满赤铜耐压罐：回溯后灌装机由塑形机供罐、转化机供气，无封闭回路', () => {
+    const graph = buildChainGraph(
+      [{ itemId: 'item_gasjar_copper_gas_copper', rate: 10 }],
+      cuRecipes, cuIndex, cuSources, {},
+    )
+    const machineIds = graph.nodes.filter(n => n.kind === 'machine').map(n => n.machineId)
+    expect(machineIds).toContain('filling_1')
+    expect(machineIds).toContain('shaper_1')
+    expect(machineIds).toContain('transmuter_2')
+    expect(machineIds).not.toContain('dismantler_1')
+    const sourceItems = graph.nodes.filter(n => n.kind === 'source').map(n => n.itemId)
+    expect(sourceItems).toContain('item_copper_ore')
+    expect(sourceItems).toContain('item_gas_inert')
+    expect(graph.edges.every(e => e.cycleType !== 'closed')).toBe(true)
+  })
+
+  it('用户指定配方（override）为强制项，不参与回溯', () => {
+    const graph = buildChainGraph(
+      [{ itemId: 'item_gas_copper', rate: 10 }],
+      cuRecipes, cuIndex, cuSources, {},
+      { item_gas_copper: 'dismantler_copperjar_gas_copper_1' },
+    )
+    // 强制拆解机：封闭回路保留标记而不是被替换
+    const dismantlerNode = graph.nodes.find(n => n.machineId === 'dismantler_1')
+    expect(dismantlerNode).toBeDefined()
+    expect(graph.edges.some(e => e.cycleType === 'closed')).toBe(true)
+  })
+})
+
+describe('有效循环产能结算（种植增产）', () => {
+  // 种植：1 种子 → 1 作物；采种：1 作物 → 2 种子（netRatio=2）
+  const plantRecipe: FactoryRecipe = {
+    id: 'plant', machineId: 'planter',
+    ingredients: [{ itemId: 'seed', count: 1 }],
+    outcomes: [{ itemId: 'crop', count: 1 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const seedRecipe: FactoryRecipe = {
+    id: 'seed', machineId: 'seeder',
+    ingredients: [{ itemId: 'crop', count: 1 }],
+    outcomes: [{ itemId: 'seed', count: 2 }],
+    totalProgress: 1000, sortId: 0,
+  }
+  const plantIndex: FactoryItemIndex = {
+    asIngredient: { seed: [plantRecipe], crop: [seedRecipe] },
+    asOutcome: { crop: [plantRecipe], seed: [seedRecipe] },
+  }
+
+  it('作物目标：种植机/采种机按净产出比放大至稳态产能', () => {
+    const graph = buildChainGraph([{ itemId: 'crop', rate: 10 }], [plantRecipe, seedRecipe], plantIndex, [], {})
+    // 稳态：种植机总产 20（10 交付 + 10 回流采种），采种机处理 10 作物 → 20 种子
+    const planter = graph.nodes.find(n => n.machineId === 'planter')
+    const seeder = graph.nodes.find(n => n.machineId === 'seeder')
+    expect(planter?.actualPm).toBe(20)
+    expect(seeder?.actualPm).toBe(20)
+    expect(planter?.machineCount).toBe(1) // 单台理论 60/min，20/min → 1 台
+  })
+
+  it('作物目标：循环反馈边速率为稳态回流量', () => {
+    const graph = buildChainGraph([{ itemId: 'crop', rate: 10 }], [plantRecipe, seedRecipe], plantIndex, [], {})
+    const cycleEdge = graph.edges.find(e => e.isCycle)
+    expect(cycleEdge?.cycleType).toBe('productive')
+    expect(cycleEdge?.cycleRatio).toBe(2)
+    expect(cycleEdge?.perMinute).toBe(10) // 回流量 = 20 - 10
+    // 种子流边同样按稳态 20/min
+    const seedEdge = graph.edges.find(e => e.itemId === 'seed' && !e.isCycle)
+    expect(seedEdge?.perMinute).toBe(20)
+  })
+
+  it('多目标同一作物：产能按合并外部需求一次性放大，不重复翻倍', () => {
+    const graph = buildChainGraph(
+      [{ itemId: 'crop', rate: 10 }, { itemId: 'crop', rate: 10 }],
+      [plantRecipe, seedRecipe], plantIndex, [], {},
+    )
+    const planter = graph.nodes.find(n => n.machineId === 'planter')
+    const seeder = graph.nodes.find(n => n.machineId === 'seeder')
+    expect(planter?.actualPm).toBe(40) // 外部 20 × 2/(2-1)
+    expect(seeder?.actualPm).toBe(40)
+    const cycleEdges = graph.edges.filter(e => e.isCycle)
+    expect(cycleEdges).toHaveLength(1)
+    expect(cycleEdges[0]?.perMinute).toBe(20)
+  })
+
+  it('种子目标：采种机增产自足，种植机仅承担循环回流', () => {
+    const graph = buildChainGraph([{ itemId: 'seed', rate: 10 }], [plantRecipe, seedRecipe], plantIndex, [], {})
+    const seeder = graph.nodes.find(n => n.machineId === 'seeder')
+    const planter = graph.nodes.find(n => n.machineId === 'planter')
+    expect(seeder?.actualPm).toBe(20) // 10 交付 + 10 供种植
+    expect(planter?.actualPm).toBe(10) // 10 作物全部回流采种
+  })
+
+  it('种草（额外消耗清水）：非循环材料按结算增量补展开', () => {
+    const grassPlant: FactoryRecipe = {
+      id: 'plant_grass', machineId: 'planter',
+      ingredients: [{ itemId: 'grass_seed', count: 1 }, { itemId: 'item_liquid_water', count: 1 }],
+      outcomes: [{ itemId: 'grass', count: 2 }],
+      totalProgress: 1000, sortId: 0,
+    }
+    const grassSeed: FactoryRecipe = {
+      id: 'seed_grass', machineId: 'seeder',
+      ingredients: [{ itemId: 'grass', count: 1 }],
+      outcomes: [{ itemId: 'grass_seed', count: 1 }],
+      totalProgress: 1000, sortId: 0,
+    }
+    const grassIndex: FactoryItemIndex = {
+      asIngredient: { grass_seed: [grassPlant], item_liquid_water: [grassPlant], grass: [grassSeed] },
+      asOutcome: { grass: [grassPlant], grass_seed: [grassSeed] },
+    }
+    const waterSources: FactorySource[] = [
+      { machineId: 'pump_1', itemId: 'item_liquid_water', produceRate: 1, msPerRound: 1000, uncapped: true },
+    ]
+    const graph = buildChainGraph([{ itemId: 'grass', rate: 10 }], [grassPlant, grassSeed], grassIndex, waterSources, {})
+    const planter = graph.nodes.find(n => n.machineId === 'planter')
+    expect(planter?.actualPm).toBe(20) // netRatio = 2/1 × 1/1 = 2
+    // 稳态清水需求 = 20 × (1/2) = 10/min（构建期 5 + 结算增量 5）
+    const water = graph.nodes.find(n => n.kind === 'source' && n.itemId === 'item_liquid_water')
+    expect(water?.demandPm).toBe(10)
+    expect(water?.actualPm).toBe(10)
+  })
+})
+
+describe('液体泵源无限采集', () => {
+  const drinkRecipe: FactoryRecipe = {
+    id: 'drink', machineId: 'brewer',
+    ingredients: [{ itemId: 'item_liquid_water', count: 1 }],
+    outcomes: [{ itemId: 'drink', count: 1 }],
+    totalProgress: 60000, sortId: 0,
+  }
+  const idx: FactoryItemIndex = {
+    asIngredient: { item_liquid_water: [drinkRecipe] },
+    asOutcome: { drink: [drinkRecipe] },
+  }
+
+  it('uncapped 源不封顶、不标记 supplyLimited', () => {
+    const sources: FactorySource[] = [
+      { machineId: 'pump_1', itemId: 'item_liquid_water', produceRate: 1, msPerRound: 1000, uncapped: true },
+    ]
+    const graph = buildChainGraph([{ itemId: 'drink', rate: 1000 }], [drinkRecipe], idx, sources, {})
+    const source = graph.nodes.find(n => n.kind === 'source')
+    expect(source?.demandPm).toBe(1000)
+    expect(source?.actualPm).toBe(1000)
+    expect(source?.supplyLimited).toBe(false)
+  })
+})

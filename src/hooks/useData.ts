@@ -1274,7 +1274,9 @@ export function useCraftingChain(targets: ChainTarget[]): UseDataResult<ChainGra
       if (cancelled) return
       const defaultCrafts: Record<string, string> = {}
       for (const [itemId, entry] of Object.entries<any>(defaultCraftRaw)) {
-        if (entry?.craftId) defaultCrafts[itemId] = entry.craftId
+        // WikiDefaultCraftTable 值为 craftId 纯字符串（兼容对象格式）
+        const craftId = typeof entry === 'string' ? entry : entry?.craftId
+        if (craftId) defaultCrafts[itemId] = craftId
       }
       const sources = adaptFactorySources(minerRaw, gasMinerRaw, pumpRaw)
       setChainData({ defaultCrafts, sources })

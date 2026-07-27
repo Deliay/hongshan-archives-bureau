@@ -83,9 +83,22 @@ function MachineNode({ data }: { data: ChainNode }) {
 function SourceNode({ data }: { data: ChainNode }) {
   const { t } = useI18n()
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center border border-green-900/60 rounded p-2 bg-archive-ink">
       <Handle type="source" position={Position.Right} className="!bg-green-500" />
       <Handle type="target" position={Position.Left} className="!bg-green-500" />
+      {data.machineIcon && (
+        <img
+          src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/factory/buildingpanelicon/${data.machineIcon}.png`}
+          alt=""
+          className="w-8 h-8 object-contain"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+        />
+      )}
+      {data.machineName && (
+        <div className="text-[10px] text-archive-dust mt-0.5 max-w-[90px] truncate text-center">
+          {data.machineName}
+        </div>
+      )}
       <ItemTile itemId={data.itemId} size="sm" showTips={true} />
       <div className="text-[10px] text-green-400 mt-0.5">{data.actualPm.toFixed(1)}/min</div>
       <div className="text-[9px] text-archive-lead">{t('factory.sourceNode')}</div>
@@ -104,6 +117,8 @@ const nodeTypes = {
 
 // 机器节点宽度随配方物品数（输入+输出）变化，与 dagre 布局和 ReactFlow 显式尺寸保持一致
 function nodeSize(n: ChainNode): { width: number; height: number } {
+  // 源节点含采集机器图标/名称 + 物品 tile + 速率行
+  if (n.kind === 'source') return { width: 110, height: 170 }
   if (n.kind !== 'machine') return { width: 80, height: 80 }
   const tiles = (n.recipe?.inputs.length ?? 0) + (n.recipe?.outputs.length ?? 0)
   const width = Math.max(120, tiles * 52 + 40)

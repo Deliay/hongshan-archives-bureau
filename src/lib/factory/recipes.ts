@@ -28,6 +28,9 @@ export function adaptFactoryMachine(raw: any, i18nMap?: Record<string, string>):
   }
 }
 
+/** 可泵采液体白名单（硬编码）：酸/清水支持无限来源采集，但链路中需放置对应水泵 */
+export const PUMPABLE_LIQUIDS = new Set(['item_liquid_acid', 'item_liquid_water'])
+
 export function adaptFactorySources(
   minerRaw: Record<string, any>,
   gasMinerRaw: Record<string, any>,
@@ -55,13 +58,18 @@ export function adaptFactorySources(
       })
     }
   }
+  // FactoryFluidPumpInTable 结构与矿机表不同：用 enableLiquidIds 列举可泵采液体，
+  // 无 produceRate（隐含每 msPerRound 1 单位），视为无限来源
   for (const [machineId, entry] of Object.entries(pumpRaw)) {
-    for (const m of entry?.mineable ?? []) {
+    const enableLiquidIds: string[] = Array.isArray(entry?.enableLiquidIds) ? entry.enableLiquidIds : []
+    for (const itemId of enableLiquidIds) {
+      if (!PUMPABLE_LIQUIDS.has(itemId)) continue
       sources.push({
         machineId,
-        itemId: m.miningItemId ?? '',
-        produceRate: m.produceRate ?? 0,
-        msPerRound: entry.msPerRound ?? 1000,
+        itemId,
+        produceRate: 1,
+        msPerRound: entry?.msPerRound ?? 1000,
+        uncapped: true,
       })
     }
   }
