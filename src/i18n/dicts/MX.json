@@ -397,6 +397,7 @@
     "region": "Región",
     "regionWuling": "Región de Wuling",
     "regionValley4": "Valle IV",
-    "priming": "Requiere carga previa"
+    "priming": "Requiere carga previa",
+    "reactorSlots": "Búferes {{used}}/{{total}}"
   }
 }

@@ -397,6 +397,7 @@
     "region": "Khu vực",
     "regionWuling": "Khu vực Vũ Lăng",
     "regionValley4": "Thung lũng IV",
-    "priming": "Cần nạp trước"
+    "priming": "Cần nạp trước",
+    "reactorSlots": "Vùng đệm {{used}}/{{total}}"
   }
 }

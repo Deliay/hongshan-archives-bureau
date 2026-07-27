@@ -37,6 +37,18 @@ export interface ChainTarget {
   rate: number
 }
 
+/** 扩容反应池共炉配方行：同一反应池内级联运行的一条配方 */
+export interface ReactorRecipeLine {
+  id: string
+  inputs: { itemId: string; count: number; rate: number }[]
+  outputs: { itemId: string; count: number; rate: number }[]
+  totalProgress: number
+  /** 该配方实际产速（/min） */
+  actualPm: number
+  /** 该配方需要的产线数（ceil(actualPm / 单线理论产速)） */
+  lines: number
+}
+
 export interface ChainNode {
   key: string
   kind: 'machine' | 'source' | 'target'
@@ -51,6 +63,11 @@ export interface ChainNode {
     outputs: { itemId: string; count: number; rate: number }[]
     totalProgress: number
   }
+  /** 扩容反应池：共炉运行的多条配方（存在时优先于 recipe 渲染） */
+  recipes?: ReactorRecipeLine[]
+  /** 缓存区占用/上限（不同物质种数，产物也占缓存区，共享物质只算一次） */
+  slotsUsed?: number
+  slotsTotal?: number
   demandPm: number
   actualPm: number
   theoryPm?: number

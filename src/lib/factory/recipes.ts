@@ -3,10 +3,22 @@ import type { FactoryRecipe, FactoryMachine, FactorySource } from './types'
 
 function flattenGroup(group: { group: { id: string; count: number }[] }[]): { itemId: string; count: number }[] {
   if (!Array.isArray(group) || group.length === 0) return []
-  // TODO: 多 group 语义待验证，当前取首 group
+  // 材料恒为单组（全表 0 个多材料组配方），组内多物品皆为必需
   const first = group[0]?.group
   if (!Array.isArray(first)) return []
   return first.map(g => ({ itemId: g.id, count: g.count }))
+}
+
+/** 产出语义与材料不同：多 group = 每组一个副产物（如 污水/惰性壤晶废液），需全部展开 */
+function flattenOutcomeGroups(groups: { group: { id: string; count: number }[] }[]): { itemId: string; count: number }[] {
+  if (!Array.isArray(groups)) return []
+  const result: { itemId: string; count: number }[] = []
+  for (const g of groups) {
+    for (const item of g?.group ?? []) {
+      result.push({ itemId: item.id, count: item.count })
+    }
+  }
+  return result
 }
 
 export function adaptFactoryRecipe(raw: any): FactoryRecipe {
@@ -14,7 +26,7 @@ export function adaptFactoryRecipe(raw: any): FactoryRecipe {
     id: raw.formulaId ?? raw.id ?? raw.$key ?? '',
     machineId: raw.machineId ?? '',
     ingredients: flattenGroup(raw.ingredients ?? []),
-    outcomes: flattenGroup(raw.outcomes ?? []),
+    outcomes: flattenOutcomeGroups(raw.outcomes ?? []),
     totalProgress: raw.totalProgress ?? 0,
     sortId: raw.sortId ?? 0,
   }

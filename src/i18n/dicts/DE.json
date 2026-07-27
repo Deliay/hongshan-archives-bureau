@@ -397,6 +397,7 @@
     "region": "Gebiet",
     "regionWuling": "Region Wuling",
     "regionValley4": "Tal IV",
-    "priming": "Vorbefüllung nötig"
+    "priming": "Vorbefüllung nötig",
+    "reactorSlots": "Puffer {{used}}/{{total}}"
   }
 }

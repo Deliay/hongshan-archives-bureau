@@ -397,6 +397,7 @@
     "region": "Région",
     "regionWuling": "Région de Wuling",
     "regionValley4": "Vallée IV",
-    "priming": "Pré-chargement requis"
+    "priming": "Pré-chargement requis",
+    "reactorSlots": "Tampons {{used}}/{{total}}"
   }
 }

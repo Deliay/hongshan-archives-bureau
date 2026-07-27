@@ -397,6 +397,7 @@
     "region": "Region",
     "regionWuling": "Wuling Region",
     "regionValley4": "Valley IV",
-    "priming": "Priming required"
+    "priming": "Priming required",
+    "reactorSlots": "Buffers {{used}}/{{total}}"
   }
 }

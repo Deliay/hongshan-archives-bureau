@@ -5726,5 +5726,21 @@
     "TH": "ต้องใส่ล่วงหน้า",
     "ID": "Perlu isian awal",
     "IT": "Pre-caricamento richiesto"
+  },
+  "factory.reactorSlots": {
+    "CN": "缓存区 {{used}}/{{total}}",
+    "TC": "緩存區 {{used}}/{{total}}",
+    "EN": "Buffers {{used}}/{{total}}",
+    "JP": "バッファ {{used}}/{{total}}",
+    "KR": "버퍼 {{used}}/{{total}}",
+    "RU": "Буферы {{used}}/{{total}}",
+    "MX": "Búferes {{used}}/{{total}}",
+    "BR": "Reservas {{used}}/{{total}}",
+    "DE": "Puffer {{used}}/{{total}}",
+    "FR": "Tampons {{used}}/{{total}}",
+    "VN": "Vùng đệm {{used}}/{{total}}",
+    "TH": "บัฟเฟอร์ {{used}}/{{total}}",
+    "ID": "Buffer {{used}}/{{total}}",
+    "IT": "Buffer {{used}}/{{total}}"
   }
 }

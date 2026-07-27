@@ -397,6 +397,7 @@
     "region": "ภูมิภาค",
     "regionWuling": "ภูมิภาคอู่หลิง",
     "regionValley4": "หุบเขาที่ 4",
-    "priming": "ต้องใส่ล่วงหน้า"
+    "priming": "ต้องใส่ล่วงหน้า",
+    "reactorSlots": "บัฟเฟอร์ {{used}}/{{total}}"
   }
 }

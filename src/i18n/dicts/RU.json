@@ -397,6 +397,7 @@
     "region": "Регион",
     "regionWuling": "Регион Улин",
     "regionValley4": "Долина IV",
-    "priming": "Нужна предзагрузка"
+    "priming": "Нужна предзагрузка",
+    "reactorSlots": "Буферы {{used}}/{{total}}"
   }
 }

@@ -1152,3 +1152,152 @@ describe('有效循环预填充标识', () => {
     expect(planter?.priming).toEqual({ itemId: 'seed', count: 1 })
   })
 })
+
+
+describe('扩容反应池多配方共炉', () => {
+  // 炉内级联链：粉末+水→液X（3 物质）；液X+污水→液Y+副产（4）；液Y×2+铁粉→终物+污水（4）
+  // 全组不同物质：粉末/水/液X/污水/液Y/副产/铁粉/终物 = 8，正好占满缓存区
+  function makePoolRecipes(machineId: string): { poolA: FactoryRecipe; poolB: FactoryRecipe; poolC: FactoryRecipe } {
+    return {
+      poolA: {
+        id: `pool_a_${machineId}`, machineId,
+        ingredients: [{ itemId: 'powder', count: 1 }, { itemId: 'water', count: 1 }],
+        outcomes: [{ itemId: 'liquid_x', count: 1 }],
+        totalProgress: 12000, sortId: 0,
+      },
+      poolB: {
+        id: `pool_b_${machineId}`, machineId,
+        ingredients: [{ itemId: 'liquid_x', count: 1 }, { itemId: 'sewage', count: 1 }],
+        outcomes: [{ itemId: 'liquid_y', count: 1 }, { itemId: 'byproduct', count: 1 }],
+        totalProgress: 12000, sortId: 0,
+      },
+      poolC: {
+        id: `pool_c_${machineId}`, machineId,
+        ingredients: [{ itemId: 'liquid_y', count: 2 }, { itemId: 'iron_powder', count: 1 }],
+        outcomes: [{ itemId: 'final', count: 1 }, { itemId: 'sewage', count: 1 }],
+        totalProgress: 12000, sortId: 0,
+      },
+    }
+  }
+  const { poolA, poolB, poolC } = makePoolRecipes('mix_pool_2')
+  const poolIndex: FactoryItemIndex = {
+    asIngredient: {
+      powder: [poolA], water: [poolA],
+      liquid_x: [poolB], sewage: [poolB],
+      liquid_y: [poolC], iron_powder: [poolC],
+    },
+    asOutcome: {
+      liquid_x: [poolA],
+      liquid_y: [poolB], byproduct: [poolB],
+      final: [poolC], sewage: [poolC],
+    },
+  }
+  const poolSources: FactorySource[] = [
+    { machineId: 'miner', itemId: 'powder', produceRate: 100, msPerRound: 100 },
+    { machineId: 'pump', itemId: 'water', produceRate: 100, msPerRound: 100, uncapped: true },
+    { machineId: 'miner2', itemId: 'iron_powder', produceRate: 100, msPerRound: 100 },
+    { machineId: 'pump2', itemId: 'sewage', produceRate: 100, msPerRound: 100, uncapped: true },
+  ]
+
+  it('级联 3 配方合并为单台反应池节点：缓存区 8/8，台数取最大产线数', () => {
+    const graph = buildChainGraph([{ itemId: 'final', rate: 10 }], [poolA, poolB, poolC], poolIndex, poolSources, {})
+    const poolNodes = graph.nodes.filter(n => n.machineId === 'mix_pool_2')
+    expect(poolNodes).toHaveLength(1)
+    const reactor = poolNodes[0]
+    expect(reactor.key.startsWith('reactor:')).toBe(true)
+    expect(reactor.recipes).toHaveLength(3)
+    expect(reactor.slotsUsed).toBe(8)
+    expect(reactor.slotsTotal).toBe(8)
+    // 单线理论 5/min：终物 10 → 2 线；液Y 20 → 4 线；液X 20 → 4 线 → 台数 4
+    expect(reactor.machineCount).toBe(4)
+    expect(reactor.recipes?.map(r => r.actualPm)).toEqual([10, 20, 20])
+    // 炉内级联边取消：所有边的端点都是现存节点，且无自环
+    const nodeKeys = new Set(graph.nodes.map(n => n.key))
+    for (const e of graph.edges) {
+      expect(e.from === e.to).toBe(false)
+      expect(nodeKeys.has(e.from)).toBe(true)
+      expect(nodeKeys.has(e.to)).toBe(true)
+    }
+    // 外部边重定向：反应池 → 目标、源 → 反应池
+    expect(graph.edges.some(e => e.from === reactor.key && e.to === 'target:final')).toBe(true)
+    expect(graph.edges.some(e => e.from.startsWith('source:') && e.to === reactor.key)).toBe(true)
+  })
+
+  it('普通反应池（mix_pool_1）不合并、不标注缓存区', () => {
+    const { poolA: a, poolB: b, poolC: c } = makePoolRecipes('mix_pool_1')
+    const idx: FactoryItemIndex = {
+      asIngredient: {
+        powder: [a], water: [a], liquid_x: [b], sewage: [b], liquid_y: [c], iron_powder: [c],
+      },
+      asOutcome: { liquid_x: [a], liquid_y: [b], byproduct: [b], final: [c], sewage: [c] },
+    }
+    const graph = buildChainGraph([{ itemId: 'final', rate: 10 }], [a, b, c], idx, poolSources, {})
+    const poolNodes = graph.nodes.filter(n => n.machineId === 'mix_pool_1')
+    expect(poolNodes).toHaveLength(3)
+    expect(poolNodes.every(n => n.slotsTotal == null && n.recipes == null)).toBe(true)
+  })
+
+  it('缓存区溢出时拆分为多台反应池，跨池物品保留外部物流边', () => {
+    // 追加下游配方 poolD：终物+矿石→产物2（新增 矿石/产物2 两种物质，全组 10 > 8）
+    const poolD: FactoryRecipe = {
+      id: 'pool_d', machineId: 'mix_pool_2',
+      ingredients: [{ itemId: 'final', count: 1 }, { itemId: 'ore', count: 1 }],
+      outcomes: [{ itemId: 'final2', count: 1 }],
+      totalProgress: 12000, sortId: 0,
+    }
+    const idx: FactoryItemIndex = {
+      asIngredient: {
+        ...poolIndex.asIngredient,
+        final: [poolD], ore: [poolD],
+      },
+      asOutcome: { ...poolIndex.asOutcome, final2: [poolD] },
+    }
+    const sources = [...poolSources, { machineId: 'miner3', itemId: 'ore', produceRate: 100, msPerRound: 100 }]
+    const graph = buildChainGraph([{ itemId: 'final2', rate: 10 }], [poolA, poolB, poolC, poolD], idx, sources, {})
+    const poolNodes = graph.nodes.filter(n => n.machineId === 'mix_pool_2')
+    // 装箱（共享污水/液Y/液X）：[poolD+poolC+poolB]=8 物质共炉、[poolA] 单池 3 物质
+    expect(poolNodes).toHaveLength(2)
+    const merged = poolNodes.find(n => n.recipes != null)
+    const singleton = poolNodes.find(n => n.recipes == null)
+    expect(merged?.recipes).toHaveLength(3)
+    expect(merged?.slotsUsed).toBe(8)
+    expect(merged?.slotsTotal).toBe(8)
+    expect(singleton?.slotsUsed).toBe(3)
+    expect(singleton?.slotsTotal).toBe(8)
+    // 跨池级联边（液X：poolA 池 → 共炉池）保留为外部物流边
+    const crossEdge = graph.edges.find(e =>
+      e.itemId === 'liquid_x' && e.from === singleton?.key && e.to === merged?.key,
+    )
+    expect(crossEdge?.perMinute).toBe(20)
+  })
+
+  it('不相连的独立配方只要缓存区容纳得下也合并', () => {
+    const poolE: FactoryRecipe = {
+      id: 'pool_e', machineId: 'mix_pool_2',
+      ingredients: [{ itemId: 'a', count: 1 }, { itemId: 'b', count: 1 }],
+      outcomes: [{ itemId: 'c', count: 1 }],
+      totalProgress: 12000, sortId: 0,
+    }
+    const poolF: FactoryRecipe = {
+      id: 'pool_f', machineId: 'mix_pool_2',
+      ingredients: [{ itemId: 'd', count: 1 }, { itemId: 'e', count: 1 }],
+      outcomes: [{ itemId: 'f', count: 1 }],
+      totalProgress: 12000, sortId: 0,
+    }
+    const idx: FactoryItemIndex = {
+      asIngredient: { a: [poolE], b: [poolE], d: [poolF], e: [poolF] },
+      asOutcome: { c: [poolE], f: [poolF] },
+    }
+    const sources: FactorySource[] = ['a', 'b', 'd', 'e'].map(itemId => ({
+      machineId: 'miner', itemId, produceRate: 100, msPerRound: 100,
+    }))
+    const graph = buildChainGraph(
+      [{ itemId: 'c', rate: 5 }, { itemId: 'f', rate: 5 }],
+      [poolE, poolF], idx, sources, {},
+    )
+    const poolNodes = graph.nodes.filter(n => n.machineId === 'mix_pool_2')
+    expect(poolNodes).toHaveLength(1)
+    expect(poolNodes[0].recipes).toHaveLength(2)
+    expect(poolNodes[0].slotsUsed).toBe(6)
+  })
+})

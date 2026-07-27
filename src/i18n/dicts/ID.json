@@ -397,6 +397,7 @@
     "region": "Wilayah",
     "regionWuling": "Wilayah Wuling",
     "regionValley4": "Lembah IV",
-    "priming": "Perlu isian awal"
+    "priming": "Perlu isian awal",
+    "reactorSlots": "Buffer {{used}}/{{total}}"
   }
 }

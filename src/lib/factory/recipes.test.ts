@@ -31,6 +31,23 @@ describe('adaptFactoryRecipe', () => {
     expect(recipe.totalProgress).toBe(0)
   })
 
+  it('flattens all outcome groups (multi-group = co-products)', () => {
+    // 真实结构：pool_liquid_xiranite_poly_2 的 outcomes 为两组，各一个副产物
+    const raw = {
+      formulaId: 'pool_test',
+      machineId: 'mix_pool_2',
+      ingredients: [{ group: [{ id: 'a', count: 1 }, { id: 'b', count: 1 }] }],
+      outcomes: [
+        { group: [{ id: 'main', count: 1 }] },
+        { group: [{ id: 'byproduct', count: 1 }] },
+      ],
+    }
+    const recipe = adaptFactoryRecipe(raw)
+    expect(recipe.ingredients).toHaveLength(2)
+    expect(recipe.outcomes).toHaveLength(2)
+    expect(recipe.outcomes.map(o => o.itemId)).toEqual(['main', 'byproduct'])
+  })
+
   it('flattens first group from multi-group ingredients', () => {
     const raw = {
       formulaId: 'test',

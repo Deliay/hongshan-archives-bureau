@@ -427,6 +427,32 @@ test.describe('工厂系统 (Factory System)', () => {
       expect(graphText).not.toContain('固气转化机')
     })
 
+    test('扩容反应池共炉级联（息壤聚合）', async ({ page }) => {
+      // 息壤液/聚合液/息壤聚合等 mix_pool_2 配方共炉：合并为一个扩容反应池节点，
+      // 炉内级联，缓存区按不同物质计数（共享物质只算一次）
+      await page.goto('/archive/factory/chains?targets=item_xiranite_poly:10', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+      await page.waitForTimeout(3000)
+
+      const graphText = await page.locator('.react-flow').textContent()
+      expect(graphText).toContain('扩容反应池')
+      // 共炉配方涉及 8 种不同物质（缓存区上限 8），与游戏教程场景一致
+      expect(graphText).toContain('缓存区 8/8')
+      // 规划验证修复：不得残留灌装↔拆解零产出封闭子图
+      expect(graphText).not.toContain('拆解机')
+      expect(graphText).not.toContain('灌装机')
+      // 普通反应池不出现在链路中（扩容反应池路线优先）
+      const poolNodes = page.locator('.react-flow__node-machine', { hasText: '反应池' })
+      const poolCount = await poolNodes.count()
+      expect(poolCount).toBe(1)
+    })
+
     test('传送带/管道边显示数量', async ({ page }) => {
       const TARGET = 'item_proc_battery_5'
 

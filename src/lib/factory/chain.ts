@@ -50,6 +50,20 @@ export function calcTransportCount(rate: number, throughput: number): number {
 const DEFAULT_BELT_THROUGHPUT = 30
 const DEFAULT_PIPE_THROUGHPUT = 120
 
+/**
+ * 反应池缓存区（slot）上限。游戏结构化数据尚未解包该字段（经确认以常量维护），
+ * 数值取自教学文案（I18nTextTable，6 个数据版本一致）：
+ * - 「仅有5个缓存区的反应池无法同时进行这3个配方生产」→ 反应池 mix_pool_1 = 5
+ * - 「扩容反应池拥有8个缓存区」→ 扩容反应池 mix_pool_2 = 8
+ * slot 占用 = 共炉配方涉及的不同物质种数（产物也占缓存区，共享物质只算一次）。
+ * 只有扩容反应池支持多配方共炉与炉内级联，普通反应池无此功能。
+ */
+export const EXPANDED_REACTOR_MACHINE_ID = 'mix_pool_2'
+export const REACTOR_BUFFER_SLOTS: Record<string, number> = {
+  mix_pool_1: 5,
+  mix_pool_2: 8,
+}
+
 /** 循环路径上的一级：物品、生产配方、节点与投入/产出数量 */
 interface CycleStage {
   nodeKey: string
@@ -125,12 +139,16 @@ export function buildChainGraph(
   /** 规划阶段为物品选定的有序可行配方路线（消除封闭回路后的回溯结果，可多路线） */
   const assignment = new Map<string, string[]>()
 
+  /** 被全局验证剔除的配方（itemId → 配方 id 集合）：这些路线参与封闭回路，不再候选 */
+  const excludedRoutes = new Map<string, Set<string>>()
+
   /** 候选配方有序列表：用户指定 > Wiki 默认 > 配方表键序；用户指定为强制项不参与回退 */
   function candidateRecipes(itemId: string): FactoryRecipe[] {
+    const excluded = excludedRoutes.get(itemId)
     const list: FactoryRecipe[] = []
     const seen = new Set<string>()
     const push = (id: string | undefined) => {
-      if (!id || seen.has(id)) return
+      if (!id || seen.has(id) || excluded?.has(id)) return
       const r = recipeById.get(id)
       if (r) {
         seen.add(id)
@@ -209,6 +227,92 @@ export function buildChainGraph(
     if (Number.isFinite(target.rate) && target.rate > 0) planItem(target.itemId, [])
   }
 
+  /** 沿首选路线的依赖环净产出比 */
+  function primaryCycleRatio(cycleItems: string[], startItem: string): number {
+    const stages: { inputQty: number; outputQty: number }[] = []
+    for (let i = 0; i < cycleItems.length; i++) {
+      const cycleItem = cycleItems[i]
+      const nextItem = i + 1 < cycleItems.length ? cycleItems[i + 1] : startItem
+      const recipe = recipeById.get(assignment.get(cycleItem)?.[0] ?? '')
+      if (!recipe) continue
+      const output = recipe.outcomes.find(o => o.itemId === cycleItem)
+      const input = recipe.ingredients.find(g => g.itemId === nextItem)
+      if (output && input) stages.push({ inputQty: input.count, outputQty: output.count })
+    }
+    return calcCycleNetRatio(stages)
+  }
+
+  /** 沿首选路线全局检测净产出比 ≤ 1 的封闭回路（返回环上物品，无则 null） */
+  function findClosedPrimaryCycle(): string[] | null {
+    const visited = new Set<string>()
+    const stack: string[] = []
+    const inStack = new Set<string>()
+    function dfs(itemId: string): string[] | null {
+      if (visited.has(itemId)) return null
+      if (inStack.has(itemId)) {
+        const cycle = stack.slice(stack.indexOf(itemId))
+        return primaryCycleRatio(cycle, itemId) <= 1 ? cycle : null
+      }
+      if (supplyCapByItem.has(itemId)) {
+        visited.add(itemId)
+        return null
+      }
+      const recipe = recipeById.get(assignment.get(itemId)?.[0] ?? '')
+      if (!recipe) {
+        visited.add(itemId)
+        return null
+      }
+      inStack.add(itemId)
+      stack.push(itemId)
+      for (const ing of recipe.ingredients) {
+        const found = dfs(ing.itemId)
+        if (found) return found
+      }
+      stack.pop()
+      inStack.delete(itemId)
+      visited.add(itemId)
+      return null
+    }
+    for (const itemId of assignment.keys()) {
+      const found = dfs(itemId)
+      if (found) return found
+    }
+    return null
+  }
+
+  /**
+   * 规划验证与修复：各物品的路线是在不同 DFS 分支（不同上下文）中选定的，跨分支组合
+   * 后可能残留封闭回路（如气态赫铜=拆解机 × 满赫铜罐=灌装机各自「可行」、组合后互喂）。
+   * 沿首选路线全局检测，剔除环上物品的首选路线并重规划（候选中永久排除被剔路线）。
+   */
+  function verifyAndRepairAssignment(): void {
+    for (let guard = 0; guard < 20; guard++) {
+      const cycle = findClosedPrimaryCycle()
+      if (!cycle) return
+      let repaired = false
+      for (const itemId of cycle) {
+        const current = assignment.get(itemId)?.[0]
+        if (!current) continue
+        // 无替代候选的物品跳过（尝试环上下一物品）
+        if (!candidateRecipes(itemId).some(r => r.id !== current)) continue
+        const excluded = excludedRoutes.get(itemId) ?? new Set<string>()
+        excluded.add(current)
+        excludedRoutes.set(itemId, excluded)
+        assignment.delete(itemId)
+        if (planItem(itemId, []) && assignment.has(itemId)) {
+          repaired = true
+          break
+        }
+        // 重规划失败：恢复原首选路线，尝试环上下一物品
+        assignment.set(itemId, [current])
+      }
+      // 环上物品均无替代路线：放弃修复，由构建阶段保留封闭回路标记
+      if (!repaired) return
+    }
+  }
+
+  verifyAndRepairAssignment()
+
   function resolveRecipe(itemId: string): FactoryRecipe | null {
     const routes = assignment.get(itemId)
     if (routes?.length && recipeById.has(routes[0])) return recipeById.get(routes[0])!
@@ -255,6 +359,10 @@ export function buildChainGraph(
         const fb = Number.isFinite(b.ceiling)
         if (fa !== fb) return fa ? -1 : 1
         if (fa && fb) return a.ceiling - b.ceiling
+        // 同为不受限路线时：扩容反应池优先（共炉省台数），普通反应池最后
+        const rank = (m: string) => (m === EXPANDED_REACTOR_MACHINE_ID ? 0 : m === 'mix_pool_1' ? 2 : 1)
+        const dr = rank(a.recipe.machineId) - rank(b.recipe.machineId)
+        if (dr !== 0) return dr
         return a.idx - b.idx
       })
       .map(x => x.recipe)
@@ -571,6 +679,102 @@ export function buildChainGraph(
       consumerNode.priming = { itemId: loop.itemId, count: lastStage.nextInCount }
     }
   }
+
+  /** 配方组涉及的不同物质集合（投入 ∪ 产出；产物也占缓存区） */
+  function reactorSubstances(nodes: ChainNode[]): Set<string> {
+    const items = new Set<string>()
+    for (const n of nodes) {
+      for (const i of n.recipe?.inputs ?? []) items.add(i.itemId)
+      for (const o of n.recipe?.outputs ?? []) items.add(o.itemId)
+    }
+    return items
+  }
+
+  /**
+   * 扩容反应池多配方共炉：全图 mix_pool_2 机器节点按缓存区上限（不同物质 ≤ slots）
+   * 贪心装箱合并（节点创建顺序 ≈ 链路顺序，相连配方相邻，天然共炉）。同一反应池内
+   * 配方产物可直接作为下一配方原料（炉内级联），内部物流边取消；台数 = 各配方产线
+   * 数最大值（每台反应池可同时跑桶内整套配方且不溢出缓存区）。普通反应池无此功能。
+   */
+  function mergeReactorGroups(): void {
+    const slotsTotal = REACTOR_BUFFER_SLOTS[EXPANDED_REACTOR_MACHINE_ID]
+    if (!slotsTotal) return
+    const poolNodes = Array.from(allNodes.values()).filter(
+      n => n.kind === 'machine' && n.machineId === EXPANDED_REACTOR_MACHINE_ID && n.recipe,
+    )
+    if (poolNodes.length === 0) return
+
+    if (poolNodes.length === 1) {
+      const only = poolNodes[0]
+      only.slotsUsed = reactorSubstances([only]).size
+      only.slotsTotal = slotsTotal
+      return
+    }
+
+    const buckets: ChainNode[][] = []
+    let current: ChainNode[] = []
+    let currentItems = new Set<string>()
+    for (const node of poolNodes) {
+      const items = reactorSubstances([node])
+      if (current.length > 0 && new Set([...currentItems, ...items]).size > slotsTotal) {
+        buckets.push(current)
+        current = []
+        currentItems = new Set()
+      }
+      current.push(node)
+      currentItems = new Set([...currentItems, ...items])
+    }
+    if (current.length > 0) buckets.push(current)
+
+    const keyMap = new Map<string, string>()
+    for (const bucket of buckets) {
+      const substances = reactorSubstances(bucket)
+      if (bucket.length === 1) {
+        const only = bucket[0]
+        only.slotsUsed = substances.size
+        only.slotsTotal = slotsTotal
+        continue
+      }
+      const mergedKey = `reactor:${bucket.map(n => n.key).join('+')}`
+      const first = bucket[0]
+      allNodes.set(mergedKey, {
+        key: mergedKey,
+        kind: 'machine',
+        itemId: first.itemId,
+        machineId: EXPANDED_REACTOR_MACHINE_ID,
+        machineName: first.machineName,
+        machineIcon: first.machineIcon,
+        machineCount: Math.max(...bucket.map(n => n.machineCount ?? 1)),
+        recipes: bucket.map(n => ({
+          id: n.recipe!.id,
+          inputs: n.recipe!.inputs,
+          outputs: n.recipe!.outputs,
+          totalProgress: n.recipe!.totalProgress,
+          actualPm: n.actualPm,
+          lines: n.machineCount ?? 1,
+        })),
+        slotsUsed: substances.size,
+        slotsTotal,
+        demandPm: 0,
+        actualPm: 0,
+      })
+      for (const n of bucket) {
+        keyMap.set(n.key, mergedKey)
+        allNodes.delete(n.key)
+      }
+    }
+
+    if (keyMap.size === 0) return
+    // 重写边：成员节点 key → 合并节点 key；炉内级联边（两端同节点）取消
+    for (let i = allEdges.length - 1; i >= 0; i--) {
+      const e = allEdges[i]
+      e.from = keyMap.get(e.from) ?? e.from
+      e.to = keyMap.get(e.to) ?? e.to
+      if (e.from === e.to) allEdges.splice(i, 1)
+    }
+  }
+
+  mergeReactorGroups()
 
   // 边按 (from, to, itemId) 合并，perMinute 累加后重算物流数量
   const edgeMap = new Map<string, ChainEdge>()

@@ -397,6 +397,7 @@
     "region": "区域",
     "regionWuling": "武陵地区",
     "regionValley4": "四号谷地",
-    "priming": "需预填充"
+    "priming": "需预填充",
+    "reactorSlots": "缓存区 {{used}}/{{total}}"
   }
 }

@@ -397,6 +397,7 @@
     "region": "지역",
     "regionWuling": "무릉 지구",
     "regionValley4": "제4계곡",
-    "priming": "사전 투입 필요"
+    "priming": "사전 투입 필요",
+    "reactorSlots": "버퍼 {{used}}/{{total}}"
   }
 }
