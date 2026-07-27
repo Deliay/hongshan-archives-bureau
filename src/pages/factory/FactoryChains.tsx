@@ -8,6 +8,7 @@ import ChainGraph from '../../components/Factory/ChainGraph'
 import FactoryItemPickerDialog from '../../components/Factory/FactoryItemPickerDialog'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
 import { FACTORY_REGIONS, DEFAULT_REGION_ID, getFactoryRegion } from '../../lib/factory/regions'
+import { perMinute } from '../../lib/factory/chain'
 import type { ChainTarget } from '../../lib/factory/types'
 
 export default function FactoryChains() {
@@ -37,7 +38,7 @@ export default function FactoryChains() {
   const defaultRateOf = useCallback((itemId: string): number => {
     const recipe = factoryData?.index.asOutcome[itemId]?.[0]
     const outcome = recipe?.outcomes.find(o => o.itemId === itemId)
-    return recipe ? (outcome?.count ?? 1) * 60000 / recipe.totalProgress : 0
+    return recipe ? perMinute(outcome?.count ?? 1, recipe.totalProgress) : 0
   }, [factoryData])
 
   // 非法（NaN、负数）rate 回退为该物品默认配方的理论产出速率

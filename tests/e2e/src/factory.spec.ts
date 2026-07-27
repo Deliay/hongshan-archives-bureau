@@ -453,6 +453,23 @@ test.describe('工厂系统 (Factory System)', () => {
       expect(poolCount).toBe(1)
     })
 
+    test('中容武陵电池 6/min：封装机 10s/个正好 1 台', async ({ page }) => {
+      // 回归：totalProgress 误当毫秒导致理论产速低估 6 倍（60000 → 10s/个 → 单台 6/min）
+      await page.goto('/archive/factory/chains?targets=item_proc_battery_5:6', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+      await page.waitForTimeout(3000)
+
+      const packer = page.locator('.react-flow__node-machine', { hasText: '封装机' })
+      await expect(packer).toHaveCount(1)
+      await expect(packer.first()).toContainText('×1')
+    })
+
     test('传送带/管道边显示数量', async ({ page }) => {
       const TARGET = 'item_proc_battery_5'
 

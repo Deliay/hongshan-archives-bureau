@@ -12,11 +12,12 @@ import {
 import type { FactoryRecipe, FactoryItemIndex, FactorySource, ChainTarget } from './types'
 
 describe('perMinute', () => {
+  // totalProgress 单位：6000 进度 = 1 秒（progressRound 即制作秒数）
   it('calculates output per minute correctly', () => {
-    expect(perMinute(1, 60000)).toBe(1)
-    expect(perMinute(2, 60000)).toBe(2)
-    expect(perMinute(1, 12000)).toBe(5)
-    expect(perMinute(3, 10000)).toBe(18)
+    expect(perMinute(1, 60000)).toBe(6) // 10s/个 → 6/min（如中容武陵电池）
+    expect(perMinute(2, 60000)).toBe(12)
+    expect(perMinute(1, 12000)).toBe(30) // 2s/个 → 30/min
+    expect(perMinute(3, 6000)).toBe(180) // 1s 产 3 个 → 180/min
   })
 
   it('returns 0 for zero totalProgress', () => {
@@ -42,7 +43,7 @@ describe('buildChainGraph', () => {
     machineId: 'furnace',
     ingredients: [{ itemId: 'iron_ore', count: 2 }],
     outcomes: [{ itemId: 'iron_ingot', count: 1 }],
-    totalProgress: 12000,
+    totalProgress: 72000,
     sortId: 0,
   }
 
@@ -54,7 +55,7 @@ describe('buildChainGraph', () => {
       { itemId: 'coal', count: 1 },
     ],
     outcomes: [{ itemId: 'steel_ingot', count: 1 }],
-    totalProgress: 18000,
+    totalProgress: 108000,
     sortId: 0,
   }
 
@@ -124,7 +125,7 @@ describe('buildChainGraph', () => {
       machineId: 'filler',
       ingredients: [{ itemId: 'glass_bottle', count: 1 }],
       outcomes: [{ itemId: 'water_bottle', count: 1 }],
-      totalProgress: 1000,
+      totalProgress: 6000,
       sortId: 0,
     }
     const emptyBottleRecipe: FactoryRecipe = {
@@ -132,7 +133,7 @@ describe('buildChainGraph', () => {
       machineId: 'filler',
       ingredients: [{ itemId: 'water_bottle', count: 1 }],
       outcomes: [{ itemId: 'glass_bottle', count: 1 }],
-      totalProgress: 1000,
+      totalProgress: 6000,
       sortId: 0,
     }
     const cycleIndex: FactoryItemIndex = {
@@ -165,7 +166,7 @@ describe('buildChainGraph', () => {
       machineId: 'furnace',
       ingredients: [{ itemId: 'iron_ore', count: 5 }],
       outcomes: [{ itemId: 'iron_ingot', count: 1 }],
-      totalProgress: 20000,
+      totalProgress: 120000,
       sortId: 1,
     }
     const targets: ChainTarget[] = [{ itemId: 'iron_ingot', rate: 1 }]
@@ -202,7 +203,7 @@ describe('buildChainGraph with real data', () => {
     {
       id: 'component_activity_xiranite_cmpt_1',
       machineId: 'component_mc_1',
-      totalProgress: 12000,
+      totalProgress: 72000,
       sortId: 6,
       ingredients: [{ itemId: 'item_xiranite_powder', count: 1 }],
       outcomes: [{ itemId: 'item_activity_xiranite_cmpt', count: 1 }],
@@ -210,7 +211,7 @@ describe('buildChainGraph with real data', () => {
     {
       id: 'tools_proc_activity_xiranite_hulu_1',
       machineId: 'tools_assebling_mc_1',
-      totalProgress: 60000,
+      totalProgress: 360000,
       sortId: 12,
       ingredients: [
         { itemId: 'item_activity_xiranite_bottle', count: 5 },
@@ -393,7 +394,7 @@ describe('R7 供给封顶瓶颈', () => {
     machineId: 'furnace',
     ingredients: [{ itemId: 'iron_ore', count: 2 }],
     outcomes: [{ itemId: 'iron_ingot', count: 1 }],
-    totalProgress: 12000, // 单台理论产出 5/min
+    totalProgress: 72000, // 单台理论产出 5/min
     sortId: 0,
   }
   const r7Index: FactoryItemIndex = {
@@ -438,7 +439,7 @@ describe('R8 机器数量', () => {
     machineId: 'assembler',
     ingredients: [{ itemId: 'part', count: 1 }],
     outcomes: [{ itemId: 'widget', count: 1 }],
-    totalProgress: 2000, // 单台理论产出 30/min
+    totalProgress: 12000, // 单台理论产出 30/min
     sortId: 0,
   }
   const r8Index: FactoryItemIndex = {
@@ -470,7 +471,7 @@ describe('R9/R10 物流设施与液体区分', () => {
     machineId: 'brewer',
     ingredients: [{ itemId: 'water', count: 1 }],
     outcomes: [{ itemId: 'drink', count: 1 }],
-    totalProgress: 60000, // 单台 1/min
+    totalProgress: 360000, // 单台 1/min
     sortId: 0,
   }
   const r9Index: FactoryItemIndex = {
@@ -543,7 +544,7 @@ describe('多目标需求累加', () => {
     machineId: 'furnace',
     ingredients: [{ itemId: 'iron_ore', count: 2 }],
     outcomes: [{ itemId: 'iron_ingot', count: 1 }],
-    totalProgress: 12000, // 单台 5/min
+    totalProgress: 72000, // 单台 5/min
     sortId: 0,
   }
   const steelRecipe: FactoryRecipe = {
@@ -551,7 +552,7 @@ describe('多目标需求累加', () => {
     machineId: 'furnace',
     ingredients: [{ itemId: 'iron_ingot', count: 3 }],
     outcomes: [{ itemId: 'steel_ingot', count: 1 }],
-    totalProgress: 6000, // 单台 10/min
+    totalProgress: 36000, // 单台 10/min
     sortId: 0,
   }
   const mtIndex: FactoryItemIndex = {
@@ -597,7 +598,7 @@ describe('非整数与非法产速', () => {
     machineId: 'furnace',
     ingredients: [{ itemId: 'iron_ore', count: 2 }],
     outcomes: [{ itemId: 'iron_ingot', count: 1 }],
-    totalProgress: 12000,
+    totalProgress: 72000,
     sortId: 0,
   }
   const idx: FactoryItemIndex = {
@@ -641,13 +642,13 @@ describe('循环规则 R0-R6', () => {
       id: 'plant', machineId: 'planter',
       ingredients: [{ itemId: 'seed', count: 1 }],
       outcomes: [{ itemId: 'crop', count: 1 }],
-      totalProgress: 1000, sortId: 0,
+      totalProgress: 6000, sortId: 0,
     }
     const seedRecipe: FactoryRecipe = {
       id: 'seed', machineId: 'seeder',
       ingredients: [{ itemId: 'crop', count: 1 }],
       outcomes: [{ itemId: 'seed', count: 2 }],
-      totalProgress: 1000, sortId: 0,
+      totalProgress: 6000, sortId: 0,
     }
     const idx: FactoryItemIndex = {
       asIngredient: { seed: [plantRecipe], crop: [seedRecipe] },
@@ -664,13 +665,13 @@ describe('循环规则 R0-R6', () => {
       id: 'bottle', machineId: 'filler',
       ingredients: [{ itemId: 'glass_bottle', count: 1 }],
       outcomes: [{ itemId: 'water_bottle', count: 1 }],
-      totalProgress: 1000, sortId: 0,
+      totalProgress: 6000, sortId: 0,
     }
     const emptyRecipe: FactoryRecipe = {
       id: 'empty', machineId: 'filler',
       ingredients: [{ itemId: 'water_bottle', count: 1 }],
       outcomes: [{ itemId: 'glass_bottle', count: 1 }],
-      totalProgress: 1000, sortId: 0,
+      totalProgress: 6000, sortId: 0,
     }
     const idx: FactoryItemIndex = {
       asIngredient: { glass_bottle: [bottleRecipe], water_bottle: [emptyRecipe] },
@@ -696,13 +697,13 @@ describe('循环规则 R0-R6', () => {
         { itemId: 'junk', count: 9 },
         { itemId: 'a', count: 2 },
       ],
-      totalProgress: 1000, sortId: 0,
+      totalProgress: 6000, sortId: 0,
     }
     const recipeB: FactoryRecipe = {
       id: 'make_b', machineId: 'm2',
       ingredients: [{ itemId: 'a', count: 1 }],
       outcomes: [{ itemId: 'b', count: 1 }],
-      totalProgress: 1000, sortId: 0,
+      totalProgress: 6000, sortId: 0,
     }
     const idx: FactoryItemIndex = {
       asIngredient: { x: [recipeA], b: [recipeA], a: [recipeB] },
@@ -726,7 +727,7 @@ describe('循环规则 R0-R6', () => {
         id: `r${i}`, machineId: `m${i}`,
         ingredients: [{ itemId: `item_${i + 1}`, count: 1 }],
         outcomes: [{ itemId: `item_${i}`, count: 1 }],
-        totalProgress: 1000, sortId: 0,
+        totalProgress: 6000, sortId: 0,
       }
       chainRecipes.push(r)
       chainIndex.asIngredient[`item_${i + 1}`] = [r]
@@ -748,37 +749,37 @@ describe('封闭回路消除（配方规划回溯）', () => {
     id: 'dismantler_copperjar_gas_copper_1', machineId: 'dismantler_1',
     ingredients: [{ itemId: 'item_gasjar_copper_gas_copper', count: 1 }],
     outcomes: [{ itemId: 'item_copper_jar', count: 1 }, { itemId: 'item_gas_copper', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const transmuterGas: FactoryRecipe = {
     id: 'liquid_transmuter_2_gas_gas_copper_1', machineId: 'transmuter_2',
     ingredients: [{ itemId: 'item_copper_nugget', count: 2 }],
     outcomes: [{ itemId: 'item_gas_copper', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const transmuterSolid: FactoryRecipe = {
     id: 'liquid_transmuter_2_solid_copper_nugget_1', machineId: 'transmuter_2',
     ingredients: [{ itemId: 'item_gas_copper', count: 1 }],
     outcomes: [{ itemId: 'item_copper_nugget', count: 2 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const furnace: FactoryRecipe = {
     id: 'furnance_copper_nugget_1', machineId: 'furnance_1',
     ingredients: [{ itemId: 'item_copper_ore', count: 1 }, { itemId: 'item_liquid_water', count: 1 }],
     outcomes: [{ itemId: 'item_copper_nugget', count: 1 }, { itemId: 'item_liquid_sewage', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const filling: FactoryRecipe = {
     id: 'filling_copperjar_gas_copper_1', machineId: 'filling_1',
     ingredients: [{ itemId: 'item_copper_jar', count: 1 }, { itemId: 'item_gas_copper', count: 1 }],
     outcomes: [{ itemId: 'item_gasjar_copper_gas_copper', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const shaper: FactoryRecipe = {
     id: 'shaper_gas_copper_jar_1', machineId: 'shaper_1',
     ingredients: [{ itemId: 'item_copper_nugget', count: 2 }, { itemId: 'item_gas_inert', count: 1 }],
     outcomes: [{ itemId: 'item_copper_jar', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const cuRecipes = [dismantler, transmuterGas, transmuterSolid, furnace, filling, shaper]
   const cuIndex: FactoryItemIndex = {
@@ -871,13 +872,13 @@ describe('有效循环产能结算（种植增产）', () => {
     id: 'plant', machineId: 'planter',
     ingredients: [{ itemId: 'seed', count: 1 }],
     outcomes: [{ itemId: 'crop', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const seedRecipe: FactoryRecipe = {
     id: 'seed', machineId: 'seeder',
     ingredients: [{ itemId: 'crop', count: 1 }],
     outcomes: [{ itemId: 'seed', count: 2 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const plantIndex: FactoryItemIndex = {
     asIngredient: { seed: [plantRecipe], crop: [seedRecipe] },
@@ -932,13 +933,13 @@ describe('有效循环产能结算（种植增产）', () => {
       id: 'plant_grass', machineId: 'planter',
       ingredients: [{ itemId: 'grass_seed', count: 1 }, { itemId: 'item_liquid_water', count: 1 }],
       outcomes: [{ itemId: 'grass', count: 2 }],
-      totalProgress: 1000, sortId: 0,
+      totalProgress: 6000, sortId: 0,
     }
     const grassSeed: FactoryRecipe = {
       id: 'seed_grass', machineId: 'seeder',
       ingredients: [{ itemId: 'grass', count: 1 }],
       outcomes: [{ itemId: 'grass_seed', count: 1 }],
-      totalProgress: 1000, sortId: 0,
+      totalProgress: 6000, sortId: 0,
     }
     const grassIndex: FactoryItemIndex = {
       asIngredient: { grass_seed: [grassPlant], item_liquid_water: [grassPlant], grass: [grassSeed] },
@@ -962,7 +963,7 @@ describe('液体泵源无限采集', () => {
     id: 'drink', machineId: 'brewer',
     ingredients: [{ itemId: 'item_liquid_water', count: 1 }],
     outcomes: [{ itemId: 'drink', count: 1 }],
-    totalProgress: 60000, sortId: 0,
+    totalProgress: 360000, sortId: 0,
   }
   const idx: FactoryItemIndex = {
     asIngredient: { item_liquid_water: [drinkRecipe] },
@@ -988,19 +989,19 @@ describe('区域资源上限与多路线分配', () => {
     id: 'transmuter_solid', machineId: 'transmuter_2',
     ingredients: [{ itemId: 'item_gas_xiranite', count: 1 }],
     outcomes: [{ itemId: 'item_xiranite_powder', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const oven: FactoryRecipe = {
     id: 'oven_powder', machineId: 'xiranite_oven_1',
     ingredients: [{ itemId: 'item_carbon_mtl', count: 1 }, { itemId: 'item_liquid_water', count: 1 }],
     outcomes: [{ itemId: 'item_xiranite_powder', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const gasFromPowder: FactoryRecipe = {
     id: 'gas_from_powder', machineId: 'transmuter_2',
     ingredients: [{ itemId: 'item_xiranite_powder', count: 1 }],
     outcomes: [{ itemId: 'item_gas_xiranite', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const xiRecipes = [transmuterSolid, oven, gasFromPowder]
   const xiIndex: FactoryItemIndex = {
@@ -1081,7 +1082,7 @@ describe('区域资源上限与多路线分配', () => {
       id: 'iron_ingot', machineId: 'furnace',
       ingredients: [{ itemId: 'item_iron_ore', count: 2 }],
       outcomes: [{ itemId: 'item_iron_ingot', count: 1 }],
-      totalProgress: 12000, sortId: 0,
+      totalProgress: 72000, sortId: 0,
     }
     const idx: FactoryItemIndex = {
       asIngredient: { item_iron_ore: [ingotRecipe] },
@@ -1124,13 +1125,13 @@ describe('有效循环预填充标识', () => {
     id: 'plant', machineId: 'planter',
     ingredients: [{ itemId: 'seed', count: 1 }],
     outcomes: [{ itemId: 'crop', count: 1 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const seedRecipe: FactoryRecipe = {
     id: 'seed', machineId: 'seeder',
     ingredients: [{ itemId: 'crop', count: 1 }],
     outcomes: [{ itemId: 'seed', count: 2 }],
-    totalProgress: 1000, sortId: 0,
+    totalProgress: 6000, sortId: 0,
   }
   const plantIndex: FactoryItemIndex = {
     asIngredient: { seed: [plantRecipe], crop: [seedRecipe] },
@@ -1163,19 +1164,19 @@ describe('扩容反应池多配方共炉', () => {
         id: `pool_a_${machineId}`, machineId,
         ingredients: [{ itemId: 'powder', count: 1 }, { itemId: 'water', count: 1 }],
         outcomes: [{ itemId: 'liquid_x', count: 1 }],
-        totalProgress: 12000, sortId: 0,
+        totalProgress: 72000, sortId: 0,
       },
       poolB: {
         id: `pool_b_${machineId}`, machineId,
         ingredients: [{ itemId: 'liquid_x', count: 1 }, { itemId: 'sewage', count: 1 }],
         outcomes: [{ itemId: 'liquid_y', count: 1 }, { itemId: 'byproduct', count: 1 }],
-        totalProgress: 12000, sortId: 0,
+        totalProgress: 72000, sortId: 0,
       },
       poolC: {
         id: `pool_c_${machineId}`, machineId,
         ingredients: [{ itemId: 'liquid_y', count: 2 }, { itemId: 'iron_powder', count: 1 }],
         outcomes: [{ itemId: 'final', count: 1 }, { itemId: 'sewage', count: 1 }],
-        totalProgress: 12000, sortId: 0,
+        totalProgress: 72000, sortId: 0,
       },
     }
   }
@@ -1243,7 +1244,7 @@ describe('扩容反应池多配方共炉', () => {
       id: 'pool_d', machineId: 'mix_pool_2',
       ingredients: [{ itemId: 'final', count: 1 }, { itemId: 'ore', count: 1 }],
       outcomes: [{ itemId: 'final2', count: 1 }],
-      totalProgress: 12000, sortId: 0,
+      totalProgress: 72000, sortId: 0,
     }
     const idx: FactoryItemIndex = {
       asIngredient: {
@@ -1276,13 +1277,13 @@ describe('扩容反应池多配方共炉', () => {
       id: 'pool_e', machineId: 'mix_pool_2',
       ingredients: [{ itemId: 'a', count: 1 }, { itemId: 'b', count: 1 }],
       outcomes: [{ itemId: 'c', count: 1 }],
-      totalProgress: 12000, sortId: 0,
+      totalProgress: 72000, sortId: 0,
     }
     const poolF: FactoryRecipe = {
       id: 'pool_f', machineId: 'mix_pool_2',
       ingredients: [{ itemId: 'd', count: 1 }, { itemId: 'e', count: 1 }],
       outcomes: [{ itemId: 'f', count: 1 }],
-      totalProgress: 12000, sortId: 0,
+      totalProgress: 72000, sortId: 0,
     }
     const idx: FactoryItemIndex = {
       asIngredient: { a: [poolE], b: [poolE], d: [poolF], e: [poolF] },

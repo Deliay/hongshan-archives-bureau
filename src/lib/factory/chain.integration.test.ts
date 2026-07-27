@@ -65,6 +65,15 @@ describe('真实数据集成回归', () => {
     expect(reactorNodes.some(n => (n.recipes?.length ?? 0) >= 2)).toBe(true)
   })
 
+  it('中容武陵电池 6/min：封装机 10s/个 → 正好 1 台', () => {
+    // tools_proc_battery_5_1：totalProgress=60000（progressRound=10 → 10s/个），单台 6/min
+    const graph = buildWithRealData('item_proc_battery_5', 6, 'wuling')
+    const packer = graph.nodes.find(n => n.machineId === 'tools_assebling_mc_1')
+    expect(packer).toBeDefined()
+    expect(packer?.theoryPm).toBe(6)
+    expect(packer?.machineCount).toBe(1)
+  })
+
   it('种植（酮化灌木）：有效循环 + 预填充标识，无封闭回路', () => {
     const graph = buildWithRealData('item_plant_bbflower_1', 10, 'wuling')
     expect(graph.edges.every(e => e.cycleType !== 'closed')).toBe(true)

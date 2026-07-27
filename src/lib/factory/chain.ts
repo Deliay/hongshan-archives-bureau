@@ -1,7 +1,14 @@
 import type { FactoryRecipe, FactoryItemIndex, FactorySource, ChainGraph, ChainNode, ChainEdge, ChainTarget } from './types'
 
+/**
+ * 配方单台理论产出（个/min）。
+ * FactoryMachineCraftTable 的 totalProgress 不是毫秒：全部数据版本均满足
+ * totalProgress = progressRound × 6000，即 6000 进度单位 = 1 秒
+ * （progressRound 字段即为制作秒数，如中容武陵电池 progressRound=10 → 10s/个）。
+ * 因此单台理论产出 = count × 360000 / totalProgress。
+ */
 export function perMinute(count: number, totalProgress: number): number {
-  return totalProgress > 0 ? (count * 60000) / totalProgress : 0
+  return totalProgress > 0 ? (count * 360000) / totalProgress : 0
 }
 
 export function sourcePerMinute(produceRate: number, msPerRound: number): number {
