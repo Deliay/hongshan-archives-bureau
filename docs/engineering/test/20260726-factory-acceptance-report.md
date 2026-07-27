@@ -288,6 +288,107 @@ type: Fleeting
 
 ---
 
+### 2.15 添加目标产物未使用 ItemTile 展示
+
+**问题描述**：制作链路页「添加目标产物」使用原生 `<select>` 下拉框，选项仅显示物品名称文本，未使用 ItemTile 展示物品图标与稀有度，与全站物品展示规范不一致。
+
+**根因**：chain v2 重构（§3.6）将选品 UI 改为原生 `<select>` 下拉（原生 `<option>` 无法渲染图标组件），回退了 2.12 中已与配方页对齐的侧边栏选品模式。
+
+**修复方案**：
+- 链路页恢复与配方页一致的布局：复用 `FactoryItemSidebar`（每行 `ItemTile size="sm"` + 名称），桌面端左侧持久侧边栏 + 移动端折叠下拉
+- 使用 `FactoryItemSidebar` 已为多选场景预留的 `disableSelected`（已选目标禁用重复点击）与 `clearSearchOnSelect`（选中后清空搜索框，便于连续添加）
+- 右侧区域保留已选目标列表（ItemTile + 产速输入 + 移除）、清空按钮与链路图
+- 更新 E2E：原「通过下拉选择器添加目标产物」用例改为点击侧边栏物品行
+
+**涉及文件**：
+- `src/pages/factory/FactoryChains.tsx` — 移除原生 `<select>`，接入 `FactoryItemSidebar`
+- `tests/e2e/src/factory.spec.ts` — 更新添加目标产物用例
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed（含更新后的「通过物品列表添加目标产物」）
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+> ⚠️ 注：2.15 的侧边栏方案已被 2.16 取代（占位按钮 + 弹窗选择），最终代码以 2.16 为准。
+
+---
+
+### 2.16 添加目标产物改为占位按钮 + 弹窗选择
+
+**问题描述**：验收要求制作链路页「添加目标产物」不使用常驻侧边栏，改为在原列表位置放置占位按钮，点击后弹出 dialog 进行物品选择。
+
+**根因**：2.15 复用了配方页的常驻侧边栏，占用了链路图左侧空间；验收期望选品入口更轻量，仅在需要时弹出选择。
+
+**修复方案**：
+- 新增 `FactoryItemPickerDialog` 组件：模态弹窗（沿用 `ItemTooltip` 的 overlay 模式，点击遮罩 / Escape 关闭），内含搜索框 + 物品列表（每行 `ItemTile size="sm"` + 名称）+ 分页（50/页），已选目标高亮禁用，每次打开重置搜索与分页
+- 链路页原侧边栏位置（`md:w-72`）改为虚线占位按钮（「+ 添加目标产物」），点击弹出 dialog
+- 选中物品后弹窗自动关闭，目标加入已选列表；再次点击占位按钮可继续添加
+- E2E「通过弹窗添加目标产物」：点击占位 → dialog 可见 → 点击物品行 → dialog 关闭且目标出现
+
+**涉及文件**：
+- `src/components/Factory/FactoryItemPickerDialog.tsx` — 新增选品弹窗
+- `src/pages/factory/FactoryChains.tsx` — 侧边栏替换为占位按钮 + 弹窗
+- `tests/e2e/src/factory.spec.ts` — 更新添加目标产物用例
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed（含「通过弹窗添加目标产物」）
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+---
+
+### 2.17 添加目标产物入口与目标产物列表合并
+
+**问题描述**：验收要求「添加目标产物」入口不要单独占用左侧栏，应与目标产物列表放在一起，并使用与目标项相同的样式。
+
+**根因**：2.16 将占位按钮放在独立的左侧栏（`md:w-72`）中，与右侧目标产物列表分离，且为虚线大按钮样式，与目标项（`bg-archive-gold/10` 卡片）风格不一致。
+
+**修复方案**：
+- 移除左侧栏布局，恢复单列布局
+- 「添加目标产物」按钮移至目标产物列表末尾，复用目标项样式（`flex items-center gap-2 bg-archive-gold/10 rounded px-3 py-2`），图标位置用 ItemTile 同尺寸（`w-12 h-12`）的虚线「+」占位
+
+**涉及文件**：`src/pages/factory/FactoryChains.tsx`
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+---
+
+### 2.18 目标产物组件改为 fit-content 且名称/产速分行
+
+**问题描述**：验收要求目标产物组件不要占满一行（fit content）；产物名字单独占一行，生产数量（产速输入）换行显示在下方。
+
+**根因**：目标项为块级行（flex 容器默认 stretch 撑满父宽），名称、产速输入、单位全部在同一行内排列。
+
+**修复方案**：
+- 目标项与「添加目标产物」按钮加 `w-fit`，宽度按内容自适应
+- 目标项内部改为：ItemTile + 右侧纵向 flex（第一行名称，第二行产速输入 + 单位），移除按钮 `self-start` 对齐顶部
+
+**涉及文件**：`src/pages/factory/FactoryChains.tsx`
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+---
+
+### 2.19 目标产物与添加入口改为横向排列可换行
+
+**问题描述**：验收要求目标产物与「添加目标产物」占位按钮不要各自占一行，应横向排列、允许换行。
+
+**根因**：2.18 中目标项容器为纵向 flex（`flex flex-col`），每个目标项独占一行。
+
+**修复方案**：
+- 目标项容器改为 `flex flex-wrap items-center gap-2`，目标项与添加按钮（均已 `w-fit`）横向排列、自动换行
+- 「清空」按钮移出换行容器，保持独立一行左对齐
+
+**涉及文件**：`src/pages/factory/FactoryChains.tsx`
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+---
+
 ## 3. 制作链路重构方案（待 Review）
 
 > **状态**: 🟡 第三轮评审
@@ -1057,6 +1158,11 @@ describe('calcThroughput', () => {
 | 2.12 | 链路页选品 UI 与配方页不一致 | 链路页用搜索弹窗，配方页用侧边栏 | `159ca08` |
 | 2.13 | 机器节点缺少名字和图标 | buildChainGraph 未传入 machines 数据 | `769a3b7` |
 | 2.14 | 机器图标资源路径错误 | 使用 itemicon/ 而非 buildingpanelicon/ | `0cf0ef6` |
+| 2.15 | 添加目标产物未使用 ItemTile 展示 | chain v2 改用原生 `<select>`，无法渲染图标 | `5c71ff3`（被 2.16 取代） |
+| 2.16 | 添加目标产物改为占位按钮 + 弹窗选择 | 常驻侧边栏占用链路图空间 | `5c71ff3` |
+| 2.17 | 添加入口与目标列表分离且样式不一 | 占位按钮在独立左侧栏 | `5c71ff3` |
+| 2.18 | 目标产物组件占满整行、名称产速同行 | 块级行布局 + 单行排列 | `5c71ff3` |
+| 2.19 | 目标产物与添加入口各占一行 | 纵向 flex 容器 | `5c71ff3` |
 
 ---
 
@@ -1125,9 +1231,9 @@ describe('calcThroughput', () => {
 | 验证项 | 结果 |
 |--------|------|
 | `npm run lint` | ✅ 0 errors |
-| `npm run test` | ✅ 218 tests passed |
+| `npm run test` | ✅ 312 tests passed |
 | `npm run build` | ✅ 构建成功 |
-| E2E `factory.spec.ts` | ✅ 13/17 passed（连线验证 + 机器节点验证通过，5个失败为预存问题） |
+| E2E `factory.spec.ts`（制作链路页） | ✅ 13/13 passed（2.15 修复后复跑） |
 
 ---
 
