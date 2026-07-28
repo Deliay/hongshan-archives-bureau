@@ -1,6 +1,6 @@
 ---
 description: 宏山档案局全局加载提示框与骨架屏产品方案
-type: Fleeting
+type: Permanent
 ---
 
 # 加载提示框产品方案

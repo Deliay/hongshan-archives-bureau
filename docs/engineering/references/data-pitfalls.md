@@ -102,6 +102,19 @@ Dummy/training 敌人常见配置：`attrType:1, attrValue:1000, modifierType:1`
 
 ## 工厂数据表
 
+### FactoryMachineCraftTable 主键与材料结构
+
+- 配方主键字段是 **`id`**（不是 `formulaId`、也不是 `$key`）。按 `formulaId ?? $key` 解析会得到全空 ID，所有配方索引查询匹配到同一条（验收 2.6：点击任意物品总显示同一配方）。解析链必须含 `raw.id` 兑底。
+- `ingredients` 的实际结构是 **`[{ group: [{ id, count }] }]`**（外层数组包一层 `{ group }` 对象），不是 `{ id, count }[][]`。按 `[][]` 假设会报 `group[0].map is not a function`（验收 2.7）。材料侧恒为单 group（组内多物品皆必需）；outcomes 多 group 语义见下文「产出多 group = 副产物」。
+
+### Income/Outcome 索引表的 key 不是物品 ID
+
+`FactoryItemAsMachineCrafterIncomeTable` / `FactoryItemAsMachineCrafterOutcomeTable` 看似是「物品 → 配方」的索引表，但其 key 可能不是 item ID，直接用作物品列表数据源会显示错误 ID（验收 2.5）。参与配方的物品 ID 应直接从 `FactoryMachineCraftTable` 的 `ingredients` / `outcomes` 中提取去重，`asIngredient` / `asOutcome` 索引也从配方数据自行构建。
+
+### 机器图标资源路径不同于物品图标
+
+`FactoryBuildingTable.iconOnPanel` 值（如 `icon_port_furnance_1`）对应的资源在 `factory/buildingpanelicon/` 目录，**不是**物品图标的 `itemicon/`：`assets/beyond/dynamicassets/gameplay/ui/sprites/factory/buildingpanelicon/{iconOnPanel}.png`（验收 2.14）。
+
 ### WikiDefaultCraftTable 值为纯字符串
 
 该表 value 是 craftId **纯字符串**（如 `"item_gas_copper": "liquid_transmuter_2_gas_gas_copper_1"`），不是 `{ craftId }` 对象。按 `entry.craftId` 解析会静默得到空表，导致链路图丢失官方默认配方、回退到配方表键序首个配方（气态赤铜/空罐/赤铜块的首个均为拆解机/转化机反向配方，必然构成净产出为 0 的封闭回路）。解析必须兼容字符串：

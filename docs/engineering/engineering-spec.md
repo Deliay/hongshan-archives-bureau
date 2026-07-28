@@ -125,7 +125,10 @@ i18nMap[String(field.id)] ?? field.text ?? ''
 - 干员相关：`CharacterTable`、`CharProfessionTable`、`CharTypeTable`、`CharBattleTagTable`、`AttributeMetaTable`、`AttributeShowConfigTable`、`CharGrowthTable`、`SkillPatchTable`、`SpaceshipCharSkillTable`、`SpaceshipSkillTable`、标签表。
 - 武器与物品：`WeaponBasicTable`、`ItemTable`、`TextTable` 等。
 - 敌人相关：`EnemyTemplateDisplayInfoTable`、`EnemyTable`、`EnemyAttributeTemplateTable`、`WikiEntryDataTable`、`WikiGroupTable`、`DistributionInfoTable` 等。
+- 工厂相关：`FactoryMachineCraftTable`、`FactoryBuildingTable`、`FactoryMinerTable`、`FactoryGasMinerTable`、`FactoryFluidPumpInTable`、`WikiDefaultCraftTable`、`FactoryGridBeltTable`、`FactoryLiquidPipeTable`、`LiquidTable` 等。
 - 富文本相关：`HyperlinkTextTable`、`RichTextStyleTable`。
+
+制作链路求解器（`src/lib/factory/chain.ts`）的架构与算法见 [制作链路求解器参考](./references/factory-chain-solver.md)。
 
 ### Per-table I18n
 
@@ -195,5 +198,6 @@ UI 多语言通过 `LocaleProvider` + `I18nProvider` 提供，数据层按表按
 - [[frontend-spec|前端开发规范]]
 - [数据表映射参考](./references/data-mapping-tables.md)
 - [数据层常见陷阱](./references/data-pitfalls.md)
+- [制作链路求解器参考](./references/factory-chain-solver.md)
 - [国际化规范](./references/i18n-spec.md)
 - [Diff 系统参考](./references/diff-system.md)

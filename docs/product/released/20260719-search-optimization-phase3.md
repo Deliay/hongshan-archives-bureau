@@ -1,6 +1,6 @@
 ---
 description: 搜索结果优化三期：富文本增益色、敌人能力倒排、天赋面板、技能等级与映射修复
-type: Fleeting
+type: Permanent
 ---
 
 # 搜索结果优化三期

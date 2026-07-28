@@ -18,11 +18,13 @@ docs/engineering/
   references/            详细参考文档
     data-mapping-tables.md   数据表映射参考
     data-pitfalls.md         数据层常见陷阱
+    factory-chain-solver.md  制作链路求解器参考
     rich-text-spec.md        富文本规范参考
     ui-pitfalls.md           UI 常见陷阱参考
     diff-system.md           Diff 系统参考
-  plans/                 开发计划与任务拆解（留空）
-  proposal/              技术方案文档（留空）
+    i18n-spec.md             国际化规范
+  plans/                 开发计划与任务拆解
+  proposal/              技术方案文档
   test/                  验收问题报告
 ```
 
@@ -55,11 +57,12 @@ docs/engineering/
 - 前端相关修改，加载 [[frontend-spec|前端开发规范]]。
 - 数据层、缓存、Diff 相关修改，加载 [[engineering-spec|工程架构规范]]。
 - 调试数据问题或实现新模块时，查阅 [数据表映射参考](./references/data-mapping-tables.md) 与 [数据层常见陷阱](./references/data-pitfalls.md)。
+- 修改制作链路求解器（`src/lib/factory/chain.ts`）前，必读 [制作链路求解器参考](./references/factory-chain-solver.md)。
 - 处理富文本或 tooltip 时，查阅 [富文本规范参考](./references/rich-text-spec.md) 与 [UI 常见陷阱参考](./references/ui-pitfalls.md)。
 
 ## 经验教训
 
-以下为工厂系统一期验收中总结的失败经验，后续开发需注意。
+以下为工厂系统验收（一期 2.1–2.21 + 二期 2.22–2.29）中总结的失败经验，后续开发需注意。二期求解器经验详见 [制作链路求解器参考](./references/factory-chain-solver.md)「设计原则」。
 
 ### 数据适配层
 
@@ -95,6 +98,15 @@ docs/engineering/
 ### 配方展示逻辑
 
 - **按机器分组而非按方向分组**：「作为产物」「作为材料」是外部工具的逻辑，产品需求是按机器分组，每个配方一行，材料在左、箭头指向产物。实现前需仔细阅读产品文档，不可照搬其他工具的设计。
+
+### 链路求解器（二期）
+
+- **数值字段单位语义必须用全表数据考证**：`totalProgress` 被按字段名臆测为毫秒，实为 6000 进度 = 1 秒，机器台数整体放大 6 倍且单测无法发现（fixture 与实现同源同错）。考证方法：对全部数据版本统计验证不变式。
+- **「解析失败静默回退」的路径必须告警或测试断言**：WikiDefaultCraftTable 按对象解析实际为纯字符串，静默得到空表后回退到表键序首候选（恰为拆解机反向配方），必然成环。
+- **全局共享的规划状态会被求解顺序污染**：未验证的路线不写入全局状态；「已规划即合法」的信任通道只能做浅检查。
+- **规划期无法穷举构建期行为**：路线重排序/回退解析/源超额转配方只在构建期可见，必须有构建后检测-剔除-重规划兑底（每轮永久排除 ≥1 条配方保证收敛）。
+- **副产物是供给不是废料**：不纳入需求抵扣会为可回用材料虚增整条上游链；副产物复用用不动点迭代求解。
+- **集成回归用真实数据转储**：合成 fixture 测不出真实数据的键序、表结构与数值语义。
 
 ## 相关技能
 

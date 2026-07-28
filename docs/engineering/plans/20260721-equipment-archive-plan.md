@@ -5,7 +5,7 @@ type: Fleeting
 
 # 装备图鉴 - 实现方案
 
-**对应产品文档**: [[20260721-equipment-archive|装备图鉴产品方案（docs/product/draft）]]
+**对应产品文档**: [[20260721-equipment-archive|装备图鉴产品方案（docs/product/released）]]
 **对应技术方案**: [[20260721-equipment-archive|装备图鉴技术方案]]
 **实现方案版本**: v1.0
 **创建日期**: 2026-07-21
@@ -522,7 +522,7 @@ import EquipmentDetail from './pages/equipment/EquipmentDetail'
 
 ## 8. 相关文档
 
-- [[20260721-equipment-archive|装备图鉴产品方案（docs/product/draft）]]
+- [[20260721-equipment-archive|装备图鉴产品方案（docs/product/released）]]
 - [[20260721-equipment-archive|装备图鉴技术方案（docs/engineering/proposal）]]
 - [前端开发规范](../frontend-spec.md)
 - [数据表映射参考](../references/data-mapping-tables.md)

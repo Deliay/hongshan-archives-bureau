@@ -21,6 +21,7 @@ Detailed engineering guidelines, data mappings, and historical pitfalls are main
 - [工程架构规范](docs/engineering/engineering-spec.md) — API, cache, adapter, diff system, and project structure
 - [数据表映射参考](docs/engineering/references/data-mapping-tables.md) — game data tables and adapter mappings
 - [数据层常见陷阱](docs/engineering/references/data-pitfalls.md) — historical data handling pitfalls
+- [制作链路求解器参考](docs/engineering/references/factory-chain-solver.md) — factory chain solver architecture (planning / build / closed-loop repair / byproduct reuse)
 - [富文本规范参考](docs/engineering/references/rich-text-spec.md) — rich text parsing and rendering rules
 - [UI 常见陷阱参考](docs/engineering/references/ui-pitfalls.md) — frontend interaction pitfalls
 - [Diff 系统参考](docs/engineering/references/diff-system.md) — version diff implementation details
