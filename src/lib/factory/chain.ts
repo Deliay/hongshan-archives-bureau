@@ -123,6 +123,20 @@ export function buildChainGraph(
     return Math.max(0, cap - (consumedByItem.get(itemId) ?? 0))
   }
 
+  /**
+   * 副产物复用：上一轮构建中各机器节点的非主产出（如壤晶合成副产污水）作为本轮
+   * 的「虚拟供给」，需求优先从副产物抵扣，余量才走采集源/配方路线；含副产物材料
+   * 的转化路线按副产物余量封顶（如惰性壤晶废液→提纯机→壤晶废液）。供给量取决于
+   * 构建结果，故构建迭代至不动点（见文件底部驱动循环）。
+   */
+  let byproductProducers = new Map<string, { nodeKey: string; rate: number }[]>()
+  let byproductCap = new Map<string, number>()
+  /** 本轮构建中副产物供给已被消耗的量（多消费方先到先得） */
+  const byproductConsumed = new Map<string, number>()
+  function byproductRemaining(itemId: string): number {
+    return Math.max(0, (byproductCap.get(itemId) ?? 0) - (byproductConsumed.get(itemId) ?? 0))
+  }
+
   const beltThroughput = (beltTable ? maxThroughput(beltTable, 'beltData') : 0) || DEFAULT_BELT_THROUGHPUT
   const pipeThroughput = (pipeTable ? maxThroughput(pipeTable, 'pipeData') : 0) || DEFAULT_PIPE_THROUGHPUT
 
@@ -142,6 +156,10 @@ export function buildChainGraph(
   }
   const productiveLoops = new Map<string, ProductiveLoop>()
   let settling = false
+
+  /** 副产物复用迭代上限与收敛精度（几何收敛，24 轮足够 1e-6 精度） */
+  const BYPRODUCT_MAX_ITER = 24
+  const BYPRODUCT_EPS = 1e-6
 
   /** 规划阶段为物品选定的有序可行配方路线（消除封闭回路后的回溯结果，可多路线） */
   const assignment = new Map<string, string[]>()
@@ -199,6 +217,10 @@ export function buildChainGraph(
    */
   function planItem(itemId: string, path: string[]): boolean {
     if (path.length > PLAN_DEPTH_LIMIT) return true // 深度外交由 R6 截断处理
+    // 采集源物品在环上可独立供给（源优先、超额才转配方），不构成必须依赖的环，
+    // 与 findClosedPrimaryCycle 跳过源物品的语义对齐；避免环上下文的候选剔除污染
+    // 其全局路线集（如污水在瓶罐分支上下文中丢掉精炼炉路线）
+    if (path.includes(itemId) && supplyCapByItem.has(itemId)) return true
     if (assignment.has(itemId)) {
       if (!path.includes(itemId)) return true // 已规划且不在当前路径
       return planCycleRatio(itemId, path) > 1 // 循环：仅接受有效循环
@@ -344,15 +366,31 @@ export function buildChainGraph(
     return r ? [r] : []
   }
 
-  /** 路线天花板：直接材料中有采集上限的物品决定该路线最大可用速率（共享余量，先到先得） */
+  /** 该副产物的生产路线中是否存在会同产 itemId 的配方（转化路线的自喂放大判定） */
+  function coProduces(byproductItem: string, itemId: string): boolean {
+    return (index.asOutcome[byproductItem] ?? []).some(r => r.outcomes.some(o => o.itemId === itemId))
+  }
+
+  /**
+   * 路线天花板：直接材料中有采集上限的物品决定该路线最大可用速率（共享余量，先到先得）。
+   * 转化路线的副产物材料（如提纯机吃惰性壤晶废液产壤晶废液）按副产物余量封顶——仅当
+   * 生产该副产物的路线会同产本物品时（coProduces），防止「为转化而生产副产物」的自喂
+   * 放大；其他副产物材料（如壤晶废液合成吃污水）不封顶，余量外的部分由配方路线补足。
+   */
   function routeCeiling(recipe: FactoryRecipe, itemId: string): number {
     const outCount = recipe.outcomes.find(o => o.itemId === itemId)?.count ?? 1
     let ceiling = Number.POSITIVE_INFINITY
     for (const ing of recipe.ingredients) {
-      if (!supplyCapByItem.has(ing.itemId)) continue
-      const cap = remainingCap(ing.itemId)
-      if (!Number.isFinite(cap)) continue
-      ceiling = Math.min(ceiling, ing.count > 0 ? (cap * outCount) / ing.count : 0)
+      if (supplyCapByItem.has(ing.itemId)) {
+        const cap = remainingCap(ing.itemId)
+        if (Number.isFinite(cap)) {
+          ceiling = Math.min(ceiling, ing.count > 0 ? (cap * outCount) / ing.count : 0)
+        }
+      }
+      const bpRemain = byproductRemaining(ing.itemId)
+      if (bpRemain > 0 && coProduces(ing.itemId, itemId)) {
+        ceiling = Math.min(ceiling, ing.count > 0 ? (bpRemain * outCount) / ing.count : 0)
+      }
     }
     return ceiling
   }
@@ -461,12 +499,42 @@ export function buildChainGraph(
     }
   }
 
+  /**
+   * 副产物抵扣：从上一轮的生产节点列表依次为当前需求供给（多消费方先到先得），
+   * 边从副产物生产节点直接连到消费方（同一反应池合并后自动转为炉内级联）。
+   * 未收敛的中间轮次生产者节点可能尚未创建，边先挂上，轮末统一清理悬空边。
+   */
+  function allocateByproduct(itemId: string, demandPm: number, parentKey: string): number {
+    const producers = byproductProducers.get(itemId)
+    if (!producers?.length || demandPm <= 0) return 0
+    let skip = byproductConsumed.get(itemId) ?? 0
+    let allocated = 0
+    for (const p of producers) {
+      if (allocated >= demandPm) break
+      if (skip >= p.rate) { skip -= p.rate; continue }
+      const avail = p.rate - skip
+      skip = 0
+      const take = Math.min(avail, demandPm - allocated)
+      if (take <= 0) continue
+      pushEdge(p.nodeKey, parentKey, itemId, take)
+      allocated += take
+    }
+    if (allocated > 0) byproductConsumed.set(itemId, (byproductConsumed.get(itemId) ?? 0) + allocated)
+    return allocated
+  }
+
   function expand(
     itemId: string,
     demandPm: number,
     path: Set<string>,
     parentKey: string,
   ): number {
+    // 副产物复用优先：链路内其他节点的副产物先抵扣需求，余量才走采集源/配方路线
+    const byproduct = allocateByproduct(itemId, demandPm, parentKey)
+    if (byproduct > 0) {
+      demandPm -= byproduct
+      if (demandPm <= 0) return byproduct
+    }
     // R4 外部供给优先：采集源按全局余量分配；达区域/机台上限后，超额部分改走配方路线
     const supplyCap = supplyCapByItem.get(itemId)
     if (supplyCap !== undefined) {
@@ -604,32 +672,52 @@ export function buildChainGraph(
     return actualPm
   }
 
-  for (const target of targets) {
-    if (!Number.isFinite(target.rate) || target.rate <= 0) continue
+  /** 单轮构建：重置构建状态，从目标展开全图并结算有效循环，最后清理悬空边 */
+  function buildOnce(): void {
+    allNodes.clear()
+    allEdges.length = 0
+    producerKeyByItem.clear()
+    externalPm.clear()
+    productiveLoops.clear()
+    consumedByItem.clear()
+    byproductConsumed.clear()
+    settling = false
 
-    const targetKey = `target:${target.itemId}`
-    const recipe = resolveRecipe(target.itemId)
-    const outcome = recipe?.outcomes.find(o => o.itemId === target.itemId)
-    const theoryPm = recipe ? perMinute(outcome?.count ?? 1, recipe.totalProgress) : 0
+    for (const target of targets) {
+      if (!Number.isFinite(target.rate) || target.rate <= 0) continue
 
-    allNodes.set(targetKey, {
-      key: targetKey,
-      kind: 'target',
-      itemId: target.itemId,
-      demandPm: target.rate,
-      actualPm: target.rate,
-      theoryPm,
-    })
+      const targetKey = `target:${target.itemId}`
+      const recipe = resolveRecipe(target.itemId)
+      const outcome = recipe?.outcomes.find(o => o.itemId === target.itemId)
+      const theoryPm = recipe ? perMinute(outcome?.count ?? 1, recipe.totalProgress) : 0
 
-    if (!recipe) continue
-    const path = new Set<string>()
-    expand(target.itemId, target.rate, path, targetKey)
+      allNodes.set(targetKey, {
+        key: targetKey,
+        kind: 'target',
+        itemId: target.itemId,
+        demandPm: target.rate,
+        actualPm: target.rate,
+        theoryPm,
+      })
+
+      if (!recipe) continue
+      const path = new Set<string>()
+      expand(target.itemId, target.rate, path, targetKey)
+    }
+
+    // 有效循环产能结算（种植/采种增产）：稳态下循环机器总产 = 外部需求 × netRatio/(netRatio-1)，
+    // 回流量 = 总产 - 外部需求。构建期 expand 在循环点直接返回（回流未入账），此处统一补齐：
+    // 机器台数/配方速率按结算总产刷新，循环边与非循环材料（如种植用水）按增量补展开。
+    settling = true
+    settleProductiveLoops()
+
+    // 清理悬空边：未收敛的中间轮次可能从上轮已消失/未创建的节点引出副产物边
+    for (let i = allEdges.length - 1; i >= 0; i--) {
+      if (!allNodes.has(allEdges[i].from) || !allNodes.has(allEdges[i].to)) allEdges.splice(i, 1)
+    }
   }
 
-  // 有效循环产能结算（种植/采种增产）：稳态下循环机器总产 = 外部需求 × netRatio/(netRatio-1)，
-  // 回流量 = 总产 - 外部需求。构建期 expand 在循环点直接返回（回流未入账），此处统一补齐：
-  // 机器台数/配方速率按结算总产刷新，循环边与非循环材料（如种植用水）按增量补展开。
-  settling = true
+  function settleProductiveLoops(): void {
   for (const loop of productiveLoops.values()) {
     const r = loop.ratio
     if (r <= 1) continue
@@ -685,6 +773,47 @@ export function buildChainGraph(
     if (consumerNode && lastStage) {
       consumerNode.priming = { itemId: loop.itemId, count: lastStage.nextInCount }
     }
+  }
+  }
+
+  /** 汇总本轮构建的副产物供给：各机器节点非主产出的速率（outputs 速率已按 actualPm 缩放） */
+  function collectByproducts(): {
+    caps: Map<string, number>
+    producers: Map<string, { nodeKey: string; rate: number }[]>
+  } {
+    const caps = new Map<string, number>()
+    const producers = new Map<string, { nodeKey: string; rate: number }[]>()
+    for (const node of allNodes.values()) {
+      if (node.kind !== 'machine' || !node.recipe) continue
+      for (const out of node.recipe.outputs) {
+        if (out.itemId === node.itemId || out.rate <= 0) continue
+        caps.set(out.itemId, (caps.get(out.itemId) ?? 0) + out.rate)
+        const list = producers.get(out.itemId) ?? []
+        list.push({ nodeKey: node.key, rate: out.rate })
+        producers.set(out.itemId, list)
+      }
+    }
+    return { caps, producers }
+  }
+
+  function byproductCapsEqual(a: Map<string, number>, b: Map<string, number>): boolean {
+    if (a.size !== b.size) return false
+    for (const [k, v] of a) {
+      const w = b.get(k)
+      if (w === undefined || Math.abs(v - w) > BYPRODUCT_EPS) return false
+    }
+    return true
+  }
+
+  // 副产物复用不动点迭代：本轮构建使用上轮的副产物供给，产出新的供给；供给量收敛
+  // （或达迭代上限）即定稿。无多产出配方的链路首轮供给为空，与初始一致，一轮即出。
+  for (let iter = 0; ; iter++) {
+    const usedCaps = byproductCap
+    buildOnce()
+    const { caps, producers } = collectByproducts()
+    byproductProducers = producers
+    byproductCap = caps
+    if (iter >= BYPRODUCT_MAX_ITER || byproductCapsEqual(caps, usedCaps)) break
   }
 
   /** 配方组涉及的不同物质集合（投入 ∪ 产出；产物也占缓存区） */

@@ -1302,3 +1302,91 @@ describe('扩容反应池多配方共炉', () => {
     expect(poolNodes[0].slotsUsed).toBe(6)
   })
 })
+
+
+describe('副产物复用与转化利用', () => {
+  // 中容武陵电池链路简化模型：
+  // packer：poly×5 → final×1（10s）
+  // poolC：liquidY×2 + iron×1 → poly×1 + sewage×1（副产污水回用）
+  // poolB：liquidX×1 + sewage×1 → liquidY×1 + inert×1（副产惰性废液）
+  // purifier：inert×4 → liquidY×1 + water×1（转化利用，减少 poolB 运行）
+  // furnace：ore×1 + water×1 → nugget×1 + sewage×1（污水净外部来源）
+  // final 6/min → poly 30 → liquidY 60 = poolB 48 + purifier 12；
+  // sewage 需求 48 - 副产 30 = 18 → furnace 18 → ore 18/min
+  const packer: FactoryRecipe = {
+    id: 'packer', machineId: 'packer_mc',
+    ingredients: [{ itemId: 'poly', count: 5 }],
+    outcomes: [{ itemId: 'final', count: 1 }],
+    totalProgress: 60000, sortId: 0,
+  }
+  const poolC: FactoryRecipe = {
+    id: 'pool_c', machineId: 'mix_pool_2',
+    ingredients: [{ itemId: 'liquidY', count: 2 }, { itemId: 'iron', count: 1 }],
+    outcomes: [{ itemId: 'poly', count: 1 }, { itemId: 'sewage', count: 1 }],
+    totalProgress: 12000, sortId: 0,
+  }
+  const poolB: FactoryRecipe = {
+    id: 'pool_b', machineId: 'mix_pool_2',
+    ingredients: [{ itemId: 'liquidX', count: 1 }, { itemId: 'sewage', count: 1 }],
+    outcomes: [{ itemId: 'liquidY', count: 1 }, { itemId: 'inert', count: 1 }],
+    totalProgress: 12000, sortId: 0,
+  }
+  const purifier: FactoryRecipe = {
+    id: 'purifier', machineId: 'purifier_mc',
+    ingredients: [{ itemId: 'inert', count: 4 }],
+    outcomes: [{ itemId: 'liquidY', count: 1 }, { itemId: 'water', count: 1 }],
+    totalProgress: 12000, sortId: 0,
+  }
+  const furnace: FactoryRecipe = {
+    id: 'furnace', machineId: 'furnance_1',
+    ingredients: [{ itemId: 'ore', count: 1 }, { itemId: 'water', count: 1 }],
+    outcomes: [{ itemId: 'nugget', count: 1 }, { itemId: 'sewage', count: 1 }],
+    totalProgress: 12000, sortId: 0,
+  }
+  const bpRecipes = [packer, poolC, poolB, purifier, furnace]
+  const bpIndex: FactoryItemIndex = {
+    asIngredient: {
+      poly: [packer], liquidY: [poolC], iron: [poolC],
+      liquidX: [poolB], sewage: [poolB], inert: [purifier],
+      ore: [furnace], water: [furnace],
+    },
+    asOutcome: {
+      final: [packer], poly: [poolC], sewage: [poolC, furnace],
+      liquidY: [poolB, purifier], inert: [poolB],
+      nugget: [furnace], water: [purifier],
+    },
+  }
+  const bpSources: FactorySource[] = [
+    { machineId: 'miner_ore', itemId: 'ore', produceRate: 1, msPerRound: 1000 },
+    { machineId: 'pump_water', itemId: 'water', produceRate: 1, msPerRound: 1000, uncapped: true },
+    { machineId: 'miner_iron', itemId: 'iron', produceRate: 1, msPerRound: 1000 },
+    { machineId: 'pump_x', itemId: 'liquidX', produceRate: 1, msPerRound: 1000, uncapped: true },
+  ]
+
+  it('副产物抵扣需求 + 转化路线按副产物余量封顶，收敛到理论解', () => {
+    const graph = buildChainGraph([{ itemId: 'final', rate: 6 }], bpRecipes, bpIndex, bpSources, {})
+    // 污水净外部需求 18/min → 精炼炉 18/min（矿石 18/min）
+    const furnaceNode = graph.nodes.find(n => n.machineId === 'furnance_1')
+    expect(furnaceNode?.actualPm).toBeCloseTo(18, 3)
+    const oreSource = graph.nodes.find(n => n.kind === 'source' && n.itemId === 'ore')
+    expect(oreSource?.actualPm).toBeCloseTo(18, 3)
+    // 转化利用：提纯机 12/min（惰性 48 → 液Y 12）
+    const purifierNode = graph.nodes.find(n => n.machineId === 'purifier_mc')
+    expect(purifierNode?.actualPm).toBeCloseTo(12, 3)
+    // poolB 稳态 48/min（60 - 提纯回供 12）；poolC/poolB 同为扩容反应池合并为单节点
+    const reactor = graph.nodes.find(n => n.machineId === 'mix_pool_2')
+    expect(reactor?.recipes).toHaveLength(2)
+    const poolBLine = reactor?.recipes?.find(r => r.id === 'pool_b')
+    expect(poolBLine?.actualPm).toBeCloseTo(48, 3)
+    // 缓存区：液Y/铁/poly/污水/液X/惰性 = 6 种物质
+    expect(reactor?.slotsUsed).toBe(6)
+    expect(reactor?.slotsTotal).toBe(8)
+    // 副产物污水回用边转为炉内级联（两配方同池合并），外部污水边仅精炼炉 18/min
+    const sewageEdges = graph.edges.filter(e => e.itemId === 'sewage')
+    expect(sewageEdges).toHaveLength(1)
+    expect(sewageEdges[0].perMinute).toBeCloseTo(18, 3)
+    // 惰性废液边：反应池 → 提纯机 48/min
+    const inertEdge = graph.edges.find(e => e.itemId === 'inert')
+    expect(inertEdge?.perMinute).toBeCloseTo(48, 3)
+  })
+})

@@ -74,6 +74,29 @@ describe('真实数据集成回归', () => {
     expect(packer?.machineCount).toBe(1)
   })
 
+  it('中容武陵电池 6/min：副产物复用（污水回用+惰性废液提纯），赤铜矿仅需 18/min', () => {
+    const graph = buildWithRealData('item_proc_battery_5', 6, 'wuling')
+    expect(graph.edges.every(e => e.cycleType !== 'closed')).toBe(true)
+    // 壤晶合成（pool_xiranite_poly_2）副产污水 30/min 回用于壤晶废液合成；
+    // 惰性壤晶废液经提纯机回收（4→1 壤晶废液，12/min），壤晶废液池仅需 48/min；
+    // 污水净外部需求 48-30=18/min → 精炼炉副产（赤铜矿+清水→赤铜块+污水）
+    const copperOre = graph.nodes.find(n => n.kind === 'source' && n.itemId === 'item_copper_ore')
+    expect(copperOre?.actualPm).toBeCloseTo(18, 3)
+    const furnace = graph.nodes.find(n => n.machineId === 'furnance_1' && n.itemId === 'item_liquid_sewage')
+    expect(furnace?.actualPm).toBeCloseTo(18, 3)
+    const purifier = graph.nodes.find(n => n.machineId === 'liquid_purifier_1')
+    expect(purifier?.actualPm).toBeCloseTo(12, 3)
+    // 不再出现为产污水而跑赫铜块路线的赤铜链（池内赤铜/提纯赤铜/赤铜粉末）
+    const machineIds = graph.nodes.filter(n => n.kind === 'machine').map(n => n.machineId)
+    expect(machineIds.filter(m => m === 'liquid_purifier_1')).toHaveLength(1)
+    expect(graph.nodes.some(n => n.itemId === 'item_liquid_copper_enr')).toBe(false)
+    expect(graph.nodes.some(n => n.itemId === 'item_liquid_copper')).toBe(false)
+    // 污水回用边转为炉内级联：外部污水边仅精炼炉 → 反应池 18/min
+    const sewageEdges = graph.edges.filter(e => e.itemId === 'item_liquid_sewage')
+    expect(sewageEdges).toHaveLength(1)
+    expect(sewageEdges[0].perMinute).toBeCloseTo(18, 3)
+  })
+
   it('种植（酮化灌木）：有效循环 + 预填充标识，无封闭回路', () => {
     const graph = buildWithRealData('item_plant_bbflower_1', 10, 'wuling')
     expect(graph.edges.every(e => e.cycleType !== 'closed')).toBe(true)

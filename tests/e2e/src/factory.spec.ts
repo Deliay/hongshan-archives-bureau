@@ -442,8 +442,10 @@ test.describe('工厂系统 (Factory System)', () => {
 
       const graphText = await page.locator('.react-flow').textContent()
       expect(graphText).toContain('扩容反应池')
-      // 共炉配方涉及 8 种不同物质（缓存区上限 8），与游戏教程场景一致
-      expect(graphText).toContain('缓存区 8/8')
+      // 副产物复用后共炉配方为壤晶合成+壤晶废液合成：壤晶废液/蓝铁粉末/壤晶/污水/液化息壤/惰性壤晶废液 6 种物质
+      expect(graphText).toContain('缓存区 6/8')
+      // 惰性壤晶废液经提纯机转化回壤晶废液（副产物转化利用）
+      expect(graphText).toContain('提纯机')
       // 规划验证修复：不得残留灌装↔拆解零产出封闭子图
       expect(graphText).not.toContain('拆解机')
       expect(graphText).not.toContain('灌装机')
@@ -451,6 +453,28 @@ test.describe('工厂系统 (Factory System)', () => {
       const poolNodes = page.locator('.react-flow__node-machine', { hasText: '反应池' })
       const poolCount = await poolNodes.count()
       expect(poolCount).toBe(1)
+    })
+
+    test('中容武陵电池副产物复用：污水回用 + 惰性废液提纯，赤铜矿仅需 18/min', async ({ page }) => {
+      // 壤晶合成副产污水回用于壤晶废液合成；惰性壤晶废液经提纯机回收；
+      // 污水净外部需求 18/min → 精炼炉副产（赤铜矿 18/min），不再跑赫铜块路线
+      await page.goto('/archive/factory/chains?targets=item_proc_battery_5:6', { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => {
+        const body = document.body.textContent || ''
+        return !body.includes('正在调阅')
+      }, { timeout: 30000 })
+      await page.waitForFunction(() => {
+        return document.querySelectorAll('.react-flow__node').length > 0
+      }, { timeout: 15000 })
+      await page.waitForTimeout(3000)
+
+      const graphText = await page.locator('.react-flow').textContent()
+      expect(graphText).toContain('提纯机')
+      expect(graphText).not.toContain('赫铜')
+      // 赤铜矿源节点仅需 18/min（副产物复用前为区域上限 420/min）
+      const copperOre = page.locator('.react-flow__node-source', { hasText: '赤铜矿' })
+      await expect(copperOre).toHaveCount(1)
+      await expect(copperOre.first()).toContainText('18.0/min')
     })
 
     test('中容武陵电池 6/min：封装机 10s/个正好 1 台', async ({ page }) => {
