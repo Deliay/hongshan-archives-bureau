@@ -132,6 +132,10 @@ const craftId = typeof entry === 'string' ? entry : entry?.craftId
 
 配方的 `totalProgress` 字段**不是毫秒**：全部数据版本均满足 `totalProgress = progressRound × 6000`，即 **6000 进度单位 = 1 秒**（`progressRound` 字段即为制作秒数）。例：中容武陵电池 `progressRound=10, totalProgress=60000` → 10s/个 → 单台 6/min。误按毫秒（`count×60000/totalProgress`）计算会把所有机器理论产速低估 6 倍、台数放大 6 倍。单台理论产速应为 `count × 360000 / totalProgress`（`chain.ts` 的 `perMinute()`）。注意与矿机/泵机表区分：`FactoryMinerTable`/`FactoryFluidPumpInTable` 等的 `msPerRound` 字段名自带 ms，为真实毫秒。
 
+### 配方副产物可回用于链路其他环节
+
+多产出配方的非主产出（如壤晶合成副产污水、精炼炉副产污水/提纯机副产清水）不是废料：游戏内可回用为其他配方的材料（壤晶废液合成吃污水、惰性壤晶废液经提纯机 4→1 回收为壤晶废液）。链路求解必须将副产物作为供给抵扣需求（含「副产物→转化配方→主产物」的利用回路），否则会为污水等材料虚增整条上游链（典型：中容武陵电池 6/min 的污水净外部需求仅 18/min，不复用会按 60/min 跑赫铜块路线、顶满赤铜矿区域上限 420/min）。转化路线的副产物材料需按副产物余量封顶，防止「为转化而生产副产物」的自喂放大。
+
 ### FactoryMinerTable 的 consumeItem
 
 矿机 `mineable[]` 条目可能带 `consumeItem`（如 `miner_4` 水驱矿机采矿消耗清水），adapter 目前丢弃该字段，评估矿机真实成本时需注意。
