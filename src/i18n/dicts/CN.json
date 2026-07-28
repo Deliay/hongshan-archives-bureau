@@ -292,9 +292,11 @@
     "title": "档案搜索"
   },
   "site": {
-    "dataSource": "数据来源：天师数据库 API · 管理员记录",
+    "dataSource": "数据来源：天师数据库 API · AKEData",
+    "dataSourceApiName": "天师数据库 API",
+    "dataSourcePrefix": "数据来源：",
     "enter": "进入档案局",
-    "footer": "宏山档案局 · 塔卫二官方档案管理与调阅系统",
+    "footer": "宏山档案局 · 武陵一般路过市民的粉丝向资料站",
     "homeSubtitle": "选择一卷档案开始调阅",
     "homeTitle": "档案局总览",
     "name": "宏山档案局",

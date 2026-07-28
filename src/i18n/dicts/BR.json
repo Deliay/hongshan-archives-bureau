@@ -292,9 +292,11 @@
     "title": "Pesquisa de arquivo"
   },
   "site": {
-    "dataSource": "Fonte de dados",
+    "dataSource": "Fonte de dados: API do banco de dados Tianshi · AKEData",
+    "dataSourceApiName": "API do banco de dados Tianshi",
+    "dataSourcePrefix": "Fonte de dados: ",
     "enter": "Entrar",
-    "footer": "Arquivo Hongshan - Arquivo de dados de Endfield",
+    "footer": "Arquivo Hongshan · Wiki de fã por Wuling Passerby",
     "homeSubtitle": "Arquivo de dados abertos de Endfield",
     "homeTitle": "Arquivo Hongshan",
     "name": "Arquivo Hongshan",

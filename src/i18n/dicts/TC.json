@@ -292,9 +292,11 @@
     "title": "檔案搜索"
   },
   "site": {
-    "dataSource": "數據來源：天師數據庫 API · 管理員記錄",
+    "dataSource": "數據來源：天師數據庫 API · AKEData",
+    "dataSourceApiName": "天師數據庫 API",
+    "dataSourcePrefix": "數據來源：",
     "enter": "進入檔案局",
-    "footer": "宏山檔案局 · 塔衛二官方檔案管理與調閱系統",
+    "footer": "宏山檔案局 · 武陵一般路過市民的粉絲向資料站",
     "homeSubtitle": "選擇一卷檔案開始調閱",
     "homeTitle": "檔案局總覽",
     "name": "宏山檔案局",
