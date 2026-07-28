@@ -292,9 +292,11 @@
     "title": "アーカイブ検索"
   },
   "site": {
-    "dataSource": "データソース：天師データベース API · 管理者記録",
+    "dataSource": "データソース：天師データベース API · AKEData",
+    "dataSourceApiName": "天師データベース API",
+    "dataSourcePrefix": "データソース：",
     "enter": "檔案局に入る",
-    "footer": "宏山檔案局 · タロスII公式檔案管理システム",
+    "footer": "宏山檔案局 · 武陵一般通行市民のファンWiki",
     "homeSubtitle": "檔案を選んで閲覧を開始",
     "homeTitle": "檔案局概要",
     "name": "宏山檔案局",

@@ -292,9 +292,11 @@
     "title": "Cari arsip"
   },
   "site": {
-    "dataSource": "Sumber data",
+    "dataSource": "Sumber data: API basis data Tianshi · AKEData",
+    "dataSourceApiName": "API basis data Tianshi",
+    "dataSourcePrefix": "Sumber data: ",
     "enter": "Masuk",
-    "footer": "Arsip Hongshan - Arsip data Endfield",
+    "footer": "Arsip Hongshan · Wiki penggemar oleh Wuling Passerby",
     "homeSubtitle": "Arsip data terbuka Endfield",
     "homeTitle": "Arsip Hongshan",
     "name": "Arsip Hongshan",

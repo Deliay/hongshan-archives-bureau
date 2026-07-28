@@ -292,9 +292,11 @@
     "title": "Tìm kiếm tài liệu"
   },
   "site": {
-    "dataSource": "Nguồn dữ liệu",
+    "dataSource": "Nguồn dữ liệu: API cơ sở dữ liệu Tianshi · AKEData",
+    "dataSourceApiName": "API cơ sở dữ liệu Tianshi",
+    "dataSourcePrefix": "Nguồn dữ liệu: ",
     "enter": "Vào",
-    "footer": "Kho lưu trữ Hongshan - Kho dữ liệu Endfield",
+    "footer": "Kho lưu trữ Hongshan · Wiki người hâm mộ bởi Wuling Passerby",
     "homeSubtitle": "Kho dữ liệu mở Endfield",
     "homeTitle": "Kho lưu trữ Hongshan",
     "name": "Kho lưu trữ Hongshan",

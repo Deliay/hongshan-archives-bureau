@@ -292,9 +292,11 @@
     "title": "Archive Search"
   },
   "site": {
-    "dataSource": "Data source: Tianshi Database API · Administrator logs",
+    "dataSource": "Data source: Tianshi Database API · AKEData",
+    "dataSourceApiName": "Tianshi Database API",
+    "dataSourcePrefix": "Data source: ",
     "enter": "Enter the Archives",
-    "footer": "Hongshan Archives Bureau · Talos-II Official Archive System",
+    "footer": "Hongshan Archives Bureau · A fan wiki by Wuling Passerby",
     "homeSubtitle": "Choose an archive to begin",
     "homeTitle": "Archives Overview",
     "name": "Hongshan Archives Bureau",

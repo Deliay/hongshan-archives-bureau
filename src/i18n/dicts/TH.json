@@ -292,9 +292,11 @@
     "title": "ค้นหาฐานข้อมูล"
   },
   "site": {
-    "dataSource": "แหล่งข้อมูล",
+    "dataSource": "แหล่งข้อมูล: API ฐานข้อมูล Tianshi · AKEData",
+    "dataSourceApiName": "API ฐานข้อมูล Tianshi",
+    "dataSourcePrefix": "แหล่งข้อมูล: ",
     "enter": "เข้า",
-    "footer": "หอจดหมายเหตุหงซาน - คลังข้อมูลเอนด์ฟิลด์",
+    "footer": "หอจดหมายเหตุหงซาน · วิกิแฟนโดย Wuling Passerby",
     "homeSubtitle": "คลังข้อมูลเปิดของเอนด์ฟิลด์",
     "homeTitle": "หอจดหมายเหตุหงซาน",
     "name": "หอจดหมายเหตุหงซาน",

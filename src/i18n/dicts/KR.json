@@ -292,9 +292,11 @@
     "title": "아카이브 검색"
   },
   "site": {
-    "dataSource": "데이터 출처: 톈시 데이터베이스 API · 관리자 기록",
+    "dataSource": "데이터 출처: 톈시 데이터베이스 API · AKEData",
+    "dataSourceApiName": "톈시 데이터베이스 API",
+    "dataSourcePrefix": "데이터 출처: ",
     "enter": "아카이브국 들어가기",
-    "footer": "홍산 아카이브국 · 탈로스 II 공식 아카이브 시스템",
+    "footer": "홍산 아카이브국 · 우링 일반 시민의 팬 위키",
     "homeSubtitle": "염조할 아카이브를 선택하세요",
     "homeTitle": "아카이브국 개요",
     "name": "홍산 아카이브국",
