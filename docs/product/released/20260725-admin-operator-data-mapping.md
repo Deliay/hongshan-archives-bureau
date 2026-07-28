@@ -1,6 +1,6 @@
 ---
 description: 管理员干员数据映射特化方案
-type: Draft
+type: Permanent
 ---
 
 # 管理员干员数据映射特化

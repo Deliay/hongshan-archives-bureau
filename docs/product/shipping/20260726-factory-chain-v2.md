@@ -1,9 +1,11 @@
 ---
 description: 制作链路图重构：机器节点为中心、多目标产速可调、物流设施展示、循环规则完善
-type: Fleeting
+type: Permanent
 ---
 
 # 制作链路图重构（二期）
+
+> **状态**: 已实现并验收通过（验收 2.22–2.29，见 [[20260726-factory-acceptance-report|工厂系统验收报告]]），随 PR #43 待合入 main 后转入 released/。求解器现行架构见 [制作链路求解器参考](../../engineering/references/factory-chain-solver.md)。
 
 **功能名称**: 制作链路图 v2
 **关联一期 PRD**: [[20260725-factory-system|工厂系统（工厂配方与制作链路）]]

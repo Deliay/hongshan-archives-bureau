@@ -164,9 +164,11 @@ interface ChainGraph {
 ### 4.2 速率换算
 
 ```typescript
+// ⚠️ 单位勘误（验收 2.27）：totalProgress 不是毫秒，6000 进度 = 1 秒，系数为 360000
 const perMinute = (count: number, totalProgress: number) =>
-  totalProgress > 0 ? (count * 60000) / totalProgress : 0
+  totalProgress > 0 ? (count * 360000) / totalProgress : 0
 
+// 注意：矿机/泵机的 msPerRound 是真毫秒，系数仍为 60000
 const sourcePerMinute = (produceRate: number, msPerRound: number) =>
   msPerRound > 0 ? (produceRate * 60000) / msPerRound : 0
 ```

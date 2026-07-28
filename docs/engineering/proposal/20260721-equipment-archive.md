@@ -366,7 +366,7 @@ tests/e2e/src/equipment.spec.ts     # 新增 E2E
 
 ## 10. 相关文档
 
-- [[20260721-equipment-archive|装备图鉴产品方案（docs/product/draft）]]
+- [[20260721-equipment-archive|装备图鉴产品方案（docs/product/released）]]
 - [工程架构规范](../engineering-spec.md)
 - [前端开发规范](../frontend-spec.md)
 - [数据表映射参考](../references/data-mapping-tables.md)

@@ -1,14 +1,17 @@
 ---
-description: 工厂系统验收问题记录与修复方案
-type: Fleeting
+description: 工厂系统验收问题记录与修复方案（已闭环：2.1–2.29 全部修复，求解器经验已沉淀至 references/）
+type: Permanent
 ---
 
 # 工厂系统验收报告
 
-**关联 PRD**: [[20260725-factory-system|工厂系统（工厂配方与制作链路）]]
-**关联技术方案**: [[20260725-factory-system|工厂系统 - 技术提案]]
-**关联实现方案**: [[20260725-factory-system-plan|工厂系统 - 实现方案]]
-**PR**: [#39 feat/factory-archive-impl](https://github.com/Deliay/hongshan-archives-bureau/pull/39) → [#38 feat/factory-archive](https://github.com/Deliay/hongshan-archives-bureau/pull/38)
+> **状态**: ✅ 验收闭环（2026-07-26）。29 项问题全部修复，最终验证见 §5。
+> 求解器架构与数据陷阱等长期知识已沉淀至 [制作链路求解器参考](../references/factory-chain-solver.md)、[[data-pitfalls|数据层常见陷阱]] 与 [[ui-pitfalls|UI 常见陷阱参考]]，本报告保留完整历史记录。
+
+**关联 PRD**: [[20260725-factory-system|工厂系统（工厂配方与制作链路）]]、[[20260726-factory-chain-v2|制作链路图 v2]]
+**关联技术方案**: [[20260725-factory-system|工厂系统 - 技术提案]]、[[20260726-factory-chain-v2-tech|制作链路图 v2 技术提案]]
+**关联实现方案**: [[20260725-factory-system-plan|工厂系统 - 实现方案]]、[[20260726-factory-chain-v2-plan|制作链路图 v2 实现方案]]
+**PR**: [#43 feat/factory-archive](https://github.com/Deliay/hongshan-archives-bureau/pull/43)（当前，含一期+二期全部工作）；历史：#39 feat/factory-archive-impl → #38 feat/factory-archive
 **验收日期**: 2026-07-26
 
 ---
@@ -35,7 +38,7 @@ type: Fleeting
 - **数据层**：消费 `FactoryMachineCraftTable`、`FactoryBuildingTable`、`FactoryMinerTable` 等表，沿用 `getCachedData` + adapter 纯函数模式
 - **路由**：嵌套子路由 + `Outlet`，选中状态经 `useSearchParams` 同步 URL
 - **链路图**：`lib/factory/chain.ts` 纯函数构建（DFS 环检测 + 速率换算），`@xyflow/react` + `@dagrejs/dagre` 渲染
-- **每分钟换算**：`count × 60000 / totalProgress`
+- **每分钟换算**：~~`count × 60000 / totalProgress`~~（初版按毫秒理解，**有误**，见 §2.27）→ 修正为 `count × 360000 / totalProgress`（`totalProgress` 实为进度单位，6000 进度 = 1 秒）
 
 ### 1.3 实现计划
 
@@ -631,9 +634,10 @@ type: Fleeting
 
 ---
 
-## 3. 制作链路重构方案（待 Review）
+## 3. 制作链路重构方案（已实施）
 
-> **状态**: 🟡 第三轮评审
+> **状态**: ✅ 已实施并验收。本节保留的是二期重构（chain v2）的设计原文，对应 PRD [[20260726-factory-chain-v2|制作链路图 v2]] 与技术提案 [[20260726-factory-chain-v2-tech|制作链路图 v2 技术提案]]。
+> 实施后又在验收中历经 2.22–2.29 八项修复持续演进：DFS 环检测已升级为「配方规划（带回溯）→ 构建 → 构建后封闭回路修复 → 副产物复用不动点迭代」的完整求解管线，现行架构以 [制作链路求解器参考](../references/factory-chain-solver.md) 为准。
 > **关联**: 制作链路图 `buildChainGraph` + `FactoryChains` 页面 UI
 
 ### 3.1 问题背景
@@ -1418,7 +1422,9 @@ describe('calcThroughput', () => {
 
 ---
 
-### 问题 12：编写制作链路连线 E2E 测试
+> 以下「问题 12/13/14」为早期 E2E 专项记录，与主清单 §2.11（二次修复，ReactFlow 边渲染）、§2.13、§2.14 为同一批问题，保留原文备查。
+
+### 问题 12：编写制作链路连线 E2E 测试（即 §2.11 二次修复）
 
 **问题描述**：验收要求编写 E2E 测试，验证选择 `item_proc_battery_5` 后链路图的连线都正常连接。
 
@@ -1439,7 +1445,7 @@ describe('calcThroughput', () => {
 
 ---
 
-### 问题 13：机器节点渲染名字和图标
+### 问题 13：机器节点渲染名字和图标（同 §2.13）
 
 **问题描述**：制作链路图中机器节点存在但无名字和图标内容。
 
@@ -1463,7 +1469,7 @@ describe('calcThroughput', () => {
 
 ---
 
-### 问题 14：机器图标资源路径错误
+### 问题 14：机器图标资源路径错误（同 §2.14）
 
 **问题描述**：机器图标加载 404，URL 使用 `itemicon/` 路径。
 
@@ -1480,12 +1486,16 @@ describe('calcThroughput', () => {
 
 ## 5. 最终验证
 
+验收闭环时（2.29 修复后，commit `9502efc` + `1053e5c`）的全量验证结果：
+
 | 验证项 | 结果 |
 |--------|------|
 | `npm run lint` | ✅ 0 errors |
-| `npm run test` | ✅ 312 tests passed |
-| `npm run build` | ✅ 构建成功 |
-| E2E `factory.spec.ts`（制作链路页） | ✅ 13/13 passed（2.15 修复后复跑） |
+| `npm run test` | ✅ 345 tests passed（含 chain.ts 78 单测 + 真实数据集成回归 6 用例） |
+| `npm run build` | ✅ 构建成功（含 tsc） |
+| E2E `factory.spec.ts`（制作链路页） | ✅ 21/21 passed |
+
+> 各问题的阶段性验证结果见对应条目（2.1–2.29）。
 
 ---
 
@@ -1516,3 +1526,15 @@ describe('calcThroughput', () => {
 - **修复方式**：在 dagre 布局后为节点显式设置 `width`/`height`，与 dagre 计算的尺寸一致。这样 ReactFlow 首帧即可正确计算边位置。
 - **React 19 + zustand v4 无兼容性问题**：之前误判为 zustand 订阅问题，实际是节点尺寸未就绪。ReactFlow 原生边在节点有显式尺寸后正常渲染。
 - **不要过早绕过**：遇到库内部渲染问题时，先加日志确认根因（store 数据 vs DOM 渲染），再决定是绕过还是修复配置。
+
+### 6.6 链路求解器（2.22–2.29）
+
+以下为二期验收在求解器上的核心教训，详细架构见 [制作链路求解器参考](../references/factory-chain-solver.md)：
+
+- **数值字段的单位语义必须用数据考证，不能按字段名臆测**：`totalProgress` 按字段名推断为毫秒，实际全版本数据满足 `totalProgress = progressRound × 6000`（6000 进度 = 1 秒），错误假设使机器台数整体放大 6 倍且单测无法发现（fixture 与实现同源同错）。考证方法：对全部数据版本做全表统计验证不变式。
+- **「默认配方表」解析失败是静默的**：WikiDefaultCraftTable 按对象解析实际为纯字符串，得到空表后回退到表键序首候选——而键序首候选恰是拆解机/转化机反向配方，必然成环。凡是「有默认值、解析失败回退」的路径，解析失败必须显式告警或测试断言。
+- **全局共享的规划状态会被求解顺序污染**：多目标按顺序规划、共享一份路线集时，「已规划即合法」的信任通道会把深分支中未经验证的路线传播给浅分支（2.28 污水路线劣质、2.29 气态灼铜零产环）。防护：未验证路线不写入全局状态；信任通道只做循环检查不做深入展开（path 中物品必然已写入 assignment）。
+- **规划期无法穷举构建期才出现的行为**：路线重排序、回退解析、源达上限后的超额转配方都只在构建期可见，因此任何「规划阶段保证无环」的设计都有漏网之鱼，必须有构建后检测-剔除-重规划的修复兑底（每轮永久排除 ≥1 条配方保证收敛）。
+- **guard 计数要按「有效修复次数」而非「轮数」设计**：`verifyAndRepairAssignment` 的 20 轮 guard 被大量无关污染环耗尽，轮不到真环。
+- **副产物是供给不是废料**：不把副产物纳入需求抵扣，会为可回用材料虚增整条上游链（电池案例：污水净外部需求 18/min，不复用会顶满区域上限 420/min）。副产物复用天然是不动点问题（复用改变需求、需求改变产出），用迭代收敛而非单次计算。
+- **集成回归要用真实数据转储**：合成 fixture 测得出算法逻辑，测不出真实数据里的键序、表结构与数值语义；`chain.integration.test.ts` 用 `endfield-data/` 真实转储锁定了全部验收场景。

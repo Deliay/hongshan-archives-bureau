@@ -71,6 +71,23 @@ type: Permanent
 - `type` 为开放枚举（实测 31 种值且随版本增长），展示时必须做「大类归并 + 其他兜底」，禁止封闭枚举硬编码。
 - 图片路径：`ui/sprites/activity/{tabImg}.png`。
 
+## 工厂相关
+
+| 表名 | 主键 | 关键字段 | 用途 |
+|---|---|---|---|
+| FactoryMachineCraftTable | `id` | `machineId`, `ingredients[{group:[{id,count}]}]`, `outcomes[{group:[{id,count}]}]`, `totalProgress`（= progressRound × 6000，6000 进度 = 1 秒）, `sortId` | 机器制造配方（含采种/种植） |
+| FactoryBuildingTable | building ID | `name`, `iconOnPanel`（图标在 `factory/buildingpanelicon/`） | 机器/建筑显示数据 |
+| FactoryMinerTable | miner ID | `mineable[{miningItemId, produceRate, consumeItem?}]`, `msPerRound`（真毫秒） | 矿机可采资源与产能 |
+| FactoryGasMinerTable | gas miner ID | 同 FactoryMinerTable | 气泵可采气体 |
+| FactoryFluidPumpInTable | pump ID | `enableLiquidIds[]`, `msPerRound` | 水泵可泵液体（隐含每轮 1 单位） |
+| WikiDefaultCraftTable | item ID | value = craftId **纯字符串**（泵类为伪配方 ID） | 官方指定默认配方 |
+| FactoryGridBeltTable | `grid_belt_01` | `beltData.msPerRound`（2000ms → 30 个/min） | 固体传送带吞吐量 |
+| FactoryLiquidPipeTable | `log_pipe_01` | `pipeData.msPerRound`（500ms）、`volume`（1 → 120 单位/min） | 液体管道吞吐量 |
+| LiquidTable | item ID | — | 液体物品判定（链路图边样式：管道 vs 传送带） |
+| FactoryItemAsMachineCrafterIncomeTable / OutcomeTable | ⚠️ key 非物品 ID | — | 不用于物品索引（见 [[data-pitfalls|数据陷阱]]） |
+
+适配要点：配方适配器在 `src/lib/factory/recipes.ts`；链路求解器在 `src/lib/factory/chain.ts`（架构见 [制作链路求解器参考](./factory-chain-solver.md)）；区域采集上限为人工维护常量 `src/lib/factory/regions.ts`（武陵/四号谷地）。
+
 ## 富文本相关
 
 | 表名 | 主键 | 关键字段 | 用途 |

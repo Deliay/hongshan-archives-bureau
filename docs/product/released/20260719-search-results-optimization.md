@@ -1,6 +1,6 @@
 ---
 description: 档案搜索结果优化：实体关联、高亮、翻页与关键词 query 联动
-type: Fleeting
+type: Permanent
 ---
 
 # 搜索结果优化

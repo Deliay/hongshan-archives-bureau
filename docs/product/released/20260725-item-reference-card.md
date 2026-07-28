@@ -1,6 +1,6 @@
 ---
 description: 搜索结果物品参考卡片：展示物品基础信息
-type: Fleeting
+type: Permanent
 ---
 
 # 搜索结果物品参考卡片

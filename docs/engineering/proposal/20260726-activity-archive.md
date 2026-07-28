@@ -255,7 +255,7 @@ const [activitiesRaw, timeRangesRaw, tagsRaw, activityI18n, tagI18n] = await Pro
 
 ## 相关文档
 
-- [[20260726-activity-archive|活动档案产品文档]]（docs/product/draft）
+- [[20260726-activity-archive|活动档案产品文档]]（docs/product/shipping）
 - [[data-mapping-tables|数据表映射参考]]
 - [[data-pitfalls|数据层常见陷阱]]
 - [[engineering-spec|工程架构规范]]

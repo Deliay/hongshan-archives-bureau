@@ -5,7 +5,7 @@ type: Fleeting
 
 # 装备图鉴验收修复 - 实现方案
 
-**对应产品文档**: [[20260721-equipment-archive|装备图鉴产品方案（docs/product/draft，v1.1）]]
+**对应产品文档**: [[20260721-equipment-archive|装备图鉴产品方案（docs/product/released，v1.1）]]
 **对应技术方案**: [[20260721-equipment-archive-acceptance|装备图鉴验收修复技术方案]]
 **实现方案版本**: v1.0
 **创建日期**: 2026-07-21
@@ -377,7 +377,7 @@ export default function SuitLogo({ logoName, className }: { logoName: string; cl
 
 ## 8. 相关文档
 
-- [[20260721-equipment-archive|装备图鉴产品方案（docs/product/draft，v1.1）]]
+- [[20260721-equipment-archive|装备图鉴产品方案（docs/product/released，v1.1）]]
 - [[20260721-equipment-archive-acceptance|装备图鉴验收修复技术方案]]
 - [装备图鉴实现方案 v1.0](./20260721-equipment-archive-plan.md)
 - [数据表映射参考](../references/data-mapping-tables.md)

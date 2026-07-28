@@ -5,7 +5,7 @@ type: Permanent
 
 # 活动档案实现计划
 
-实现 [[20260726-activity-archive|活动档案技术方案]]（proposal）与 [[20260726-activity-archive|活动档案]]（产品文档，draft）。本计划拆解为可并行/串行执行的任务，每个任务有明确的产出物与完成判据。
+实现 [[20260726-activity-archive|活动档案技术方案]]（proposal）与 [[20260726-activity-archive|活动档案]]（产品文档，shipping）。本计划拆解为可并行/串行执行的任务，每个任务有明确的产出物与完成判据。
 
 ## 已确认决策
 

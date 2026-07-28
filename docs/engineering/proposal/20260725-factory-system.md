@@ -179,7 +179,9 @@ interface RecipeCardProps {
 }
 ```
 
-布局：`[产物 ItemTile 组] ← [材料 ItemTile 组]`，下方信息行：机器（图标+名称）、耗时 `totalProgress/1000` 秒、每分钟产能（产出 `count × 60000/totalProgress`，消耗同理）。物品统一 `<ItemTile itemId amount size="lg" />`（保留默认 tooltip 行为）。
+布局：`[产物 ItemTile 组] ← [材料 ItemTile 组]`，下方信息行：机器（图标+名称）、耗时 `totalProgress/6000` 秒、每分钟产能（产出 `count × 360000/totalProgress`，消耗同理）。物品统一 `<ItemTile itemId amount size="lg" />`（保留默认 tooltip 行为）。
+
+> ⚠️ 单位勘误（验收 2.27）：`totalProgress` 不是毫秒，全版本数据满足 `totalProgress = progressRound × 6000`（6000 进度 = 1 秒）。本文初版按毫秒（`60000`）换算有误，以上为修正后公式。详见 [[data-pitfalls|数据层常见陷阱]]。
 
 ### 4.4 制作链路页与链路构建算法（核心）
 

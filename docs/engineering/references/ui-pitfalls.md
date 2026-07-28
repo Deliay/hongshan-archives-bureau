@@ -73,6 +73,22 @@ type: Permanent
 
 避免在所有页面强制 4 列，防止首页卡片内容稀疏或详情页关联卡片过密。
 
+## ReactFlow（@xyflow/react）
+
+### 自定义节点必须显式设置 width/height，否则边全部不渲染
+
+ReactFlow 的 `getEdgePosition()` 内部调用 `isNodeInitialized()`，要求 `node.measured.width || node.width || node.initialWidth` 为真。自定义节点依赖 DOM 测量（ResizeObserver），首帧渲染时 `measured.width` 尚未赋值，所有边因 `sourceX === null` 返回 null——表现为节点正常、边全部消失（验收 2.11/问题 12，34 条边只渲染 1 条）。
+
+修复：dagre 布局时为每个节点显式设置 `width`/`height`（与 dagre 计算尺寸一致），并收敛到统一的 `nodeSize()` 函数供布局与渲染共用，禁止两处各自硬编码。
+
+### ReactFlow 默认 CSS 会覆盖边样式
+
+仅在边的 `style` 属性上改颜色/宽度可能被 ReactFlow 默认 CSS 覆盖，深色主题下边几乎不可见（验收 2.11 首次修复失败）。需要追加全局 CSS 覆盖 `.react-flow__edge path` 与 `.react-flow__arrow polygon`。改样式后必须用 E2E 断言 `.react-flow__edge` 实际渲染数量，不能只看视觉效果。
+
+### 排障方法
+
+遇到库内部渲染问题时，先加日志确认根因发生在哪一层（store 数据 vs 布局 vs DOM 渲染），再决定绕过还是修复配置；不要过早绕过（验收 2.11 曾误判为 React 19 + zustand v4 兼容性问题，实际是节点尺寸未就绪）。
+
 ## 相关文档
 
 - [前端开发规范](../frontend-spec.md)

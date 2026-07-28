@@ -1,6 +1,6 @@
 ---
 description: 档案搜索模块：跨表关键词检索与实体卡片跳转
-type: Fleeting
+type: Permanent
 ---
 
 # 档案搜索完善

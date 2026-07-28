@@ -118,8 +118,9 @@ export interface ChainGraph { nodes: ChainNode[]; edges: ChainEdge[] }
 **`chain.ts`** — 链路构建纯函数（无 React 依赖）：
 
 ```ts
+// ⚠️ 单位勘误（验收 2.27）：totalProgress 不是毫秒，6000 进度 = 1 秒，系数为 360000
 export const perMinute = (count: number, totalProgress: number) =>
-  totalProgress > 0 ? (count * 60000) / totalProgress : 0
+  totalProgress > 0 ? (count * 360000) / totalProgress : 0
 
 export function buildChainGraph(
   targets: string[],

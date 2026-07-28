@@ -1,6 +1,6 @@
 ---
 description: 物品组件规范化（ItemPanel）：统一物品视觉语言，规范全场景物品展示
-type: Fleeting
+type: Permanent
 ---
 
 # 物品组件规范化（ItemPanel）
