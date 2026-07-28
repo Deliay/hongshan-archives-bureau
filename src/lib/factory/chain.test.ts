@@ -1390,3 +1390,90 @@ describe('副产物复用与转化利用', () => {
     expect(inertEdge?.perMinute).toBeCloseTo(48, 3)
   })
 })
+
+/**
+ * 规划污染防护（验收 2.29）：深层分支的灌装↔拆解零产出环不能借深度短路写入
+ * 全局路线集。两个通道：
+ * 1. 深度短路只返回「可行但未验证」，未验证路线不写入全局 assignment；
+ * 2. 环上物品的循环检查先于深度限制（path 中的物品必然已写入 assignment，
+ *    planCycleRatio 无需继续深入即可判定）。
+ * 深层采集源物品的可行性是事实（源不构成环），不受深度限制影响。
+ */
+describe('规划污染防护（深度视界外的零产出环）', () => {
+  const mkRecipe = (
+    id: string,
+    machineId: string,
+    ins: [string, number][],
+    outs: [string, number][],
+    sortId = 0,
+  ): FactoryRecipe => ({
+    id,
+    machineId,
+    ingredients: ins.map(([itemId, count]) => ({ itemId, count })),
+    outcomes: outs.map(([itemId, count]) => ({ itemId, count })),
+    totalProgress: 6000,
+    sortId,
+  })
+  const mkIndex = (recipes: FactoryRecipe[]): FactoryItemIndex => {
+    const asIngredient: FactoryItemIndex['asIngredient'] = {}
+    const asOutcome: FactoryItemIndex['asOutcome'] = {}
+    for (const r of recipes) {
+      for (const i of r.ingredients) (asIngredient[i.itemId] ??= []).push(r)
+      for (const o of r.outcomes) (asOutcome[o.itemId] ??= []).push(r)
+    }
+    return { asIngredient, asOutcome }
+  }
+  const oreSource: FactorySource[] = [
+    { machineId: 'miner', itemId: 'ore', produceRate: 1, msPerRound: 1000 },
+  ]
+  /** 深度链 t → c1 → … → cN（每级单配方 1→1），末级 cN 由 leafRecipe 生产 */
+  function deepChain(n: number, leafId: string): FactoryRecipe[] {
+    const list: FactoryRecipe[] = []
+    for (let i = 0; i <= n; i++) {
+      const cur = i === 0 ? 't' : `c${i}`
+      const nxt = i === n ? leafId : `c${i + 1}`
+      list.push(mkRecipe(`r_${cur}`, 'mc', [[nxt, 1]], [[cur, 1]], i))
+    }
+    return list
+  }
+
+  it('深度视界外的灌装↔拆解零产出环路线不写入全局路线集', () => {
+    // 深层分支（t → … → gasX，规划深度 12）：拆解机候选的成分 jarX 位于深度 13
+    // （深度视界外）；修复前 jarX 被深度短路放行 → 零产出环路线写入全局 assignment，
+    // 随后被浅层分支（gasX 直接作为目标）使用——跨分支污染（验收 2.29 的真实结构）
+    const recipes = [
+      ...deepChain(11, 'gasX'),
+      mkRecipe('bad_gas', 'dismantler', [['jarX', 1]], [['gasX', 1], ['bottleX', 1]], 1),
+      mkRecipe('good_gas', 'gasmc', [['ore', 1]], [['gasX', 1]], 2),
+      mkRecipe('fill_jarX', 'filling', [['bottleX', 1], ['gasX', 1]], [['jarX', 1]], 3),
+    ]
+    const graph = buildChainGraph(
+      [
+        { itemId: 't', rate: 6 },
+        { itemId: 'gasX', rate: 6 },
+      ],
+      recipes, mkIndex(recipes), oreSource, {},
+    )
+    expect(graph.edges.every(e => e.cycleType !== 'closed')).toBe(true)
+    // 未验证的拆解机路线被丢弃，gasX 选定到合法的气体机路线
+    const gasNode = graph.nodes.find(n => n.itemId === 'gasX' && n.kind === 'machine')
+    expect(gasNode?.recipe?.id).toBe('good_gas')
+    expect(graph.nodes.some(n => n.machineId === 'dismantler')).toBe(false)
+  })
+
+  it('深度外的在环物品循环检查不被深度限制短路', () => {
+    // B 在规划深度 11，其候选 badB 的成分 C 位于深度 12；C 的唯一配方又吃 B
+    // （B 在深度 13 再次出现）：修复前深度短路跳过循环检查 → 零产出互喂环通过校验
+    const recipes = [
+      ...deepChain(10, 'itemB'),
+      mkRecipe('badB', 'dismantler', [['itemC', 1]], [['itemB', 1]], 1),
+      mkRecipe('goodB', 'gasmc', [['ore', 1]], [['itemB', 1]], 2),
+      mkRecipe('r_itemC', 'filling', [['itemB', 1]], [['itemC', 1]], 3),
+    ]
+    const graph = buildChainGraph([{ itemId: 't', rate: 6 }], recipes, mkIndex(recipes), oreSource, {})
+    expect(graph.edges.every(e => e.cycleType !== 'closed')).toBe(true)
+    const bNode = graph.nodes.find(n => n.itemId === 'itemB')
+    expect(bNode?.recipe?.id).toBe('goodB')
+    expect(graph.nodes.some(n => n.machineId === 'dismantler')).toBe(false)
+  })
+})

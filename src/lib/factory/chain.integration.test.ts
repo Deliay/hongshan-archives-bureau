@@ -14,6 +14,10 @@ const DIR = 'endfield-data/initial_8764515-7_main_8764515-7'
 const load = (name: string) => JSON.parse(readFileSync(`${DIR}/${name}`, 'utf-8'))
 
 function buildWithRealData(itemId: string, rate: number, regionId: string) {
+  return buildTargetsWithRealData([{ itemId, rate }], regionId)
+}
+
+function buildTargetsWithRealData(targets: { itemId: string; rate: number }[], regionId: string) {
   const craftRaw = load('FactoryMachineCraftTable.json')
   const recipes: FactoryRecipe[] = Object.values(craftRaw).map(v => adaptFactoryRecipe(v))
   const asIngredient: FactoryItemIndex['asIngredient'] = {}
@@ -31,7 +35,7 @@ function buildWithRealData(itemId: string, rate: number, regionId: string) {
   const liquids = new Set(Object.keys(load('LiquidTable.json')))
   const regionCaps = FACTORY_REGIONS.find(r => r.id === regionId)?.caps
   return buildChainGraph(
-    [{ itemId, rate }],
+    targets,
     recipes, { asIngredient, asOutcome }, sources, defaultCrafts,
     undefined, undefined, liquids, undefined, undefined, regionCaps,
   )
@@ -95,6 +99,25 @@ describe('真实数据集成回归', () => {
     const sewageEdges = graph.edges.filter(e => e.itemId === 'item_liquid_sewage')
     expect(sewageEdges).toHaveLength(1)
     expect(sewageEdges[0].perMinute).toBeCloseTo(18, 3)
+  })
+
+  it('求解顺序污染（电池14+血瓶1+灼铜件13）：无灌装↔拆解零产环，气态灼铜走气体反应炉', () => {
+    // 验收 2.29：电池链深层分支的灌装↔拆解环曾借深度短路写入全局路线集，
+    // 导致气态灼铜/气态赫铜用拆解机+灌装机互喂「生产」（零净值，实际不产出任何产物）
+    const graph = buildTargetsWithRealData([
+      { itemId: 'item_proc_battery_5', rate: 14 },
+      { itemId: 'item_bottled_rec_hp_5', rate: 1 },
+      { itemId: 'item_copper_enr2_cmpt', rate: 13 },
+    ], 'wuling')
+    expect(graph.edges.every(e => e.cycleType !== 'closed')).toBe(true)
+    // 气态灼铜必须走气体反应炉（气态赫铜×2 + 息壤气 → 气态灼铜）
+    const gasEnr2 = graph.nodes.find(n => n.itemId === 'item_gas_copper_enr2')
+    expect(gasEnr2?.machineId).toBe('gas_reactor_1')
+    expect(gasEnr2?.actualPm).toBeCloseTo(65, 3)
+    // 拆解机不参与任何气体生产；灌装机仅用于合法瓶装产物（血瓶的盛草瓶）
+    expect(graph.nodes.some(n => n.machineId === 'dismantler_1')).toBe(false)
+    const fillingNodes = graph.nodes.filter(n => n.machineId === 'filling_powder_mc_1')
+    expect(fillingNodes.every(n => !n.itemId.startsWith('item_gasjar_'))).toBe(true)
   })
 
   it('种植（酮化灌木）：有效循环 + 预填充标识，无封闭回路', () => {

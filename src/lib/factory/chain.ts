@@ -208,53 +208,82 @@ export function buildChainGraph(
 
   const PLAN_DEPTH_LIMIT = 12
 
+  /** 规划结果：ok=可行（供当前 DFS 分支判断）；verified=可行性未借助深度短路（见下） */
+  interface PlanResult {
+    ok: boolean
+    verified: boolean
+  }
+  const PLAN_OK: PlanResult = { ok: true, verified: true }
+  const PLAN_FAIL: PlanResult = { ok: false, verified: true }
+  /** 深度外放行：未展开校验，可行但「未验证」 */
+  const PLAN_UNVERIFIED: PlanResult = { ok: true, verified: false }
+
   /**
    * 配方规划（带回溯的 DFS）：为每个物品收集全部可行配方路线，保证按序展开后不出现
    * 净产出比 ≤ 1 的封闭回路（如灌装机↔拆解机互喂的零产出自环）；有效循环（如采种/
    * 种植增产）允许。采集源物品同样收集路线（供「源达上限后超额转配方」使用），但源
    * 优先且不参与循环判定。无可行路线时：非源物品返回 false，构建阶段回退旧解析并保
    * 留封闭回路标记。
+   *
+   * 规划污染防护（验收 2.29）：
+   * 1. 循环检查先于深度限制——path 中的物品必然已写入 assignment（本函数先
+   *    assignment.set 再递归材料），planCycleRatio 无需继续深入即可判定；
+   * 2. 深度短路只返回「可行但未验证」——未验证路线供当前分支判断但不写入全局
+   *    assignment（未验证标记沿调用链上传）；否则深层分支的灌装↔拆解零产出环会
+   *    藏在深度视界外通过校验，写入全局路线集后在其他分支借「已规划且不在当前
+   *    路径」的信任通道合法化。单配方物品回退解析（默认 > 表键序）结果相同，
+   *    丢弃其未验证路线不改变构建行为；
+   * 3. 深层采集源物品可行性是事实（源不构成环，余量约束在构建阶段处理），不受
+   *    深度限制影响，避免含深源成分的合法路线被误丢。
+   * 规划阶段无法穷举所有成环组合（路线重排序/回退解析/源超额转配方只在构建期可见），
+   * 残留的封闭回路由构建后修复循环兜底（见文件底部 BUILD_REPAIR）。
    */
-  function planItem(itemId: string, path: string[]): boolean {
-    if (path.length > PLAN_DEPTH_LIMIT) return true // 深度外交由 R6 截断处理
+  function planItem(itemId: string, path: string[]): PlanResult {
     // 采集源物品在环上可独立供给（源优先、超额才转配方），不构成必须依赖的环，
     // 与 findClosedPrimaryCycle 跳过源物品的语义对齐；避免环上下文的候选剔除污染
     // 其全局路线集（如污水在瓶罐分支上下文中丢掉精炼炉路线）
-    if (path.includes(itemId) && supplyCapByItem.has(itemId)) return true
+    if (path.includes(itemId) && supplyCapByItem.has(itemId)) return PLAN_OK
     if (assignment.has(itemId)) {
-      if (!path.includes(itemId)) return true // 已规划且不在当前路径
-      return planCycleRatio(itemId, path) > 1 // 循环：仅接受有效循环
+      if (!path.includes(itemId)) return PLAN_OK // 已规划且不在当前路径（只写入已验证路线，可信）
+      return planCycleRatio(itemId, path) > 1 ? PLAN_OK : PLAN_FAIL // 循环：仅接受有效循环
     }
+    // 深层采集源物品：可行性是事实（源不构成环，余量约束在构建阶段处理），已验证
+    if (supplyCapByItem.has(itemId) && path.length > PLAN_DEPTH_LIMIT) return PLAN_OK
+    if (path.length > PLAN_DEPTH_LIMIT) return PLAN_UNVERIFIED // 深度外交由 R6 截断处理
     const candidates = candidateRecipes(itemId)
-    if (candidates.length === 0) return true // 无配方叶子
+    if (candidates.length === 0) return PLAN_OK // 无配方叶子
     const sourced = supplyCapByItem.has(itemId)
-    const routes: string[] = []
+    const routes: { id: string; verified: boolean }[] = []
     for (const recipe of candidates) {
       // 让循环检查看到「已收集路线 + 当前候选」的组合
-      assignment.set(itemId, [...routes, recipe.id])
+      assignment.set(itemId, [...routes.map(r => r.id), recipe.id])
       path.push(itemId)
       let ok = true
+      let verified = true
       for (const ing of recipe.ingredients) {
-        if (!planItem(ing.itemId, path)) {
+        const r = planItem(ing.itemId, path)
+        if (!r.ok) {
           ok = false
           break
         }
+        verified &&= r.verified
       }
       path.pop()
-      if (ok) routes.push(recipe.id)
+      if (ok) routes.push({ id: recipe.id, verified })
     }
-    if (routes.length > 0) {
-      assignment.set(itemId, routes)
+    // 只有全部成分都经完整校验的路线才写入全局路线集
+    const verifiedRoutes = routes.filter(r => r.verified)
+    if (verifiedRoutes.length > 0) {
+      assignment.set(itemId, verifiedRoutes.map(r => r.id))
     } else {
       assignment.delete(itemId)
     }
-    // 采集源物品无路线也可接受（纯源供给）；非源物品无路线则规划失败
-    return sourced || routes.length > 0
+    // 采集源物品无路线也可接受（纯源供给）；非源物品无路线则规划失败。
+    // 有已验证路线写入 → 后续分支可信；仅未验证路线/无路线 → 标记未验证继续上传
+    const ok = sourced || routes.length > 0
+    return { ok, verified: verifiedRoutes.length > 0 || (sourced && routes.length === 0) }
   }
 
-  for (const target of targets) {
-    if (Number.isFinite(target.rate) && target.rate > 0) planItem(target.itemId, [])
-  }
 
   /** 沿首选路线的依赖环净产出比 */
   function primaryCycleRatio(cycleItems: string[], startItem: string): number {
@@ -328,7 +357,7 @@ export function buildChainGraph(
         excluded.add(current)
         excludedRoutes.set(itemId, excluded)
         assignment.delete(itemId)
-        if (planItem(itemId, []) && assignment.has(itemId)) {
+        if (planItem(itemId, []).ok && assignment.has(itemId)) {
           repaired = true
           break
         }
@@ -340,7 +369,16 @@ export function buildChainGraph(
     }
   }
 
-  verifyAndRepairAssignment()
+  /** 全量规划：清空路线集重跑 DFS + 首选路线校验修复（被剔除路线永久排除，故收敛） */
+  function planAllTargets(): void {
+    assignment.clear()
+    for (const target of targets) {
+      if (Number.isFinite(target.rate) && target.rate > 0) planItem(target.itemId, [])
+    }
+    verifyAndRepairAssignment()
+  }
+
+  planAllTargets()
 
   function resolveRecipe(itemId: string): FactoryRecipe | null {
     const routes = assignment.get(itemId)
@@ -805,15 +843,59 @@ export function buildChainGraph(
     return true
   }
 
-  // 副产物复用不动点迭代：本轮构建使用上轮的副产物供给，产出新的供给；供给量收敛
-  // （或达迭代上限）即定稿。无多产出配方的链路首轮供给为空，与初始一致，一轮即出。
-  for (let iter = 0; ; iter++) {
-    const usedCaps = byproductCap
-    buildOnce()
-    const { caps, producers } = collectByproducts()
-    byproductProducers = producers
-    byproductCap = caps
-    if (iter >= BYPRODUCT_MAX_ITER || byproductCapsEqual(caps, usedCaps)) break
+  /**
+   * 构建后封闭回路修复（验收 2.29 兜底）：规划阶段无法穷举所有成环组合——路线重排序
+   * （orderRoutesByCeiling）、无路线集物品的回退解析（resolveRecipe）、采集源达上限后的
+   * 超额转配方都只在构建期可见，可能组合出规划时未见的零净值封闭回路（如灌装↔拆解、
+   * 气体↔液体↔粉末转化互喂）。每轮构建后检测封闭回路边：剔除回边消费方物品的当前
+   * 路线（无替代路线则剔除生产方路线）并重规划重建；每轮永久排除 ≥1 条配方，必然收敛。
+   * 无可行替代时保留封闭回路标记呈现（与原行为一致）。
+   */
+  const BUILD_REPAIR_MAX_ATTEMPTS = 20
+  for (let attempt = 0; ; attempt++) {
+    // 副产物复用不动点迭代：本轮构建使用上轮的副产物供给，产出新的供给；供给量收敛
+    // （或达迭代上限）即定稿。无多产出配方的链路首轮供给为空，与初始一致，一轮即出。
+    for (let iter = 0; ; iter++) {
+      const usedCaps = byproductCap
+      buildOnce()
+      const { caps, producers } = collectByproducts()
+      byproductProducers = producers
+      byproductCap = caps
+      if (iter >= BYPRODUCT_MAX_ITER || byproductCapsEqual(caps, usedCaps)) break
+    }
+
+    const closedEdges = allEdges.filter(e => e.cycleType === 'closed')
+    if (closedEdges.length === 0 || attempt >= BUILD_REPAIR_MAX_ATTEMPTS) break
+
+    let excludedAny = false
+    const exclude = (itemId: string, recipeId: string): boolean => {
+      const excluded = excludedRoutes.get(itemId) ?? new Set<string>()
+      if (excluded.has(recipeId)) return false
+      excluded.add(recipeId)
+      excludedRoutes.set(itemId, excluded)
+      return true
+    }
+    for (const e of closedEdges) {
+      const consumer = allNodes.get(e.from)
+      const producer = allNodes.get(e.to)
+      // 优先剔除回边消费方（环内吃循环物品的一方）的当前路线；其无替代路线时
+      // 剔除生产方（被循环消费物品）的当前路线
+      if (
+        consumer?.kind === 'machine' &&
+        consumer.recipe &&
+        candidateRecipes(consumer.itemId).some(r => r.id !== consumer.recipe!.id)
+      ) {
+        excludedAny = exclude(consumer.itemId, consumer.recipe.id) || excludedAny
+      } else if (
+        producer?.kind === 'machine' &&
+        producer.recipe &&
+        candidateRecipes(producer.itemId).some(r => r.id !== producer.recipe!.id)
+      ) {
+        excludedAny = exclude(producer.itemId, producer.recipe.id) || excludedAny
+      }
+    }
+    if (!excludedAny) break
+    planAllTargets()
   }
 
   /** 配方组涉及的不同物质集合（投入 ∪ 产出；产物也占缓存区） */
