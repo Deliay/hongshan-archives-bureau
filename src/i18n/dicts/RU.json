@@ -393,6 +393,11 @@
     "beltCount": "Конвейер ×{{count}} ({{rate}}/мин)",
     "pipeCount": "Труба ×{{count}} ({{rate}}/мин)",
     "closedLoop": "↻ Замкнуто",
-    "productiveLoop": "↻ Чистый выход ×{{ratio}}"
+    "productiveLoop": "↻ Чистый выход ×{{ratio}}",
+    "region": "Регион",
+    "regionWuling": "Регион Улин",
+    "regionValley4": "Долина IV",
+    "priming": "Нужна предзагрузка",
+    "reactorSlots": "Буферы {{used}}/{{total}}"
   }
 }

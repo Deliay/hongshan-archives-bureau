@@ -288,6 +288,349 @@ type: Fleeting
 
 ---
 
+### 2.15 添加目标产物未使用 ItemTile 展示
+
+**问题描述**：制作链路页「添加目标产物」使用原生 `<select>` 下拉框，选项仅显示物品名称文本，未使用 ItemTile 展示物品图标与稀有度，与全站物品展示规范不一致。
+
+**根因**：chain v2 重构（§3.6）将选品 UI 改为原生 `<select>` 下拉（原生 `<option>` 无法渲染图标组件），回退了 2.12 中已与配方页对齐的侧边栏选品模式。
+
+**修复方案**：
+- 链路页恢复与配方页一致的布局：复用 `FactoryItemSidebar`（每行 `ItemTile size="sm"` + 名称），桌面端左侧持久侧边栏 + 移动端折叠下拉
+- 使用 `FactoryItemSidebar` 已为多选场景预留的 `disableSelected`（已选目标禁用重复点击）与 `clearSearchOnSelect`（选中后清空搜索框，便于连续添加）
+- 右侧区域保留已选目标列表（ItemTile + 产速输入 + 移除）、清空按钮与链路图
+- 更新 E2E：原「通过下拉选择器添加目标产物」用例改为点击侧边栏物品行
+
+**涉及文件**：
+- `src/pages/factory/FactoryChains.tsx` — 移除原生 `<select>`，接入 `FactoryItemSidebar`
+- `tests/e2e/src/factory.spec.ts` — 更新添加目标产物用例
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed（含更新后的「通过物品列表添加目标产物」）
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+> ⚠️ 注：2.15 的侧边栏方案已被 2.16 取代（占位按钮 + 弹窗选择），最终代码以 2.16 为准。
+
+---
+
+### 2.16 添加目标产物改为占位按钮 + 弹窗选择
+
+**问题描述**：验收要求制作链路页「添加目标产物」不使用常驻侧边栏，改为在原列表位置放置占位按钮，点击后弹出 dialog 进行物品选择。
+
+**根因**：2.15 复用了配方页的常驻侧边栏，占用了链路图左侧空间；验收期望选品入口更轻量，仅在需要时弹出选择。
+
+**修复方案**：
+- 新增 `FactoryItemPickerDialog` 组件：模态弹窗（沿用 `ItemTooltip` 的 overlay 模式，点击遮罩 / Escape 关闭），内含搜索框 + 物品列表（每行 `ItemTile size="sm"` + 名称）+ 分页（50/页），已选目标高亮禁用，每次打开重置搜索与分页
+- 链路页原侧边栏位置（`md:w-72`）改为虚线占位按钮（「+ 添加目标产物」），点击弹出 dialog
+- 选中物品后弹窗自动关闭，目标加入已选列表；再次点击占位按钮可继续添加
+- E2E「通过弹窗添加目标产物」：点击占位 → dialog 可见 → 点击物品行 → dialog 关闭且目标出现
+
+**涉及文件**：
+- `src/components/Factory/FactoryItemPickerDialog.tsx` — 新增选品弹窗
+- `src/pages/factory/FactoryChains.tsx` — 侧边栏替换为占位按钮 + 弹窗
+- `tests/e2e/src/factory.spec.ts` — 更新添加目标产物用例
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed（含「通过弹窗添加目标产物」）
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+---
+
+### 2.17 添加目标产物入口与目标产物列表合并
+
+**问题描述**：验收要求「添加目标产物」入口不要单独占用左侧栏，应与目标产物列表放在一起，并使用与目标项相同的样式。
+
+**根因**：2.16 将占位按钮放在独立的左侧栏（`md:w-72`）中，与右侧目标产物列表分离，且为虚线大按钮样式，与目标项（`bg-archive-gold/10` 卡片）风格不一致。
+
+**修复方案**：
+- 移除左侧栏布局，恢复单列布局
+- 「添加目标产物」按钮移至目标产物列表末尾，复用目标项样式（`flex items-center gap-2 bg-archive-gold/10 rounded px-3 py-2`），图标位置用 ItemTile 同尺寸（`w-12 h-12`）的虚线「+」占位
+
+**涉及文件**：`src/pages/factory/FactoryChains.tsx`
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+---
+
+### 2.18 目标产物组件改为 fit-content 且名称/产速分行
+
+**问题描述**：验收要求目标产物组件不要占满一行（fit content）；产物名字单独占一行，生产数量（产速输入）换行显示在下方。
+
+**根因**：目标项为块级行（flex 容器默认 stretch 撑满父宽），名称、产速输入、单位全部在同一行内排列。
+
+**修复方案**：
+- 目标项与「添加目标产物」按钮加 `w-fit`，宽度按内容自适应
+- 目标项内部改为：ItemTile + 右侧纵向 flex（第一行名称，第二行产速输入 + 单位），移除按钮 `self-start` 对齐顶部
+
+**涉及文件**：`src/pages/factory/FactoryChains.tsx`
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+---
+
+### 2.19 目标产物与添加入口改为横向排列可换行
+
+**问题描述**：验收要求目标产物与「添加目标产物」占位按钮不要各自占一行，应横向排列、允许换行。
+
+**根因**：2.18 中目标项容器为纵向 flex（`flex flex-col`），每个目标项独占一行。
+
+**修复方案**：
+- 目标项容器改为 `flex flex-wrap items-center gap-2`，目标项与添加按钮（均已 `w-fit`）横向排列、自动换行
+- 「清空」按钮移出换行容器，保持独立一行左对齐
+
+**涉及文件**：`src/pages/factory/FactoryChains.tsx`
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 13/13 passed
+
+**提交**：`5c71ff3 fix(factory): chains 添加目标产物改为 ItemTile 弹窗选择`
+
+---
+
+### 2.20 机器节点配方渲染为原始 itemId 文本
+
+**问题描述**：链路图画布中，机器节点渲染配方时直接显示原始 itemId 文本（如 `item_xxx + item_yyy → item_zzz×2`），而非物品图标。
+
+**根因**：`MachineNode` 中配方以纯文本拼接渲染（`inputs.map(i => i.itemId).join(' + ')`），未使用 ItemTile。
+
+**修复方案**：
+- 机器节点配方改为类似「工厂配方」页的展示形式：输入 ItemTile（带数量角标）→ 输出 ItemTile（带数量角标）
+- 机器节点宽度随配方物品数动态计算（新增 `nodeSize()`，输入+输出每个 tile 52px + 箭头/边距 40px，最小 120px，高度 180px），dagre 布局与 ReactFlow 显式尺寸统一走该函数
+- 新增 E2E「机器节点以物品图标渲染配方」：断言节点文本不含 `item_` 原始 ID、包含 `→`、含多个 `<img>`
+
+**涉及文件**：
+- `src/components/Factory/ChainGraph.tsx` — `MachineNode` 配方渲染、新增 `nodeSize()`
+- `tests/e2e/src/factory.spec.ts` — 新增用例
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 14/14 passed
+
+**提交**：`bf57442 fix(factory): 链路图机器节点配方改用 ItemTile 渲染并显示名称`
+
+---
+
+### 2.21 链路图中 ItemTile 未显示名称
+
+**问题描述**：链路图机器节点配方中的 ItemTile 未显示物品名称。
+
+**根因**：2.20 实现时配方 ItemTile 传了 `showName={false}`。
+
+**修复方案**：移除机器节点配方 ItemTile 的 `showName={false}`，恢复默认的名称覆盖层展示（名称渲染在 tile 内部底部，不影响节点尺寸）。
+
+**涉及文件**：`src/components/Factory/ChainGraph.tsx`
+
+**验证结果**：✅ lint / test（312 passed）/ build 通过；E2E 制作链路页 14/14 passed
+
+**提交**：`bf57442 fix(factory): 链路图机器节点配方改用 ItemTile 渲染并显示名称`
+
+---
+
+### 2.22 链路图出现零产出封闭子图（左脚踩右脚）＋输入来源细化
+
+**问题描述**：构建链路图时仍会出现净产出为 0 的无用子图——例如 1 个灌装机输入到 2 个拆解机（输入=输出，系统无产出）。以「气态赤铜」为例，正确解应输入赤铜矿，实际却走灌装机↔拆解机互喂回路。同时输入来源需细化：矿机（FactoryMinerTable）/气泵（FactoryGasMinerTable）/水泵（液体硬编码酸+水、耐酸泵抽酸）/种植（采种 1→2 + 种植增产循环）均需在链路图中体现对应机器。
+
+**根因分析**（三层叠加）：
+1. `WikiDefaultCraftTable` 的值为 craftId **纯字符串**（如 `"item_gas_copper": "liquid_transmuter_2_gas_gas_copper_1"`），但 `useCraftingChain` 按 `entry.craftId` 对象解析 → `defaultCrafts` 恒为空，官方指定默认配方被静默丢弃；
+2. 回退策略 `asOutcome[0]` 按配方表 JSON 键序取首个，气态赤铜/空罐/赤铜块的首个配方恰好都是拆解机/转化机反向配方 → 必然构成净产出比 = 1 的封闭回路；且循环检测只打标记、不回溯尝试备选配方；
+3. `FactoryFluidPumpInTable` 实际结构为 `enableLiquidIds: string[]`（不是矿机表的 `mineable[]`），adapter 按 `mineable` 解析 → 水泵来源恒为空，液体永远没有采集源头。
+
+**修复方案**：
+- **defaultCrafts 解析**：兼容字符串值（`typeof entry === 'string' ? entry : entry?.craftId`）
+- **配方规划回溯**（chain.ts 新增规划阶段）：构建前先以带回溯的 DFS 为每个物品选定配方——候选顺序 用户 override > Wiki 默认 > 表键序；展开中遇到净产出比 ≤ 1 的封闭回路即失败回溯、尝试下一候选；有效循环（netRatio > 1，如采种/种植）允许；无可行配方时回退旧解析并保留封闭回路标记；override 为强制项不参与回溯
+- **有效循环产能结算**：构建期循环点只记录不回流；构建结束后统一按稳态结算——循环机器总产 = 外部需求 × netRatio/(netRatio−1)（如目标作物 10/min → 种植机 20/min：10 交付 + 10 回流采种），机器台数/配方速率/物流边按增量补齐，非循环材料（如种植用水）按增量补展开；多目标合并基于「外部需求」一次性放大，不重复翻倍
+- **水泵适配修复**：按 `enableLiquidIds` 解析，硬编码白名单 `item_liquid_acid`/`item_liquid_water` 无限采集（uncapped 不封顶）；酸仅 `pump_2` 耐酸水泵支持（表数据自然表达）
+- **源节点机器展示**：SourceNode 渲染采集机器图标+名称（矿机/气泵/水泵），nodeSize 相应调整；同物品多台采集机器时保留首个（基础机型）展示
+
+**涉及文件**：
+- `src/lib/factory/chain.ts` — 配方规划回溯（planItem/candidateRecipes）、有效循环结算（analyzeCycle + 结算阶段）、uncapped 源
+- `src/lib/factory/recipes.ts` — 水泵表 enableLiquidIds 适配 + PUMPABLE_LIQUIDS 白名单
+- `src/lib/factory/types.ts` — `FactorySource.uncapped`
+- `src/hooks/useData.ts` — defaultCrafts 字符串解析
+- `src/components/Factory/ChainGraph.tsx` — SourceNode 机器图标/名称、nodeSize
+- `src/lib/factory/chain.test.ts` / `recipes.test.ts` — 新增 10 个单测
+- `tests/e2e/src/factory.spec.ts` — 新增 2 个用例（气态赤铜→赤铜矿、种植循环）
+
+**验证结果**：✅ lint / test（323 passed）/ build 通过；E2E 制作链路页 16/16 passed
+
+**提交**：`3b10eb0 fix(factory): 链路求解回溯消除封闭回路并细化采集源头`
+
+---
+
+### 2.23 链路求解未按供给需求综合考虑多种配方
+
+**问题描述**：链路图不考虑供给/需求情况在多种配方间分配。例如息壤（息壤粉末）的制作，应综合考虑「气泵直接采集息壤气（经固气转化机）」与「碳块+水在天有洪炉生产」两种方案，而不是只走 Wiki 默认的洪炉路线。
+
+**根因**：配方规划阶段每个物品只保留单一路线（首个可行配方），且 R4 源优先分支在采集达上限后仅标记 `supplyLimited`，不会把超额需求转交配方路线。
+
+**修复方案**：
+- **多路线规划**：`planItem` 从「首个可行即返回」改为收集全部可行配方路线（按 override > Wiki 默认 > 表键序，逐候选验证子树无封闭回路）；采集源物品同样收集路线（供超额转配方）
+- **受限路线优先的多路线分配**：构建阶段 `expandRoutes` 按「路线天花板」排序——直接材料有采集上限的路线优先用满（天花板 = 材料剩余上限 × 产出/投入比），剩余需求依次落到不受限路线；全部受限仍有缺口时压给末条路线并以供应受限呈现。息壤粉末 150/min（武陵）= 转化机 100（气泵上限）+ 洪炉 50
+- **采集源超额转配方**：R4 分支改为按全局余量分配（多消费方先到先得），超额部分自动走该物品的配方路线（如息壤气目标 100/min = 泵采 20 + 粉末转化 80，粉末由洪炉供给，不构成回路）
+
+**涉及文件**：`src/lib/factory/chain.ts`（planItem 多路线收集、expandRoutes/expandRoute/routeCeiling、R4 超额转配方）
+
+**验证结果**：✅ lint / test（331 passed）/ build 通过；E2E 制作链路页 18/18 passed
+
+**提交**：`96680cc feat(factory): 链路求解按供给需求分配多配方路线，支持区域资源上限与循环预填充标识`
+
+---
+
+### 2.24 区域自然资源上限与区域切换
+
+**问题描述**：需要对整体资源采集设置上限并支持切换区域。武陵地区：息壤气 100/min、惰气 460/min、源矿 540/min、蓝铁矿 120/min、赤铜矿 420/min；四号谷地：源矿 560/min、紫晶矿 240/min、蓝铁矿 1080/min。产出的链路也需要考虑区域最大资源上限。
+
+**根因**：原实现采集上限仅来自矿机/气泵机台产能（produceRate/msPerRound），无区域概念。
+
+**修复方案**：
+- 新增 `src/lib/factory/regions.ts`：武陵/四号谷地两区域上限表（默认武陵）；经与需求方确认：**区域内未列出的自然资源不可采集（上限 0）**，需求全部改走配方路线或标记供应受限；液体泵采（酸/水）不受区域限制
+- `buildChainGraph` 新增 `regionCaps` 参数：区域模式下列出资源应用区域上限、未列出资源上限 0
+- 链路页新增区域切换按钮组（武陵地区/四号谷地），区域与 targets 同步到 URL（`?region=valley4&targets=...`）
+- 区域不可采集且无配方路线的资源：源节点零供给标记供应受限，同时标记消费方机器
+
+**涉及文件**：
+- `src/lib/factory/regions.ts` — 新增区域定义
+- `src/lib/factory/chain.ts` — regionCaps 上限覆盖
+- `src/hooks/useData.ts` — `useCraftingChain(targets, regionId)`
+- `src/pages/factory/FactoryChains.tsx` — 区域切换 UI + URL 同步
+- `scripts/i18n-custom.json` — factory.region / regionWuling / regionValley4（14 语言）
+
+**验证结果**：✅ lint / test（331 passed）/ build 通过；E2E 制作链路页 18/18 passed
+
+**提交**：`96680cc feat(factory): 链路求解按供给需求分配多配方路线，支持区域资源上限与循环预填充标识`
+
+---
+
+### 2.25 有效循环缺少预填充标识
+
+**问题描述**：允许的循环结构（如种植-采种增产循环）需要标识清楚哪个节点需要预填充、按配方提示需预填充什么物品。
+
+**根因**：有效循环在稳态下自给自足，但冷启动时循环消费方（如采种机）没有输入可跑，必须预填一批循环物品才能启动；原实现无此提示。
+
+**修复方案**：有效循环结算时，在循环消费方节点（循环基准物品的回流消费机器，如采种机）标记 `priming = { itemId, count }`（itemId 为循环基准物品如作物，count 为配方投入数）；机器节点渲染「需预填充」+ 物品 ItemTile（带数量角标），节点高度随标识行自适应。
+
+**涉及文件**：
+- `src/lib/factory/chain.ts` — 结算阶段 priming 标记
+- `src/lib/factory/types.ts` — `ChainNode.priming`
+- `src/components/Factory/ChainGraph.tsx` — 预填充标识渲染、nodeSize 高度调整
+- `scripts/i18n-custom.json` — factory.priming（14 语言）
+
+**验证结果**：✅ lint / test（331 passed）/ build 通过；E2E 制作链路页 18/18 passed
+
+**提交**：`96680cc feat(factory): 链路求解按供给需求分配多配方路线，支持区域资源上限与循环预填充标识`
+
+---
+
+### 2.26 扩容反应池多配方共炉与炉内级联
+
+**问题描述**：扩容反应池（mix_pool_2）可以处理多个配方，只要缓存区（slot）足够即可，甚至产物也可以在同一反应池内参加下一步反应；需要考虑缓存区数量不能溢出。普通反应池（mix_pool_1）没有这个功能。
+
+**数据考证**（以游戏数据/文本为准）：
+- 扩容反应池 = `mix_pool_2`、普通反应池 = `mix_pool_1`（FactoryBuildingTable）
+- 缓存区数量在结构化表中不存在（经需求方确认该部分游戏数据尚未解包，以常量维护并注明出处）：教学文案「扩容反应池拥有8个缓存区」→ mix_pool_2 = **8**；「仅有5个缓存区的反应池无法同时进行这3个配方生产」→ mix_pool_1 = **5**
+- slot 占用规则取自教学文案：「3个配方一共涉及8种不同的物质」+「将产出的芽针溶液存储在最后一个缓存区中」→ **缓存区占用 = 共炉配方涉及的不同物质种数（投入∪产出，产物也占缓存区，共享物质只算一次）**
+
+**修复方案**：
+- **共炉合并**：链路构建后处理 `mergeReactorGroups()`——全图 mix_pool_2 机器节点按缓存区上限贪心装箱（节点创建顺序 ≈ 链路顺序，相连配方相邻），每桶不同物质 ≤ 8 合并为一个反应池节点；与是否相连无关，只要缓存区容纳得下即合并
+- **炉内级联**：共炉配方间的内部物流边取消（产物直接作为下一配方原料）；跨池物品保留外部物流边
+- **不溢出**：装箱时物质集合超过 8 即拆分为多台反应池；台数 = 桶内各配方产线数最大值（每台可同时跑桶内整套配方）
+- **路线优先**：不受限路线中扩容反应池优先于普通反应池（共炉省台数）
+- **渲染**：反应池节点展示每条共炉配方（输入 ItemTile → 输出 ItemTile + 产速）与「缓存区 used/total」行；单配方 mix_pool_2 节点也标注缓存区占用
+- **副产物适配修复**（附带发现）：配方的 `outcomes` 多 group 语义为「每组一个副产物」（全表 8 个配方，如 污水/惰性壤晶废液），原 adapter 只取首组导致副产物被丢弃——既影响缓存区物质计数，也使副产物物品失去配方路线候选。已改为展开全部产出组（材料侧确认为恒单组，维持取首组）
+- **规划校验与修复 pass**（附带发现）：多路线规划在不同 DFS 分支为物品选定路线，跨分支组合后可能残留封闭回路（如气态赫铜=拆解机 × 满赫铜罐=灌装机各自「可行」、组合后互喂；息壤聚合链路真实触发）。规划完成后沿首选路线全局检测净产出比 ≤ 1 的环，剔除环上物品的首选路线并重规划（候选永久排除被剔路线、无替代则恢复原路线由构建阶段标记）。修复后气态赫铜正确走 Wiki 默认的提纯机路线（气态赤铜+滤芯）
+
+**涉及文件**：
+- `src/lib/factory/chain.ts` — `REACTOR_BUFFER_SLOTS` 常量（注明文案出处）、`mergeReactorGroups()`、路线排序 pool_2 优先
+- `src/lib/factory/recipes.ts` — outcomes 多 group 副产物展开修复
+- `src/lib/factory/types.ts` — `ReactorRecipeLine`、`ChainNode.recipes/slotsUsed/slotsTotal`
+- `src/components/Factory/ChainGraph.tsx` — 反应池节点多配方渲染、缓存区行、nodeSize
+- `src/lib/factory/chain.integration.test.ts` — 真实数据转储集成回归（气态赤铜/息壤聚合/种植）
+- `scripts/i18n-custom.json` — factory.reactorSlots（14 语言）
+
+**验证结果**：✅ lint / test（339 passed）/ build 通过；E2E 制作链路页 19/19 passed
+
+**提交**：`f5eaaa7 feat(factory): 扩容反应池多配方共炉与炉内级联（缓存区约束）`
+
+---
+
+### 2.27 配方制作时间单位误解，机器台数放大 6 倍
+
+**问题描述**：中容武陵电池的配方是封装机 10s 生产 1 个，要求 6/min 的产量正好 1 台封装机即可满足；但链路图显示 6 台。
+
+**根因**：`perMinute()` 把 `FactoryMachineCraftTable.totalProgress` 当作毫秒（`count × 60000 / totalProgress`）。实际该字段不是时间毫秒数：全部 6 个数据版本、305 条配方均满足 `totalProgress = progressRound × 6000`，即 **6000 进度单位 = 1 秒**（`progressRound` 字段即为制作秒数；中容武陵电池 `progressRound=10` → 10s/个 → 单台 6/min）。误按毫秒计算使所有机器理论产速被低估 6 倍、台数被放大 6 倍。矿机/泵机的 `msPerRound` 字段名自带 ms，为真实毫秒，不受影响。
+
+**修复方案**：
+- `perMinute(count, totalProgress)` 改为 `count × 360000 / totalProgress`，并注明单位语义（6000 进度 = 1 秒）
+- `FactoryChains.tsx` 中重复的内联理论产速公式改为复用 `perMinute()`（消除重复实现）
+- 单元测试 fixture 的 `totalProgress` 统一 ×6 缩放（保持各用例「单台理论产出」语义不变），`perMinute` 直接测试改为新单位语义
+
+**涉及文件**：
+- `src/lib/factory/chain.ts` — `perMinute()` 公式与单位注释
+- `src/pages/factory/FactoryChains.tsx` — 默认理论产速回退改用 `perMinute()`
+- `src/lib/factory/chain.test.ts` — fixture 缩放 + perMinute 用例更新
+- `src/lib/factory/chain.integration.test.ts` — 新增真实数据回归：中容武陵电池 6/min → 封装机 theoryPm=6、machineCount=1
+- `tests/e2e/src/factory.spec.ts` — 新增 E2E：中容武陵电池 6/min 封装机 ×1
+- `docs/engineering/references/data-pitfalls.md` — 记录 totalProgress 单位语义
+
+**验证结果**：✅ lint / test（340 passed）/ build 通过；E2E 制作链路页 20/20 passed
+
+**提交**：`86fef65 fix(factory): 配方 totalProgress 单位修正（6000 进度=1 秒），机器台数不再放大 6 倍`
+
+---
+
+### 2.28 未考虑中间产物复用（副产物回用与转化利用）
+
+**问题描述**：中容武陵电池 6/min 时，赤铜矿只需要 18/min 即可满足污水需求——壤晶合成会副产污水可以重复利用；但链路图给出赤铜矿 420/min（顶满区域上限），且出现了为产污水而跑赫铜块路线的整条赤铜链。
+
+**根因**：
+1. **副产物不参与需求抵扣**：配方的非主产出（如壤晶合成副产污水 30/min、精炼炉副产污水）在求解中被忽略，污水需求全部按独立生产展开
+2. **副产物未被转化利用**：惰性壤晶废液可经提纯机 4→1 回收为壤晶废液（壤晶废液合成 60/min 可降为 48/min），但规划不会主动利用该转化回路
+3. **规划污染导致污水路线劣质**：污水的路线集是在瓶罐拆解分支的环上下文中首次规划的，精炼炉路线（赤铜矿+清水→赤铜块+污水）被该上下文的循环检查剔除，最终只剩 pool_copper_enr（赫铜块主产+污水副产）路线——叠加扩容池优先，整条赤铜链顶满 420/min 仅为产污水
+
+**修复方案**：
+- **规划修复**：`planItem` 中环上的采集源物品直接判可行（源可独立供给、超额才转配方，与 `findClosedPrimaryCycle` 跳过源物品的语义对齐），避免环上下文的候选剔除污染全局路线集——污水的精炼炉路线得以保留（天花板 420 有限，自然优先于 pool_copper_enr）
+- **副产物复用（不动点迭代）**：构建改为多轮迭代至副产物供给收敛（几何收敛，上限 24 轮/1e-6 精度）。每轮以上一轮各机器节点的非主产出作为「虚拟供给」：需求优先从副产物抵扣（边从生产节点直连消费方，反应池合并后自动转为炉内级联），余量才走采集源/配方路线；含副产物材料的转化路线按副产物余量封顶（仅当生产该副产物的路线会同产本物品时——`coProduces` 判定，防止「为转化而生产副产物」的自喂放大）
+- 不动点结果（电池 6/min）：壤晶废液 = 池 48 + 提纯 12（惰性 48 回收）；污水 = 副产 30 回用 + 精炼炉 18 → 赤铜矿 18/min；清水 = 提纯副产 12 + 水泵 6
+
+**涉及文件**：
+- `src/lib/factory/chain.ts` — planItem 源物品环上放行；`buildOnce` 重构 + 不动点迭代驱动；`allocateByproduct`（副产物抵扣）；`routeCeiling` 转化路线封顶（coProduces）；`collectByproducts`；悬空边清理
+- `src/lib/factory/chain.test.ts` — 新增「副产物复用与转化利用」合成模型回归（锁定 48/12/18 理论解）
+- `src/lib/factory/chain.integration.test.ts` — 真实数据回归：电池 6/min 赤铜矿 18、精炼炉污水 18、提纯机 12、无赫铜链
+- `tests/e2e/src/factory.spec.ts` — 息壤聚合缓存区 8/8 → 6/8（不再混入药铜块配方）；新增电池副产物复用 E2E（赤铜矿 18.0/min、无赫铜）
+
+**验证结果**：✅ lint / test（342 passed）/ build 通过；E2E 制作链路页 21/21 passed
+
+**提交**：`7bf4d65 feat(factory): 副产物复用与转化利用（不动点迭代），修复污水虚增上游链`
+
+---
+
+### 2.29 求解顺序污染：灌装机+拆解机左脚踩右脚生产气态灼铜
+
+**问题描述**：按 item_proc_battery_5(14/min) → item_bottled_rec_hp_5(1/min) → item_copper_enr2_cmpt(13/min) 的顺序添加产物时，气态灼铜（item_gas_copper_enr2）由「拆解机+灌装机」互喂生产（65/min 封闭回路）——灌装机吃罐产气、拆解机吃气产罐，净产出为零，无法产出任何产物。
+
+**根因**（三层叠加，均为规划污染的不同通道）：
+1. **深度限制短路跳过循环检查**：`planItem` 开头 `path.length > 12 → return true`。电池链深度 13 处，气态灼铜罐的灌装机路线（成分气态灼铜在环上，净产出比 1）未经循环检查即通过，写入全局路线集；灼铜部件分支（浅层）借「已规划且不在当前路径」的信任通道采纳拆解机路线 → 气态灼铜封闭回路
+2. **深度视界外的路线未经验证即写入全局路线集**：气态赫铜在规划深度 12 时，其拆解机候选的成分（气罐）位于深度 13 被深度短路放行、根本不展开——环藏在深度视界外，规划验证 pass 也因气罐无路线集而看不到该环
+3. **规划验证修复 guard 耗尽**：`verifyAndRepairAssignment` 的 20 轮 guard 被大量无关污染环（铜瓶/玻璃瓶/铁瓶 × 9 种气罐逐一修复）耗尽，轮不到真正的气态灼铜环
+
+**修复方案**：
+- **循环检查先于深度限制**：path 中的物品必然已写入 assignment（planItem 先 `assignment.set` 再递归材料），`planCycleRatio` 无需继续深入即可判定——任何深度的环都能被拦截
+- **深度短路只返回「可行但未验证」**（`PlanResult.verified`）：未验证路线供当前 DFS 分支判断但不写入全局路线集，未验证标记沿调用链上传；深层采集源物品可行性是事实（源不构成环），不受深度限制影响。单配方物品回退解析（默认 > 表键序）结果相同，丢弃未验证路线不改变构建行为
+- **构建后封闭回路修复循环（兑底）**：规划阶段无法穷举所有成环组合——路线重排序（orderRoutesByCeiling）、无路线集物品的回退解析、采集源达上限后的超额转配方都只在构建期可见（如修复后新暴露的息壤气→固气转化→粉末→液气转化→息壤气 1:1 转化环）。每轮构建后检测封闭回路边：剔除回边消费方物品的当前路线（无替代路线则剔除生产方路线），清空路线集重规划重建；每轮永久排除 ≥1 条配方（上限 20 轮），必然收敛；无可行替代时保留封闭回路标记呈现
+
+**修复后结果**（电池14+血瓶1+灼铜件13，武陵）：气态灼铜走气体反应炉 65/min（气态赫铜×2+息壤气）；气态赫铜走液气转化机 130/min（赫铜溶液）；息壤气超额部分走液气转化机 65/min；无拆解机、无封闭回路；赤铜矿需求 540/420 按供应受限诚实呈现（该顺序本身超区域上限）
+
+**涉及文件**：
+- `src/lib/factory/chain.ts` — planItem 循环检查先于深度限制 + `PlanResult.verified` 未验证路线不写全局路线集 + 深层采集源已验证；`planAllTargets()` 全量重规划；`BUILD_REPAIR` 构建后封闭回路修复循环
+- `src/lib/factory/chain.test.ts` — 新增「规划污染防护（深度视界外的零产出环）」2 用例（跨分支污染结构 + 深度外在环物品循环检查）
+- `src/lib/factory/chain.integration.test.ts` — 真实数据回归：精确验收顺序（电池14+血瓶1+灼铜件13），断言无封闭回路、气态灼铜走气体反应炉 65/min、无拆解机、灌装机不产气罐
+
+**验证结果**：✅ lint / test（345 passed）/ build 通过；E2E 制作链路页 21/21 passed
+
+**提交**：`9502efc feat(factory): 修复求解顺序污染导致的灌装↔拆解零产环（验收 2.29）`
+
+---
+
 ## 3. 制作链路重构方案（待 Review）
 
 > **状态**: 🟡 第三轮评审
@@ -1057,6 +1400,21 @@ describe('calcThroughput', () => {
 | 2.12 | 链路页选品 UI 与配方页不一致 | 链路页用搜索弹窗，配方页用侧边栏 | `159ca08` |
 | 2.13 | 机器节点缺少名字和图标 | buildChainGraph 未传入 machines 数据 | `769a3b7` |
 | 2.14 | 机器图标资源路径错误 | 使用 itemicon/ 而非 buildingpanelicon/ | `0cf0ef6` |
+| 2.15 | 添加目标产物未使用 ItemTile 展示 | chain v2 改用原生 `<select>`，无法渲染图标 | `5c71ff3`（被 2.16 取代） |
+| 2.16 | 添加目标产物改为占位按钮 + 弹窗选择 | 常驻侧边栏占用链路图空间 | `5c71ff3` |
+| 2.17 | 添加入口与目标列表分离且样式不一 | 占位按钮在独立左侧栏 | `5c71ff3` |
+| 2.18 | 目标产物组件占满整行、名称产速同行 | 块级行布局 + 单行排列 | `5c71ff3` |
+| 2.19 | 目标产物与添加入口各占一行 | 纵向 flex 容器 | `5c71ff3` |
+| 2.20 | 机器节点配方渲染为原始 itemId | 配方以纯文本拼接渲染 | `bf57442` |
+| 2.21 | 链路图 ItemTile 未显示名称 | 配方 ItemTile 误传 showName={false} | `bf57442` |
+| 2.22 | 链路图零产出封闭子图；输入来源未细化 | defaultCrafts 字符串值被丢弃 + 键序回退选中拆解机 + 闭环不回溯；水泵表结构误配 | `3b10eb0` |
+| 2.23 | 链路求解不按供给需求综合多种配方 | 单一路线规划 + 源达上限后超额不走配方 | `96680cc` |
+| 2.24 | 缺少区域资源上限与区域切换 | 无区域概念，采集上限仅来自机台产能 | `96680cc` |
+| 2.25 | 有效循环缺少预填充标识 | 未提示循环消费方冷启动需预填物品 | `96680cc` |
+| 2.26 | 扩容反应池未支持多配方共炉与炉内级联 | 每配方独立机器节点，无缓存区概念 | `f5eaaa7` |
+| 2.27 | 配方制作时间单位误解，机器台数放大 6 倍 | totalProgress 误当毫秒（实为 6000 进度=1 秒） | `86fef65` |
+| 2.28 | 未考虑中间产物复用（污水回用/惰性废液提纯） | 副产物不参与需求抵扣 + 环上源物品候选剔除污染路线集 | `7bf4d65` |
+| 2.29 | 求解顺序污染：灌装↔拆解零产环生产气态灼铜 | 深度短路跳过循环检查 + 未验证路线写入全局路线集 | `9502efc` |
 
 ---
 
@@ -1125,9 +1483,9 @@ describe('calcThroughput', () => {
 | 验证项 | 结果 |
 |--------|------|
 | `npm run lint` | ✅ 0 errors |
-| `npm run test` | ✅ 218 tests passed |
+| `npm run test` | ✅ 312 tests passed |
 | `npm run build` | ✅ 构建成功 |
-| E2E `factory.spec.ts` | ✅ 13/17 passed（连线验证 + 机器节点验证通过，5个失败为预存问题） |
+| E2E `factory.spec.ts`（制作链路页） | ✅ 13/13 passed（2.15 修复后复跑） |
 
 ---
 

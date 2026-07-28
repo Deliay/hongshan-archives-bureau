@@ -393,6 +393,11 @@
     "beltCount": "Belt ×{{count}} ({{rate}}/min)",
     "pipeCount": "Pipe ×{{count}} ({{rate}}/min)",
     "closedLoop": "↻ Closed",
-    "productiveLoop": "↻ Net output ×{{ratio}}"
+    "productiveLoop": "↻ Net output ×{{ratio}}",
+    "region": "Region",
+    "regionWuling": "Wuling Region",
+    "regionValley4": "Valley IV",
+    "priming": "Priming required",
+    "reactorSlots": "Buffers {{used}}/{{total}}"
   }
 }

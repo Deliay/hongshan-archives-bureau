@@ -5,7 +5,10 @@ import { useI18n } from '../../i18n'
 import { useFactoryData, useCraftingChain, useFactoryItemMeta } from '../../hooks/useData'
 import ItemTile from '../../components/Items/ItemTile'
 import ChainGraph from '../../components/Factory/ChainGraph'
+import FactoryItemPickerDialog from '../../components/Factory/FactoryItemPickerDialog'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
+import { FACTORY_REGIONS, DEFAULT_REGION_ID, getFactoryRegion } from '../../lib/factory/regions'
+import { perMinute } from '../../lib/factory/chain'
 import type { ChainTarget } from '../../lib/factory/types'
 
 export default function FactoryChains() {
@@ -25,13 +28,17 @@ export default function FactoryChains() {
     return Array.from(map, ([itemId, rate]) => ({ itemId, rate }))
   })
 
+  const regionParam = searchParams.get('region')
+  const [regionId, setRegionId] = useState(() => getFactoryRegion(regionParam)?.id ?? DEFAULT_REGION_ID)
+
   const { data: factoryData, loading, error } = useFactoryData()
-  const { data: graph } = useCraftingChain(targets)
+  const { data: graph } = useCraftingChain(targets, regionId)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const defaultRateOf = useCallback((itemId: string): number => {
     const recipe = factoryData?.index.asOutcome[itemId]?.[0]
     const outcome = recipe?.outcomes.find(o => o.itemId === itemId)
-    return recipe ? (outcome?.count ?? 1) * 60000 / recipe.totalProgress : 0
+    return recipe ? perMinute(outcome?.count ?? 1, recipe.totalProgress) : 0
   }, [factoryData])
 
   // 非法（NaN、负数）rate 回退为该物品默认配方的理论产出速率
@@ -61,14 +68,23 @@ export default function FactoryChains() {
     })
   }, [baseIds, itemMeta])
 
+  const updateSearch = useCallback((newTargets: ChainTarget[], nextRegion: string) => {
+    const params: Record<string, string> = { region: nextRegion }
+    if (newTargets.length > 0) {
+      params.targets = newTargets.map(t => `${t.itemId}:${t.rate}`).join(',')
+    }
+    setSearchParams(params)
+  }, [setSearchParams])
+
   const updateTargets = useCallback((newTargets: ChainTarget[]) => {
     setTargets(newTargets)
-    if (newTargets.length === 0) {
-      setSearchParams({})
-    } else {
-      setSearchParams({ targets: newTargets.map(t => `${t.itemId}:${t.rate}`).join(',') })
-    }
-  }, [setSearchParams])
+    updateSearch(newTargets, regionId)
+  }, [updateSearch, regionId])
+
+  function updateRegion(nextRegion: string) {
+    setRegionId(nextRegion)
+    updateSearch(targets, nextRegion)
+  }
 
   function addTarget(itemId: string) {
     if (targets.some(t => t.itemId === itemId)) return
@@ -92,44 +108,39 @@ export default function FactoryChains() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-archive-lead">{t('factory.addTarget')}:</span>
-          <select
-            onChange={(e) => {
-              if (e.target.value) {
-                addTarget(e.target.value)
-                e.target.value = ''
-              }
-            }}
-            className="bg-archive-ink border border-archive-border rounded px-2 py-1 text-sm text-archive-ivory"
-          >
-            <option value="">--</option>
-            {itemIds.map(id => (
-              <option key={id} value={id}>{itemMeta[id]?.name || id}</option>
-            ))}
-          </select>
-        </div>
+      <FactoryItemPickerDialog
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        itemIds={itemIds}
+        itemMeta={itemMeta}
+        isSelected={id => targets.some(target => target.itemId === id)}
+        onSelect={addTarget}
+      />
 
+      <div className="flex flex-wrap items-center gap-2">
         {targets.map(target => {
           const meta = itemMeta[target.itemId]
           return (
-            <div key={target.itemId} className="flex items-center gap-2 bg-archive-gold/10 rounded px-3 py-2">
+            <div key={target.itemId} className="flex items-center gap-2 bg-archive-gold/10 rounded px-3 py-2 w-fit">
               <ItemTile itemId={target.itemId} size="sm" name={meta?.name} rarity={meta?.rarity} showTips={false} />
-              <span className="text-sm text-archive-gold">{meta?.name || target.itemId}</span>
-              <input
-                type="number"
-                value={target.rate}
-                onChange={(e) => updateRate(target.itemId, parseFloat(e.target.value) || 0)}
-                className="w-20 bg-archive-ink border border-archive-border rounded px-2 py-1 text-sm text-archive-ivory"
-                min="0"
-                step="0.1"
-              />
-              <span className="text-xs text-archive-lead">{t('factory.unitPerMin')}</span>
+              <div className="flex flex-col gap-1">
+                <span className="text-sm text-archive-gold">{meta?.name || target.itemId}</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={target.rate}
+                    onChange={(e) => updateRate(target.itemId, parseFloat(e.target.value) || 0)}
+                    className="w-20 bg-archive-ink border border-archive-border rounded px-2 py-1 text-sm text-archive-ivory"
+                    min="0"
+                    step="0.1"
+                  />
+                  <span className="text-xs text-archive-lead">{t('factory.unitPerMin')}</span>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => removeTarget(target.itemId)}
-                className="text-archive-lead hover:text-archive-ivory ml-2"
+                className="text-archive-lead hover:text-archive-ivory ml-2 self-start"
               >
                 ×
               </button>
@@ -137,11 +148,39 @@ export default function FactoryChains() {
           )
         })}
 
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="flex items-center gap-2 bg-archive-gold/10 rounded px-3 py-2 text-left w-fit hover:bg-archive-gold/20 transition-colors"
+        >
+          <span className="w-12 h-12 shrink-0 flex items-center justify-center rounded border border-dashed border-archive-gold/40 text-archive-gold text-xl leading-none">+</span>
+          <span className="text-sm text-archive-gold">{t('factory.addTarget')}</span>
+        </button>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-archive-lead">{t('factory.region')}</span>
+        <div className="flex gap-1">
+          {FACTORY_REGIONS.map(region => (
+            <button
+              key={region.id}
+              type="button"
+              onClick={() => updateRegion(region.id)}
+              className={`text-xs px-2 py-1 rounded border transition-colors ${
+                regionId === region.id
+                  ? 'border-archive-gold bg-archive-gold/10 text-archive-gold'
+                  : 'border-archive-border text-archive-lead hover:text-archive-ivory'
+              }`}
+            >
+              {t(region.nameKey)}
+            </button>
+          ))}
+        </div>
         {targets.length > 0 && (
           <button
             type="button"
             onClick={clearTargets}
-            className="text-xs text-archive-lead hover:text-archive-ivory self-start"
+            className="text-xs text-archive-lead hover:text-archive-ivory ml-auto"
           >
             {t('factory.clearAll')}
           </button>

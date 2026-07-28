@@ -50,20 +50,61 @@ function MachineNode({ data }: { data: ChainNode }) {
           ×{data.machineCount}
         </div>
       )}
-      {data.recipe && (
-        <div className="text-[8px] text-archive-lead mt-1 max-w-[100px] truncate">
-          {data.recipe.inputs.map(i => i.itemId).join(' + ')} → {data.recipe.outputs.map(o => `${o.itemId}×${o.count}`).join(', ')}
+      {data.recipes ? (
+        // 扩容反应池：共炉多配方，炉内级联（产物直接作为下一配方原料）
+        data.recipes.map(r => (
+          <div key={r.id} className="flex items-center gap-1 mt-1">
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {r.inputs.map(i => (
+                <ItemTile key={i.itemId} itemId={i.itemId} amount={i.count} size="sm" showTips={false} />
+              ))}
+            </div>
+            <span className="text-archive-gold text-[10px] shrink-0">→</span>
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {r.outputs.map(o => (
+                <ItemTile key={o.itemId} itemId={o.itemId} amount={o.count} size="sm" showTips={false} />
+              ))}
+            </div>
+            <span className="text-[9px] text-archive-dust shrink-0">{r.actualPm.toFixed(1)}/min</span>
+          </div>
+        ))
+      ) : data.recipe ? (
+        <div className="flex items-center gap-1 mt-1">
+          <div className="flex flex-wrap items-center justify-center gap-1">
+            {data.recipe.inputs.map(i => (
+              <ItemTile key={i.itemId} itemId={i.itemId} amount={i.count} size="sm" showTips={false} />
+            ))}
+          </div>
+          <span className="text-archive-gold text-[10px] shrink-0">→</span>
+          <div className="flex flex-wrap items-center justify-center gap-1">
+            {data.recipe.outputs.map(o => (
+              <ItemTile key={o.itemId} itemId={o.itemId} amount={o.count} size="sm" showTips={false} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {!data.recipes && (
+        <div className="text-[9px] text-archive-dust mt-0.5">
+          {t('factory.actualOutput')}: {data.actualPm.toFixed(1)}/min
+          {data.supplyLimited && (
+            <span className="text-orange-500"> ({t('factory.supplyLimited')})</span>
+          )}
         </div>
       )}
-      <div className="text-[9px] text-archive-dust mt-0.5">
-        {t('factory.actualOutput')}: {data.actualPm.toFixed(1)}/min
-        {data.supplyLimited && (
-          <span className="text-orange-500"> ({t('factory.supplyLimited')})</span>
-        )}
-      </div>
-      {data.demandPm !== data.actualPm && (
+      {!data.recipes && data.demandPm !== data.actualPm && (
         <div className="text-[9px] text-archive-lead">
           {t('factory.demand')}: {data.demandPm.toFixed(1)}/min
+        </div>
+      )}
+      {data.slotsTotal != null && data.slotsUsed != null && (
+        <div className="text-[9px] text-amber-400 mt-0.5">
+          {t('factory.reactorSlots', { used: data.slotsUsed, total: data.slotsTotal })}
+        </div>
+      )}
+      {data.priming && (
+        <div className="flex items-center gap-1 mt-1">
+          <span className="text-[9px] text-amber-400">{t('factory.priming')}</span>
+          <ItemTile itemId={data.priming.itemId} amount={data.priming.count} size="sm" showTips={true} />
         </div>
       )}
     </div>
@@ -73,9 +114,22 @@ function MachineNode({ data }: { data: ChainNode }) {
 function SourceNode({ data }: { data: ChainNode }) {
   const { t } = useI18n()
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center border border-green-900/60 rounded p-2 bg-archive-ink">
       <Handle type="source" position={Position.Right} className="!bg-green-500" />
       <Handle type="target" position={Position.Left} className="!bg-green-500" />
+      {data.machineIcon && (
+        <img
+          src={`${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/factory/buildingpanelicon/${data.machineIcon}.png`}
+          alt=""
+          className="w-8 h-8 object-contain"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+        />
+      )}
+      {data.machineName && (
+        <div className="text-[10px] text-archive-dust mt-0.5 max-w-[90px] truncate text-center">
+          {data.machineName}
+        </div>
+      )}
       <ItemTile itemId={data.itemId} size="sm" showTips={true} />
       <div className="text-[10px] text-green-400 mt-0.5">{data.actualPm.toFixed(1)}/min</div>
       <div className="text-[9px] text-archive-lead">{t('factory.sourceNode')}</div>
@@ -92,15 +146,29 @@ const nodeTypes = {
   source: SourceNode,
 }
 
+// 机器节点宽度随配方物品数（输入+输出）变化，与 dagre 布局和 ReactFlow 显式尺寸保持一致
+function nodeSize(n: ChainNode): { width: number; height: number } {
+  // 源节点含采集机器图标/名称 + 物品 tile + 速率行
+  if (n.kind === 'source') return { width: 110, height: 170 }
+  if (n.kind !== 'machine') return { width: 80, height: 80 }
+  // 扩容反应池：每条共炉配方占一行（含速率文本），另有缓存区行
+  if (n.recipes?.length) {
+    const maxTiles = Math.max(...n.recipes.map(r => r.inputs.length + r.outputs.length))
+    return { width: Math.max(180, maxTiles * 52 + 100), height: 116 + n.recipes.length * 56 }
+  }
+  const tiles = (n.recipe?.inputs.length ?? 0) + (n.recipe?.outputs.length ?? 0)
+  const width = Math.max(120, tiles * 52 + 40)
+  // 预填充标识 / 缓存区行额外占高
+  return { width, height: (n.priming ? 236 : 180) + (n.slotsTotal != null ? 20 : 0) }
+}
+
 function layoutGraph(graph: ChainGraphData, t: (key: string, vars?: Record<string, string | number>) => string): { nodes: Node[]; edges: Edge[] } {
   const g = new dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
   g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 80 })
 
   for (const node of graph.nodes) {
-    const width = node.kind === 'machine' ? 120 : 80
-    const height = node.kind === 'machine' ? 100 : 80
-    g.setNode(node.key, { width, height })
+    g.setNode(node.key, nodeSize(node))
   }
   for (const edge of graph.edges) {
     g.setEdge(edge.from, edge.to)
@@ -110,8 +178,7 @@ function layoutGraph(graph: ChainGraphData, t: (key: string, vars?: Record<strin
 
   const nodes: Node[] = graph.nodes.map(n => {
     const pos = g.node(n.key)
-    const width = n.kind === 'machine' ? 120 : 80
-    const height = n.kind === 'machine' ? 100 : 80
+    const { width, height } = nodeSize(n)
     return {
       id: n.key,
       type: n.kind,

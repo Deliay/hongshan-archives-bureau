@@ -393,6 +393,11 @@
     "beltCount": "Convoyeur ×{{count}} ({{rate}}/min)",
     "pipeCount": "Tuyau ×{{count}} ({{rate}}/min)",
     "closedLoop": "↻ Fermé",
-    "productiveLoop": "↻ Rendement net ×{{ratio}}"
+    "productiveLoop": "↻ Rendement net ×{{ratio}}",
+    "region": "Région",
+    "regionWuling": "Région de Wuling",
+    "regionValley4": "Vallée IV",
+    "priming": "Pré-chargement requis",
+    "reactorSlots": "Tampons {{used}}/{{total}}"
   }
 }

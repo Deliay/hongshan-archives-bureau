@@ -393,6 +393,11 @@
     "beltCount": "Esteira ×{{count}} ({{rate}}/min)",
     "pipeCount": "Tubulação ×{{count}} ({{rate}}/min)",
     "closedLoop": "↻ Fechado",
-    "productiveLoop": "↻ Produção líquida ×{{ratio}}"
+    "productiveLoop": "↻ Produção líquida ×{{ratio}}",
+    "region": "Região",
+    "regionWuling": "Região de Wuling",
+    "regionValley4": "Vale IV",
+    "priming": "Requer carga prévia",
+    "reactorSlots": "Reservas {{used}}/{{total}}"
   }
 }

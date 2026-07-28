@@ -393,6 +393,11 @@
     "beltCount": "ベルト×{{count}} ({{rate}}/分)",
     "pipeCount": "パイプ×{{count}} ({{rate}}/分)",
     "closedLoop": "↻ 閉鎖",
-    "productiveLoop": "↻ 正味産出 ×{{ratio}}"
+    "productiveLoop": "↻ 正味産出 ×{{ratio}}",
+    "region": "エリア",
+    "regionWuling": "武陵地区",
+    "regionValley4": "四号谷地",
+    "priming": "事前投入が必要",
+    "reactorSlots": "バッファ {{used}}/{{total}}"
   }
 }

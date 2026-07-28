@@ -91,7 +91,8 @@ flowchart TD
 | 机器配方 | `FactoryMachineCraftTable`（305 条） | `machineId`、`ingredients[].group[{id,count}]`、`outcomes[].group[{id,count}]`、`totalProgress`、`sortId` |
 | 机器/建筑 | `FactoryBuildingTable`（105 条） | key=buildingId，`name`/`desc`（i18n）、`iconOnPanel`、`type` |
 | 物品→配方反查 | `FactoryItemAsMachineCrafterIncomeTable` / `FactoryItemAsMachineCrafterOutcomeTable` | 值为 `{ list: [formulaId] }`，分别对应「作为材料」「作为产物」 |
-| 资源源头 | `FactoryMinerTable`、`FactoryGasMinerTable`、`FactoryFluidPumpInTable` | `mineable[{miningItemId, produceRate}]`、`msPerRound` |
+| 资源源头 | `FactoryMinerTable`、`FactoryGasMinerTable` | `mineable[{miningItemId, produceRate}]`、`msPerRound` |
+| 液体源头 | `FactoryFluidPumpInTable` | 结构不同：`enableLiquidIds: string[]`（无 `mineable`/`produceRate`），如 `pump_2` 耐酸水泵独占 `item_liquid_acid` |
 | 默认配方 | `WikiDefaultCraftTable` | 物品 → 推荐配方 ID，用于链路图默认展开路径 |
 | 物品显示 | `ItemTable`（+i18n dict） | 名称/稀有度/图标，经 `ItemTile` 内部机制解析 |
 | 机器 i18n | `FactoryBuildingTable` 的 i18n dict | 机器名称 |

@@ -393,6 +393,11 @@
     "beltCount": "傳送帶×{{count}} ({{rate}}/min)",
     "pipeCount": "管道×{{count}} ({{rate}}/min)",
     "closedLoop": "↻ 封閉",
-    "productiveLoop": "↻ 淨產出 ×{{ratio}}"
+    "productiveLoop": "↻ 淨產出 ×{{ratio}}",
+    "region": "區域",
+    "regionWuling": "武陵地區",
+    "regionValley4": "四號谷地",
+    "priming": "需預填充",
+    "reactorSlots": "緩存區 {{used}}/{{total}}"
   }
 }

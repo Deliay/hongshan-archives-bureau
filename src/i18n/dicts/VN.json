@@ -393,6 +393,11 @@
     "beltCount": "Băng chuyền ×{{count}} ({{rate}}/phút)",
     "pipeCount": "Ống dẫn ×{{count}} ({{rate}}/phút)",
     "closedLoop": "↻ Khép kín",
-    "productiveLoop": "↻ Sản lượng ròng ×{{ratio}}"
+    "productiveLoop": "↻ Sản lượng ròng ×{{ratio}}",
+    "region": "Khu vực",
+    "regionWuling": "Khu vực Vũ Lăng",
+    "regionValley4": "Thung lũng IV",
+    "priming": "Cần nạp trước",
+    "reactorSlots": "Vùng đệm {{used}}/{{total}}"
   }
 }

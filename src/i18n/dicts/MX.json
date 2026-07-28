@@ -393,6 +393,11 @@
     "beltCount": "Cinta ×{{count}} ({{rate}}/min)",
     "pipeCount": "Tubería ×{{count}} ({{rate}}/min)",
     "closedLoop": "↻ Cerrado",
-    "productiveLoop": "↻ Producción neta ×{{ratio}}"
+    "productiveLoop": "↻ Producción neta ×{{ratio}}",
+    "region": "Región",
+    "regionWuling": "Región de Wuling",
+    "regionValley4": "Valle IV",
+    "priming": "Requiere carga previa",
+    "reactorSlots": "Búferes {{used}}/{{total}}"
   }
 }
