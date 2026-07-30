@@ -1,16 +1,18 @@
 ---
-description: 剧情纪事模块重构技术方案：剧情回顾长卷与 PRTS 馆藏文库
+description: 剧情纪事模块重构技术方案：剧情回顾长卷、PRTS 馆藏文库与 Baker 聊天终端
 type: Fleeting
 ---
 
 # 剧情纪事 - 技术提案
 
-**功能名称**: 剧情纪事（Story Chronicle）—— archive/story 模块重构
+**功能名称**: 剧情纪事（Story Chronicle）—— archive/story 模块重构 + Baker 新模块
 **关联 PRD**: [[20260730-story-chronicle|剧情纪事]]
-**技术提案版本**: v1.0
+**技术提案版本**: v1.1
 **创建日期**: 2026-07-30
 **作者**: 前端工程
 **feat-branch**: `feat/story-chronicle`
+
+**v1.1 变更**: 根据 review 意见新增「Baker」聊天终端模块（§2.4 / §4.4 / §5.5）。
 
 ## 1. 概述
 
@@ -21,22 +23,24 @@ type: Fleeting
 ### 1.2 目标
 
 - 接入剧情梗概（DialogSummary）与 PRTS 文库（Prts\* 系列表）数据，完成 adapter / hooks / 页面三层重构。
-- 新增 4 个页面：总览、纪事长卷、馆藏文库、文献详情。
-- 模块更名「剧情纪事」，全站导航与 i18n 同步。
+- 新增 4 个 story 页面：总览、纪事长卷、馆藏文库、文献详情；新增 Baker 模块页面（联系人列表 + 聊天界面）。
+- 模块更名「剧情纪事」，新增「Baker」入口，全站导航与 i18n 同步。
 
 ### 1.3 范围
 
 **做**:
 - 剧情梗概数据接入与「纪事长卷」页（篇章导航 + 梗概流 + 类型筛选）。
 - PRTS 六类文献浏览（分类页签 + 卷网格）与文献详情页（富文本正文 / 音像剧本）。
-- 模块总览页、路由、导航更名、i18n 扩充。
+- Baker 模块：联系人列表（四 Tab 筛选）+ 聊天界面（消息流、分支选项切换、图片/表情包/表情回应/系统提示/分享卡片）。
+- 模块总览页、路由、导航更名与 Baker 入口、i18n 扩充。
 - `docs/engineering/references/data-mapping-tables.md` 补充新表映射。
 
 **不做**:
 - 剧情全文对话回放（`DialogTextTable`，数据量极大，后续版本评估）。
 - 剧情梗概与文献的全文搜索（依赖搜索模块扩展，单独立项）。
-- 音像条目的音频播放（素材服务仅支持 png/tga 下载，无音频文件）。
+- 音像条目的音频播放与 Baker 语音/视频消息播放（素材服务仅支持 png/tga 下载，无音视频文件）。
 - 文献关联网络（文献 → 干员/地区/敌人跳转，后续版本）。
+- Baker 测试用消息类型（视频/语音/物品卡/投票/转发卡，线上数据基本不出现）的专门渲染，统一按未知类型跳过。
 
 ## 2. 数据探查结论
 
@@ -73,8 +77,51 @@ entityRelationshipDiagram
 | `PrtsReading` | 21 | `list{N}.contentId/name/order` | 阅读物组（term_*），归入文库条目展示 |
 | `PrtsInvestigate` | 15 | `categoryDataList`, `collectionIdList`, `domainId` | 调查报告关联，初版仅通过 FirstLv 体系间接展示 |
 
-### 2.3 素材资源
+### 2.3 Baker 聊天（SNS 系列表）
 
+游戏内聊天软件官方名称为 **Baker**（`TextTable: LUA_UI_SNS_ENTER_NAME`，各语言均为 "Baker"）。
+
+```mermaid
+entityRelationshipDiagram
+    SNSChatTable ||--o{ SNSDialogTable : chatId
+    SNSDialogTopicTable ||--o{ SNSDialogTable : "includeDialogIds / topicId"
+    SNSDialogTable ||--o{ SNSDialogOptionTable : dialogOptionIds
+    SNSChatTable ||--o{ SNSChatTable : "speaker → 发送者(群聊)"
+```
+
+| 表 | 规模 | 关键字段 | 说明 |
+|----|------|---------|------|
+| `SNSChatTable` | 137 | `chatId`, `chatType`, `name`, `icon`, `charGender`, `isSettlementChannel` | 会话。`chatType`：1=联系人（NPC 单聊，81）、2=群聊（28）、3=干员（干员单聊，28），与 PRD 四 Tab 对应 |
+| `SNSDialogTable` | 334 | `chatId`, `dialogId`, `dialogType`, `noticeType`, `relatedMissionId`, `topicId`, `dialogContentData` | 一场聊天（会话内按剧情顺序多场），`dialogContentData` 为消息节点图 |
+| `SNSDialogOptionTable` | 1425 | `optionDesc`, `optionNextContentId`, `optionResPath`, `optionNPCIds` | 分支选项；`optionResPath` 非空（143 条，`sns_emoji_*`）表示以表情包回复 |
+| `SNSDialogTopicTable` | 117 | `topicId`, `topicName`, `sortId`, `includeDialogIds[]` | 话题分组（干员日常聊天），`sortId` 提供顺序 |
+| `SNSConst` | 4 | `myselfSpeaker=endmin`, `snsDialogStartId=1` | 「我」的 speaker id 与消息图入口节点 id |
+
+**消息节点**（`dialogContentData[contentId]`）：`content{i18n}`, `contentType`, `speaker`, `nextContentId`, `preContentId`, `dialogOptionIds[]`, `optionType`, `isEnd`（`nextContentId=-1` 为会话结束）。
+
+`contentType` 分布与渲染策略：
+
+| contentType | 数量 | 含义 | 渲染 |
+|---|---|---|---|
+| 1 | 6173 | 文本 | 气泡（含富文本） |
+| 2 | 28 | 图片（`contentParam=[sns_image_*]`） | 图片消息 |
+| 7 | 95 | 系统提示（如「[铁锚子]已离线」） | 居中提示条 |
+| 9 | 1+ | 表情回应（`contentParams` JSON：`emojiResPath`+`npcIds`+`npcCount`） | pin reaction 角标，附着在前序消息 |
+| 10 | 20 | PRTS 收藏分享（`contentParams` 含 `nar_*` 条目 id） | 分享卡片（可跳转文献详情） |
+| 12 | 44 | 任务链接（`linkMissionId`） | 任务卡片 |
+| 4/5/6/8/11 | ~31 | 视频/语音/物品卡/转发卡/投票（均为 `sns_test_*` 测试会话） | 未知类型跳过不渲染 |
+
+**分支模型**：`dialogOptionIds` 非空的节点为分支点（931 处），各选项 `optionNextContentId` 指向不同后续节点，分支最终汇合（固定路径）。切换选项即从分支点沿新 `optionNextContentId` 重新遍历。
+
+**素材**：头像 `sprites/charroundicon/{icon}.png`（`icon_sns_npc_*` / `icon_round_chr_*`，61+30 个）；表情包 `sprites/sns/emoji/sns_emoji_*.png`（43）；图片消息 `sprites/sns/picture/sns_image_*.png`（37）。
+
+**会话内多场聊天排序**：topic 会话按 `SNSDialogTopicTable.sortId`；任务关联会话按 `relatedMissionId` 自然序；其余按 `dialogId` 自然序兜底（实现阶段抽样校准）。
+
+**发送者解析**：`speaker=endmin` →「我」；其余 speaker 即 `SNSChatTable` 的 `chatId`（如 `sns_chr_0013_aglina`），名称与头像经会话表解析。
+
+### 2.4 素材资源
+
+- Baker 头像 / 表情包 / 图片消息路径见 §2.3。
 - 卷图标：`sprites/prts/icon/{icon}.png`（189 个 prts 图标），部分图标在 `sprites/prts/{icon}.png`（如 `icon_entrance_pivot`），需双路径回退。
 - 正文插图：`<image>Reading/xxx</image>` 已由 `src/lib/richText.tsx` 解析为 `sprites/{path}.png`（现有能力，直接复用）。
 - 已验证 `PrtsCategory` / `PrtsFirstLv` / `PrtsAllItem` / `RichContentTable` / `DialogSummaryTable` 的 i18n dict 接口均可用。
@@ -85,35 +132,40 @@ entityRelationshipDiagram
 
 ```mermaid
 flowchart TD
-    subgraph pages[页面层 src/pages/story]
-        P1[StoryOverview 总览]
-        P2[StoryRecap 纪事长卷]
-        P3[StoryLibrary 馆藏文库]
-        P4[StoryDocumentDetail 文献详情]
+    subgraph pages[页面层 src/pages]
+        P1[story/StoryOverview 总览]
+        P2[story/StoryRecap 纪事长卷]
+        P3[story/StoryLibrary 馆藏文库]
+        P4[story/StoryDocumentDetail 文献详情]
+        P5[baker/BakerTerminal 聊天终端]
     end
     subgraph hooks[数据层 src/hooks]
         H1[useStoryRecap]
         H2[usePrtsLibrary]
         H3[usePrtsItemDetail]
+        H4[useBakerChats]
+        H5[useBakerDialog]
     end
     subgraph lib[适配层 src/lib]
-        A1[adapter: adaptRecap* / adaptPrts*]
-        T1[types: StoryRecap* / PrtsItem*]
+        A1[adapter: adaptRecap*/adaptPrts*/adaptBaker*]
+        T1[types: StoryRecap*/Prts*/Baker*]
     end
     P1 --> H1 & H2
     P2 --> H1
     P3 --> H2
     P4 --> H3
-    H1 & H2 & H3 --> A1
+    P5 --> H4 & H5
+    H1 & H2 & H3 & H4 & H5 --> A1
     A1 --> C[getCachedData + i18n dict]
 ```
 
 | 模块 | 职责 | 关键技术点 |
 |------|------|-----------|
-| `lib/types.ts` | 新增剧情/文库类型 | 见 §4.1 |
+| `lib/types.ts` | 新增剧情/文库/Baker 类型 | 见 §4.1 / §4.3 |
 | `lib/adapter.ts` | 原始表 → 类型化结构 | 64 位 id 一律 `String(id)`（见 data-pitfalls） |
+| `lib/baker.ts` | 消息图遍历与分支求值 | 见 §4.4 |
 | `hooks/useData.ts` | 数据获取 hooks | 复用 `getCachedData` + `getTableI18nDict` |
-| `pages/story/*` | 四个页面 | 遵循列表页/卷宗页/总览页模板与三态模式 |
+| `pages/story/*`、`pages/baker/*` | 页面 | 遵循列表页/卷宗页/总览页模板与三态模式 |
 
 ### 3.2 路由设计
 
@@ -124,9 +176,11 @@ flowchart TD
 /archive/story/library             StoryLibrary（新增）
 /archive/story/library?cat=paper   分类页签经 query param
 /archive/story/library/:itemId     StoryDocumentDetail（新增）
+/archive/baker                     BakerTerminal（新增）
+/archive/baker?chat={chatId}       当前会话经 query param（可分享）
 ```
 
-Sidebar 与 ArchiveHome 仅更新文案（nav.story / nav.storyDesc），结构不变；Breadcrumb 映射补充 `recap` / `library`。
+Sidebar 与 ArchiveHome：更新 story 文案，并在 chronicle（编年）分组新增 `baker` 条目；Breadcrumb 映射补充 `recap` / `library` / `baker`；`archiveMeta.ts` 的 `MODULE_CODES` 新增 `baker: 'HSA-BKR'`。
 
 ## 4. 数据模型与接口
 
@@ -181,7 +235,63 @@ export interface PrtsItemDetail extends PrtsItem {
 
 i18n dict 缓存键沿用 `I18nDict_{locale}_{table}`；`RadioTable` 按需新增 entry 级缓存。
 
-### 4.3 适配要点
+### 4.3 Baker 类型与分支求值（`src/lib/baker.ts`）
+
+```ts
+// types.ts
+export interface BakerChat {
+  id: string                              // chatId
+  kind: 'operator' | 'contact' | 'group'  // chatType 3 / 1 / 2
+  name: string
+  iconUrl: string
+  isSettlementChannel: boolean
+}
+export interface BakerMessage {
+  id: string                              // `${dialogId}:${contentId}`
+  speakerId: string                       // endmin | chatId | ''
+  isSelf: boolean
+  speakerName: string; speakerIconUrl: string
+  kind: 'text' | 'image' | 'sticker' | 'system' | 'share' | 'mission'
+  text: string                            // i18n 解析后
+  imageUrl?: string                       // contentType 2 → sprites/sns/picture/
+  reactions?: { emojiUrl: string; fromNames: string[]; count: number }[]  // contentType 9 归并
+}
+export interface BakerOption { id: string; text: string; emojiUrl?: string }
+export interface BakerBeat {              // 消息流节点：消息 | 分支点
+  messages: BakerMessage[]                // 分支点前的连续消息段
+  options?: BakerOption[]                 // 非空即分支点
+}
+```
+
+**遍历算法**（纯函数，可单测）：
+
+```ts
+function resolveDialog(
+  nodes: Record<string, RawNode>,           // dialogContentData
+  options: Record<string, RawOption>,       // SNSDialogOptionTable
+  choices: Record<number, string>,          // 分支点 contentId → 选中 optionId（默认第一项）
+): BakerBeat[]
+```
+
+- 从 `SNSConst.snsDialogStartId`（"1"）开始沿 `nextContentId` 遍历；遇 `dialogOptionIds` 非空节点记为分支点，取 `choices[contentId]` 或第一项的 `optionNextContentId` 继续；`nextContentId <= 0` 结束。
+- 环保护：visited set 上限防御，异常即截断。
+- 切换分支：更新 `choices`（同时丢弃该分支点之后的旧选择）→ 重新执行 `resolveDialog` → 重渲染后续消息。计算量极小（单场 ≤ 百级节点），无需缓存。
+- contentType 9（表情回应）在遍历时归并到其前序消息（按 `preContentId` 归属），不作为独立气泡。
+- 分支点选项本身渲染为「我」的气泡：选中项文本/表情作为我的消息插入流中，与游戏内表现一致。
+
+### 4.4 数据获取（Baker）
+
+| 用途 | 接口 | 加载策略 |
+|------|------|---------|
+| 会话列表 | `GET /table/SNSChatTable/all` + i18n dict | 一次性（137 条） |
+| 聊天内容 | `GET /table/SNSDialogTable/all` + i18n dict | 一次性（334 场，进入模块即加载） |
+| 选项 | `GET /table/SNSDialogOptionTable/all` + i18n dict | 一次性（1425 条） |
+| 话题分组/顺序 | `GET /table/SNSDialogTopicTable/all` + i18n dict | 一次性（117 条） |
+| 常量 | `GET /table/SNSConst/all` | 一次性 |
+
+均为小表，全部走版本缓存；无按需加载点。
+
+### 4.5 适配要点
 
 - **梗概排序**：解析 `dlg_{prefix}{a}m{b}_{c}`，按 `(chapterType, chapterId 数值, missionId 数值, sceneNo)` 排序；无法解析的 key 归入「其他」分组并记录 console 警告，不丢弃数据。
 - **编号生成**：`code = ${chapterId.toUpperCase()}·M${m}·场${String(c).padStart(2,'0')}`。
@@ -217,12 +327,24 @@ i18n dict 缓存键沿用 `I18nDict_{locale}_{table}`；`RadioTable` 按需新�
 - multi_media：剧本列表（speaker 加粗金色 + line），标注「音像转写」。
 - 三态模式 + 返回所属卷链接（`?cat=` 回跳）。
 
-### 5.5 i18n 计划
+### 5.5 BakerTerminal（新增）
+
+- 布局：桌面端 `grid-cols-[300px_1fr]`——左侧联系人列表（顶部四 Tab：全部/干员/联系人/群聊，按 `kind` 过滤；条目 = 头像 + 名称，选中态金色描边），右侧聊天面板；移动端单栏，列表 ↔ 聊天经返回键切换。
+- 当前会话同步 `?chat=` query param；未选会话时右侧展示引导占位。
+- 聊天面板：按会话（dialog）顺序渲染，会话间以分隔条（场次序号）区隔；消息气泡：他人靠左（群聊附头像 + 昵称），`endmin` 靠右暗金描边；系统提示（contentType 7）居中灰字。
+- 分支点渲染为选项组卡片（金线框）：每个选项一行（文本或表情图），选中项带印章式勾选；点击其他选项即切换分支——该选项更新为「我」的气泡，其后的旧选择被丢弃，后续消息按新分支重算（`resolveDialog`）。
+- 表情回应（contentType 9）：归并到目标消息气泡底部，角标形式（表情小图 + 回应人昵称 tooltip）。
+- 图片消息点击可放大预览（复用简单 lightbox 或新标签页打开，KISS）；表情包 inline 展示。
+- PRTS 分享卡（contentType 10）：解析 `nar_*` 条目名，点击跳 `/archive/story/library/:itemId`；任务卡（contentType 12）展示 `linkMissionId` 编号。
+- 三态模式；未知 contentType（测试类型）跳过不渲染。
+
+### 5.6 i18n 计划
 
 `scripts/i18n-custom.json` 新增/修改（全部 14 语言，禁占位）：
 
 - 修改：`nav.story`（剧情记录→剧情纪事）、`nav.storyDesc`
-- 新增：`story.recap` / `story.recapDesc` / `story.library` / `story.libraryDesc` / `story.spoilerHint` / `story.scene`（场）/ `story.typeAll` / `story.chapterType.{e,sm,c,f,gm,a,db,m,other}` / `story.emptyContent` / `story.audioTranscript` / `story.backToVolume` / `breadcrumb.recap` / `breadcrumb.library`
+- 新增 story：`story.recap` / `story.recapDesc` / `story.library` / `story.libraryDesc` / `story.spoilerHint` / `story.scene`（场）/ `story.typeAll` / `story.chapterType.{e,sm,c,f,gm,a,db,m,other}` / `story.emptyContent` / `story.audioTranscript` / `story.backToVolume` / `breadcrumb.recap` / `breadcrumb.library`
+- 新增 baker：`nav.baker`（Baker）/ `nav.bakerDesc` / `baker.title` / `baker.tab.{all,operator,contact,group}` / `baker.selectChat`（引导占位）/ `baker.emptyChat` / `baker.sessionSeparator`（场次）/ `baker.selfName`（「我」的显示名，取游戏内管理员称谓）/ `baker.reactedBy` / `baker.sharedArchive` / `baker.missionLink` / `breadcrumb.baker`
 
 生成：`node scripts/generate-i18n-dicts.ts`，校验 `npm run lint && npm run test && npm run build`。
 
@@ -235,33 +357,40 @@ i18n dict 缓存键沿用 `I18nDict_{locale}_{table}`；`RadioTable` 按需新�
 | RadioTable | all | 按需 entry | 按需 entry | 2909 条过大，仅详情页需要单条 |
 | 长列表性能 | 虚拟滚动 | content-visibility | content-visibility | KISS，原生 CSS 即满足 |
 | 卷内条目展示 | 独立卷页面 | 页内 accordion | accordion | 减少路由层级，浏览动线更短 |
+| Baker 分支求值 | 构建期预展开所有分支 | 运行时按 choices 重算 | B | 分支组合爆炸，重算成本极低且状态简单 |
+| Baker 会话排序 | 仅靠 dialogId 排序 | topic sortId / relatedMissionId / dialogId 多级 | B | 贴近游戏内呈现顺序，有兜底 |
 
 ## 7. 项目结构
 
 ```
 src/
-  pages/story/
-    StoryOverview.tsx        # 重构：总览页
-    StoryRecap.tsx           # 新增：纪事长卷
-    StoryLibrary.tsx         # 新增：馆藏文库
-    StoryDocumentDetail.tsx  # 新增：文献详情
-  hooks/useData.ts           # 新增 useStoryRecap / usePrtsLibrary / usePrtsItemDetail
+  pages/
+    story/
+      StoryOverview.tsx        # 重构：总览页
+      StoryRecap.tsx           # 新增：纪事长卷
+      StoryLibrary.tsx         # 新增：馆藏文库
+      StoryDocumentDetail.tsx  # 新增：文献详情
+    baker/
+      BakerTerminal.tsx        # 新增：聊天终端（联系人列表 + 聊天面板）
+  hooks/useData.ts             # 新增 useStoryRecap / usePrtsLibrary / usePrtsItemDetail / useBakerChats / useBakerDialog
   lib/
-    types.ts                 # StoryRecap*/Prts* 类型
-    adapter.ts               # adaptRecap*/adaptPrts*
-  App.tsx                    # 新增 3 条路由
-  components/Layout/Breadcrumb.tsx  # recap/library 映射
-scripts/i18n-custom.json     # story.* 扩充 + nav.story 更名
+    types.ts                   # StoryRecap*/Prts*/Baker* 类型
+    adapter.ts                 # adaptRecap*/adaptPrts*/adaptBaker*
+    baker.ts                   # 消息图遍历与分支求值 resolveDialog
+  App.tsx                      # 新增 4 条路由
+  data/archiveMeta.ts          # MODULE_CODES 新增 baker: HSA-BKR
+  components/Layout/Sidebar.tsx、Breadcrumb.tsx、routes/ArchiveHome.tsx  # baker 入口与映射
+scripts/i18n-custom.json       # story.*/baker.* 扩充 + nav.story 更名
 docs/engineering/references/data-mapping-tables.md  # 新表映射
 ```
 
 ## 8. 实现计划
 
-1. **数据层**：types + adapter + 三个 hooks（含 64 位 id、图标回退、dlg key 解析）。
-2. **页面层**：四个页面 + 路由 + Breadcrumb + 导航文案。
+1. **数据层**：types + adapter + hooks（含 64 位 id、图标回退、dlg key 解析）；`lib/baker.ts` 分支求值纯函数。
+2. **页面层**：story 四个页面 + Baker 页面 + 路由 + Breadcrumb + 导航文案与 Baker 入口。
 3. **i18n**：14 语言 key 补全与字典生成。
-4. **文档**：`data-mapping-tables.md` 补充 DialogSummary/Prts\*/RichContent/Radio 映射；根 AGENTS.md 无需变更。
-5. **测试**：adapter 单测 + e2e。
+4. **文档**：`data-mapping-tables.md` 补充 DialogSummary/Prts\*/RichContent/Radio/SNS\* 映射；根 AGENTS.md 无需变更。
+5. **测试**：adapter 与 resolveDialog 单测 + e2e。
 
 ## 9. 测试策略
 
@@ -270,6 +399,8 @@ docs/engineering/references/data-mapping-tables.md  # 新表映射
 - dlg key 解析与排序（含异常 key 归入「其他」）。
 - `adaptPrtsItem` / 卷分组聚合（空 itemIds、缺 icon、类型分布）。
 - 正文展开（多 contentId、空 contentList）。
+- `resolveDialog`：线性遍历、分支切换后后续消息更新、切换后丢弃旧选择、环保护、表情回应归并、未知 contentType 跳过。
+- `adaptBakerChat`：chatType → 干员/联系人/群聊映射，speaker 名称/头像解析。
 
 ### 9.2 E2E 测试（playwright）
 
@@ -277,6 +408,7 @@ docs/engineering/references/data-mapping-tables.md  # 新表映射
 - 长卷页筛选切换与锚点导航。
 - 文库页页签切换、卷展开、条目跳详情。
 - 详情页正文与剧本渲染、图片加载。
+- Baker：Tab 筛选、选择会话加载消息、切换分支后消息更新、图片/表情包/表情回应展示。
 
 ## 10. 风险与回滚
 
@@ -286,13 +418,16 @@ docs/engineering/references/data-mapping-tables.md  # 新表映射
 | 卷图标路径不一致 | 部分图标 404 | 双路径回退 + 占位图形 |
 | RichContentTable i18n dict 体积 | 详情页首次加载变慢 | 版本缓存 + IndexedDB 持久化；加载态骨架屏 |
 | dlg key 格式未来变动 | 排序/编号错乱 | 解析失败兜底「其他」分组，不阻断渲染 |
+| Baker 分支图存在环或悬空引用 | 遍历死循环/中断 | visited set 环保护 + 悬空即结束会话 |
+| Baker 会话内多场排序依据不足 | 场次顺序与游戏内不一致 | 多级排序（topic sortId → relatedMissionId → dialogId），实现阶段抽样校准 |
+| contentType 9 归属判定（前序消息）不准 | 表情回应挂错消息 | 按 `preContentId` 归属，失败时渲染为独立系统条 |
 
 回滚策略：纯新增页面与数据流，StoryOverview 之外无既有逻辑改动，可直接回滚分支。
 
 ## 11. 验收标准
 
 - [ ] 技术方案评审通过
-- [ ] 四个页面按 PRD 验收标准实现
+- [ ] story 四个页面与 Baker 页面按 PRD 验收标准实现
 - [ ] 14 语言 i18n 无占位、无缺失
 - [ ] `data-mapping-tables.md` 更新完成
 - [ ] `npm run lint` / `npm run test` / `npm run build` 通过
