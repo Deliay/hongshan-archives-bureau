@@ -1,39 +1,66 @@
-# 干员语音记录音频播放 Implementation Plan
-
-> **For agentic workers:** REQUIRED SUB-SKILL: Use compose:subagent (recommended) or compose:execute to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
-**Goal:** Add audio playback to operator voice records and fix missing voice records for admin operators.
-
-**Architecture:** Extend the `VoiceLine` type to include `voId` and unlock fields, create a `getAudioUrl` utility for locale-aware audio URL construction, build a `VoicePlayer` component with global singleton playback, and integrate into `OperatorDetail`.
-
-**Tech Stack:** React 19, TypeScript, Tailwind CSS 4, Vitest
-
+---
+description: 干员语音记录音频播放实现方案 — 类型扩展、音频工具、播放组件与管理员修复
+type: Fleeting
 ---
 
-## File Structure
+# 干员语音记录音频播放 - 实现方案
 
-| Operation | File | Responsibility |
-|-----------|------|---------------|
-| Modify | `src/lib/types.ts:148-151` | Extend `VoiceLine` interface with `voiceIndex`, `unlockType`, `unlockValue`, `voId` |
-| Modify | `src/lib/adapter.ts:45-48` | Map additional raw fields into `VoiceLine` |
-| Create | `src/lib/audio.ts` | Audio URL construction and locale-to-language mapping |
-| Create | `src/lib/__tests__/audio.test.ts` | Tests for `getAudioUrl` |
-| Create | `src/components/VoicePlayer.tsx` | Audio playback button component |
-| Modify | `src/pages/operators/OperatorDetail.tsx:326-339` | Integrate `VoicePlayer`, remove 10-item limit |
+**对应产品文档**: [[20260730-voice-audio-playback|干员语音记录音频播放 PRD]]
+**对应技术方案**: [[20260730-voice-audio-playback|干员语音记录音频播放技术方案]]
+**实现方案版本**: v1.0
+**创建日期**: 2026-07-30
+**作者**: MiMoCode
+**开发分支**: `feat/voice-audio-playback`
 
----
+## 1. 概述
 
-### Task 1: Extend VoiceLine Type
+### 1.1 目标
 
-**Covers:** Spec §3.2 (voice records data model)
+将已评审通过的技术提案转化为可执行的代码实现清单：
 
-**Files:**
-- Modify: `src/lib/types.ts:148-151`
+1. 扩展 `VoiceLine` 类型，保留 `voiceIndex`、`unlockType`、`unlockValue`、`voId` 字段。
+2. 修改适配层 `adaptOperator`，映射新增字段。
+3. 新建 `getAudioUrl` 工具函数，实现 locale → 音频语言映射。
+4. 新建 `VoicePlayer` 组件，支持音频播放与全局单例控制。
+5. 在 `OperatorDetail` 页面集成播放组件，移除 10 条语音限制。
+6. 修复管理员干员语音记录缺失（voice records 从 `chr_0002/0003` 获取，非 `chr_9000`）。
 
-- [ ] **Step 1: Update VoiceLine interface**
+### 1.2 范围
+
+- **做**：VoiceLine 类型扩展、适配层映射、音频 URL 工具、播放组件、页面集成、管理员语音修复。
+- **不做**：i18n 新增 key（播放按钮无文案，仅图标）、语音解锁条件展示、语音列表筛选。
+
+## 2. 代码变更总览
+
+### 2.1 新增文件
+
+| 文件路径 | 说明 |
+|----------|------|
+| `src/lib/audio.ts` | 音频 URL 构建与 locale → 语言映射 |
+| `src/lib/__tests__/audio.test.ts` | `getAudioUrl` 单元测试 |
+| `src/components/VoicePlayer.tsx` | 音频播放按钮组件 |
+
+### 2.2 修改文件
+
+| 文件路径 | 说明 |
+|----------|------|
+| `src/lib/types.ts` | `VoiceLine` 接口新增 `voiceIndex`、`unlockType`、`unlockValue`、`voId` |
+| `src/lib/adapter.ts` | `adaptOperator` voiceLines 映射新增字段 |
+| `src/lib/__tests__/adapter.test.ts` | 新增 voiceLines 映射测试 |
+| `src/pages/operators/OperatorDetail.tsx` | 集成 `VoicePlayer`，移除 `.slice(0, 10)` 限制，添加 `useLocale` |
+| `src/hooks/useData.ts` | 管理员干员数据映射（voice records 从 chr_0002/0003 获取） |
+
+### 2.3 删除文件
+
+无。
+
+## 3. 详细实现
+
+### 3.1 类型定义
+
+**`src/lib/types.ts`** — 替换 `VoiceLine` 接口（第 148-151 行）：
 
 ```typescript
-// src/lib/types.ts — replace lines 148-151
 export interface VoiceLine {
   title: string
   text: string
@@ -44,31 +71,24 @@ export interface VoiceLine {
 }
 ```
 
-- [ ] **Step 2: Run typecheck to verify**
+### 3.2 适配层更新
 
-Run: `npx tsc --noEmit`
-Expected: PASS (no type errors from this change; adapter will be updated next)
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add src/lib/types.ts
-git commit -m "types: extend VoiceLine with voiceIndex, unlockType, unlockValue, voId"
-```
-
----
-
-### Task 2: Update Adapter to Map Voice Fields
-
-**Covers:** Spec §3.2 (adapter layer)
-
-**Files:**
-- Modify: `src/lib/adapter.ts:45-48`
-
-- [ ] **Step 1: Write failing test for adapter voice mapping**
+**`src/lib/adapter.ts`** — `adaptOperator()` 函数 voiceLines 映射（第 45-48 行）：
 
 ```typescript
-// src/lib/__tests__/adapter.test.ts — append at end of file
+voiceLines: (raw.profileVoice ?? []).map((v: any) => ({
+  title: resolveI18n(v.voiceTitle, i18nMap),
+  text: resolveI18n(v.voiceDesc, i18nMap),
+  voiceIndex: v.voiceIndex ?? 0,
+  unlockType: v.unlockType ?? 0,
+  unlockValue: v.unlockValue ?? 0,
+  voId: v.voId ?? '',
+})),
+```
+
+**测试** — `src/lib/__tests__/adapter.test.ts` 追加：
+
+```typescript
 describe('adaptOperator voiceLines', () => {
   it('should map voiceIndex, unlockType, unlockValue, voId from raw profileVoice', () => {
     const raw = {
@@ -145,51 +165,30 @@ describe('adaptOperator voiceLines', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+### 3.3 音频 URL 工具
 
-Run: `npx vitest run src/lib/__tests__/adapter.test.ts`
-Expected: FAIL — `voiceIndex` property not found on return value
-
-- [ ] **Step 3: Update adaptOperator voiceLines mapping**
+**`src/lib/audio.ts`**（新建）：
 
 ```typescript
-// src/lib/adapter.ts — replace lines 45-48
-voiceLines: (raw.profileVoice ?? []).map((v: any) => ({
-  title: resolveI18n(v.voiceTitle, i18nMap),
-  text: resolveI18n(v.voiceDesc, i18nMap),
-  voiceIndex: v.voiceIndex ?? 0,
-  unlockType: v.unlockType ?? 0,
-  unlockValue: v.unlockValue ?? 0,
-  voId: v.voId ?? '',
-})),
+const AUDIO_LOCALE_MAP: Record<string, string> = {
+  CN: 'chinese',
+  TC: 'chinese',
+  EN: 'english',
+  JP: 'japanese',
+  KR: 'korean',
+}
+
+const AUDIO_BASE_URL = 'https://endfield-assets.fffdan.com/audios/dialogs/vo'
+
+export function getAudioUrl(voId: string, locale: string): string {
+  const lang = AUDIO_LOCALE_MAP[locale] ?? 'english'
+  return `${AUDIO_BASE_URL}/${lang}/${voId}`
+}
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `npx vitest run src/lib/__tests__/adapter.test.ts`
-Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/lib/adapter.ts src/lib/__tests__/adapter.test.ts
-git commit -m "adapter: map voiceIndex, unlockType, unlockValue, voId in voiceLines"
-```
-
----
-
-### Task 3: Create Audio URL Utility
-
-**Covers:** Spec §3.2 (audio URL construction, locale mapping)
-
-**Files:**
-- Create: `src/lib/audio.ts`
-- Create: `src/lib/__tests__/audio.test.ts`
-
-- [ ] **Step 1: Write failing tests for getAudioUrl**
+**`src/lib/__tests__/audio.test.ts`**（新建）：
 
 ```typescript
-// src/lib/__tests__/audio.test.ts
 import { describe, it, expect } from 'vitest'
 import { getAudioUrl } from '../audio'
 
@@ -235,56 +234,11 @@ describe('getAudioUrl', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+### 3.4 VoicePlayer 组件
 
-Run: `npx vitest run src/lib/__tests__/audio.test.ts`
-Expected: FAIL — module not found
-
-- [ ] **Step 3: Create audio.ts**
-
-```typescript
-// src/lib/audio.ts
-const AUDIO_LOCALE_MAP: Record<string, string> = {
-  CN: 'chinese',
-  TC: 'chinese',
-  EN: 'english',
-  JP: 'japanese',
-  KR: 'korean',
-}
-
-const AUDIO_BASE_URL = 'https://endfield-assets.fffdan.com/audios/dialogs/vo'
-
-export function getAudioUrl(voId: string, locale: string): string {
-  const lang = AUDIO_LOCALE_MAP[locale] ?? 'english'
-  return `${AUDIO_BASE_URL}/${lang}/${voId}`
-}
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `npx vitest run src/lib/__tests__/audio.test.ts`
-Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/lib/audio.ts src/lib/__tests__/audio.test.ts
-git commit -m "audio: add getAudioUrl utility with locale-to-language mapping"
-```
-
----
-
-### Task 4: Create VoicePlayer Component
-
-**Covers:** Spec §3.2 (audio playback UI), §3.5 (error handling)
-
-**Files:**
-- Create: `src/components/VoicePlayer.tsx`
-
-- [ ] **Step 1: Create VoicePlayer component**
+**`src/components/VoicePlayer.tsx`**（新建）：
 
 ```tsx
-// src/components/VoicePlayer.tsx
 import { useState, useRef, useCallback } from 'react'
 import { getAudioUrl } from '../lib/audio'
 
@@ -369,38 +323,35 @@ export default function VoicePlayer({ voId, locale }: VoicePlayerProps) {
 }
 ```
 
-- [ ] **Step 2: Run typecheck**
+**要点**：
+- 模块级 `currentAudio` / `currentSetPlaying` 实现全局单例播放。
+- `stopOther()` 在播放前停止其他正在播放的音频。
+- `onError` 静默处理，不影响文本展示。
+- 播放中显示暂停图标（金色），未播放显示播放图标（灰色）。
 
-Run: `npx tsc --noEmit`
-Expected: PASS
+### 3.5 页面集成
 
-- [ ] **Step 3: Commit**
+**`src/pages/operators/OperatorDetail.tsx`**：
 
-```bash
-git add src/components/VoicePlayer.tsx
-git commit -m "components: add VoicePlayer audio playback component"
-```
-
----
-
-### Task 5: Integrate VoicePlayer into OperatorDetail
-
-**Covers:** Spec §3.2 (playback integration), §3.4 (remove 10-item limit)
-
-**Files:**
-- Modify: `src/pages/operators/OperatorDetail.tsx:326-339`
-
-- [ ] **Step 1: Update OperatorDetail imports**
+**import 添加**（第 8 行之后）：
 
 ```typescript
-// src/pages/operators/OperatorDetail.tsx — add import after line 16
+import { useLocale } from '../../lib/locale'
+```
+
+```typescript
 import VoicePlayer from '../../components/VoicePlayer'
 ```
 
-- [ ] **Step 2: Replace voice records section**
+**函数内添加 locale**（第 27 行之后）：
+
+```typescript
+const { locale } = useLocale()
+```
+
+**语音记录模块替换**（第 326-339 行）：
 
 ```tsx
-// src/pages/operators/OperatorDetail.tsx — replace lines 326-339
 {/* 语音记录 */}
 {op.voiceLines.length > 0 && (
   <section>
@@ -422,94 +373,38 @@ import VoicePlayer from '../../components/VoicePlayer'
 )}
 ```
 
-Note: The `locale` variable is not yet available in the component scope. We need to add it.
+### 3.6 管理员干员语音修复
 
-- [ ] **Step 3: Add locale import and usage**
+**关键洞察**：`chr_9000_endmin` 没有 `profileVoice` 数据。管理员干员的 voice records 必须从 `chr_0002_endminm` / `chr_0003_endminf` 各自获取。其他数据（技能、天赋等）仍从 `chr_9000_endmin` 获取。
 
-```typescript
-// src/pages/operators/OperatorDetail.tsx — add import after line 7
-import { useLocale } from '../../lib/locale'
-```
+**`src/hooks/useData.ts`**：
 
-```typescript
-// src/pages/operators/OperatorDetail.tsx — add inside OperatorDetail function, after line 27
-const { locale } = useLocale()
-```
-
-- [ ] **Step 4: Run typecheck**
-
-Run: `npx tsc --noEmit`
-Expected: PASS
-
-- [ ] **Step 5: Run lint**
-
-Run: `npm run lint`
-Expected: PASS
-
-- [ ] **Step 6: Run tests**
-
-Run: `npm run test`
-Expected: PASS (existing tests unaffected)
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add src/pages/operators/OperatorDetail.tsx
-git commit -m "feat: integrate VoicePlayer into operator detail, remove 10-item voice limit"
-```
-
----
-
-### Task 6: Fix Admin Operator Voice Records
-
-**Covers:** Spec §3.2 (admin operator fix)
-
-**Key insight:** `chr_9000_endmin` does NOT have `profileVoice` data. Voice records for admin operators must come from `chr_0002_endminm` / `chr_0003_endminf` respectively. Other data (skills, talents, etc.) still comes from `chr_9000_endmin`.
-
-**Files:**
-- Modify: `src/hooks/useData.ts`
-
-- [ ] **Step 1: Check if admin mapping already exists**
-
-Run: `grep -n "ADMIN_OPERATOR_MAP\|chr_0002\|chr_9000" src/hooks/useData.ts`
-Expected: If already implemented, skip this task. If not, proceed.
-
-- [ ] **Step 2: Add admin operator mapping (if not present)**
+**添加映射常量**（文件顶部，imports 之后）：
 
 ```typescript
-// src/hooks/useData.ts — add near top of file (after imports)
 const ADMIN_OPERATOR_MAP: Record<string, string> = {
   chr_0002_endminm: 'chr_9000_endmin',
   chr_0003_endminf: 'chr_9000_endmin',
 }
 ```
 
-- [ ] **Step 3: Modify useOperatorDetail to use dataId**
+**`useOperatorDetail` 修改**：
 
 ```typescript
-// src/hooks/useData.ts — in useOperatorDetail function
-// Add at the start of the async callback:
+// async 回调开头添加：
 const dataId = ADMIN_OPERATOR_MAP[id] ?? id
 
-// Replace rawData[id] with rawData[dataId] for most data sources
-// EXCEPT:
-// - CharacterPotentialTable (keep id — each admin has own potential)
-// - profileVoice / voiceLines (keep id — chr_9000 has no voice data)
-// - Portrait URL (keep id — each admin has own portrait)
+// 大部分数据源使用 rawData[dataId]
+// 以下数据保持使用原始 id：
+// - CharacterPotentialTable（各自潜能）
+// - profileVoice / voiceLines（chr_9000 无语音数据）
+// - Portrait URL（各自头像）
 ```
 
-- [ ] **Step 4: Keep voice records from original id**
+**voice records 从原始 id 获取**：
 
 ```typescript
-// For CharacterTable, voiceLines should use original id, NOT dataId:
-const voiceRaw = rawData[id]  // NOT rawData[dataId]
-// voiceLines comes from voiceRaw.profileVoice
-```
-
-The adapter call should receive the original `rawData[id]` for voice extraction, or extract voice separately:
-
-```typescript
-// Option A: Extract voice from original id before adaptOperator
+// adaptOperator 调用后，用原始 id 的 voice 覆盖：
 const voiceSource = rawData[id]
 const voiceLines = (voiceSource?.profileVoice ?? []).map((v: any) => ({
   title: resolveI18n(v.voiceTitle, i18nMap),
@@ -519,73 +414,102 @@ const voiceLines = (voiceSource?.profileVoice ?? []).map((v: any) => ({
   unlockValue: v.unlockValue ?? 0,
   voId: v.voId ?? '',
 }))
-
-// Then override op.voiceLines after adaptOperator:
 op.voiceLines = voiceLines
 ```
 
-- [ ] **Step 5: Override portrait for admin operators**
+**头像覆盖**：
 
 ```typescript
-// After adaptOperator call:
 if (ADMIN_OPERATOR_MAP[id]) {
   op.id = id
   op.portrait = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${id}.png`
 }
 ```
 
-- [ ] **Step 6: Run typecheck**
+## 4. 实现顺序
 
-Run: `npx tsc --noEmit`
-Expected: PASS
+### 阶段一：类型与适配（第 1 轮提交）
 
-- [ ] **Step 7: Run tests**
+1. `src/lib/types.ts` — 扩展 `VoiceLine` 接口。
+2. `src/lib/adapter.ts` — 更新 voiceLines 映射。
+3. `src/lib/__tests__/adapter.test.ts` — 新增测试。
+4. 校验：`npx tsc --noEmit && npx vitest run src/lib/__tests__/adapter.test.ts`。
 
-Run: `npm run test`
-Expected: PASS
+### 阶段二：音频工具（第 2 轮提交）
 
-- [ ] **Step 8: Commit**
+1. `src/lib/audio.ts` — 新建 `getAudioUrl`。
+2. `src/lib/__tests__/audio.test.ts` — 新建测试。
+3. 校验：`npx vitest run src/lib/__tests__/audio.test.ts`。
 
-```bash
-git add src/hooks/useData.ts
-git commit -m "fix: admin operator voice records from chr_0002/0003, not chr_9000"
-```
+### 阶段三：播放组件（第 3 轮提交）
 
----
+1. `src/components/VoicePlayer.tsx` — 新建组件。
+2. 校验：`npx tsc --noEmit`。
 
-### Task 7: Final Verification
+### 阶段四：页面集成（第 4 轮提交）
 
-**Covers:** All spec sections
+1. `src/pages/operators/OperatorDetail.tsx` — 集成 VoicePlayer，移除限制。
+2. 校验：`npx tsc --noEmit && npm run lint && npm run test`。
 
-**Files:** None (verification only)
+### 阶段五：管理员修复（第 5 轮提交）
 
-- [ ] **Step 1: Run full lint**
+1. `src/hooks/useData.ts` — 添加管理员映射与 voice records 逻辑。
+2. 校验：`npx tsc --noEmit && npm run test`。
 
-Run: `npm run lint`
-Expected: PASS
+### 阶段六：最终验证（第 6 轮提交）
 
-- [ ] **Step 2: Run full test suite**
+1. `npm run lint && npm run test && npm run build` — 全量通过。
 
-Run: `npm run test`
-Expected: PASS
+## 5. 测试计划
 
-- [ ] **Step 3: Run build**
+### 5.1 类型检查
 
-Run: `npm run build`
-Expected: PASS
+- `npx tsc --noEmit` — 无类型错误。
 
-- [ ] **Step 4: Manual verification checklist**
+### 5.2 单元测试
 
-- [ ] Visit `/archive/operators/chr_0005_chen` — voice records show play buttons
-- [ ] Click play button — audio plays
-- [ ] Click another voice while playing — first stops, second plays
-- [ ] Switch locale to EN — next play uses english audio
-- [ ] Visit `/archive/operators/chr_0002_endminm` — voice records display
-- [ ] Visit `/archive/operators/chr_0003_endminf` — voice records display
+- `npx vitest run src/lib/__tests__/adapter.test.ts` — voiceLines 映射测试通过。
+- `npx vitest run src/lib/__tests__/audio.test.ts` — getAudioUrl 测试通过。
 
-- [ ] **Step 5: Commit (if any fixes needed)**
+### 5.3 构建验证
 
-```bash
-git add -A
-git commit -m "fix: address review feedback"
-```
+- `npm run lint` — 无 lint 错误。
+- `npm run test` — 现有测试全部通过。
+- `npm run build` — 构建成功。
+
+### 5.4 视觉验证
+
+- 干员详情页语音记录模块显示播放按钮。
+- 点击播放按钮可播放音频，再点暂停。
+- 同时点击多条语音，只有最新一条播放。
+- 切换语言后播放，音频语言正确。
+- 管理员干员（chr_0002/0003）语音记录正常显示。
+
+## 6. 验收标准
+
+- [ ] 干员详情页语音记录模块显示播放按钮。
+- [ ] 播放/暂停功能正常，全局单例播放。
+- [ ] 音频语言跟随用户 locale（中文/英文/日文/韩文，其他回退英文）。
+- [ ] 管理员干员语音记录正常显示（从 chr_0002/0003 获取）。
+- [ ] 移除 10 条语音限制，展示所有语音。
+- [ ] `voId` 为空时隐藏播放按钮。
+- [ ] `npm run lint`、`npm run test`、`npm run build` 全部通过。
+
+## 7. 风险与回滚
+
+| 风险 | 影响 | 缓解措施 |
+|------|------|----------|
+| 音频文件 404 或加载失败 | 播放按钮点击无反应 | `onError` 静默处理，不影响文本展示 |
+| `voId` 字段在部分干员数据中缺失 | 该干员无播放按钮 | `voId` 为空时隐藏按钮，仅显示文本 |
+| `chr_9000_endmin` 数据结构变化 | 管理员数据映射失效 | 降级使用 chr_0002/0003 自身数据 |
+| 全局单例 audio 内存泄漏 | 长时间使用后内存增长 | `ended` / `error` 事件中清理引用 |
+
+回滚策略：按阶段提交，可逐阶段回滚。删除 `VoicePlayer.tsx` + `audio.ts` + 回滚 `types.ts` / `adapter.ts` / `OperatorDetail.tsx` / `useData.ts` 即可。
+
+## 8. 相关文档
+
+- [[20260730-voice-audio-playback|干员语音记录音频播放 PRD]]
+- [[20260730-voice-audio-playback|干员语音记录音频播放技术方案]]
+- [通用开发规范](../common-rules.md)
+- [前端开发规范](../frontend-spec.md)
+- [数据表映射参考](../references/data-mapping-tables.md)
