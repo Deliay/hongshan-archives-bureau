@@ -464,6 +464,8 @@ git commit -m "feat: integrate VoicePlayer into operator detail, remove 10-item 
 
 **Covers:** Spec §3.2 (admin operator fix)
 
+**Key insight:** `chr_9000_endmin` does NOT have `profileVoice` data. Voice records for admin operators must come from `chr_0002_endminm` / `chr_0003_endminf` respectively. Other data (skills, talents, etc.) still comes from `chr_9000_endmin`.
+
 **Files:**
 - Modify: `src/hooks/useData.ts`
 
@@ -489,12 +491,40 @@ const ADMIN_OPERATOR_MAP: Record<string, string> = {
 // Add at the start of the async callback:
 const dataId = ADMIN_OPERATOR_MAP[id] ?? id
 
-// Replace rawData[id] with rawData[dataId] for all data sources EXCEPT:
-// - CharacterPotentialTable (keep id)
-// - Portrait URL (keep id)
+// Replace rawData[id] with rawData[dataId] for most data sources
+// EXCEPT:
+// - CharacterPotentialTable (keep id — each admin has own potential)
+// - profileVoice / voiceLines (keep id — chr_9000 has no voice data)
+// - Portrait URL (keep id — each admin has own portrait)
 ```
 
-- [ ] **Step 4: Override portrait for admin operators**
+- [ ] **Step 4: Keep voice records from original id**
+
+```typescript
+// For CharacterTable, voiceLines should use original id, NOT dataId:
+const voiceRaw = rawData[id]  // NOT rawData[dataId]
+// voiceLines comes from voiceRaw.profileVoice
+```
+
+The adapter call should receive the original `rawData[id]` for voice extraction, or extract voice separately:
+
+```typescript
+// Option A: Extract voice from original id before adaptOperator
+const voiceSource = rawData[id]
+const voiceLines = (voiceSource?.profileVoice ?? []).map((v: any) => ({
+  title: resolveI18n(v.voiceTitle, i18nMap),
+  text: resolveI18n(v.voiceDesc, i18nMap),
+  voiceIndex: v.voiceIndex ?? 0,
+  unlockType: v.unlockType ?? 0,
+  unlockValue: v.unlockValue ?? 0,
+  voId: v.voId ?? '',
+}))
+
+// Then override op.voiceLines after adaptOperator:
+op.voiceLines = voiceLines
+```
+
+- [ ] **Step 5: Override portrait for admin operators**
 
 ```typescript
 // After adaptOperator call:
@@ -504,21 +534,21 @@ if (ADMIN_OPERATOR_MAP[id]) {
 }
 ```
 
-- [ ] **Step 5: Run typecheck**
+- [ ] **Step 6: Run typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: PASS
 
-- [ ] **Step 6: Run tests**
+- [ ] **Step 7: Run tests**
 
 Run: `npm run test`
 Expected: PASS
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add src/hooks/useData.ts
-git commit -m "fix: add admin operator data mapping for voice records"
+git commit -m "fix: admin operator voice records from chr_0002/0003, not chr_9000"
 ```
 
 ---
