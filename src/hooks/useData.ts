@@ -353,6 +353,17 @@ export function useOperatorDetail(id: string): UseDataResult<OperatorDetailData>
     if (ADMIN_OPERATOR_MAP[id]) {
       op.id = id
       op.portrait = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/charicon/icon_${id}.png`
+      const voiceSource = rawData[id]
+      if (voiceSource?.profileVoice) {
+        op.voiceLines = (voiceSource.profileVoice as any[]).map((v: any) => ({
+          title: resolveI18n(v.voiceTitle, i18nMap),
+          text: resolveI18n(v.voiceDesc, i18nMap),
+          voiceIndex: v.voiceIndex ?? 0,
+          unlockType: v.unlockType ?? 0,
+          unlockValue: v.unlockValue ?? 0,
+          voId: v.voId ?? '',
+        }))
+      }
     }
 
     const attributes: CharacterAttributeSet[] = (raw.attributes ?? []).map((a: any) => ({

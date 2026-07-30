@@ -14,6 +14,7 @@ import ItemTile from '../../components/Items/ItemTile'
 import { formatBlackboard } from '../../lib/formatText'
 import type { SkillGroup, SkillPatchData } from '../../lib/types'
 import PotentialSection from './PotentialSection'
+import VoicePlayer from '../../components/VoicePlayer'
 
 const SKILL_TYPE_LABELS: Record<number, string> = {
   0: 'operator.skillType.0',
@@ -25,6 +26,7 @@ const SKILL_TYPE_LABELS: Record<number, string> = {
 export default function OperatorDetail() {
   const { id } = useParams<{ id: string }>()
   const { t } = useI18n()
+  const { locale } = useLocale()
   const { data: detail, loading, error } = useOperatorDetail(id ?? '')
 
   const breakCostMap = detail?.breakCostMap ?? {}
@@ -328,9 +330,14 @@ export default function OperatorDetail() {
         <section>
           <h3 className="text-sm font-medium text-archive-gold mb-3">{t('operator.voiceRecords')}</h3>
           <div className="space-y-2">
-            {op.voiceLines.slice(0, 10).map((vl, i) => (
+            {op.voiceLines.map((vl, i) => (
               <div key={i} className="p-3 rounded border border-archive-border bg-archive-file">
-                <p className="text-xs text-archive-lead mb-1">{vl.title || `${t('operator.voiceRecords')} ${i + 1}`}</p>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-archive-lead">
+                    {vl.title || `${t('operator.voiceRecords')} ${i + 1}`}
+                  </p>
+                  {vl.voId && <VoicePlayer voId={vl.voId} locale={locale} />}
+                </div>
                 <p className="text-sm text-archive-dust"><RichText text={vl.text} /></p>
               </div>
             ))}

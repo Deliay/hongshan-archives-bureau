@@ -69,6 +69,7 @@ npm run build                  # tsc + vite build
 npm run lint                   # oxlint
 npm run test                   # vitest
 node scripts/generate-i18n-dicts.ts  # regenerate i18n dictionaries from scripts/i18n-custom.json
+cd tests/e2e && npm run test   # run E2E tests
 ```
 
 ## 验收问题处理流程
