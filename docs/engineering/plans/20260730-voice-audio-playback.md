@@ -456,9 +456,15 @@ if (ADMIN_OPERATOR_MAP[id]) {
 1. `src/hooks/useData.ts` — 添加管理员映射与 voice records 逻辑。
 2. 校验：`npx tsc --noEmit && npm run test`。
 
-### 阶段六：最终验证（第 6 轮提交）
+### 阶段六：E2E 测试（第 6 轮提交）
+
+1. `tests/e2e/src/voice-audio.spec.ts` — 新建 E2E 测试。
+2. 校验：`cd tests/e2e && npx playwright test voice-audio`。
+
+### 阶段七：最终验证（第 7 轮提交）
 
 1. `npm run lint && npm run test && npm run build` — 全量通过。
+2. `cd tests/e2e && npx playwright test voice-audio` — E2E 通过。
 
 ## 5. 测试计划
 
@@ -468,16 +474,81 @@ if (ADMIN_OPERATOR_MAP[id]) {
 
 ### 5.2 单元测试
 
-- `npx vitest run src/lib/__tests__/adapter.test.ts` — voiceLines 映射测试通过。
-- `npx vitest run src/lib/__tests__/audio.test.ts` — getAudioUrl 测试通过。
+| 测试文件 | 覆盖目标 | 关键用例 |
+|----------|----------|----------|
+| `src/lib/__tests__/audio.test.ts` | `getAudioUrl` | CN/TC → chinese、EN → english、JP → japanese、KR → korean、未知 locale → english 回退 |
+| `src/lib/__tests__/adapter.test.ts` | `adaptOperator` voiceLines | 映射 voiceIndex/unlockType/unlockValue/voId、缺失字段默认值处理 |
 
-### 5.3 构建验证
+### 5.3 E2E 测试
+
+| 测试文件 | 覆盖目标 | 关键用例 |
+|----------|----------|----------|
+| `tests/e2e/src/voice-audio.spec.ts` | 语音音频播放完整流程 | 语音记录模块可见、播放按钮可见、点击播放、点击暂停、管理员干员语音显示 |
+
+**E2E 测试用例**：
+
+```typescript
+// tests/e2e/src/voice-audio.spec.ts
+import { test, expect } from '@playwright/test'
+
+test.describe('干员语音音频播放 (Voice Audio Playback)', () => {
+
+  async function waitForDetailReady(page: any, operatorId: string) {
+    await page.goto(`/archive/operators/${operatorId}`)
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('语音记录') || body.includes('未找到') || body.includes('加载失败')
+    }, { timeout: 20000 })
+  }
+
+  test('语音记录模块可见', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0005_chen')
+    await expect(page.getByText('语音记录', { exact: true }).first()).toBeVisible({ timeout: 10000 })
+  })
+
+  test('播放按钮可见', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0005_chen')
+    await page.waitForTimeout(3000)
+    const playButtons = page.locator('button[aria-label="Play"]')
+    const count = await playButtons.count()
+    expect(count).toBeGreaterThanOrEqual(1)
+  })
+
+  test('点击播放按钮触发播放', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0005_chen')
+    await page.waitForTimeout(3000)
+    const playButton = page.locator('button[aria-label="Play"]').first()
+    await playButton.click()
+    await expect(page.locator('button[aria-label="Pause"]').first()).toBeVisible({ timeout: 5000 })
+  })
+
+  test('点击暂停按钮停止播放', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0005_chen')
+    await page.waitForTimeout(3000)
+    const playButton = page.locator('button[aria-label="Play"]').first()
+    await playButton.click()
+    await expect(page.locator('button[aria-label="Pause"]').first()).toBeVisible({ timeout: 5000 })
+    const pauseButton = page.locator('button[aria-label="Pause"]').first()
+    await pauseButton.click()
+    await expect(page.locator('button[aria-label="Play"]').first()).toBeVisible({ timeout: 5000 })
+  })
+
+  test('管理员干员语音记录显示', async ({ page }) => {
+    await waitForDetailReady(page, 'chr_0002_endminm')
+    await page.waitForTimeout(3000)
+    const voiceSection = page.getByText('语音记录', { exact: true })
+    await expect(voiceSection.first()).toBeVisible({ timeout: 10000 })
+  })
+})
+```
+
+### 5.4 构建验证
 
 - `npm run lint` — 无 lint 错误。
-- `npm run test` — 现有测试全部通过。
+- `npm run test` — 现有测试 + 新增单元测试全部通过。
 - `npm run build` — 构建成功。
 
-### 5.4 视觉验证
+### 5.5 视觉验证
 
 - 干员详情页语音记录模块显示播放按钮。
 - 点击播放按钮可播放音频，再点暂停。
@@ -493,7 +564,10 @@ if (ADMIN_OPERATOR_MAP[id]) {
 - [ ] 管理员干员语音记录正常显示（从 chr_0002/0003 获取）。
 - [ ] 移除 10 条语音限制，展示所有语音。
 - [ ] `voId` 为空时隐藏播放按钮。
+- [ ] 单元测试覆盖：`getAudioUrl` 6 用例、`adaptOperator` voiceLines 2 用例。
+- [ ] E2E 测试覆盖：语音模块可见、播放按钮、播放/暂停、管理员语音。
 - [ ] `npm run lint`、`npm run test`、`npm run build` 全部通过。
+- [ ] `cd tests/e2e && npx playwright test voice-audio` 通过。
 
 ## 7. 风险与回滚
 
