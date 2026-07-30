@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { adaptEquip, adaptSuit, adaptEquipFormula } from '../adapter'
+import { adaptEquip, adaptSuit, adaptEquipFormula, adaptOperator } from '../adapter'
 
 describe('adaptEquip', () => {
   const mockItemRaw: Record<string, any> = {
@@ -206,5 +206,80 @@ describe('adaptEquipFormula', () => {
     const result = adaptEquipFormula(formula, chains)
     expect(result[0].unlockType).toBe(2)
     expect(result[0].unlockKey).toBe('mission_123')
+  })
+})
+
+describe('adaptOperator voiceLines', () => {
+  it('should map voiceIndex, unlockType, unlockValue, voId from raw profileVoice', () => {
+    const raw = {
+      charId: 'chr_test',
+      name: { text: 'Test' },
+      profession: 1,
+      charTypeId: 'fire',
+      rarity: 5,
+      mainAttrType: 1,
+      subAttrType: 2,
+      profileVoice: [
+        {
+          id: 'v1',
+          voiceIndex: 0,
+          voiceTitle: { id: 100, text: 'Greeting' },
+          voiceDesc: { id: 101, text: 'Hello!' },
+          unlockType: 0,
+          unlockValue: 0,
+          voId: 'vo_001',
+        },
+        {
+          id: 'v2',
+          voiceIndex: 3,
+          voiceTitle: { id: 200, text: 'Trust' },
+          voiceDesc: { id: 201, text: 'We are friends.' },
+          unlockType: 4,
+          unlockValue: 100,
+          voId: 'vo_002',
+        },
+      ],
+    }
+    const i18n = { '100': '问候', '101': '你好！', '200': '信赖', '201': '我们是朋友。' }
+    const result = adaptOperator(raw, i18n)
+    expect(result.voiceLines).toHaveLength(2)
+    expect(result.voiceLines[0]).toEqual({
+      title: '问候',
+      text: '你好！',
+      voiceIndex: 0,
+      unlockType: 0,
+      unlockValue: 0,
+      voId: 'vo_001',
+    })
+    expect(result.voiceLines[1]).toEqual({
+      title: '信赖',
+      text: '我们是朋友。',
+      voiceIndex: 3,
+      unlockType: 4,
+      unlockValue: 100,
+      voId: 'vo_002',
+    })
+  })
+
+  it('should default missing voice fields gracefully', () => {
+    const raw = {
+      charId: 'chr_test2',
+      name: { text: 'Test2' },
+      profession: 1,
+      charTypeId: 'ice',
+      rarity: 3,
+      profileVoice: [
+        { voiceTitle: { text: 'Title' }, voiceDesc: { text: 'Desc' } },
+      ],
+    }
+    const result = adaptOperator(raw)
+    expect(result.voiceLines[0]).toEqual({
+      title: 'Title',
+      text: 'Desc',
+      voiceIndex: 0,
+      unlockType: 0,
+      unlockValue: 0,
+      voId: '',
+    })
   })
 })

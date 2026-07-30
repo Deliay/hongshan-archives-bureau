@@ -45,6 +45,10 @@ export function adaptOperator(
     voiceLines: (raw.profileVoice ?? []).map((v: any) => ({
       title: resolveI18n(v.voiceTitle, i18nMap),
       text: resolveI18n(v.voiceDesc, i18nMap),
+      voiceIndex: v.voiceIndex ?? 0,
+      unlockType: v.unlockType ?? 0,
+      unlockValue: v.unlockValue ?? 0,
+      voId: v.voId ?? '',
     })),
     tags: (raw.charBattleTagIds ?? []).map((id: string) => battleTagMap?.[id] ?? id),
     race: raceMap?.[charId] ?? '',

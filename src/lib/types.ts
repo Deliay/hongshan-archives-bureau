@@ -148,6 +148,10 @@ export interface Operator {
 export interface VoiceLine {
   title: string
   text: string
+  voiceIndex: number
+  unlockType: number
+  unlockValue: number
+  voId: string
 }
 
 export interface Weapon {
