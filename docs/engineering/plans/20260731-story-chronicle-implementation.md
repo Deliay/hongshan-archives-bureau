@@ -1,382 +1,827 @@
 ---
-description: 剧情纪事模块实现计划
+description: 剧情纪事模块实现方案：数据层、页面、组件与多语言的可执行清单
 type: Fleeting
 ---
 
-# 剧情纪事 - 实现计划
+# 剧情纪事 - 实现方案
 
-**功能名称**: 剧情纪事（Story Chronicle）
-**关联 PRD**: [[20260730-story-chronicle|剧情纪事]]
-**关联技术提案**: [[20260730-story-chronicle|剧情纪事技术提案 v1.2]]
+**对应产品文档**: [[20260730-story-chronicle|剧情纪事产品方案]]
+**对应技术方案**: [[20260730-story-chronicle|剧情纪事技术方案 v1.2]]
+**实现方案版本**: v1.0
 **创建日期**: 2026-07-31
-**feat-branch**: `feat/story-chronicle`
+**作者**: 前端工程
+**开发分支**: `feat/story-chronicle`
 
-## 1. 实现概览
+## 1. 概述
 
-### 1.1 任务分解
+### 1.1 目标
+
+将技术方案转化为可执行的代码实现清单：剧情梗概页（篇章导航 + 梗概流）、PRTS 文库页（分类页签 + 卷网格 + 详情）、Baker 聊天终端（联系人列表 + 聊天界面 + 分支求值）、总览页重构、路由导航、14 语言文案与测试。
+
+### 1.2 范围
+
+- **做**：`types.ts` / `adapter.ts` / `baker.ts` / `useData.ts` 数据层；`StoryRecap` / `StoryLibrary` / `StoryDocumentDetail` / `BakerTerminal` / `StoryOverview` 页面；路由 / Sidebar / Breadcrumb / ArchiveHome；`story.*` / `baker.*` i18n（14 语言全量）；adapter + baker 单测与 E2E。
+- **不做**：剧情全文对话回放（`DialogTextTable`）；全文搜索；音频/视频播放；文献关联网络；Baker 测试用消息类型专门渲染。
+
+## 2. 代码变更总览
+
+### 2.1 新增文件
+
+| 文件路径 | 说明 |
+|----------|------|
+| `src/pages/story/StoryRecap.tsx` | 剧情梗概页（篇章导航 + 梗概流） |
+| `src/pages/story/StoryLibrary.tsx` | PRTS 文库页（分类页签 + 卷网格） |
+| `src/pages/story/StoryDocumentDetail.tsx` | 文献详情页（正文 / 剧本） |
+| `src/pages/baker/BakerTerminal.tsx` | Baker 聊天终端（联系人列表 + 聊天面板） |
+| `src/components/Baker/BakerMessageBubble.tsx` | 消息气泡组件 |
+| `src/components/Baker/BakerOptionGroup.tsx` | 分支选项组组件 |
+| `src/components/Baker/BakerContactList.tsx` | 联系人列表组件 |
+| `src/components/Baker/BakerChatPanel.tsx` | 聊天面板组件 |
+| `src/lib/baker.ts` | 消息图遍历与分支求值 `resolveDialog` |
+| `src/lib/__tests__/adapter-story.test.ts` | 剧情梗概 / PRTS 适配器单测 |
+| `src/lib/__tests__/baker.test.ts` | Baker 分支求值单测 |
+| `tests/e2e/src/story-chronicle.spec.ts` | 剧情纪事模块 E2E |
+
+### 2.2 修改文件
+
+| 文件路径 | 说明 |
+|----------|------|
+| `src/lib/types.ts` | 新增 `StoryRecapScene` / `StoryRecapChapter` / `PrtsCategory` / `PrtsVolume` / `PrtsItem` / `PrtsItemDetail` / `BakerChat` / `BakerMessage` / `BakerOption` / `BakerBeat` |
+| `src/lib/adapter.ts` | 新增 `adaptRecapScene` / `adaptRecapChapter` / `adaptPrtsCategory` / `adaptPrtsVolume` / `adaptPrtsItem` / `adaptPrtsItemDetail` / `adaptBakerChat` / `adaptBakerMessage` |
+| `src/hooks/useData.ts` | 新增 `useStoryRecap` / `usePrtsLibrary` / `usePrtsItemDetail` / `useBakerChats` / `useBakerDialog` |
+| `src/pages/story/StoryOverview.tsx` | 重构：双入口卡（剧情梗概 + PRTS 文库） |
+| `src/App.tsx` | 新增 4 条路由 |
+| `src/components/Layout/Sidebar.tsx` | story 文案更新 + baker 入口 |
+| `src/components/Layout/Breadcrumb.tsx` | 补充 recap / library / baker 映射 |
+| `src/routes/ArchiveHome.tsx` | baker 入口卡片 |
+| `src/data/archiveMeta.ts` | MODULE_CODES 新增 baker: HSA-BKR |
+| `scripts/i18n-custom.json` | 新增 story.* / baker.* namespace（14 语言） |
+
+### 2.3 删除文件
+
+| 文件路径 | 说明 |
+|----------|------|
+| `src/pages/story/StoryOverview.tsx`（旧占位） | 被重构后的新版替代（原地重写，非删除） |
+
+## 3. 详细实现
+
+### 3.1 类型定义 `src/lib/types.ts`
+
+```ts
+// ===== 剧情梗概 =====
+export interface StoryRecapScene {
+  id: string                // summary id (e.g. "summary_e1m1_1_001")
+  dlgId: string             // dlg_e1m3_4
+  chapterId: string         // e1
+  missionId: string         // e1m3
+  sceneNo: number           // 4
+  chapterType: string       // e | sm | c | f | gm | a | db | m
+  code: string              // E1·M3·场04
+  text: string              // 梗概正文
+}
+
+export interface StoryRecapMission {
+  missionId: string
+  scenes: StoryRecapScene[]
+}
+
+export interface StoryRecapChapter {
+  chapterId: string         // e1
+  chapterType: string       // e
+  missions: StoryRecapMission[]
+}
+
+// ===== PRTS 文库 =====
+export interface PrtsCategory {
+  id: string                // document | paper | digital | collection | report | media
+  name: string              // i18n
+  order: number
+  itemCount: number
+}
+
+export interface PrtsVolume {
+  id: string                // PrtsFirstLv key
+  categoryId: string
+  name: string              // i18n
+  subName: string           // i18n（副题）
+  iconUrl: string
+  order: number
+  itemIds: string[]
+}
+
+export interface PrtsItem {
+  id: string                // PrtsAllItem key
+  volumeId: string
+  type: 'text' | 'document' | 'multi_media'
+  name: string              // i18n
+  desc: string              // i18n
+  order: number
+  contentId: string
+}
+
+export interface PrtsItemDetail extends PrtsItem {
+  volumeName: string
+  categoryId: string
+  contents: { title: string; segments: string[] }[]
+  script?: { speaker: string; line: string }[]
+}
+
+// ===== Baker =====
+export interface BakerChat {
+  id: string                // chatId
+  kind: 'operator' | 'contact' | 'group'  // chatType 3 / 1 / 2
+  name: string              // i18n
+  iconUrl: string
+  isSettlementChannel: boolean
+}
+
+export interface BakerMessage {
+  id: string                // `${dialogId}:${contentId}`
+  speakerId: string         // endmin | chatId | ''
+  isSelf: boolean
+  speakerName: string
+  speakerIconUrl: string
+  kind: 'text' | 'image' | 'sticker' | 'system' | 'share' | 'mission'
+  text: string
+  imageUrl?: string
+  reactions?: { emojiUrl: string; fromNames: string[]; count: number }[]
+}
+
+export interface BakerOption {
+  id: string                // optionId
+  text: string
+  emojiUrl?: string
+}
+
+export interface BakerBeat {
+  messages: BakerMessage[]
+  options?: BakerOption[]
+}
+
+export interface BakerTopic {
+  topicId: string
+  topicName: string         // i18n（有标题显示标题，无标题显示预览）
+  sortId: number
+  dialogs: { dialogId: string; preview: string }[]
+}
+```
+
+### 3.2 适配器 `src/lib/adapter.ts`
+
+#### 3.2.1 `adaptRecapScene`（剧情梗概）
+
+```ts
+const DLG_KEY_RE = /^dlg_([a-z]+)(\d+)m(\d+)(?:d\d+)?_(\d+)$/
+
+export function adaptRecapScene(
+  dlgKey: string,
+  summaryId: string,
+  summaryText: string,
+  i18nMap?: Record<string, string>
+): StoryRecapScene | null {
+  const m = DLG_KEY_RE.exec(dlgKey)
+  if (!m) return null
+  const [, chapterType, chapterNum, missionNum, sceneNo] = m
+  const chapterId = `${chapterType}${chapterNum}`
+  const missionId = `${chapterId}m${missionNum}`
+  const code = `${chapterId.toUpperCase()}·M${missionNum}·场${String(sceneNo).padStart(2, '0')}`
+  return {
+    id: summaryId,
+    dlgId: dlgKey,
+    chapterId,
+    missionId,
+    sceneNo: Number(sceneNo),
+    chapterType,
+    code,
+    text: resolveI18n(summaryText, i18nMap),
+  }
+}
+```
+
+#### 3.2.2 `adaptRecapChapter`（篇章聚合）
+
+```ts
+export function adaptRecapChapter(scenes: StoryRecapScene[]): StoryRecapChapter[] {
+  const chapterMap = new Map<string, StoryRecapScene[]>()
+  for (const s of scenes) {
+    if (!chapterMap.has(s.chapterId)) chapterMap.set(s.chapterId, [])
+    chapterMap.get(s.chapterId)!.push(s)
+  }
+  return Array.from(chapterMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([chapterId, chapterScenes]) => {
+      const missionMap = new Map<string, StoryRecapScene[]>()
+      for (const s of chapterScenes) {
+        if (!missionMap.has(s.missionId)) missionMap.set(s.missionId, [])
+        missionMap.get(s.missionId)!.push(s)
+      }
+      const missions = Array.from(missionMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([missionId, scenes]) => ({
+          missionId,
+          scenes: scenes.sort((a, b) => a.sceneNo - b.sceneNo),
+        }))
+      return {
+        chapterId,
+        chapterType: chapterScenes[0].chapterType,
+        missions,
+      }
+    })
+}
+```
+
+#### 3.2.3 `adaptPrtsCategory` / `adaptPrtsVolume` / `adaptPrtsItem`
+
+```ts
+export function adaptPrtsCategory(raw: any, i18nMap?: Record<string, string>): PrtsCategory {
+  return {
+    id: raw.$key ?? '',
+    name: resolveI18n(raw.name, i18nMap),
+    order: raw.order ?? 0,
+    itemCount: 0, // 需聚合计算
+  }
+}
+
+export function adaptPrtsVolume(raw: any, i18nMap?: Record<string, string>): PrtsVolume {
+  return {
+    id: raw.$key ?? '',
+    categoryId: raw.categoryId ?? '',
+    name: resolveI18n(raw.name, i18nMap),
+    subName: resolveI18n(raw.subName, i18nMap),
+    iconUrl: resolveIconUrl(raw.icon, 'prts'),
+    order: raw.order ?? 0,
+    itemIds: raw.itemIds ?? [],
+  }
+}
+
+export function adaptPrtsItem(raw: any, i18nMap?: Record<string, string>): PrtsItem {
+  return {
+    id: raw.$key ?? '',
+    volumeId: raw.firstLvId ?? '',
+    type: raw.type ?? 'text',
+    name: resolveI18n(raw.name, i18nMap),
+    desc: resolveI18n(raw.desc, i18nMap),
+    order: raw.order ?? 0,
+    contentId: raw.contentId ?? '',
+  }
+}
+```
+
+#### 3.2.4 `adaptBakerChat` / `adaptBakerMessage`
+
+```ts
+const CHAT_TYPE_MAP: Record<number, BakerChat['kind']> = {
+  1: 'contact',
+  2: 'group',
+  3: 'operator',
+}
+
+export function adaptBakerChat(raw: any, i18nMap?: Record<string, string>): BakerChat {
+  return {
+    id: raw.$key ?? '',
+    kind: CHAT_TYPE_MAP[raw.chatType] ?? 'contact',
+    name: resolveI18n(raw.name, i18nMap),
+    iconUrl: resolveIconUrl(raw.icon, 'charroundicon'),
+    isSettlementChannel: raw.isSettlementChannel ?? false,
+  }
+}
+
+export function adaptBakerMessage(
+  contentId: string,
+  raw: any,
+  chatId: string,
+  i18nMap?: Record<string, string>
+): BakerMessage | null {
+  const isSelf = raw.speaker === 'endmin'
+  return {
+    id: `${raw.dialogId ?? ''}:${contentId}`,
+    speakerId: raw.speaker ?? '',
+    isSelf,
+    speakerName: isSelf ? '我' : chatId,
+    speakerIconUrl: isSelf ? 'charroundicon/chr_0003_endminf.png' : '',
+    kind: resolveContentType(raw.contentType),
+    text: resolveI18n(raw.content, i18nMap),
+    imageUrl: raw.contentType === 2 ? resolveIconUrl(raw.contentParam, 'sns/picture') : undefined,
+    reactions: undefined, // contentType 9 归并处理
+  }
+}
+```
+
+### 3.3 Baker 分支求值 `src/lib/baker.ts`
+
+```ts
+interface RawNode {
+  content: any
+  contentType: number
+  speaker: string
+  nextContentId: number
+  preContentId: number
+  dialogOptionIds: string[]
+  isEnd: boolean
+}
+
+interface RawOption {
+  optionDesc: any
+  optionNextContentId: number
+  optionResPath: string
+  optionNPCIds: string[]
+}
+
+export function resolveDialog(
+  nodes: Record<string, RawNode>,
+  options: Record<string, RawOption>,
+  choices: Record<number, string> = {}
+): BakerBeat[] {
+  const beats: BakerBeat[] = []
+  const visited = new Set<string>()
+  let currentId = '1' // SNSConst.snsDialogStartId
+
+  while (currentId && currentId !== '-1' && !visited.has(currentId)) {
+    visited.add(currentId)
+    const node = nodes[currentId]
+    if (!node) break
+
+    // 消息节点
+    const message = nodeToMessage(node, currentId)
+    const beat: BakerBeat = { messages: [message] }
+
+    // 分支点
+    if (node.dialogOptionIds.length > 0) {
+      const selectedOptionId = choices[Number(currentId)] ?? node.dialogOptionIds[0]
+      const selectedOption = options[selectedOptionId]
+      if (selectedOption) {
+        beat.options = node.dialogOptionIds.map((oid) => {
+          const opt = options[oid]
+          return {
+            id: oid,
+            text: resolveI18n(opt?.optionDesc),
+            emojiUrl: opt?.optionResPath || undefined,
+          }
+        })
+        beats.push(beat)
+        currentId = String(selectedOption.optionNextContentId)
+        continue
+      }
+    }
+
+    beats.push(beat)
+    currentId = String(node.nextContentId)
+  }
+
+  return beats
+}
+
+function nodeToMessage(node: RawNode, contentId: string): BakerMessage {
+  return {
+    id: contentId,
+    speakerId: node.speaker ?? '',
+    isSelf: node.speaker === 'endmin',
+    speakerName: node.speaker === 'endmin' ? '我' : '',
+    speakerIconUrl: '',
+    kind: resolveContentType(node.contentType),
+    text: resolveI18n(node.content),
+  }
+}
+
+function resolveContentType(type: number): BakerMessage['kind'] {
+  const map: Record<number, BakerMessage['kind']> = {
+    1: 'text',
+    2: 'image',
+    7: 'system',
+    9: 'text', // 表情回应归并
+    10: 'share',
+    12: 'mission',
+  }
+  return map[type] ?? 'text'
+}
+```
+
+### 3.4 Hooks `src/hooks/useData.ts`
+
+#### 3.4.1 `useStoryRecap`
+
+```ts
+export function useStoryRecap(): UseDataResult<{
+  scenes: StoryRecapScene[]
+  chapters: StoryRecapChapter[]
+  stats: { total: number; byType: Record<string, number> }
+}> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [mapRaw, summaryRaw, summaryI18n] = await Promise.all([
+      getCachedData<Record<string, string>>('DialogSummaryMapTable', () => fetchTableAll('DialogSummaryMapTable')),
+      getCachedData<Record<string, any>>('DialogSummaryTable', () => fetchTableAll('DialogSummaryTable')),
+      getTableI18nDict('DialogSummaryTable', locale),
+    ])
+    const scenes = Object.entries(mapRaw)
+      .map(([dlgKey, summaryId]) => {
+        const summary = summaryRaw[summaryId]
+        if (!summary) return null
+        return adaptRecapScene(dlgKey, summaryId, summary.text, summaryI18n)
+      })
+      .filter((s): s is StoryRecapScene => s !== null)
+      .sort((a, b) => `${a.chapterId}${a.missionId}${a.sceneNo}`.localeCompare(`${b.chapterId}${b.missionId}${b.sceneNo}`))
+    const chapters = adaptRecapChapter(scenes)
+    const byType: Record<string, number> = {}
+    for (const s of scenes) byType[s.chapterType] = (byType[s.chapterType] ?? 0) + 1
+    return { scenes, chapters, stats: { total: scenes.length, byType } }
+  }, [locale])
+}
+```
+
+#### 3.4.2 `usePrtsLibrary`
+
+```ts
+export function usePrtsLibrary(): UseDataResult<{
+  categories: PrtsCategory[]
+  volumes: PrtsVolume[]
+  items: PrtsItem[]
+}> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [catRaw, volRaw, itemRaw, catI18n, volI18n, itemI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('PrtsCategory', () => fetchTableAll('PrtsCategory')),
+      getCachedData<Record<string, any>>('PrtsFirstLv', () => fetchTableAll('PrtsFirstLv')),
+      getCachedData<Record<string, any>>('PrtsAllItem', () => fetchTableAll('PrtsAllItem')),
+      getTableI18nDict('PrtsCategory', locale),
+      getTableI18nDict('PrtsFirstLv', locale),
+      getTableI18nDict('PrtsAllItem', locale),
+    ])
+    const categories = Object.entries(catRaw).map(([k, v]) => adaptPrtsCategory({ ...(v as any), $key: k }, catI18n))
+    const volumes = Object.entries(volRaw).map(([k, v]) => adaptPrtsVolume({ ...(v as any), $key: k }, volI18n))
+    const items = Object.entries(itemRaw).map(([k, v]) => adaptPrtsItem({ ...(v as any), $key: k }, itemI18n))
+    // 聚合 itemCount
+    for (const cat of categories) {
+      cat.itemCount = items.filter((i) => volumes.find((v) => v.id === i.volumeId && v.categoryId === cat.id)).length
+    }
+    return { categories, volumes, items }
+  }, [locale])
+}
+```
+
+#### 3.4.3 `useBakerChats` / `useBakerDialog`
+
+```ts
+export function useBakerChats(): UseDataResult<{ chats: BakerChat[]; topics: BakerTopic[] }> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [chatRaw, topicRaw, dialogRaw, chatI18n, topicI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('SNSChatTable', () => fetchTableAll('SNSChatTable')),
+      getCachedData<Record<string, any>>('SNSDialogTopicTable', () => fetchTableAll('SNSDialogTopicTable')),
+      getCachedData<Record<string, any>>('SNSDialogTable', () => fetchTableAll('SNSDialogTable')),
+      getTableI18nDict('SNSChatTable', locale),
+      getTableI18nDict('SNSDialogTopicTable', locale),
+    ])
+    const chats = Object.entries(chatRaw).map(([k, v]) => adaptBakerChat({ ...(v as any), $key: k }, chatI18n))
+    const topics = Object.entries(topicRaw).map(([k, v]: [string, any]) => ({
+      topicId: k,
+      topicName: resolveI18n(v.topicName, topicI18n),
+      sortId: v.sortId ?? 0,
+      dialogs: (v.includeDialogIds ?? []).map((did: string) => {
+        const d = dialogRaw[did]
+        return { dialogId: did, preview: resolveI18n(d?.dialogContentData?.['1']?.content, topicI18n) ?? '' }
+      }),
+    }))
+    return { chats, topics: topics.sort((a, b) => a.sortId - b.sortId) }
+  }, [locale])
+}
+```
+
+### 3.5 组件
+
+#### 3.5.1 `BakerContactList.tsx`
+
+```tsx
+interface BakerContactListProps {
+  chats: BakerChat[]
+  activeChatId: string | null
+  onSelect: (chatId: string) => void
+}
+
+// 布局：h-full flex flex-col
+// Tab 栏：flex gap-1 p-2 border-b border-archive-border
+//   - 四个 Tab：全部 / 干员 / 联系人 / 群聊
+//   - Tab 激活态：text-archive-gold border-b-2 border-archive-gold
+//   - Tab 未激活：text-archive-dust hover:text-archive-text
+// 列表：flex-1 overflow-y-auto
+//   - 条目：flex items-center gap-3 p-3 hover:bg-archive-hover cursor-pointer
+//   - 头像：w-10 h-10 rounded-full border border-archive-border
+//   - 名称：text-sm truncate
+//   - 选中态：bg-archive-active border-l-2 border-archive-gold
+```
+
+#### 3.5.2 `BakerChatPanel.tsx`
+
+```tsx
+interface BakerChatPanelProps {
+  chat: BakerChat
+  topics: BakerTopic[]
+  beats: BakerBeat[]
+  onSwitchOption: (contentId: number, optionId: string) => void
+}
+
+// 布局：h-full flex flex-col
+// Topic 栏（顶部）：flex overflow-x-auto gap-2 p-2 border-b border-archive-border
+//   - Topic 按钮：px-3 py-1 rounded-full text-xs whitespace-nowrap
+//   - 激活态：bg-archive-gold/20 text-archive-gold
+//   - 未激活：bg-archive-surface text-archive-dust hover:bg-archive-hover
+//   - 有标题显示标题，无标题显示最后消息预览（截断 20 字）
+// 消息流：flex-1 overflow-y-auto p-4 space-y-4
+//   - 会话分隔条：flex items-center gap-2 my-4
+//     - 线条：flex-1 border-t border-archive-border
+//     - 标签：text-xs text-archive-dust px-2
+//   - 消息气泡：
+//     - 他人：flex gap-2 (头像 32x32 + 内容)
+//       - 头像：w-8 h-8 rounded-full
+//       - 昵称：text-xs text-archive-dust
+//       - 气泡：bg-archive-surface rounded-lg px-3 py-2 max-w-[70%]
+//     - 我（endmin）：flex justify-end
+//       - 气泡：bg-archive-gold/10 border border-archive-gold/30 rounded-lg px-3 py-2 max-w-[70%]
+//     - 系统提示：text-center text-xs text-archive-dust py-2
+//   - 表情回应角标：inline-flex items-center gap-1 text-xs text-archive-dust mt-1
+//     - 表情图 16x16 + 回应人名
+//   - 分支选项组：border border-archive-gold/30 rounded-lg p-3 space-y-2
+//     - 选项按钮：w-full text-left px-3 py-2 rounded border border-archive-border
+//     - 选中态：border-archive-gold bg-archive-gold/10
+//     - 未选中：hover:border-archive-gold/50
+//   - 图片消息：max-w-xs rounded overflow-hidden
+//   - PRTS 分享卡：border border-archive-border rounded-lg p-3
+//   - 任务链接卡：border border-archive-border rounded-lg p-3
+```
+
+#### 3.5.3 `BakerMessageBubble.tsx`
+
+```tsx
+interface BakerMessageBubbleProps {
+  message: BakerMessage
+  showAvatar: boolean  // 群聊显示头像
+}
+
+// 按 message.isSelf 决定左右布局
+// 按 message.kind 渲染不同内容：
+//   - text：富文本
+//   - image：<img loading="lazy" />
+//   - sticker：<img class="w-16 h-16" />
+//   - system：居中灰字
+//   - share：卡片（标题 + 描述 + 跳转）
+//   - mission：卡片（任务编号）
+```
+
+### 3.6 页面
+
+#### 3.6.1 `StoryRecap.tsx`（剧情梗概页）
 
 ```
-T1: 数据层基础设施（types + adapter + hooks）
-T2: 纪事长卷页面（StoryRecap）
-T3: PRTS 文库页面（StoryLibrary + StoryDocumentDetail）
-T4: Baker 模块（BakerTerminal + baker.ts）
-T5: 总览页重构（StoryOverview）
-T6: 路由与导航（App.tsx + Sidebar + Breadcrumb + ArchiveHome）
-T7: i18n 扩充（14 语言）
-T8: 测试覆盖（UT + E2E）
-T9: 文档更新（data-mapping-tables.md）
+布局：min-h-screen
+├── 顶部筛选栏：sticky top-0 z-10 bg-archive-bg border-b border-archive-border
+│   ├── 篇章类型 select：w-48
+│   │   - 选项：全部 / 主线 / 支线 / 干员故事 / 地区事务 / 委托 / 谷地支线 / 协议空间 / 其他
+│   │   - 同步 ?type= query param
+│   └── 剧透提示：text-xs text-archive-dust
+├── 主体：grid grid-cols-[240px_1fr] gap-6 p-6 (移动端 flex flex-col)
+│   ├── 左侧篇章导航：sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto
+│   │   ├── 篇章按钮组：space-y-1
+│   │   │   ├── 篇章头：text-xs font-mono text-archive-gold uppercase
+│   │   │   └── 任务子项：pl-4 text-sm hover:text-archive-gold cursor-pointer
+│   │   └── 点击 scrollIntoView({ behavior: 'smooth', block: 'start' })
+│   └── 右侧梗概流：space-y-4
+│       ├── 任务分界：text-xs font-mono text-archive-dust border-b border-archive-border pb-2
+│       └── 梗概卡片：relative pl-6 border-l-2 border-archive-gold/30
+│           ├── 编号：font-mono text-xs text-archive-gold
+│           └── 正文：text-sm leading-relaxed
+├── 加载态：<ListSkeleton cards={12} />
+└── 空态：text-center text-archive-dust py-12
 ```
 
-### 1.2 依赖关系
+#### 3.6.2 `StoryLibrary.tsx`（PRTS 文库页）
 
-```mermaid
-graph TD
-    T1 --> T2
-    T1 --> T3
-    T1 --> T4
-    T2 --> T5
-    T3 --> T5
-    T4 --> T5
-    T5 --> T6
-    T6 --> T7
-    T7 --> T8
-    T8 --> T9
+```
+布局：min-h-screen p-6
+├── 顶部页签栏：flex gap-2 mb-6 overflow-x-auto
+│   └── 页签按钮：px-4 py-2 rounded-full text-sm whitespace-nowrap
+│       ├── 激活态：bg-archive-gold/20 text-archive-gold
+│       ├── 未激活：bg-archive-surface text-archive-dust hover:bg-archive-hover
+│       └── 标签：分类名 + 计数 badge
+├── 卷网格：grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4
+│   └── 卷卡片：border border-archive-border rounded-lg p-4 hover:border-archive-gold/40 cursor-pointer
+│       ├── 图标：w-12 h-12 mx-auto mb-2（onError 用占位图）
+│       ├── 卷名：text-sm font-medium text-center truncate
+│       ├── 副题：text-xs text-archive-dust text-center truncate
+│       └── 条目数：text-xs text-archive-gold text-center
+├── 卷内条目（点击展开 accordion）：border-t border-archive-border mt-4 pt-4
+│   └── 条目列表：space-y-2
+│       └── 条目行：flex items-center gap-2 p-2 hover:bg-archive-hover rounded cursor-pointer
+│           ├── 类型标签：text-xs px-2 py-0.5 rounded（text/document/multi_media）
+│           ├── 名称：text-sm flex-1
+│           └── 箭头图标
+├── 加载态：<ListSkeleton cards={20} />
+└── 空态：当前分类暂无条目
 ```
 
-### 1.3 并行策略
+#### 3.6.3 `StoryDocumentDetail.tsx`（文献详情页）
+
+```
+布局：max-w-3xl mx-auto p-6
+├── 返回链接：← t('common.backToList', { list: t('story.library') })
+├── 头部
+│   ├── 分类 Badge：text-xs px-2 py-0.5 rounded bg-archive-surface
+│   ├── 卷名：text-xs text-archive-dust
+│   ├── 标题：text-2xl font-display mt-2
+│   ├── 档案编号：font-mono text-xs text-archive-gold
+│   └── 描述（如有）：text-sm text-archive-dust mt-2
+├── 正文区（text / document 类）
+│   └── contents 每篇
+│       ├── 段标题（如有）：text-lg font-medium mt-6 mb-2
+│       └── 段内容：<RichText content={segment} /> + <img loading="lazy" />
+├── 剧本区（multi_media 类）
+│   ├── 标题：t('story.audioTranscript')
+│   └── script 逐条
+│       ├── 说话人：font-medium text-archive-gold
+│       └── 台词：text-sm
+├── 加载态：<DetailSkeleton />
+├── 错误态：t('common.loadFailed')
+└── 空态：t('story.emptyContent')
+```
+
+#### 3.6.4 `BakerTerminal.tsx`（Baker 聊天终端）
+
+```
+布局：h-[calc(100vh-4rem)] grid grid-cols-[300px_1fr] (移动端 flex flex-col)
+├── 左侧 <BakerContactList />
+│   ├── 四 Tab：全部 / 干员 / 联系人 / 群聊
+│   └── 联系人列表
+├── 右侧聊天区
+│   ├── 未选会话：flex items-center justify-center text-archive-dust
+│   │   └── 引导文案：t('baker.selectChat')
+│   └── 已选会话：<BakerChatPanel />
+│       ├── Topic 栏
+│       ├── 消息流（BakerBeat 逐条渲染）
+│       │   ├── messages → BakerMessageBubble
+│       │   └── options → BakerOptionGroup
+│       └── 分支切换回调
+├── URL 同步：?chat={chatId} query param
+└── 移动端：列表 ↔ 聊天经返回键切换
+```
+
+#### 3.6.5 `StoryOverview.tsx`（总览页，重构）
+
+```
+布局：max-w-4xl mx-auto p-6
+├── 题名区
+│   ├── Badge：HSA-STY
+│   ├── 标题：text-3xl font-display
+│   └── 定位文案：text-sm text-archive-dust
+├── 双入口卡：grid grid-cols-2 gap-4 mt-8
+│   ├── 剧情梗概卡
+│   │   ├── 图标：w-16 h-16
+│   │   ├── 标题：text-lg font-medium
+│   │   ├── 计数：text-2xl font-mono text-archive-gold + 段
+│   │   └── 说明：text-sm text-archive-dust
+│   └── PRTS 文库卡
+│       ├── 图标：w-16 h-16
+│       ├── 标题：text-lg font-medium
+│       ├── 计数：text-2xl font-mono text-archive-gold + 条
+│       └── 说明：text-sm text-archive-dust
+└── 剧透提示
+```
+
+### 3.7 路由 `src/App.tsx`
+
+```tsx
+import StoryRecap from './pages/story/StoryRecap'
+import StoryLibrary from './pages/story/StoryLibrary'
+import StoryDocumentDetail from './pages/story/StoryDocumentDetail'
+import BakerTerminal from './pages/baker/BakerTerminal'
+
+// 新增路由
+<Route path="story/recap" element={<StoryRecap />} />
+<Route path="story/library" element={<StoryLibrary />} />
+<Route path="story/library/:itemId" element={<StoryDocumentDetail />} />
+<Route path="baker" element={<BakerTerminal />} />
+```
+
+### 3.8 Sidebar / Breadcrumb / ArchiveHome
+
+**Sidebar.tsx**：
+- `nav.story` 文案保持「剧情纪事」（已在 i18n 中更新）
+- `nav.storyDesc` 更新为「剧情梗概、PRTS 文库与 Baker 聊天终端」
+- 新增 `nav.baker` 条目（图标：💬，路径：`/archive/baker`）
+
+**Breadcrumb.tsx**：
+- 新增映射：`recap: t('story.recap')`, `library: t('story.library')`, `baker: t('nav.baker')`
+
+**ArchiveHome.tsx**：
+- 「大事记」分组新增 Baker 入口卡片
+
+**archiveMeta.ts**：
+```ts
+baker: { code: 'HSA-BKR', nameKey: 'nav.baker', descKey: 'nav.bakerDesc' }
+```
+
+### 3.9 i18n（`scripts/i18n-custom.json`，14 语言全量）
 
-| 阶段 | 并行任务 | 说明 |
-|------|---------|------|
-| Phase 1 | T1 | 数据层基础，串行完成 |
-| Phase 2 | T2 + T3 + T4 | 三个页面模块可并行开发 |
-| Phase 3 | T5 + T6 | 总览页与路由导航 |
-| Phase 4 | T7 + T8 | i18n 与测试 |
-| Phase 5 | T9 | 文档收尾 |
+#### 3.9.1 story.* key
 
-## 2. 详细任务说明
+| key | CN | EN | 说明 |
+|-----|----|----|------|
+| `story.recap` | 剧情梗概 | Story Recap | |
+| `story.recapDesc` | 官方剧情梗概连续阅读 | Official story recaps | |
+| `story.library` | PRTS 文库 | PRTS Library | |
+| `story.libraryDesc` | 六类世界观文献 | Worldview documents | |
+| `story.spoilerHint` | 以下内容包含剧透 | Spoiler warning | |
+| `story.scene` | 场 | Scene | 编号用 |
+| `story.typeAll` | 全部 | All | |
+| `story.chapterType.e` | 主线 | Main Story | 前缀归纳 |
+| `story.chapterType.sm` | 支线 | Side Mission | |
+| `story.chapterType.c` | 干员故事 | Operator Story | |
+| `story.chapterType.f` | 地区事务 | Region Affairs | |
+| `story.chapterType.gm` | 委托 | Commission | |
+| `story.chapterType.a` | 谷地支线 | Valley Side | |
+| `story.chapterType.db` | 协议空间 | Protocol Space | |
+| `story.chapterType.m` | 其他 | Other | |
+| `story.emptyContent` | 正文暂缺 | No content available | |
+| `story.audioTranscript` | 音像转写 | Audio Transcript | |
+| `story.backToVolume` | 返回所属卷 | Back to volume | |
+| `breadcrumb.recap` | 剧情梗概 | Recap | |
+| `breadcrumb.library` | PRTS 文库 | Library | |
 
-### T1: 数据层基础设施
+#### 3.9.2 baker.* key
 
-**目标**: 完成 types、adapter、hooks 三层数据基础设施
+| key | CN | EN | 说明 |
+|-----|----|----|------|
+| `nav.baker` | Baker | Baker | |
+| `nav.bakerDesc` | 聊天软件会话剧情 | Chat app storylines | |
+| `baker.title` | Baker | Baker | |
+| `baker.tab.all` | 全部 | All | |
+| `baker.tab.operator` | 干员 | Operators | |
+| `baker.tab.contact` | 联系人 | Contacts | |
+| `baker.tab.group` | 群聊 | Groups | |
+| `baker.selectChat` | 选择联系人开始阅读 | Select a contact | |
+| `baker.emptyChat` | 暂无消息 | No messages | |
+| `baker.selfName` | 我 | Me | |
+| `baker.reactedBy` | {{name}} 回应 | Reacted by {{name}} | |
+| `baker.sharedArchive` | PRTS 文献分享 | Shared archive | |
+| `baker.missionLink` | 任务链接 | Mission link | |
+| `breadcrumb.baker` | Baker | Baker | |
 
-**子任务**:
-1. `src/lib/types.ts` 新增类型定义
-   - StoryRecapScene, StoryRecapChapter（剧情梗概）
-   - PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail（PRTS 文库）
-   - BakerChat, BakerMessage, BakerOption, BakerBeat（Baker）
+## 4. 实现顺序
 
-2. `src/lib/adapter.ts` 新增适配函数
-   - `adaptRecapScene`, `adaptRecapChapter`（剧情梗概）
-   - `adaptPrtsCategory`, `adaptPrtsVolume`, `adaptPrtsItem`, `adaptPrtsItemDetail`（PRTS 文库）
-   - `adaptBakerChat`, `adaptBakerMessage`（Baker）
+### 阶段一：数据层（第 1 轮提交）
 
-3. `src/lib/baker.ts` 新建分支求值模块
-   - `resolveDialog` 纯函数（消息图遍历 + 分支求值）
+- `types.ts`：StoryRecap*/Prts*/Baker* 类型
+- `adapter.ts`：adaptRecap*/adaptPrts*/adaptBaker*
+- `baker.ts`：resolveDialog
+- `useData.ts`：useStoryRecap / usePrtsLibrary / usePrtsItemDetail / useBakerChats / useBakerDialog
+- `adapter-story.test.ts` + `baker.test.ts` 单测先行
 
-4. `src/hooks/useData.ts` 新增 hooks
-   - `useStoryRecap`（剧情梗概数据）
-   - `usePrtsLibrary`（PRTS 文库数据）
-   - `usePrtsItemDetail`（文献详情数据）
-   - `useBakerChats`（Baker 会话列表）
-   - `useBakerDialog`（Baker 聊天内容）
+### 阶段二：组件层（第 2 轮提交）
 
-**验收标准**:
-- [ ] 所有类型定义完整，无 TypeScript 错误
-- [ ] adapter 函数覆盖正常数据与边界条件
-- [ ] resolveDialog 通过单元测试（线性遍历、分支切换、环保护、表情回应）
-- [ ] hooks 正确调用 getCachedData + i18n dict
+- `BakerContactList` / `BakerChatPanel` / `BakerMessageBubble` / `BakerOptionGroup`
 
-**预估工时**: 2d
+### 阶段三：页面与路由（第 3 轮提交）
 
----
+- `StoryRecap` / `StoryLibrary` / `StoryDocumentDetail` / `BakerTerminal` / `StoryOverview`（重构）
+- `App.tsx` 路由 / `Sidebar` / `Breadcrumb` / `ArchiveHome` / `archiveMeta`
 
-### T2: 纪事长卷页面（StoryRecap）
+### 阶段四：多语言（第 4 轮提交）
 
-**目标**: 实现剧情梗概连续阅读页面
+- `i18n-custom.json` 34 个 key × 14 语言 → `generate-i18n-dicts.ts`
 
-**子任务**:
-1. 页面布局
-   - 桌面端 `grid-cols-[240px_1fr]`，左侧篇章导航 sticky
-   - 移动端折叠导航
+### 阶段五：测试与验证（第 5 轮提交）
 
-2. 篇章导航组件
-   - 篇章→任务两级结构
-   - 点击 `scrollIntoView` 锚点定位
+- E2E `story-chronicle.spec.ts`；`npm run lint && npm run test && npm run build`
 
-3. 梗概流组件
-   - 左侧金色细线串联
-   - 卡片含 `font-mono` 编号 + 梗概正文
-   - 任务分界处展示任务号小标题
+## 5. 测试计划
 
-4. 类型筛选
-   - 顶部 select 组件
-   - 同步 `?type=` query param
+### 5.1 单元测试
 
-5. 性能优化
-   - `content-visibility: auto`
-   - 空篇章隐藏
+#### `adapter-story.test.ts`
 
-**验收标准**:
-- [ ] 全部 1078 个对话组按篇章、任务、场次顺序呈现
-- [ ] 篇章导航点击定位正确
-- [ ] 类型筛选功能正常
-- [ ] 剧透提示展示
+- `adaptRecapScene`：正常 key、异常 key → null、编号生成
+- `adaptRecapChapter`：多场景聚合、排序
+- `adaptPrtsCategory` / `adaptPrtsVolume` / `adaptPrtsItem`：正常映射
+- `adaptPrtsItemDetail`：RichContentTable 展开、空 contentList
 
-**预估工时**: 2d
+#### `baker.test.ts`
 
----
+- `resolveDialog`：线性遍历、分支切换、环保护、表情回应归并、未知 contentType、悬空引用
 
-### T3: PRTS 文库页面（StoryLibrary + StoryDocumentDetail）
+### 5.2 E2E（`story-chronicle.spec.ts`）
 
-**目标**: 实现 PRTS 六类文献浏览与详情页
+- 总览页：加载、计数、跳转
+- 剧情梗概：导航、锚点、筛选、卡片
+- PRTS 文库：页签、卷卡片、展开、详情
+- Baker：Tab、会话、分支、图片、表情
 
-**子任务**:
+## 6. 验收标准
 
-#### T3.1 StoryLibrary
-1. 分类页签组件
-   - 六类页签带计数
-   - 同步 `?cat=` query param
-
-2. 卷网格组件
-   - `grid-cols-2 sm:3 md:4 lg:5`
-   - 卷卡片 = 图标 + 卷名 + 副题 + 条目数
-
-3. 卷内条目列表
-   - 页内 accordion 展开
-   - 条目按 `order` 排序
-
-#### T3.2 StoryDocumentDetail
-1. 卷宗页模板
-   - 标题 + 所属卷/分类 Badge
-   - 档案编号 `formatArchiveCode('story', index)`
-   - desc + 正文
-
-2. 正文渲染
-   - `contents` 每篇渲染标题 + 各段 `<RichText>`
-   - 插图 `loading="lazy"`
-
-3. multi_media 剧本
-   - speaker 加粗金色 + line
-   - 标注「音像转写」
-
-4. 返回导航
-   - 返回所属卷链接（`?cat=` 回跳）
-
-**验收标准**:
-- [ ] 六个分类页签与游戏内一致
-- [ ] 卷卡片展示图标、卷名、副题、条目数
-- [ ] 文献详情正文富文本正确渲染
-- [ ] 多媒体条目以剧本形式呈现
-- [ ] 无图标/无正文时使用占位图形
-
-**预估工时**: 3d
-
----
-
-### T4: Baker 模块（BakerTerminal + baker.ts）
-
-**目标**: 实现 Baker 聊天终端页面
-
-**子任务**:
-
-#### T4.1 BakerTerminal 页面
-1. 双栏布局
-   - 桌面端 `grid-cols-[300px_1fr]`
-   - 移动端单栏切换
-
-2. 联系人列表
-   - 四 Tab：全部/干员/联系人/群聊
-   - 条目 = 头像 + 名称，选中态金色描边
-   - 当前会话同步 `?chat=` query param
-
-3. 聊天面板
-   - 按会话（dialog）顺序渲染
-   - 会话间分隔条
-   - 消息气泡：他人靠左（群聊附头像+昵称），endmin 靠右暗金描边
-   - 系统提示居中灰字
-
-4. 分支选项
-   - 选项组卡片（金线框）
-   - 选中项带印章式勾选
-   - 点击切换分支
-
-5. 特殊消息类型
-   - 图片消息（可放大预览）
-   - 表情包 inline 展示
-   - 表情回应角标
-   - PRTS 分享卡（跳文献详情）
-   - 任务链接卡
-
-#### T4.2 Baker 分支求值
-1. `resolveDialog` 集成到页面
-2. 分支切换状态管理
-3. 切换后丢弃旧选择
-
-**验收标准**:
-- [ ] 联系人列表四 Tab 筛选正确
-- [ ] 聊天界面消息流正确展示
-- [ ] 分支选项切换功能正常
-- [ ] 「我」（chr_0003_endminf）消息靠右展示
-- [ ] topic 有标题显示标题，无标题显示最后消息预览
-- [ ] 图片/表情包/表情回应正确加载
-- [ ] PRTS 分享卡点击跳文献详情
-
-**预估工时**: 4d
-
----
-
-### T5: 总览页重构（StoryOverview）
-
-**目标**: 重构剧情纪事总览页
-
-**子任务**:
-1. 题名区
-   - `font-display` + `Badge` HSA-STY
-   - 定位文案
-
-2. 双入口卡
-   - 「剧情梗概」卡片（图标 + 计数 + 说明）
-   - 「PRTS 文库」卡片（图标 + 计数 + 说明）
-
-3. 计数展示
-   - 从 useStoryRecap / usePrtsLibrary 获取元信息
-
-**验收标准**:
-- [ ] 页面展示模块名「剧情纪事」
-- [ ] 两个入口卡片计数正确
-- [ ] 点击跳转正确
-
-**预估工时**: 1d
-
----
-
-### T6: 路由与导航
-
-**目标**: 完成路由配置与全站导航更新
-
-**子任务**:
-1. `src/App.tsx` 新增路由
-   - `/archive/story/recap` → StoryRecap
-   - `/archive/story/library` → StoryLibrary
-   - `/archive/story/library/:itemId` → StoryDocumentDetail
-   - `/archive/baker` → BakerTerminal
-
-2. `src/components/Layout/Sidebar.tsx`
-   - story 文案更新
-   - 新增 baker 入口
-
-3. `src/components/Layout/Breadcrumb.tsx`
-   - 补充 recap / library / baker 映射
-
-4. `src/routes/ArchiveHome.tsx`
-   - baker 入口卡片
-
-5. `src/data/archiveMeta.ts`
-   - MODULE_CODES 新增 baker: HSA-BKR
-
-**验收标准**:
-- [ ] 所有路由可正常访问
-- [ ] 侧边导航显示「剧情纪事」与「Baker」
-- [ ] 面包屑导航正确
-
-**预估工时**: 1d
-
----
-
-### T7: i18n 扩充
-
-**目标**: 完成 14 语言 i18n 支持
-
-**子任务**:
-1. `scripts/i18n-custom.json` 新增/修改 key
-   - story.recap / story.recapDesc / story.library / story.libraryDesc
-   - story.spoilerHint / story.scene / story.typeAll
-   - story.chapterType.{e,sm,c,f,gm,a,db,m,other}
-   - story.emptyContent / story.audioTranscript / story.backToVolume
-   - baker.title / baker.tab.{all,operator,contact,group}
-   - baker.selectChat / baker.emptyChat / baker.selfName
-   - nav.story / nav.storyDesc / nav.baker / nav.bakerDesc
-
-2. 运行 `node scripts/generate-i18n-dicts.ts`
-
-3. 校验 14 语言无占位、无缺失
-
-**验收标准**:
-- [ ] 所有 UI 文案通过 i18n key
-- [ ] 14 语言翻译完整
-- [ ] 无直接硬编码文案
-
-**预估工时**: 2d
-
----
-
-### T8: 测试覆盖
-
-**目标**: 完成 UT + E2E 测试
-
-**子任务**:
-
-#### T8.1 单元测试
-1. `tests/unit/adapter.test.ts`
-   - dlg key 解析与排序
-   - Prts 适配函数
-   - Baker 适配函数
-
-2. `tests/unit/baker.test.ts`
-   - resolveDialog 各场景
-
-#### T8.2 E2E 测试
-1. `tests/e2e/story-chronicle.spec.ts`
-   - 总览页加载与跳转
-   - 剧情梗概筛选与导航
-   - PRTS 文库页签与详情
-   - Baker 会话与分支切换
-
-**验收标准**:
+- [ ] PRD 功能点 1-6 全部实现
 - [ ] UT 覆盖率 adapter + baker.ts ≥ 90%
-- [ ] E2E 覆盖 PRD 功能点 1-5
-- [ ] `npm run test` 全部通过
+- [ ] E2E 覆盖 PRD 功能点
+- [ ] 34 个 i18n key × 14 语言全量
+- [ ] `npm run lint` / `npm run test` / `npm run build` 通过
 
-**预估工时**: 2d
-
----
-
-### T9: 文档更新
-
-**目标**: 完成工程文档更新
-
-**子任务**:
-1. `docs/engineering/references/data-mapping-tables.md`
-   - 补充 DialogSummary / Prts* / RichContent / Radio / SNS* 映射
-
-2. PRD 移入 `docs/product/reviewed/`
-
-**验收标准**:
-- [ ] data-mapping-tables.md 包含新表映射
-- [ ] PRD 状态更新
-
-**预估工时**: 0.5d
-
----
-
-## 3. 工时汇总
-
-| 任务 | 预估工时 | 并行阶段 |
-|------|---------|---------|
-| T1: 数据层基础设施 | 2d | Phase 1 |
-| T2: 纪事长卷 | 2d | Phase 2 |
-| T3: PRTS 文库 | 3d | Phase 2 |
-| T4: Baker 模块 | 4d | Phase 2 |
-| T5: 总览页重构 | 1d | Phase 3 |
-| T6: 路由与导航 | 1d | Phase 3 |
-| T7: i18n 扩充 | 2d | Phase 4 |
-| T8: 测试覆盖 | 2d | Phase 4 |
-| T9: 文档更新 | 0.5d | Phase 5 |
-| **合计** | **17.5d** | - |
-
-**并行优化后预估**: ~10d（Phase 2 三任务并行）
-
-## 4. 风险与缓解
+## 7. 风险与回滚
 
 | 风险 | 影响 | 缓解措施 |
 |------|------|---------|
@@ -384,20 +829,15 @@ graph TD
 | Baker 分支图复杂度 | 遍历逻辑调试困难 | 单元测试覆盖全场景 |
 | RichContentTable 体积大 | 详情页加载慢 | 版本缓存 + 骨架屏 |
 | 14 语言翻译量大 | i18n 工作量 | 使用脚本批量生成 |
+| dlg key 格式未来变动 | 排序/编号错乱 | 解析失败兜底「其他」分组 |
 
-## 5. 验收标准
+回滚策略：纯新增页面与数据流，可直接回滚到 `feat/story-chronicle` 起点 commit。
 
-- [ ] PRD 功能点 1-5 全部实现
-- [ ] UT 覆盖率 adapter + baker.ts ≥ 90%
-- [ ] E2E 测试通过
-- [ ] 14 语言 i18n 无占位
-- [ ] `npm run lint` / `npm run test` / `npm run build` 通过
-- [ ] data-mapping-tables.md 更新完成
+## 8. 相关文档
 
-## 6. 相关文档
-
-- [[20260730-story-chronicle|剧情纪事 PRD]]
-- [[20260730-story-chronicle|剧情纪事技术提案 v1.2]]
-- [工程架构规范](../engineering-spec.md)
+- [[20260730-story-chronicle|剧情纪事产品方案]]
+- [[20260730-story-chronicle|剧情纪事技术方案 v1.2]]
 - [前端开发规范](../frontend-spec.md)
 - [数据表映射参考](../references/data-mapping-tables.md)
+- [UI 常见陷阱参考](../references/ui-pitfalls.md)
+- [国际化规范](../references/i18n-spec.md)
