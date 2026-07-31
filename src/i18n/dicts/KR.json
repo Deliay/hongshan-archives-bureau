@@ -327,7 +327,16 @@
     },
     "emptyContent": "콘텐츠 없음",
     "audioTranscript": "음성 전사",
-    "backToVolume": "권으로 돌아가기"
+    "backToVolume": "권으로 돌아가기",
+    "missionDesc": "임무 설명",
+    "missionObjectives": "임무 목표",
+    "missionType": "임무 유형",
+    "relatedOperator": "관련 오퍼레이터",
+    "relatedLevel": "관련 스테이지",
+    "backToRecap": "요약으로 돌아가기",
+    "mainPath": "메인 경로",
+    "branch": "분기",
+    "noDescription": "설명 없음"
   },
   "update": {
     "added": "추가",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "사전 불러오는 중…",
     "fetchingTableDictEntry": "사전 항목 불러오는 중…",
     "fetchingTableEntry": "항목 불러오는 중…",
+    "fetchingMissionList": "임무 목록 불러오는 중…",
+    "fetchingMissionDetail": "임무 상세 불러오는 중…",
     "fetchingTableIndex": "인덱스 불러오는 중…",
     "fetchingText": "텍스트를 불러오는 중…",
     "fetchingVersion": "버전 정보를 불러오는 중…"

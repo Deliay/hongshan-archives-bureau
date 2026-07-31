@@ -327,7 +327,16 @@
     },
     "emptyContent": "Kein Inhalt verfügbar",
     "audioTranscript": "Audio-Transkript",
-    "backToVolume": "Zurück zum Band"
+    "backToVolume": "Zurück zum Band",
+    "missionDesc": "Missionsbeschreibung",
+    "missionObjectives": "Ziele",
+    "missionType": "Missionstyp",
+    "relatedOperator": "Verknüpfter Operator",
+    "relatedLevel": "Verknüpfter Level",
+    "backToRecap": "Zurück zur Zusammenfassung",
+    "mainPath": "Hauptweg",
+    "branch": "Zweig",
+    "noDescription": "Keine Beschreibung"
   },
   "update": {
     "added": "Hinzugefügt",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "Wörterbuch wird geladen…",
     "fetchingTableDictEntry": "Wörterbucheintrag wird geladen…",
     "fetchingTableEntry": "Eintrag wird geladen…",
+    "fetchingMissionList": "Missionsliste wird geladen…",
+    "fetchingMissionDetail": "Missionsdetails werden geladen…",
     "fetchingTableIndex": "Index wird geladen…",
     "fetchingText": "Text wird abgerufen…",
     "fetchingVersion": "Versionsinfo wird abgerufen…"

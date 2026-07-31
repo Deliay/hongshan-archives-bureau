@@ -1,4 +1,4 @@
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage } from './types'
+import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective } from './types'
 import { ACTIVITY_TYPE_GROUPS } from '../data/constants'
 
 export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
@@ -371,6 +371,82 @@ export function adaptRecapChapter(scenes: StoryRecapScene[], missionNameMap?: Re
     mission.scenes.push(s)
   }
   return chapters
+}
+
+// ===== Mission Runtime (MissionRuntimeAsset) =====
+
+export type RuntimeTextField = { key?: string } | string | null | undefined
+
+export function resolveRuntimeText(field: RuntimeTextField, resolveKey?: (key: string) => string): string {
+  if (typeof field === 'string') return field
+  if (field && typeof field.key === 'string' && field.key) {
+    return resolveKey?.(field.key) || field.key
+  }
+  return ''
+}
+
+export function extractMissionIds(paths: string[]): string[] {
+  const ids: string[] = []
+  for (const p of paths) {
+    const m = /^Data\/Json\/MissionRuntimeAsset\/(.+)\.json$/.exec(p)
+    if (!m || m[1].endsWith('_meta')) continue
+    ids.push(m[1])
+  }
+  return ids
+}
+
+export function adaptMissionQuest(
+  questId: string,
+  quest: any,
+  mainPathSet: Set<string>,
+  resolveKey?: (key: string) => string,
+): MissionQuest {
+  const objectives: MissionQuestObjective[] = (quest?.objectiveList ?? []).map((o: any) => ({
+    description: resolveRuntimeText(o?.description, resolveKey),
+  }))
+  const description = quest?.overrideMissionDesc
+    ? resolveRuntimeText(quest?.descriptionOverride, resolveKey)
+    : ''
+  return {
+    questId,
+    questType: quest?.questType ?? 0,
+    inMainPath: mainPathSet.has(questId),
+    flowIndex: quest?.flowIndex ?? 0,
+    prevQuestIds: quest?.prevQuestIdList ?? [],
+    description,
+    objectives,
+  }
+}
+
+export function adaptMissionRuntime(
+  raw: any,
+  resolveKey?: (key: string) => string,
+): MissionRuntime {
+  const mainPathQuests: string[] = raw?.mainPathQuests ?? []
+  const mainPathSet = new Set(mainPathQuests)
+  const quests: MissionQuest[] = Object.entries(raw?.questDic ?? {})
+    .map(([questId, quest]) => adaptMissionQuest(questId, quest, mainPathSet, resolveKey))
+    .sort((a, b) => {
+      if (a.inMainPath !== b.inMainPath) return a.inMainPath ? -1 : 1
+      const ia = mainPathQuests.indexOf(a.questId)
+      const ib = mainPathQuests.indexOf(b.questId)
+      if (ia !== -1 && ib !== -1) return ia - ib
+      if (ia !== -1) return -1
+      if (ib !== -1) return 1
+      return a.questId.localeCompare(b.questId)
+    })
+  return {
+    missionId: raw?.missionId ?? '',
+    name: resolveRuntimeText(raw?.missionName, resolveKey),
+    description: resolveRuntimeText(raw?.missionDescription, resolveKey),
+    missionType: raw?.missionType ?? 0,
+    charId: raw?.charId ?? '',
+    levelId: raw?.levelId ?? '',
+    chapterBitmask: raw?.missionChapterBitmask ?? 0,
+    isWrapperMission: !!raw?.isWrapperMission,
+    mainPathQuests,
+    quests,
+  }
 }
 
 export function adaptPrtsCategory(raw: any, i18nMap?: Record<string, string>): PrtsCategory {

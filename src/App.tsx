@@ -31,6 +31,7 @@ import StoryOverview from './pages/story/StoryOverview'
 import StoryRecap from './pages/story/StoryRecap'
 import StoryLibrary from './pages/story/StoryLibrary'
 import StoryDocumentDetail from './pages/story/StoryDocumentDetail'
+import StoryMissionDetail from './pages/story/StoryMissionDetail'
 import BakerTerminal from './pages/baker/BakerTerminal'
 import ActivityArchive from './pages/activities/ActivityArchive'
 import ArchiveSearch from './pages/search/ArchiveSearch'
@@ -73,6 +74,7 @@ function AppRoutes() {
             <Route path="story/recap" element={<StoryRecap />} />
             <Route path="story/library" element={<StoryLibrary />} />
             <Route path="story/library/:itemId" element={<StoryDocumentDetail />} />
+            <Route path="story/mission/:missionId" element={<StoryMissionDetail />} />
             <Route path="baker" element={<BakerTerminal />} />
             <Route path="activities" element={<ActivityArchive />} />
             <Route path="search" element={<ArchiveSearch />} />

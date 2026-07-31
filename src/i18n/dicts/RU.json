@@ -327,7 +327,16 @@
     },
     "emptyContent": "Содержание отсутствует",
     "audioTranscript": "Аудио транскрипт",
-    "backToVolume": "Назад к тому"
+    "backToVolume": "Назад к тому",
+    "missionDesc": "Описание задания",
+    "missionObjectives": "Цели задания",
+    "missionType": "Тип задания",
+    "relatedOperator": "Связанный оператор",
+    "relatedLevel": "Связанный уровень",
+    "backToRecap": "Назад к сводке",
+    "mainPath": "Основной путь",
+    "branch": "Ветка",
+    "noDescription": "Нет описания"
   },
   "update": {
     "added": "Добавлено",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "Загрузка словаря…",
     "fetchingTableDictEntry": "Загрузка записи словаря…",
     "fetchingTableEntry": "Загрузка записи…",
+    "fetchingMissionList": "Загрузка списка заданий…",
+    "fetchingMissionDetail": "Загрузка деталей задания…",
     "fetchingTableIndex": "Загрузка индекса…",
     "fetchingText": "Получение текста…",
     "fetchingVersion": "Получение информации о версии…"

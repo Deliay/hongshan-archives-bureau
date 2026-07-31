@@ -327,7 +327,16 @@
     },
     "emptyContent": "Conteúdo indisponível",
     "audioTranscript": "Transcrição de áudio",
-    "backToVolume": "Voltar ao volume"
+    "backToVolume": "Voltar ao volume",
+    "missionDesc": "Descrição da missão",
+    "missionObjectives": "Objetivos",
+    "missionType": "Tipo de missão",
+    "relatedOperator": "Operador relacionado",
+    "relatedLevel": "Nível relacionado",
+    "backToRecap": "Voltar ao resumo",
+    "mainPath": "Caminho principal",
+    "branch": "Ramo",
+    "noDescription": "Sem descrição"
   },
   "update": {
     "added": "Adicionado",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "Carregando dicionário…",
     "fetchingTableDictEntry": "Carregando entrada do dicionário…",
     "fetchingTableEntry": "Carregando entrada…",
+    "fetchingMissionList": "Carregando lista de missões…",
+    "fetchingMissionDetail": "Carregando detalhes da missão…",
     "fetchingTableIndex": "Carregando índice…",
     "fetchingText": "Obtendo texto…",
     "fetchingVersion": "Obtendo informações da versão…"

@@ -327,7 +327,16 @@
     },
     "emptyContent": "Konten tidak tersedia",
     "audioTranscript": "Transkrip audio",
-    "backToVolume": "Kembali ke volume"
+    "backToVolume": "Kembali ke volume",
+    "missionDesc": "Deskripsi misi",
+    "missionObjectives": "Tujuan misi",
+    "missionType": "Tipe misi",
+    "relatedOperator": "Operator terkait",
+    "relatedLevel": "Level terkait",
+    "backToRecap": "Kembali ke ringkasan",
+    "mainPath": "Jalur utama",
+    "branch": "Cabang",
+    "noDescription": "Tidak ada deskripsi"
   },
   "update": {
     "added": "Ditambahkan",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "Memuat kamus…",
     "fetchingTableDictEntry": "Memuat entri kamus…",
     "fetchingTableEntry": "Memuat entri…",
+    "fetchingMissionList": "Memuat daftar misi…",
+    "fetchingMissionDetail": "Memuat detail misi…",
     "fetchingTableIndex": "Memuat indeks…",
     "fetchingText": "Mengambil teks…",
     "fetchingVersion": "Mengambil info versi…"

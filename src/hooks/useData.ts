@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText, fetchTableEntry, fetchTableDictEntry } from '../lib/api'
+import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText, fetchTableEntry, fetchTableDictEntry, fetchMissionList, fetchMissionDetail } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
 import { useI18n } from '../i18n'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, adaptRecapChapter, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat } from '../lib/adapter'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime } from '../lib/types'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, adaptRecapChapter, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
@@ -1348,6 +1348,36 @@ export function useStoryRecap(): UseDataResult<{
     for (const s of scenes) byType[s.chapterType] = (byType[s.chapterType] ?? 0) + 1
     return { scenes, chapters, stats: { total: scenes.length, byType } }
   }, [locale])
+}
+
+async function getMissionTextResolver(locale: string): Promise<(key: string) => string> {
+  const [textRaw, textI18n] = await Promise.all([
+    getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable')),
+    getTableI18nDict('TextTable', locale),
+  ])
+  return (key: string) => {
+    const entry = textRaw?.[key]
+    return resolveI18n(entry, textI18n) || key
+  }
+}
+
+export function useMissionCatalog(): UseDataResult<{ missionIds: string[] }> {
+  return useData(async () => {
+    const paths = await getCachedData<string[]>('MissionRuntimeList', () => fetchMissionList())
+    return { missionIds: extractMissionIds(paths) }
+  }, [])
+}
+
+export function useMissionDetail(missionId: string): UseDataResult<MissionRuntime | null> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    if (!missionId) return null
+    const [raw, resolveKey] = await Promise.all([
+      getCachedData<Record<string, any>>(`MissionRuntime_${missionId}`, () => fetchMissionDetail(missionId)),
+      getMissionTextResolver(locale),
+    ])
+    return adaptMissionRuntime(raw, resolveKey)
+  }, [locale, missionId])
 }
 
 export function usePrtsLibrary(): UseDataResult<{

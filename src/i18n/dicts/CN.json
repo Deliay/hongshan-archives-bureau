@@ -327,7 +327,16 @@
     },
     "emptyContent": "正文暂缺",
     "audioTranscript": "音像转写",
-    "backToVolume": "返回所属卷"
+    "backToVolume": "返回所属卷",
+    "missionDesc": "任务描述",
+    "missionObjectives": "任务目标",
+    "missionType": "任务类型",
+    "relatedOperator": "关联干员",
+    "relatedLevel": "关联关卡",
+    "backToRecap": "返回剧情梗概",
+    "mainPath": "主路径",
+    "branch": "分支",
+    "noDescription": "暂无描述"
   },
   "update": {
     "added": "新增",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "正在加载字典…",
     "fetchingTableDictEntry": "正在加载字典条目…",
     "fetchingTableEntry": "正在加载条目…",
+    "fetchingMissionList": "正在调阅任务清单…",
+    "fetchingMissionDetail": "正在调阅任务详情…",
     "fetchingTableIndex": "正在加载索引…",
     "fetchingText": "正在获取文本…",
     "fetchingVersion": "正在获取版本信息…"

@@ -453,6 +453,35 @@ export interface StoryRecapChapter {
   missions: StoryRecapMission[]
 }
 
+// ===== Mission Runtime (MissionRuntimeAsset) =====
+
+export interface MissionQuestObjective {
+  description: string
+}
+
+export interface MissionQuest {
+  questId: string
+  questType: number
+  inMainPath: boolean
+  flowIndex: number
+  prevQuestIds: string[]
+  description: string
+  objectives: MissionQuestObjective[]
+}
+
+export interface MissionRuntime {
+  missionId: string
+  name: string
+  description: string
+  missionType: number
+  charId: string
+  levelId: string
+  chapterBitmask: number
+  isWrapperMission: boolean
+  mainPathQuests: string[]
+  quests: MissionQuest[]
+}
+
 export interface PrtsCategory {
   id: string
   name: string

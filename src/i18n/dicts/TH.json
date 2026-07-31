@@ -327,7 +327,16 @@
     },
     "emptyContent": "ไม่มีเนื้อหา",
     "audioTranscript": "บทถอดเสียง",
-    "backToVolume": "กลับไปที่เล่ม"
+    "backToVolume": "กลับไปที่เล่ม",
+    "missionDesc": "คำอธิบายภารกิจ",
+    "missionObjectives": "เป้าหมายภารกิจ",
+    "missionType": "ประเภทภารกิจ",
+    "relatedOperator": "บุคลากรที่เกี่ยวข้อง",
+    "relatedLevel": "ด่านที่เกี่ยวข้อง",
+    "backToRecap": "กลับไปที่สรุป",
+    "mainPath": "เส้นทางหลัก",
+    "branch": "ทางแยก",
+    "noDescription": "ไม่มีคำอธิบาย"
   },
   "update": {
     "added": "เพิ่มแล้ว",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "กำลังโหลดพจนานุกรม…",
     "fetchingTableDictEntry": "กำลังโหลดรายการพจนานุกรม…",
     "fetchingTableEntry": "กำลังโหลดรายการ…",
+    "fetchingMissionList": "กำลังโหลดรายการภารกิจ…",
+    "fetchingMissionDetail": "กำลังโหลดรายละเอียดภารกิจ…",
     "fetchingTableIndex": "กำลังโหลดดัชนี…",
     "fetchingText": "กำลังโหลดข้อความ…",
     "fetchingVersion": "กำลังโหลดข้อมูลเวอร์ชัน…"

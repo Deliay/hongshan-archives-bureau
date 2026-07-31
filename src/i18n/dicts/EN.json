@@ -327,7 +327,16 @@
     },
     "emptyContent": "No content available",
     "audioTranscript": "Audio Transcript",
-    "backToVolume": "Back to volume"
+    "backToVolume": "Back to volume",
+    "missionDesc": "Mission Description",
+    "missionObjectives": "Objectives",
+    "missionType": "Mission Type",
+    "relatedOperator": "Operator",
+    "relatedLevel": "Level",
+    "backToRecap": "Back to recap",
+    "mainPath": "Main Path",
+    "branch": "Branch",
+    "noDescription": "No description"
   },
   "update": {
     "added": "Added",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "Loading dictionary…",
     "fetchingTableDictEntry": "Loading dictionary entry…",
     "fetchingTableEntry": "Loading entry…",
+    "fetchingMissionList": "Loading mission list…",
+    "fetchingMissionDetail": "Loading mission detail…",
     "fetchingTableIndex": "Loading index…",
     "fetchingText": "Fetching text…",
     "fetchingVersion": "Fetching version info…"

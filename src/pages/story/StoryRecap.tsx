@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useStoryRecap } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
@@ -11,12 +11,19 @@ export default function StoryRecap() {
   const { data, loading, error } = useStoryRecap()
   const [searchParams, setSearchParams] = useSearchParams()
   const typeFilter = searchParams.get('type') || ''
+  const missionParam = searchParams.get('mission') || ''
 
   const filteredChapters = useMemo(() => {
     if (!data) return []
     if (!typeFilter) return data.chapters
     return data.chapters.filter(c => c.chapterType === typeFilter)
   }, [data, typeFilter])
+
+  useEffect(() => {
+    if (!data || !missionParam) return
+    const el = document.getElementById(`mission-${missionParam}`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [data, missionParam])
 
   if (loading) return <ListSkeleton cards={12} />
   if (error) return <div className="text-red-400 text-sm p-6">{t('common.loadFailed')}</div>
@@ -68,11 +75,16 @@ export default function StoryRecap() {
           {filteredChapters.map(ch => (
             <div key={ch.chapterId}>
               {ch.missions.map(m => (
-                <div key={m.missionId} id={`mission-${m.missionId}`} className="mb-8">
-                  <div className="flex items-baseline gap-2 whitespace-nowrap border-b border-archive-border pb-2 mb-4">
-                    <span className="text-sm text-archive-ivory">{m.name}</span>
-                    <span className="font-mono text-xs text-archive-gold">{m.missionId}</span>
-                  </div>
+                  <div key={m.missionId} id={`mission-${m.missionId}`} className="mb-8">
+                    <div className="flex items-baseline gap-2 whitespace-nowrap border-b border-archive-border pb-2 mb-4">
+                      <Link
+                        to={`/archive/story/mission/${m.missionId}`}
+                        className="text-sm text-archive-ivory hover:text-archive-gold transition-colors"
+                      >
+                        {m.name}
+                      </Link>
+                      <span className="font-mono text-xs text-archive-gold">{m.missionId}</span>
+                    </div>
                   {m.scenes.map(scene => (
                     <div key={scene.id} className="relative pl-6 border-l-2 border-archive-gold/30 mb-4">
                       <div className="font-mono text-xs text-archive-gold mb-1">{scene.code}</div>

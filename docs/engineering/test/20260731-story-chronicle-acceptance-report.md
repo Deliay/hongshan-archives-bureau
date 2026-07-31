@@ -101,7 +101,7 @@ type: Permanent
 
 **问题描述**：missionId 需要支持穿透进入。
 
-**处理结论**：与产品确认，本轮先完成任务名渲染（§2.1）与排版修复（§2.2），穿透暂缓。接入 `MissionRuntimeAsset` 后，穿透详情展示 MRA 任务 json 内容，方案见 §7.2.3（取代早期 §3 规划）。
+**处理结论**：与产品确认，先完成任务名渲染（§2.1）与排版修复（§2.2）；穿透详情已实现为独立任务详情页 `/archive/story/mission/:missionId`（展示 MRA 任务 json 内容）+ recap 深链 `?mission=` 滚动与任务名链接，见 §7.2.3 与 §7.5 实施记录。
 
 ---
 
@@ -126,9 +126,9 @@ type: Permanent
 
 | # | 问题 | 根因 | 状态 | 修复 commit |
 |---|------|------|------|-------------|
-| 2.1 | 剧情梗概任务 id 未渲染任务名 | 未接入 TextTable `{missionId}_name`；`StoryRecapMission` 无 `name` 字段；页面直接渲染 `missionId` | ✅ 已修复（待提交） | 待提交 |
-| 2.2 | 任务名排版换行 | 未设 `whitespace-nowrap`，侧边栏任务项上下两行 | ✅ 已修复（待提交） | 待提交 |
-| 2.3 | missionId 穿透进入 | 功能未规划落地 | ⏸ 暂缓，方案见 §7.2.3 | — |
+| 2.1 | 剧情梗概任务 id 未渲染任务名 | 未接入 TextTable `{missionId}_name`；`StoryRecapMission` 无 `name` 字段；页面直接渲染 `missionId` | ✅ 已修复 | `965882d` |
+| 2.2 | 任务名排版换行 | 未设 `whitespace-nowrap`，侧边栏任务项上下两行 | ✅ 已修复 | `965882d` |
+| 2.3 | missionId 穿透进入 | 功能未规划落地 | ✅ 已实现（任务详情页 + 深链），方案见 §7.2.3 | 待提交 |
 
 ---
 
@@ -309,3 +309,24 @@ type: Permanent
 - **`missionType` 语义未定**：枚举含义需游戏内文本校准，分区标签不可臆测（对照原提案「章节类型前缀为数据规律归纳，命名规则暂不明确」的约束）。
 - **vfs 端点稳定性**：`files` 端点返回路径数组，需在版本变更时纳入缓存失效校验（复用现有版本对比机制）。
 - **文本 key 一律以字段自身为准**：`missionName.key` / `missionDescription.key` / quest 各 `description.key` 是权威；**`{missionId}_desc_001` 为错误约定**（349 个有 key 的 description 中 113 个不等于它），`{missionId}_name` 仅在字段缺省时作兜底；字段值还可能是直接字符串或空对象，须统一兼容三种形态。
+
+---
+
+### 7.5 实施记录（阶段一 ~ 阶段三）
+
+§7.2.3 的穿透详情已实施并通过冒烟验证（commit 待填）：
+
+| 阶段 | 内容 | 实现 |
+|------|------|------|
+| 阶段一 | `fetchMissionList` / `fetchMissionDetail`（`src/lib/api.ts`，直接 `fetchJson` 解析） | ✅ |
+| 阶段二 | `MissionRuntime` / `MissionQuest` / `MissionQuestObjective` 类型；`resolveRuntimeText` / `extractMissionIds` / `adaptMissionRuntime` / `adaptMissionQuest`（`src/lib/adapter.ts`）；`useMissionCatalog` / `useMissionDetail`（`src/hooks/useData.ts`） | ✅ |
+| 阶段三 | 任务详情页 `/archive/story/mission/:missionId`（`StoryMissionDetail.tsx`）；recap 任务名链接 + `?mission=` 深链滚动 | ✅ |
+| i18n | 新增 `story.missionDesc / missionObjectives / missionType / relatedOperator / relatedLevel / backToRecap / mainPath / branch / noDescription` 与 `api.fetchingMissionList / fetchingMissionDetail`（14 语言，经 `generate-i18n-dicts.ts` 生成） | ✅ |
+
+**验证结果**：
+- ✅ `npx vitest run src/lib/__tests__/adapter-story.test.ts`：28/28 passed（新增 mission 适配 7 例）
+- ✅ `npm run test`：389 passed（仅存量 `Sidebar.test.tsx` 2 例失败，基线问题）
+- ✅ `npm run lint`：0 errors
+- ✅ `npm run build`：构建成功（含 tsc）
+- ✅ Playwright 冒烟：`/archive/story/mission/a1m2` 渲染任务名「迟到的特训」、任务描述、`a1m2_q#*` 目标清单、「任务目标 / 主路径」分区；recap 页任务名链接存在；无 console/page 错误
+- ✅ 真实数据管道验证：490 任务目录提取；`c33m1d5 → c33m1_name`、`m1m77 → m1m74_desc_001`、`dm01m5` 直出字符串等边界均正确解析

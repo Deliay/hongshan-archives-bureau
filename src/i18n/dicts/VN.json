@@ -327,7 +327,16 @@
     },
     "emptyContent": "Nội dung chưa có",
     "audioTranscript": "Bản ghi âm",
-    "backToVolume": "Quay lại tập"
+    "backToVolume": "Quay lại tập",
+    "missionDesc": "Mô tả nhiệm vụ",
+    "missionObjectives": "Mục tiêu nhiệm vụ",
+    "missionType": "Loại nhiệm vụ",
+    "relatedOperator": "Nhân viên liên quan",
+    "relatedLevel": "Màn chơi liên quan",
+    "backToRecap": "Quay lại tóm tắt",
+    "mainPath": "Tuyến chính",
+    "branch": "Nhánh",
+    "noDescription": "Không có mô tả"
   },
   "update": {
     "added": "Đã thêm",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "Đang tải từ điển…",
     "fetchingTableDictEntry": "Đang tải mục từ điển…",
     "fetchingTableEntry": "Đang tải mục…",
+    "fetchingMissionList": "Đang tải danh sách nhiệm vụ…",
+    "fetchingMissionDetail": "Đang tải chi tiết nhiệm vụ…",
     "fetchingTableIndex": "Đang tải chỉ mục…",
     "fetchingText": "Đang tải văn bản…",
     "fetchingVersion": "Đang tải thông tin phiên bản…"

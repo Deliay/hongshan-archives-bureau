@@ -10,6 +10,9 @@ import {
   adaptBakerMessage,
   resolveContentType,
   getSpriteUrl,
+  resolveRuntimeText,
+  extractMissionIds,
+  adaptMissionRuntime,
   type BakerSpeakerContext,
 } from '../adapter'
 
@@ -192,5 +195,102 @@ describe('getSpriteUrl', () => {
   it('builds correct URL', () => {
     const url = getSpriteUrl('charroundicon/icon_test')
     expect(url).toContain('sprites/charroundicon/icon_test.png')
+  })
+})
+
+describe('resolveRuntimeText', () => {
+  const resolve = (key: string) => `T:${key}`
+
+  it('resolves {key} object via resolver', () => {
+    expect(resolveRuntimeText({ key: 'a1m2_name' }, resolve)).toBe('T:a1m2_name')
+  })
+
+  it('returns raw string as-is', () => {
+    expect(resolveRuntimeText('黑盒接取条件隐藏任务', resolve)).toBe('黑盒接取条件隐藏任务')
+  })
+
+  it('returns empty for null/empty object', () => {
+    expect(resolveRuntimeText(null, resolve)).toBe('')
+    expect(resolveRuntimeText({}, resolve)).toBe('')
+    expect(resolveRuntimeText(undefined, resolve)).toBe('')
+  })
+})
+
+describe('extractMissionIds', () => {
+  it('extracts ids and drops meta entries', () => {
+    const paths = [
+      'Data/Json/MissionRuntimeAsset/a1m2.json',
+      'Data/Json/MissionRuntimeAsset/a1m2_meta.json',
+      'Data/Json/MissionRuntimeAsset/hidden68_m1m80.json',
+      'Data/Json/MissionRuntimeAsset/hidden68_m1m80_meta.json',
+    ]
+    expect(extractMissionIds(paths)).toEqual(['a1m2', 'hidden68_m1m80'])
+  })
+})
+
+describe('adaptMissionRuntime', () => {
+  const resolve = (key: string) => `T:${key}`
+
+  it('parses mission fields, name and description via key', () => {
+    const raw = {
+      missionId: 'a1m2',
+      missionName: { key: 'a1m2_name' },
+      missionDescription: { key: 'a1m2_desc_001' },
+      missionType: 11,
+      charId: '',
+      levelId: 'map01_lv001',
+      missionChapterBitmask: 0,
+      isWrapperMission: false,
+      mainPathQuests: ['a1m2_q#3', 'a1m2_q#4'],
+      questDic: {
+        'a1m2_q#3': { questType: 1, flowIndex: 0, prevQuestIdList: [], objectiveList: [{ description: { key: 'objective_a1m2_1_001' } }] },
+        'a1m2_q#4': { questType: 0, flowIndex: 1, prevQuestIdList: ['a1m2_q#3'], objectiveList: [] },
+      },
+    }
+    const mission = adaptMissionRuntime(raw, resolve)
+    expect(mission.missionId).toBe('a1m2')
+    expect(mission.name).toBe('T:a1m2_name')
+    expect(mission.description).toBe('T:a1m2_desc_001')
+    expect(mission.missionType).toBe(11)
+    expect(mission.quests).toHaveLength(2)
+    expect(mission.quests[0].questId).toBe('a1m2_q#3')
+    expect(mission.quests[0].inMainPath).toBe(true)
+    expect(mission.quests[0].objectives[0].description).toBe('T:objective_a1m2_1_001')
+    expect(mission.quests[1].prevQuestIds).toEqual(['a1m2_q#3'])
+  })
+
+  it('treats string description as-is and handles overrideMissionDesc', () => {
+    const raw = {
+      missionId: 'dm01m5',
+      missionDescription: '黑盒接取条件隐藏任务',
+      missionName: {},
+      mainPathQuests: ['dm01m5_q#1'],
+      questDic: {
+        'dm01m5_q#1': {
+          questType: 4,
+          overrideMissionDesc: true,
+          descriptionOverride: { key: 'override_desc' },
+          objectiveList: [],
+        },
+      },
+    }
+    const mission = adaptMissionRuntime(raw, resolve)
+    expect(mission.description).toBe('黑盒接取条件隐藏任务')
+    expect(mission.name).toBe('')
+    expect(mission.quests[0].description).toBe('T:override_desc')
+  })
+
+  it('sorts main-path quests before branch quests', () => {
+    const raw = {
+      missionId: 'e11m8d5',
+      mainPathQuests: ['e11m8d5_q#1', 'e11m8d5_q#2'],
+      questDic: {
+        'e11m8d5_q#4': { questType: 0, objectiveList: [] },
+        'e11m8d5_q#1': { questType: 0, objectiveList: [] },
+        'e11m8d5_q#2': { questType: 0, objectiveList: [] },
+      },
+    }
+    const mission = adaptMissionRuntime(raw, resolve)
+    expect(mission.quests.map(q => q.questId)).toEqual(['e11m8d5_q#1', 'e11m8d5_q#2', 'e11m8d5_q#4'])
   })
 })

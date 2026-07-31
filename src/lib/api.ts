@@ -104,3 +104,17 @@ export async function fetchI18nText(locale: string, id: string): Promise<string>
     }, 'api.fetchingText', { locale })
   }, id)
 }
+
+const MISSION_ASSET_BASE = `${API_BASE}/vfs/JsonData`
+
+export async function fetchMissionList(): Promise<string[]> {
+  return trackFetch('正在调阅 任务清单', () =>
+    fetchJson(`${MISSION_ASSET_BASE}/files/Data/Json/MissionRuntimeAsset`),
+    'api.fetchingMissionList')
+}
+
+export async function fetchMissionDetail(missionId: string): Promise<any> {
+  return trackFetch(`正在调阅 任务 ${missionId}`, () =>
+    fetchJson(`${MISSION_ASSET_BASE}/raw/Data/Json/MissionRuntimeAsset/${missionId}.json`),
+    'api.fetchingMissionDetail', { missionId })
+}

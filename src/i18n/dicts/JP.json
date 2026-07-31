@@ -327,7 +327,16 @@
     },
     "emptyContent": "コンテンツなし",
     "audioTranscript": "音声書き起こし",
-    "backToVolume": "巻に戻る"
+    "backToVolume": "巻に戻る",
+    "missionDesc": "任務説明",
+    "missionObjectives": "任務目標",
+    "missionType": "任務タイプ",
+    "relatedOperator": "関連オペレーター",
+    "relatedLevel": "関連ステージ",
+    "backToRecap": "要約に戻る",
+    "mainPath": "メインルート",
+    "branch": "分岐",
+    "noDescription": "説明なし"
   },
   "update": {
     "added": "追加",
@@ -372,6 +381,8 @@
     "fetchingTableDict": "辞書を読み込み中…",
     "fetchingTableDictEntry": "辞書エントリを読み込み中…",
     "fetchingTableEntry": "エントリを読み込み中…",
+    "fetchingMissionList": "任務リストを読み込み中…",
+    "fetchingMissionDetail": "任務詳細を読み込み中…",
     "fetchingTableIndex": "インデックスを読み込み中…",
     "fetchingText": "テキストを取得中…",
     "fetchingVersion": "バージョン情報を取得中…"
