@@ -13,6 +13,7 @@ import {
   resolveRuntimeText,
   extractMissionIds,
   adaptMissionRuntime,
+  buildMissionQuestTree,
   type BakerSpeakerContext,
 } from '../adapter'
 
@@ -292,5 +293,62 @@ describe('adaptMissionRuntime', () => {
     }
     const mission = adaptMissionRuntime(raw, resolve)
     expect(mission.quests.map(q => q.questId)).toEqual(['e11m8d5_q#1', 'e11m8d5_q#2', 'e11m8d5_q#4'])
+  })
+})
+
+describe('buildMissionQuestTree', () => {
+  const mk = (questId: string, prev: string[] = [], inMainPath = true) => ({
+    questId,
+    questType: 0,
+    inMainPath,
+    flowIndex: 0,
+    prevQuestIds: prev,
+    description: '',
+    objectives: [],
+  })
+
+  it('builds a linear chain from prevQuestIdList', () => {
+    const quests = [
+      mk('a1m2_q#3'),
+      mk('a1m2_q#4', ['a1m2_q#3']),
+      mk('a1m2_q#Day1', ['a1m2_q#4']),
+    ]
+    const tree = buildMissionQuestTree(['a1m2_q#3', 'a1m2_q#4', 'a1m2_q#Day1'], quests)
+    expect(tree).toHaveLength(1)
+    expect(tree[0].questId).toBe('a1m2_q#3')
+    expect(tree[0].children.map(c => c.questId)).toEqual(['a1m2_q#4'])
+    expect(tree[0].children[0].children[0].questId).toBe('a1m2_q#Day1')
+  })
+
+  it('attaches branch quests to their main-path parent', () => {
+    const quests = [
+      mk('sm2l4m5_q#7'),
+      mk('sm2l4m5_q#8', [], false),
+      mk('sm2l4m5_q#10', ['sm2l4m5_q#7', 'sm2l4m5_q#8'], false),
+    ]
+    const tree = buildMissionQuestTree(['sm2l4m5_q#7'], quests)
+    // q#7 root; q#8 orphan root; q#10 attached to q#7 (first main-path prev)
+    expect(tree.map(n => n.questId)).toEqual(['sm2l4m5_q#7', 'sm2l4m5_q#8'])
+    expect(tree[0].children.map(c => c.questId)).toEqual(['sm2l4m5_q#10'])
+  })
+
+  it('treats quests whose prev is not in the questDic as roots', () => {
+    const quests = [
+      mk('e11m8d5_q#1', ['external_q#x']),
+      mk('e11m8d5_q#2', ['external_q#y']),
+    ]
+    const tree = buildMissionQuestTree(['e11m8d5_q#1', 'e11m8d5_q#2'], quests)
+    expect(tree).toHaveLength(2)
+  })
+
+  it('guards against dependency cycles', () => {
+    const quests = [
+      mk('q#1', ['q#2']),
+      mk('q#2', ['q#1']),
+    ]
+    const tree = buildMissionQuestTree([], quests)
+    expect(tree).toHaveLength(1)
+    expect(tree[0].children.map(c => c.questId)).toEqual(['q#2'])
+    expect(tree[0].children[0].children).toEqual([])
   })
 })

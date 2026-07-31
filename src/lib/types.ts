@@ -469,6 +469,10 @@ export interface MissionQuest {
   objectives: MissionQuestObjective[]
 }
 
+export interface MissionQuestTreeNode extends MissionQuest {
+  children: MissionQuestTreeNode[]
+}
+
 export interface MissionRuntime {
   missionId: string
   name: string

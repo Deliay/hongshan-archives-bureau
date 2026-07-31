@@ -1,4 +1,4 @@
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective } from './types'
+import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode } from './types'
 import { ACTIVITY_TYPE_GROUPS } from '../data/constants'
 
 export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
@@ -447,6 +447,68 @@ export function adaptMissionRuntime(
     mainPathQuests,
     quests,
   }
+}
+
+export function buildMissionQuestTree(
+  mainPathQuests: string[],
+  quests: MissionQuest[],
+): MissionQuestTreeNode[] {
+  const questMap = new Map<string, MissionQuest>()
+  for (const q of quests) questMap.set(q.questId, q)
+
+  const mainIndex = new Map<string, number>()
+  mainPathQuests.forEach((id, i) => { mainIndex.set(id, i) })
+
+  const parentOf = new Map<string, string | null>()
+  const childrenMap = new Map<string, string[]>()
+
+  for (const q of quests) {
+    const validPrevs = q.prevQuestIds.filter(p => questMap.has(p))
+    let parent: string | null = null
+    if (validPrevs.length > 0) {
+      const sorted = [...validPrevs].sort((a, b) => {
+        const ia = mainIndex.get(a) ?? Number.MAX_SAFE_INTEGER
+        const ib = mainIndex.get(b) ?? Number.MAX_SAFE_INTEGER
+        if (ia !== ib) return ia - ib
+        return a.localeCompare(b)
+      })
+      parent = sorted[0]
+    }
+    parentOf.set(q.questId, parent)
+    if (parent) {
+      if (!childrenMap.has(parent)) childrenMap.set(parent, [])
+      childrenMap.get(parent)!.push(q.questId)
+    }
+  }
+
+  const sortIds = (a: string, b: string) => {
+    const ia = mainIndex.get(a) ?? Number.MAX_SAFE_INTEGER
+    const ib = mainIndex.get(b) ?? Number.MAX_SAFE_INTEGER
+    if (ia !== ib) return ia - ib
+    return a.localeCompare(b)
+  }
+
+  const resolving = new Set<string>()
+  const build = (id: string): MissionQuestTreeNode | null => {
+    if (resolving.has(id)) return null
+    const q = questMap.get(id)
+    if (!q) return null
+    resolving.add(id)
+    const children = (childrenMap.get(id) ?? [])
+      .slice()
+      .sort(sortIds)
+      .map(build)
+      .filter((n): n is MissionQuestTreeNode => n !== null)
+    resolving.delete(id)
+    return { ...q, children }
+  }
+
+  const roots = [...parentOf.entries()]
+    .filter(([, parent]) => !parent)
+    .map(([id]) => id)
+    .sort(sortIds)
+  if (roots.length === 0 && quests.length > 0) roots.push(quests[0].questId)
+  return roots.map(build).filter((n): n is MissionQuestTreeNode => n !== null)
 }
 
 export function adaptPrtsCategory(raw: any, i18nMap?: Record<string, string>): PrtsCategory {

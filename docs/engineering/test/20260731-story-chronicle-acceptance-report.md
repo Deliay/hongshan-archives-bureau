@@ -145,6 +145,32 @@ type: Permanent
 
 ---
 
+### 2.6 任务目标需做树状结构
+
+**问题描述**：任务详情页的「任务目标」区需以树状结构展示，而非主路径/分支平铺分组。
+
+**根因分析**：quest 之间存在 `prevQuestIdList` 依赖关系（a1m2 为线性链；部分 mission 有分支与多父节点，如 `sm2l4m5_q#10←[q#7,q#8]`、`gm02m17_q#4←[q#5,q#1]`），平铺展示丢失依赖层级。
+
+**修复方案**：
+1. 新增 `MissionQuestTreeNode` 类型（`MissionQuest` + `children`）。
+2. `buildMissionQuestTree(mainPathQuests, quests)` 纯函数构建依赖树：以 `prevQuestIdList` 中「在主路径内且序号最小」的 prev 为父（多父确定性收编）；prev 不存在/为空视为根；孤儿分支 quest 按主路径序与 questId 排序；带环保护（re-entrant 节点跳过）与无根回退。
+3. 详情页「任务目标」改为递归树渲染：quest 节点缩进 + `border-l` 连接线 + 主路径徽标，目标项（objectiveList）挂在该 quest 节点下。
+
+**涉及文件**：
+- `src/lib/types.ts` — `MissionQuestTreeNode`
+- `src/lib/adapter.ts` — `buildMissionQuestTree`
+- `src/pages/story/StoryMissionDetail.tsx` — 树状渲染
+- `src/lib/__tests__/adapter-story.test.ts` — 树构建 4 例
+
+**验证结果**：
+- ✅ `npx vitest run src/lib/__tests__/adapter-story.test.ts`：32/32 passed
+- ✅ Playwright 冒烟：a1m2 渲染 17 个树节点带「主路径」徽标；sm2l4m5 分支 quest `q#8` 挂在依赖的 `q#6` 下、多父 `q#10` 挂在主路径 `q#7` 下；无 console 错误
+- ✅ `npm run lint`：0 errors
+- ✅ `npm run build`：构建成功
+- ⏳ 提交后回填 commit hash
+
+---
+
 ## 3. missionId 穿透进入方案（规划，未实施）
 
 > ⚠️ 已由 §7 重构方案取代（接入 `MissionRuntimeAsset` 后，穿透详情展示 MRA 任务 json 内容，见 §7.2.3）。本节保留早期基于「页内锚点深链」的规划备查。
@@ -171,6 +197,7 @@ type: Permanent
 | 2.3 | missionId 穿透进入 | 功能未规划落地 | ✅ 已实现（任务详情页 + 深链），方案见 §7.2.3 | `2325081` |
 | 2.4 | 章节类型标签为臆测分类名称 | 依据 dlg key 前缀臆测归纳 | ✅ 已修复（改为原始前缀字母） | `39562c0` |
 | 2.5 | 任务详情页文本未用 RichText 渲染 | 直接输出纯文本 | ✅ 已修复 | `30191ca` |
+| 2.6 | 任务目标需做树状结构 | quest 依赖关系平铺展示丢失层级 | ✅ 已修复（依赖树） | 待提交 |
 
 ---
 

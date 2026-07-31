@@ -1,21 +1,26 @@
+import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMissionDetail } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { Badge } from '../../components/ui/Badge'
 import { RichText } from '../../lib/richText'
+import { buildMissionQuestTree } from '../../lib/adapter'
+import type { MissionQuestTreeNode } from '../../lib/types'
 
 export default function StoryMissionDetail() {
   const { missionId } = useParams<{ missionId: string }>()
   const { t } = useI18n()
   const { data: mission, loading, error } = useMissionDetail(missionId || '')
 
+  const tree = useMemo(
+    () => (mission ? buildMissionQuestTree(mission.mainPathQuests, mission.quests) : []),
+    [mission],
+  )
+
   if (loading) return <DetailSkeleton />
   if (error) return <div className="text-red-400 text-sm p-6">{t('common.loadFailed')}</div>
   if (!mission) return <div className="text-archive-dust text-sm p-6">{t('common.empty')}</div>
-
-  const mainPath = mission.quests.filter(q => q.inMainPath)
-  const branch = mission.quests.filter(q => !q.inMainPath)
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -63,61 +68,49 @@ export default function StoryMissionDetail() {
 
       <section>
         <h3 className="text-xs font-mono text-archive-gold uppercase mb-3">{t('story.missionObjectives')}</h3>
-        {mission.quests.length === 0 && <p className="text-archive-dust text-sm">{t('common.empty')}</p>}
-        {mainPath.length > 0 && (
-          <div className="mb-4">
-            <div className="text-xs text-archive-dust mb-2">{t('story.mainPath')}</div>
-            <div className="space-y-3">
-              {mainPath.map(q => (
-                <QuestCard key={q.questId} quest={q} />
-              ))}
-            </div>
-          </div>
-        )}
-        {branch.length > 0 && (
-          <div>
-            <div className="text-xs text-archive-dust mb-2">{t('story.branch')}</div>
-            <div className="space-y-3">
-              {branch.map(q => (
-                <QuestCard key={q.questId} quest={q} />
-              ))}
-            </div>
-          </div>
-        )}
+        {tree.length === 0 && <p className="text-archive-dust text-sm">{t('common.empty')}</p>}
+        <div className="space-y-3">
+          {tree.map(root => (
+            <QuestNode key={root.questId} node={root} />
+          ))}
+        </div>
       </section>
     </div>
   )
 }
 
-interface QuestCardProps {
-  quest: {
-    questId: string
-    questType: number
-    description: string
-    objectives: { description: string }[]
-    prevQuestIds: string[]
-  }
-}
-
-function QuestCard({ quest }: QuestCardProps) {
+function QuestNode({ node }: { node: MissionQuestTreeNode }) {
+  const { t } = useI18n()
   return (
-    <div className="border border-archive-border rounded-lg p-3 bg-archive-file">
-      <div className="font-mono text-xs text-archive-gold mb-1">{quest.questId}</div>
-      {quest.description && (
-        <p className="text-sm text-archive-ivory leading-relaxed mb-2"><RichText text={quest.description} /></p>
+    <div>
+      <div className="flex items-baseline gap-2">
+        <span className="font-mono text-xs text-archive-gold">{node.questId}</span>
+        {node.inMainPath && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-archive-gold/20 text-archive-gold">{t('story.mainPath')}</span>
+        )}
+      </div>
+      {node.description && (
+        <p className="text-sm text-archive-ivory leading-relaxed mt-1"><RichText text={node.description} /></p>
       )}
-      {quest.objectives.length > 0 && (
-        <ul className="list-disc list-inside text-sm text-archive-dust space-y-0.5">
-          {quest.objectives.map(o => (
-            <li key={o.description || quest.questId}>
+      {node.objectives.length > 0 && (
+        <ul className="list-disc list-inside text-sm text-archive-dust space-y-0.5 mt-1">
+          {node.objectives.map(o => (
+            <li key={o.description || node.questId}>
               {o.description ? <RichText text={o.description} /> : '·'}
             </li>
           ))}
         </ul>
       )}
-      {quest.prevQuestIds.length > 0 && (
-        <div className="mt-2 text-[11px] font-mono text-archive-lead">
-          {'← '}{quest.prevQuestIds.join(', ')}
+      {node.prevQuestIds.length > 0 && (
+        <div className="mt-1 text-[11px] font-mono text-archive-lead">
+          {'← '}{node.prevQuestIds.join(', ')}
+        </div>
+      )}
+      {node.children.length > 0 && (
+        <div className="ml-4 mt-1 pl-4 border-l border-archive-gold/20 space-y-3">
+          {node.children.map(child => (
+            <QuestNode key={child.questId} node={child} />
+          ))}
         </div>
       )}
     </div>
