@@ -6,11 +6,13 @@ type: Fleeting
 # 剧情纪事 - 实现方案
 
 **对应产品文档**: [[20260730-story-chronicle|剧情纪事产品方案]]
-**对应技术方案**: [[20260730-story-chronicle|剧情纪事技术方案 v1.2]]
-**实现方案版本**: v1.0
+**对应技术方案**: [[20260730-story-chronicle|剧情纪事技术方案 v1.3]]
+**实现方案版本**: v1.1
 **创建日期**: 2026-07-31
 **作者**: 前端工程
 **开发分支**: `feat/story-chronicle`
+
+**v1.1 变更**: review 修正——①dlg key 正则覆盖全部 4 种变体（原正则仅匹配 734/1078，丢失全部 293 条 sm 支线等 344 个 key）；②篇章/任务/场次排序改为数值元组（chapter 数达 33、mission 数达 29、sceneNo 最大 13034，字符串排序必然错乱）；③Tailwind class 改用真实 token（`archive-ink`/`archive-file`/`archive-ivory`，原 `archive-bg`/`archive-surface`/`archive-hover`/`archive-active`/`archive-text` 均不存在）；④修正 `MODULE_CODES` 形状（`Record<string, string>`）与 `RichText` prop（`text`）；⑤新增 `getSpriteUrl` 素材 helper（原 `resolveIconUrl` 未定义）；⑥图片消息 `contentParam` 为数组取首项；⑦Baker 发送者名称/头像经 `SNSChatTable` 解析；⑧`resolveDialog` 重写：分支点节点本身无消息文本（999/999 content 为空）不产生空气泡、选中项成为「我」的消息、contentType 9 归并 reactions、未知类型跳过；⑨补齐 `usePrtsItemDetail` / `useBakerDialog` 实现；⑩topic 预览取最后一条消息且使用正确的 i18n dict；⑪i18n 补 `story.chapterType.other` / `baker.sessionSeparator`，key 计数修正为 36。
 
 ## 1. 概述
 
@@ -47,7 +49,7 @@ type: Fleeting
 | 文件路径 | 说明 |
 |----------|------|
 | `src/lib/types.ts` | 新增 `StoryRecapScene` / `StoryRecapChapter` / `PrtsCategory` / `PrtsVolume` / `PrtsItem` / `PrtsItemDetail` / `BakerChat` / `BakerMessage` / `BakerOption` / `BakerBeat` |
-| `src/lib/adapter.ts` | 新增 `adaptRecapScene` / `adaptRecapChapter` / `adaptPrtsCategory` / `adaptPrtsVolume` / `adaptPrtsItem` / `adaptPrtsItemDetail` / `adaptBakerChat` / `adaptBakerMessage` |
+| `src/lib/adapter.ts` | 新增 `adaptRecapScene` / `adaptRecapFallbackScene` / `adaptRecapChapter` / `adaptPrtsCategory` / `adaptPrtsVolume` / `adaptPrtsItem` / `adaptPrtsItemDetail` / `adaptBakerChat` / `adaptBakerMessage` / `resolveContentType` / `getSpriteUrl` / `BakerSpeakerContext` |
 | `src/hooks/useData.ts` | 新增 `useStoryRecap` / `usePrtsLibrary` / `usePrtsItemDetail` / `useBakerChats` / `useBakerDialog` |
 | `src/pages/story/StoryOverview.tsx` | 重构：双入口卡（剧情梗概 + PRTS 文库） |
 | `src/App.tsx` | 新增 4 条路由 |
@@ -59,9 +61,7 @@ type: Fleeting
 
 ### 2.3 删除文件
 
-| 文件路径 | 说明 |
-|----------|------|
-| `src/pages/story/StoryOverview.tsx`（旧占位） | 被重构后的新版替代（原地重写，非删除） |
+无。`StoryOverview.tsx` 为原地重写，已计入 §2.2 修改文件。
 
 ## 3. 详细实现
 
@@ -73,10 +73,11 @@ export interface StoryRecapScene {
   id: string                // summary id (e.g. "summary_e1m1_1_001")
   dlgId: string             // dlg_e1m3_4
   chapterId: string         // e1
-  missionId: string         // e1m3
+  missionId: string         // e1m3（含 l/d 变体，如 sm2l4m5、a1m8d1）
   sceneNo: number           // 4
+  sceneSub: number          // 场次 d 后缀差分序号（dlg_e1m1_4d2 → 2，无则 0）
   chapterType: string       // e | sm | c | f | gm | a | db | m
-  code: string              // E1·M3·场04
+  code: string              // E1·M3·场04（「场」由 t('story.scene') 注入，跟随语言）
   text: string              // 梗概正文
 }
 
@@ -156,43 +157,88 @@ export interface BakerOption {
 export interface BakerBeat {
   messages: BakerMessage[]
   options?: BakerOption[]
+  selectedOptionId?: string // 分支点当前选中项（choices 或默认第一项），选项组选中态用
+  branchId?: number         // 分支点 contentId，分支切换回调用
 }
 
 export interface BakerTopic {
   topicId: string
-  topicName: string         // i18n（有标题显示标题，无标题显示预览）
+  topicName: string         // i18n（有标题显示标题，无标题显示该 topic 最后一条消息预览）
   sortId: number
-  dialogs: { dialogId: string; preview: string }[]
+  dialogs: { dialogId: string; preview: string }[]  // preview = 该场聊天最后一条消息
 }
 ```
 
 ### 3.2 适配器 `src/lib/adapter.ts`
 
+#### 3.2.0 素材 URL helper（`src/lib/adapter.ts` 新增）
+
+代码库无 `resolveIconUrl`，现有模式为 `getItemIconUrl`（`lib/icons.ts`，`ASSET_BASE` + 完整路径）。`ASSET_BASE` 定义在 `adapter.ts`，为避免 adapter ↔ icons 循环依赖，`getSpriteUrl` 直接定义在 `adapter.ts` 并导出，本模块所有素材 URL 统一走它：
+
+```ts
+// src/lib/adapter.ts（ASSET_BASE 同文件）
+export function getSpriteUrl(path: string): string {
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/${path}.png`
+}
+// 头像：getSpriteUrl(`charroundicon/${icon}`)
+// 表情包：getSpriteUrl(`sns/emoji/${resPath}`)
+// 图片消息：getSpriteUrl(`sns/picture/${imageId}`)
+// 卷图标：getSpriteUrl(`prts/icon/${icon}`) → onError 回退 getSpriteUrl(`prts/${icon}`) → 占位图形
+```
+
 #### 3.2.1 `adaptRecapScene`（剧情梗概）
 
 ```ts
-const DLG_KEY_RE = /^dlg_([a-z]+)(\d+)m(\d+)(?:d\d+)?_(\d+)$/
+// dlg key 四种变体（已对全量 1078 个 key 验证，0 遗漏）：
+//   dlg_e1m3_4      常规：篇章 e1 · 任务 m3 · 第 4 场
+//   dlg_sm2l4m5_9   l 段（293 条 sm 支线全部为此型）：篇章 sm2 · 段落 l4 · 任务 m5
+//   dlg_a1m8d1_1    m 后 d 段（117 条）：任务 m8 的子段 d1
+//   dlg_e1m1_4d2    场次 d 后缀（65 条）：第 4 场的差分 d2
+const DLG_KEY_RE = /^dlg_([a-z]+)(\d+)(?:l(\d+))?m(\d+)(?:d(\d+))?_(\d+)(?:d(\d+))?$/
 
 export function adaptRecapScene(
   dlgKey: string,
   summaryId: string,
-  summaryText: string,
-  i18nMap?: Record<string, string>
+  summaryText: { id?: number | string; text?: string },
+  i18nMap: Record<string, string> | undefined,
+  sceneLabel: string,              // t('story.scene')，编号中的「场」跟随语言，禁止硬编码
 ): StoryRecapScene | null {
   const m = DLG_KEY_RE.exec(dlgKey)
-  if (!m) return null
-  const [, chapterType, chapterNum, missionNum, sceneNo] = m
+  if (!m) return null              // 未识别 key → null，由上层归入「其他」分组并 console.warn，不丢弃
+  const [, chapterType, chapterNum, lvNum, missionNum, missionSub, sceneNo, sceneSub] = m
   const chapterId = `${chapterType}${chapterNum}`
-  const missionId = `${chapterId}m${missionNum}`
-  const code = `${chapterId.toUpperCase()}·M${missionNum}·场${String(sceneNo).padStart(2, '0')}`
+  const missionId = `${chapterId}${lvNum ? `l${lvNum}` : ''}m${missionNum}${missionSub ? `d${missionSub}` : ''}`
+  const code = `${chapterId.toUpperCase()}·M${missionNum}·${sceneLabel}${String(sceneNo).padStart(2, '0')}${sceneSub ? `d${sceneSub}` : ''}`
   return {
     id: summaryId,
     dlgId: dlgKey,
     chapterId,
     missionId,
     sceneNo: Number(sceneNo),
+    sceneSub: sceneSub ? Number(sceneSub) : 0,
     chapterType,
     code,
+    text: resolveI18n(summaryText, i18nMap),
+  }
+}
+
+// 未识别 key 兜底：归入「其他」分组（chapterType='other'），保留原文不丢弃
+export function adaptRecapFallbackScene(
+  dlgKey: string,
+  summaryId: string,
+  summaryText: { id?: number | string; text?: string },
+  i18nMap: Record<string, string> | undefined,
+  sceneLabel: string,
+): StoryRecapScene {
+  return {
+    id: summaryId,
+    dlgId: dlgKey,
+    chapterId: 'other',
+    missionId: dlgKey,
+    sceneNo: 0,
+    sceneSub: 0,
+    chapterType: 'other',
+    code: `${dlgKey}·${sceneLabel}--`,
     text: resolveI18n(summaryText, i18nMap),
   }
 }
@@ -200,33 +246,48 @@ export function adaptRecapScene(
 
 #### 3.2.2 `adaptRecapChapter`（篇章聚合）
 
+排序必须基于 dlg key 解析出的**数值元组**，禁止字符串 `localeCompare`（chapter 数达 33、mission 数达 29、sceneNo 最大 13034，字符串排序会把 `e10` 排到 `e2` 前、第 10 场排到第 4 场前）：
+
 ```ts
-export function adaptRecapChapter(scenes: StoryRecapScene[]): StoryRecapChapter[] {
-  const chapterMap = new Map<string, StoryRecapScene[]>()
-  for (const s of scenes) {
-    if (!chapterMap.has(s.chapterId)) chapterMap.set(s.chapterId, [])
-    chapterMap.get(s.chapterId)!.push(s)
+type SortTuple = [string, number, number, number, number, number, number]
+// [chapterType, chapterNum, lvNum, missionNum, missionSub, sceneNo, sceneSub]
+
+function dlgSortKey(s: StoryRecapScene): SortTuple {
+  const m = DLG_KEY_RE.exec(s.dlgId)
+  if (!m) return [s.chapterType, 999, 0, 999, 0, 999, 0]  // 未识别排最后
+  const [, ct, cn, lv, mn, md, sn, sd] = m
+  return [ct, Number(cn), Number(lv ?? 0), Number(mn), Number(md ?? 0), Number(sn), Number(sd ?? 0)]
+}
+
+function compareTuple(a: SortTuple, b: SortTuple): number {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] === b[i]) continue
+    return typeof a[i] === 'string'
+      ? (a[i] as string).localeCompare(b[i] as string)
+      : (a[i] as number) - (b[i] as number)
   }
-  return Array.from(chapterMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([chapterId, chapterScenes]) => {
-      const missionMap = new Map<string, StoryRecapScene[]>()
-      for (const s of chapterScenes) {
-        if (!missionMap.has(s.missionId)) missionMap.set(s.missionId, [])
-        missionMap.get(s.missionId)!.push(s)
-      }
-      const missions = Array.from(missionMap.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([missionId, scenes]) => ({
-          missionId,
-          scenes: scenes.sort((a, b) => a.sceneNo - b.sceneNo),
-        }))
-      return {
-        chapterId,
-        chapterType: chapterScenes[0].chapterType,
-        missions,
-      }
-    })
+  return 0
+}
+
+export function adaptRecapChapter(scenes: StoryRecapScene[]): StoryRecapChapter[] {
+  // 先整体按数值元组排序，再稳定分组（分组内顺序天然正确）
+  const sorted = [...scenes].sort((a, b) => compareTuple(dlgSortKey(a), dlgSortKey(b)))
+  const chapters: StoryRecapChapter[] = []
+  let chapter: StoryRecapChapter | null = null
+  let mission: StoryRecapMission | null = null
+  for (const s of sorted) {
+    if (!chapter || chapter.chapterId !== s.chapterId) {
+      chapter = { chapterId: s.chapterId, chapterType: s.chapterType, missions: [] }
+      chapters.push(chapter)
+      mission = null
+    }
+    if (!mission || mission.missionId !== s.missionId) {
+      mission = { missionId: s.missionId, scenes: [] }
+      chapter.missions.push(mission)
+    }
+    mission.scenes.push(s)
+  }
+  return chapters
 }
 ```
 
@@ -248,7 +309,7 @@ export function adaptPrtsVolume(raw: any, i18nMap?: Record<string, string>): Prt
     categoryId: raw.categoryId ?? '',
     name: resolveI18n(raw.name, i18nMap),
     subName: resolveI18n(raw.subName, i18nMap),
-    iconUrl: resolveIconUrl(raw.icon, 'prts'),
+    iconUrl: raw.icon ? getSpriteUrl(`prts/icon/${raw.icon}`) : '',  // onError 回退 `prts/${raw.icon}` → 占位
     order: raw.order ?? 0,
     itemIds: raw.itemIds ?? [],
   }
@@ -281,119 +342,195 @@ export function adaptBakerChat(raw: any, i18nMap?: Record<string, string>): Bake
     id: raw.$key ?? '',
     kind: CHAT_TYPE_MAP[raw.chatType] ?? 'contact',
     name: resolveI18n(raw.name, i18nMap),
-    iconUrl: resolveIconUrl(raw.icon, 'charroundicon'),
+    iconUrl: raw.icon ? getSpriteUrl(`charroundicon/${raw.icon}`) : '',
     isSettlementChannel: raw.isSettlementChannel ?? false,
   }
 }
 
+// 发送者解析上下文：全部 86 个非 endmin speaker 均可经 SNSChatTable 解析（已验证），
+// 名称/头像必须由此而来，禁止直接展示原始 chatId（PRD 功能点 5：群聊展示头像与昵称）
+export interface BakerSpeakerContext {
+  chatMap: Record<string, BakerChat>  // SNSChatTable 适配结果（key = chatId = speaker）
+  selfName: string                    // t('baker.selfName')，由页面层注入
+  selfIconUrl: string                 // getSpriteUrl('charroundicon/icon_round_chr_0003_endminf')
+}
+
+// 返回 null = 跳过不渲染；contentType 9 不走此函数（在 resolveDialog 内归并）
+export function resolveContentType(type: number): BakerMessage['kind'] | null {
+  const map: Record<number, BakerMessage['kind']> = {
+    1: 'text',
+    2: 'image',
+    7: 'system',
+    10: 'share',
+    12: 'mission',
+  }
+  return map[type] ?? null
+}
+
 export function adaptBakerMessage(
+  dialogId: string,
   contentId: string,
   raw: any,
-  chatId: string,
+  ctx: BakerSpeakerContext,
   i18nMap?: Record<string, string>
 ): BakerMessage | null {
+  const kind = resolveContentType(raw.contentType)
+  if (!kind) return null           // 未知类型（4/5/6/8/11 测试类型）跳过不渲染
   const isSelf = raw.speaker === 'endmin'
+  const speakerChat = isSelf ? undefined : ctx.chatMap[raw.speaker]
   return {
-    id: `${raw.dialogId ?? ''}:${contentId}`,
+    id: `${dialogId}:${contentId}`,
     speakerId: raw.speaker ?? '',
     isSelf,
-    speakerName: isSelf ? '我' : chatId,
-    speakerIconUrl: isSelf ? 'charroundicon/chr_0003_endminf.png' : '',
-    kind: resolveContentType(raw.contentType),
+    speakerName: isSelf ? ctx.selfName : speakerChat?.name ?? '',
+    speakerIconUrl: isSelf ? ctx.selfIconUrl : speakerChat?.iconUrl ?? '',
+    kind,
     text: resolveI18n(raw.content, i18nMap),
-    imageUrl: raw.contentType === 2 ? resolveIconUrl(raw.contentParam, 'sns/picture') : undefined,
-    reactions: undefined, // contentType 9 归并处理
+    // contentParam 为数组（线上 28 条图片消息全部为 list），取首项
+    imageUrl: kind === 'image' && raw.contentParam?.[0]
+      ? getSpriteUrl(`sns/picture/${raw.contentParam[0]}`)
+      : undefined,
+    reactions: undefined, // contentType 9 由 resolveDialog 归并填充
   }
 }
 ```
 
 ### 3.3 Baker 分支求值 `src/lib/baker.ts`
 
+已验证的数据事实（决定以下设计）：
+
+- **分支点节点本身无消息文本**：999 个带 `dialogOptionIds` 的节点全部 `contentType=1` 且 `content.id` 为空，是纯选项容器——**不得**对分支点节点生成消息气泡。
+- 选中选项成为「我」发出的消息（PRD 功能点 5），插入分支点之后；选项带 `optionResPath`（143 条）时以表情包（sticker）形式发送。
+- `contentType=9`（表情回应）不独立渲染，按 `preContentId` 归并到目标消息的 `reactions`。
+- `contentType=4/5/6/8/11`（共 7 条，`sns_test_*` 测试会话）跳过不渲染。
+- `nextContentId` 为 `-1` 或 `0`（线上分别为 314 / 1368 处）即会话结束；悬空引用防御性视为结束（环保护：visited set）。
+
 ```ts
+import { adaptBakerMessage, resolveContentType, getSpriteUrl, resolveI18n, type BakerSpeakerContext } from './adapter'
+
 interface RawNode {
-  content: any
+  content: { id?: number | string; text?: string }
   contentType: number
   speaker: string
   nextContentId: number
   preContentId: number
   dialogOptionIds: string[]
+  contentParam?: string[]          // contentType 2：图片 id 数组
+  contentParams?: string           // contentType 9：JSON 字符串 [{emojiResPath, npcIds, npcCount}]
   isEnd: boolean
 }
 
 interface RawOption {
-  optionDesc: any
+  optionDesc: { id?: number | string; text?: string }
   optionNextContentId: number
-  optionResPath: string
+  optionResPath: string            // 非空 = 以表情包回复
   optionNPCIds: string[]
 }
 
+export interface ResolveContext {
+  speaker: BakerSpeakerContext
+  dialogI18n?: Record<string, string>   // SNSDialogTable dict
+  optionI18n?: Record<string, string>   // SNSDialogOptionTable dict
+  startId?: string                      // SNSConst.snsDialogStartId，默认 '1'
+}
+
 export function resolveDialog(
+  dialogId: string,
   nodes: Record<string, RawNode>,
   options: Record<string, RawOption>,
-  choices: Record<number, string> = {}
+  choices: Record<number, string> = {},
+  ctx: ResolveContext,
 ): BakerBeat[] {
   const beats: BakerBeat[] = []
   const visited = new Set<string>()
-  let currentId = '1' // SNSConst.snsDialogStartId
+  let currentId = ctx.startId ?? '1'
 
-  while (currentId && currentId !== '-1' && !visited.has(currentId)) {
+  const findMessage = (contentId: string) =>
+    beats.flatMap((b) => b.messages).find((m) => m.id === `${dialogId}:${contentId}`)
+
+  while (currentId && currentId !== '-1' && currentId !== '0' && !visited.has(currentId)) {
     visited.add(currentId)
     const node = nodes[currentId]
-    if (!node) break
+    if (!node) break                       // 悬空引用 → 视为会话结束
 
-    // 消息节点
-    const message = nodeToMessage(node, currentId)
-    const beat: BakerBeat = { messages: [message] }
-
-    // 分支点
-    if (node.dialogOptionIds.length > 0) {
-      const selectedOptionId = choices[Number(currentId)] ?? node.dialogOptionIds[0]
-      const selectedOption = options[selectedOptionId]
-      if (selectedOption) {
-        beat.options = node.dialogOptionIds.map((oid) => {
-          const opt = options[oid]
-          return {
-            id: oid,
-            text: resolveI18n(opt?.optionDesc),
-            emojiUrl: opt?.optionResPath || undefined,
-          }
-        })
-        beats.push(beat)
-        currentId = String(selectedOption.optionNextContentId)
-        continue
-      }
+    // 分支点：节点本身无消息文本，不产生气泡
+    if (node.dialogOptionIds?.length) {
+      const validIds = node.dialogOptionIds.filter((oid) => options[oid])
+      if (!validIds.length) break
+      const selectedId = choices[Number(currentId)] ?? validIds[0]  // 默认第一项
+      const selected = options[selectedId]
+      beats.push({
+        messages: [],
+        branchId: Number(currentId),
+        selectedOptionId: selectedId,
+        options: validIds.map((oid) => ({
+          id: oid,
+          text: resolveI18n(options[oid].optionDesc, ctx.optionI18n),
+          emojiUrl: options[oid].optionResPath ? getSpriteUrl(`sns/emoji/${options[oid].optionResPath}`) : undefined,
+        })),
+      })
+      // 选中项成为「我」的消息（带 optionResPath 时为表情包）
+      beats.push({
+        messages: [{
+          id: `${dialogId}:${currentId}:${selectedId}`,
+          speakerId: 'endmin',
+          isSelf: true,
+          speakerName: ctx.speaker.selfName,
+          speakerIconUrl: ctx.speaker.selfIconUrl,
+          kind: selected.optionResPath ? 'sticker' : 'text',
+          text: resolveI18n(selected.optionDesc, ctx.optionI18n),
+          imageUrl: selected.optionResPath ? getSpriteUrl(`sns/emoji/${selected.optionResPath}`) : undefined,
+        }],
+      })
+      currentId = String(selected.optionNextContentId)
+      continue
     }
 
-    beats.push(beat)
+    // 表情回应：归并到 preContentId 对应消息，不独立渲染
+    if (node.contentType === 9) {
+      const target = findMessage(String(node.preContentId))
+      const reaction = parseReaction(node.contentParams, ctx)
+      if (target && reaction) (target.reactions ??= []).push(reaction)
+      // 归属失败时静默丢弃（线上仅 1 条，不影响会话）
+      currentId = String(node.nextContentId)
+      continue
+    }
+
+    // 常规消息（adaptBakerMessage 内部对未知 contentType 返回 null）
+    const message = adaptBakerMessage(dialogId, currentId, node, ctx.speaker, ctx.dialogI18n)
+    if (message) beats.push({ messages: [message] })
     currentId = String(node.nextContentId)
   }
-
   return beats
 }
 
-function nodeToMessage(node: RawNode, contentId: string): BakerMessage {
-  return {
-    id: contentId,
-    speakerId: node.speaker ?? '',
-    isSelf: node.speaker === 'endmin',
-    speakerName: node.speaker === 'endmin' ? '我' : '',
-    speakerIconUrl: '',
-    kind: resolveContentType(node.contentType),
-    text: resolveI18n(node.content),
+function parseReaction(contentParams: string | undefined, ctx: ResolveContext) {
+  if (!contentParams) return null
+  try {
+    const [r] = JSON.parse(contentParams)
+    if (!r?.emojiResPath) return null
+    return {
+      emojiUrl: getSpriteUrl(`sns/emoji/${r.emojiResPath}`),
+      fromNames: (r.npcIds ?? []).map((id: string) => ctx.speaker.chatMap[id]?.name ?? id),
+      count: r.npcCount ?? (r.npcIds?.length ?? 0),
+    }
+  } catch {
+    return null
   }
 }
+```
 
-function resolveContentType(type: number): BakerMessage['kind'] {
-  const map: Record<number, BakerMessage['kind']> = {
-    1: 'text',
-    2: 'image',
-    7: 'system',
-    9: 'text', // 表情回应归并
-    10: 'share',
-    12: 'mission',
-  }
-  return map[type] ?? 'text'
-}
+**分支切换（页面层职责）**：`choices` 用有序数组维护，切换即截断该分支点之后的旧选择再追加，与技术方案 §4.3 一致：
+
+```ts
+type Choice = { branchId: number; optionId: string }
+const [choices, setChoices] = useState<Choice[]>([])
+const switchBranch = (branchId: number, optionId: string) =>
+  setChoices((prev) => {
+    const idx = prev.findIndex((c) => c.branchId === branchId)
+    return [...(idx >= 0 ? prev.slice(0, idx) : prev), { branchId, optionId }]
+  })
+// 渲染时：resolveDialog(dialogId, nodes, options, Object.fromEntries(choices.map(c => [c.branchId, c.optionId])), ctx)
 ```
 
 ### 3.4 Hooks `src/hooks/useData.ts`
@@ -407,6 +544,7 @@ export function useStoryRecap(): UseDataResult<{
   stats: { total: number; byType: Record<string, number> }
 }> {
   const { locale } = useLocale()
+  const { t } = useI18n()   // sceneLabel 注入（t('story.scene')）
   return useData(async () => {
     const [mapRaw, summaryRaw, summaryI18n] = await Promise.all([
       getCachedData<Record<string, string>>('DialogSummaryMapTable', () => fetchTableAll('DialogSummaryMapTable')),
@@ -415,13 +553,14 @@ export function useStoryRecap(): UseDataResult<{
     ])
     const scenes = Object.entries(mapRaw)
       .map(([dlgKey, summaryId]) => {
-        const summary = summaryRaw[summaryId]
+        const summary = summaryRaw[summaryId]   // entry 本身就是 i18n 字段 { id, text }
         if (!summary) return null
-        return adaptRecapScene(dlgKey, summaryId, summary.text, summaryI18n)
+        const scene = adaptRecapScene(dlgKey, summaryId, summary, summaryI18n, t('story.scene'))
+        if (!scene) console.warn(`[story-recap] 未识别的 dlg key: ${dlgKey}`)  // 归入「其他」分组，不丢弃
+        return scene ?? adaptRecapFallbackScene(dlgKey, summaryId, summary, summaryI18n, t('story.scene'))
       })
       .filter((s): s is StoryRecapScene => s !== null)
-      .sort((a, b) => `${a.chapterId}${a.missionId}${a.sceneNo}`.localeCompare(`${b.chapterId}${b.missionId}${b.sceneNo}`))
-    const chapters = adaptRecapChapter(scenes)
+    const chapters = adaptRecapChapter(scenes)   // 内部完成数值元组排序
     const byType: Record<string, number> = {}
     for (const s of scenes) byType[s.chapterType] = (byType[s.chapterType] ?? 0) + 1
     return { scenes, chapters, stats: { total: scenes.length, byType } }
@@ -459,31 +598,132 @@ export function usePrtsLibrary(): UseDataResult<{
 }
 ```
 
-#### 3.4.3 `useBakerChats` / `useBakerDialog`
+#### 3.4.3 `usePrtsItemDetail`（文献详情）
+
+技术方案 §4.2：正文 `RichContentTable` 走 all + 版本缓存；`RadioTable`（2909 条）按需取单条，不拉全表。
+
+```ts
+export function usePrtsItemDetail(itemId: string): UseDataResult<PrtsItemDetail | null> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [itemRaw, volRaw, itemI18n, volI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('PrtsAllItem', () => fetchTableAll('PrtsAllItem')),
+      getCachedData<Record<string, any>>('PrtsFirstLv', () => fetchTableAll('PrtsFirstLv')),
+      getTableI18nDict('PrtsAllItem', locale),
+      getTableI18nDict('PrtsFirstLv', locale),
+    ])
+    const item = itemRaw[itemId]
+    if (!item) return null
+    const base = adaptPrtsItem({ ...item, $key: itemId }, itemI18n)
+    const volume = volRaw[base.volumeId]
+    const detail: PrtsItemDetail = {
+      ...base,
+      volumeName: resolveI18n(volume?.name, volI18n),
+      categoryId: volume?.categoryId ?? '',
+      contents: [],
+    }
+    if (base.type === 'multi_media') {
+      // 按需单条加载 + entry 级 i18n dict（缓存键沿用 getCachedData(table, fetcher, key)）
+      const [radio, radioI18n] = await Promise.all([
+        getCachedData<any>('RadioTable', () => fetchTableEntry('RadioTable', base.contentId), base.contentId),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_RadioTable`,
+          () => fetchTableDictEntry('RadioTable', base.contentId, locale), base.contentId),
+      ])
+      detail.script = (radio?.radioSingleDataList ?? []).map((r: any) => ({
+        speaker: resolveI18n(r.actorName, radioI18n),
+        line: resolveI18n(r.radioText, radioI18n),
+      }))
+    } else {
+      const [richRaw, richI18n] = await Promise.all([
+        getCachedData<Record<string, any>>('RichContentTable', () => fetchTableAll('RichContentTable')),
+        getTableI18nDict('RichContentTable', locale),
+      ])
+      const rich = richRaw[base.contentId]
+      if (rich) {
+        detail.contents = [{
+          title: resolveI18n(rich.title, richI18n),
+          segments: (rich.contentList ?? []).map((c: any) => resolveI18n(c.content, richI18n)),
+        }]
+      }
+    }
+    return detail
+  }, [locale, itemId])
+}
+```
+
+#### 3.4.4 `useBakerChats` / `useBakerDialog`
 
 ```ts
 export function useBakerChats(): UseDataResult<{ chats: BakerChat[]; topics: BakerTopic[] }> {
   const { locale } = useLocale()
   return useData(async () => {
-    const [chatRaw, topicRaw, dialogRaw, chatI18n, topicI18n] = await Promise.all([
+    const [chatRaw, topicRaw, dialogRaw, chatI18n, topicI18n, dialogI18n] = await Promise.all([
       getCachedData<Record<string, any>>('SNSChatTable', () => fetchTableAll('SNSChatTable')),
       getCachedData<Record<string, any>>('SNSDialogTopicTable', () => fetchTableAll('SNSDialogTopicTable')),
       getCachedData<Record<string, any>>('SNSDialogTable', () => fetchTableAll('SNSDialogTable')),
       getTableI18nDict('SNSChatTable', locale),
       getTableI18nDict('SNSDialogTopicTable', locale),
+      getTableI18nDict('SNSDialogTable', locale),
     ])
     const chats = Object.entries(chatRaw).map(([k, v]) => adaptBakerChat({ ...(v as any), $key: k }, chatI18n))
+    // 预览 = 该场聊天沿 nextContentId 走到末节点的最后一条文本消息；用 dialog 自己的 i18n dict
+    const lastMessagePreview = (dialog: any): string => {
+      const nodes = dialog?.dialogContentData ?? {}
+      let id = '1', last = ''
+      const visited = new Set<string>()
+      while (id && id !== '-1' && id !== '0' && !visited.has(id)) {
+        visited.add(id)
+        const node = nodes[id]
+        if (!node) break
+        if (node.contentType === 1 && node.content?.id) last = resolveI18n(node.content, dialogI18n)
+        id = String(node.nextContentId)
+      }
+      return last
+    }
     const topics = Object.entries(topicRaw).map(([k, v]: [string, any]) => ({
       topicId: k,
       topicName: resolveI18n(v.topicName, topicI18n),
       sortId: v.sortId ?? 0,
-      dialogs: (v.includeDialogIds ?? []).map((did: string) => {
-        const d = dialogRaw[did]
-        return { dialogId: did, preview: resolveI18n(d?.dialogContentData?.['1']?.content, topicI18n) ?? '' }
-      }),
+      dialogs: (v.includeDialogIds ?? []).map((did: string) => ({
+        dialogId: did,
+        preview: lastMessagePreview(dialogRaw[did]),
+      })),
     }))
     return { chats, topics: topics.sort((a, b) => a.sortId - b.sortId) }
   }, [locale])
+}
+
+// 进入模块即加载（技术方案 §4.4：均为小表，无按需加载点）；
+// 页面层对每个 dialog 调 resolveDialog 按 choices 重算消息流
+export function useBakerDialog(chatId: string | null): UseDataResult<{
+  dialogs: { dialogId: string; topicId: string; nodes: Record<string, any> }[]  // 已按剧情顺序排序
+  options: Record<string, any>
+  ctx: Omit<ResolveContext, 'speaker'>
+} | null> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    if (!chatId) return null
+    const [dialogRaw, optionRaw, topicRaw, constRaw, dialogI18n, optionI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('SNSDialogTable', () => fetchTableAll('SNSDialogTable')),
+      getCachedData<Record<string, any>>('SNSDialogOptionTable', () => fetchTableAll('SNSDialogOptionTable')),
+      getCachedData<Record<string, any>>('SNSDialogTopicTable', () => fetchTableAll('SNSDialogTopicTable')),
+      getCachedData<Record<string, any>>('SNSConst', () => fetchTableAll('SNSConst')),
+      getTableI18nDict('SNSDialogTable', locale),
+      getTableI18nDict('SNSDialogOptionTable', locale),
+    ])
+    const topicSort = new Map(Object.entries(topicRaw).map(([k, v]: [string, any]) => [k, v.sortId ?? 0]))
+    const dialogs = Object.entries(dialogRaw)
+      .filter(([, d]: [string, any]) => d.chatId === chatId)
+      .map(([k, d]: [string, any]) => ({ dialogId: k, topicId: d.topicId ?? '', nodes: d.dialogContentData ?? {} }))
+      .sort((a, b) =>
+        (topicSort.get(a.topicId) ?? 0) - (topicSort.get(b.topicId) ?? 0) ||  // topic sortId 优先
+        a.dialogId.localeCompare(b.dialogId))                                  // 同 topic 按 dialogId 兜底
+    return {
+      dialogs,
+      options: optionRaw,
+      ctx: { dialogI18n, optionI18n, startId: String(constRaw?.snsDialogStartId ?? '1') },
+    }
+  }, [locale, chatId])
 }
 ```
 
@@ -502,12 +742,12 @@ interface BakerContactListProps {
 // Tab 栏：flex gap-1 p-2 border-b border-archive-border
 //   - 四个 Tab：全部 / 干员 / 联系人 / 群聊
 //   - Tab 激活态：text-archive-gold border-b-2 border-archive-gold
-//   - Tab 未激活：text-archive-dust hover:text-archive-text
+//   - Tab 未激活：text-archive-dust hover:text-archive-ivory
 // 列表：flex-1 overflow-y-auto
-//   - 条目：flex items-center gap-3 p-3 hover:bg-archive-hover cursor-pointer
+//   - 条目：flex items-center gap-3 p-3 hover:bg-archive-file cursor-pointer
 //   - 头像：w-10 h-10 rounded-full border border-archive-border
 //   - 名称：text-sm truncate
-//   - 选中态：bg-archive-active border-l-2 border-archive-gold
+//   - 选中态：bg-archive-file border-l-2 border-archive-gold
 ```
 
 #### 3.5.2 `BakerChatPanel.tsx`
@@ -517,14 +757,14 @@ interface BakerChatPanelProps {
   chat: BakerChat
   topics: BakerTopic[]
   beats: BakerBeat[]
-  onSwitchOption: (contentId: number, optionId: string) => void
+  onSwitchOption: (branchId: number, optionId: string) => void  // branchId = 分支点 contentId
 }
 
 // 布局：h-full flex flex-col
 // Topic 栏（顶部）：flex overflow-x-auto gap-2 p-2 border-b border-archive-border
 //   - Topic 按钮：px-3 py-1 rounded-full text-xs whitespace-nowrap
 //   - 激活态：bg-archive-gold/20 text-archive-gold
-//   - 未激活：bg-archive-surface text-archive-dust hover:bg-archive-hover
+//   - 未激活：bg-archive-file text-archive-dust hover:text-archive-ivory
 //   - 有标题显示标题，无标题显示最后消息预览（截断 20 字）
 // 消息流：flex-1 overflow-y-auto p-4 space-y-4
 //   - 会话分隔条：flex items-center gap-2 my-4
@@ -534,7 +774,7 @@ interface BakerChatPanelProps {
 //     - 他人：flex gap-2 (头像 32x32 + 内容)
 //       - 头像：w-8 h-8 rounded-full
 //       - 昵称：text-xs text-archive-dust
-//       - 气泡：bg-archive-surface rounded-lg px-3 py-2 max-w-[70%]
+//       - 气泡：bg-archive-file rounded-lg px-3 py-2 max-w-[70%]
 //     - 我（endmin）：flex justify-end
 //       - 气泡：bg-archive-gold/10 border border-archive-gold/30 rounded-lg px-3 py-2 max-w-[70%]
 //     - 系统提示：text-center text-xs text-archive-dust py-2
@@ -573,7 +813,7 @@ interface BakerMessageBubbleProps {
 
 ```
 布局：min-h-screen
-├── 顶部筛选栏：sticky top-0 z-10 bg-archive-bg border-b border-archive-border
+├── 顶部筛选栏：sticky top-0 z-10 bg-archive-ink border-b border-archive-border
 │   ├── 篇章类型 select：w-48
 │   │   - 选项：全部 / 主线 / 支线 / 干员故事 / 地区事务 / 委托 / 谷地支线 / 协议空间 / 其他
 │   │   - 同步 ?type= query param
@@ -600,7 +840,7 @@ interface BakerMessageBubbleProps {
 ├── 顶部页签栏：flex gap-2 mb-6 overflow-x-auto
 │   └── 页签按钮：px-4 py-2 rounded-full text-sm whitespace-nowrap
 │       ├── 激活态：bg-archive-gold/20 text-archive-gold
-│       ├── 未激活：bg-archive-surface text-archive-dust hover:bg-archive-hover
+│       ├── 未激活：bg-archive-file text-archive-dust hover:text-archive-ivory
 │       └── 标签：分类名 + 计数 badge
 ├── 卷网格：grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4
 │   └── 卷卡片：border border-archive-border rounded-lg p-4 hover:border-archive-gold/40 cursor-pointer
@@ -610,7 +850,7 @@ interface BakerMessageBubbleProps {
 │       └── 条目数：text-xs text-archive-gold text-center
 ├── 卷内条目（点击展开 accordion）：border-t border-archive-border mt-4 pt-4
 │   └── 条目列表：space-y-2
-│       └── 条目行：flex items-center gap-2 p-2 hover:bg-archive-hover rounded cursor-pointer
+│       └── 条目行：flex items-center gap-2 p-2 hover:bg-archive-file rounded cursor-pointer
 │           ├── 类型标签：text-xs px-2 py-0.5 rounded（text/document/multi_media）
 │           ├── 名称：text-sm flex-1
 │           └── 箭头图标
@@ -624,15 +864,15 @@ interface BakerMessageBubbleProps {
 布局：max-w-3xl mx-auto p-6
 ├── 返回链接：← t('common.backToList', { list: t('story.library') })
 ├── 头部
-│   ├── 分类 Badge：text-xs px-2 py-0.5 rounded bg-archive-surface
+│   ├── 分类 Badge：text-xs px-2 py-0.5 rounded bg-archive-file
 │   ├── 卷名：text-xs text-archive-dust
 │   ├── 标题：text-2xl font-display mt-2
-│   ├── 档案编号：font-mono text-xs text-archive-gold
+│   ├── 档案编号：font-mono text-xs text-archive-gold（formatArchiveCode('story', item.order)）
 │   └── 描述（如有）：text-sm text-archive-dust mt-2
 ├── 正文区（text / document 类）
 │   └── contents 每篇
 │       ├── 段标题（如有）：text-lg font-medium mt-6 mb-2
-│       └── 段内容：<RichText content={segment} /> + <img loading="lazy" />
+│       └── 段内容：<RichText text={segment} />（prop 为 text；插图由 RichText 内置 <image> 解析，img loading="lazy"）
 ├── 剧本区（multi_media 类）
 │   ├── 标题：t('story.audioTranscript')
 │   └── script 逐条
@@ -705,17 +945,18 @@ import BakerTerminal from './pages/baker/BakerTerminal'
 **Sidebar.tsx**：
 - `nav.story` 文案保持「剧情纪事」（已在 i18n 中更新）
 - `nav.storyDesc` 更新为「剧情梗概、PRTS 文库与 Baker 聊天终端」
-- 新增 `nav.baker` 条目（图标：💬，路径：`/archive/baker`）
+- 大事记分组新增 `{ label: t('nav.baker'), path: '/archive/baker' }` 条目（Sidebar 条目结构为 label + path，无图标字段）
 
 **Breadcrumb.tsx**：
-- 新增映射：`recap: t('story.recap')`, `library: t('story.library')`, `baker: t('nav.baker')`
+- `useListLabel` 新增映射：`recap: t('breadcrumb.recap')`, `library: t('breadcrumb.library')`, `baker: t('breadcrumb.baker')`
 
 **ArchiveHome.tsx**：
-- 「大事记」分组新增 Baker 入口卡片
+- 「大事记」分组新增 Baker 入口卡片（label: `t('nav.baker')`，desc: `t('nav.bakerDesc')`，path: `/archive/baker`）
 
 **archiveMeta.ts**：
 ```ts
-baker: { code: 'HSA-BKR', nameKey: 'nav.baker', descKey: 'nav.bakerDesc' }
+// MODULE_CODES 为 Record<string, string>，直接加一行：
+baker: 'HSA-BKR',
 ```
 
 ### 3.9 i18n（`scripts/i18n-custom.json`，14 语言全量）
@@ -739,6 +980,7 @@ baker: { code: 'HSA-BKR', nameKey: 'nav.baker', descKey: 'nav.bakerDesc' }
 | `story.chapterType.a` | 谷地支线 | Valley Side | |
 | `story.chapterType.db` | 协议空间 | Protocol Space | |
 | `story.chapterType.m` | 其他 | Other | |
+| `story.chapterType.other` | 其他 | Other | 未识别 key 兜底分组 |
 | `story.emptyContent` | 正文暂缺 | No content available | |
 | `story.audioTranscript` | 音像转写 | Audio Transcript | |
 | `story.backToVolume` | 返回所属卷 | Back to volume | |
@@ -758,11 +1000,14 @@ baker: { code: 'HSA-BKR', nameKey: 'nav.baker', descKey: 'nav.bakerDesc' }
 | `baker.tab.group` | 群聊 | Groups | |
 | `baker.selectChat` | 选择联系人开始阅读 | Select a contact | |
 | `baker.emptyChat` | 暂无消息 | No messages | |
+| `baker.sessionSeparator` | 场次 {{n}} | Session {{n}} | 会话分隔条 |
 | `baker.selfName` | 我 | Me | |
 | `baker.reactedBy` | {{name}} 回应 | Reacted by {{name}} | |
 | `baker.sharedArchive` | PRTS 文献分享 | Shared archive | |
 | `baker.missionLink` | 任务链接 | Mission link | |
 | `breadcrumb.baker` | Baker | Baker | |
+
+以上共 **36 个新增 key**（story 21 个 + baker 15 个），另修改 `nav.story` / `nav.storyDesc` 两个既有 key；全部需提供 14 语言本土翻译，禁占位。
 
 ## 4. 实现顺序
 
@@ -785,7 +1030,7 @@ baker: { code: 'HSA-BKR', nameKey: 'nav.baker', descKey: 'nav.bakerDesc' }
 
 ### 阶段四：多语言（第 4 轮提交）
 
-- `i18n-custom.json` 34 个 key × 14 语言 → `generate-i18n-dicts.ts`
+- `i18n-custom.json` 36 个新增 key × 14 语言（另修改 nav.story / nav.storyDesc）→ `generate-i18n-dicts.ts`
 
 ### 阶段五：测试与验证（第 5 轮提交）
 
@@ -797,14 +1042,21 @@ baker: { code: 'HSA-BKR', nameKey: 'nav.baker', descKey: 'nav.bakerDesc' }
 
 #### `adapter-story.test.ts`
 
-- `adaptRecapScene`：正常 key、异常 key → null、编号生成
-- `adaptRecapChapter`：多场景聚合、排序
-- `adaptPrtsCategory` / `adaptPrtsVolume` / `adaptPrtsItem`：正常映射
-- `adaptPrtsItemDetail`：RichContentTable 展开、空 contentList
+- `adaptRecapScene`：四种 key 变体（`dlg_e1m3_4` / `dlg_sm2l4m5_9` / `dlg_a1m8d1_1` / `dlg_e1m1_4d2`）全部正确解析；异常 key → null；编号生成（sceneLabel 注入、场次补零、d 后缀）
+- `adaptRecapFallbackScene`：未识别 key 归入 other 分组，不丢弃
+- `adaptRecapChapter`：多场景聚合；数值排序（chapter≥10 如 e11 排在 e2 后、scene≥10 排在第 4 场后、l/d 段参与排序）
+- `adaptPrtsCategory` / `adaptPrtsVolume` / `adaptPrtsItem`：正常映射；卷图标 URL 为完整 sprite URL
+- `adaptPrtsItemDetail`：RichContentTable 展开、空 contentList；RadioTable 剧本解析
+- `adaptBakerChat`：chatType 1/2/3 → contact/group/operator
+- `adaptBakerMessage`：speaker 名称/头像经 chatMap 解析；endmin → isSelf + selfName；contentParam 数组取首项；未知 contentType → null
 
 #### `baker.test.ts`
 
-- `resolveDialog`：线性遍历、分支切换、环保护、表情回应归并、未知 contentType、悬空引用
+- `resolveDialog`：线性遍历、会话结束（nextContentId=-1 / 0）、环保护、悬空引用
+- 分支点：不产生空气泡；beat 带 options + selectedOptionId；默认第一项
+- 分支切换：切换后「我」的消息更新为选中项（带 optionResPath 时为 sticker），后续消息按新分支重算；旧选择被截断丢弃
+- contentType 9：归并到 preContentId 消息的 reactions（emojiUrl + fromNames + count）；归属失败静默丢弃
+- 未知 contentType（4/5/6/8/11）：跳过不渲染
 
 ### 5.2 E2E（`story-chronicle.spec.ts`）
 
@@ -818,7 +1070,7 @@ baker: { code: 'HSA-BKR', nameKey: 'nav.baker', descKey: 'nav.bakerDesc' }
 - [ ] PRD 功能点 1-6 全部实现
 - [ ] UT 覆盖率 adapter + baker.ts ≥ 90%
 - [ ] E2E 覆盖 PRD 功能点
-- [ ] 34 个 i18n key × 14 语言全量
+- [ ] 36 个新增 i18n key × 14 语言全量（另修改 nav.story / nav.storyDesc）
 - [ ] `npm run lint` / `npm run test` / `npm run build` 通过
 
 ## 7. 风险与回滚
@@ -836,7 +1088,7 @@ baker: { code: 'HSA-BKR', nameKey: 'nav.baker', descKey: 'nav.bakerDesc' }
 ## 8. 相关文档
 
 - [[20260730-story-chronicle|剧情纪事产品方案]]
-- [[20260730-story-chronicle|剧情纪事技术方案 v1.2]]
+- [[20260730-story-chronicle|剧情纪事技术方案 v1.3]]
 - [前端开发规范](../frontend-spec.md)
 - [数据表映射参考](../references/data-mapping-tables.md)
 - [UI 常见陷阱参考](../references/ui-pitfalls.md)

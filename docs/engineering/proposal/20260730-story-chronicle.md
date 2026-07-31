@@ -7,10 +7,12 @@ type: Fleeting
 
 **功能名称**: 剧情纪事（Story Chronicle）—— archive/story 模块重构 + Baker 新模块
 **关联 PRD**: [[20260730-story-chronicle|剧情纪事]]
-**技术提案版本**: v1.2
+**技术提案版本**: v1.3
 **创建日期**: 2026-07-30
 **作者**: 前端工程
 **feat-branch**: `feat/story-chronicle`
+
+**v1.3 变更**: 清理 v1.2 更名后的旧称遗留（纪事长卷→剧情梗概、馆藏文库→PRTS 文库）；补充 dlg key 四种变体格式；数据复核修正（分支点 931→999、测试类型 ~31→7）；明确分支点节点本身无消息文本；说明 DialogSummaryTable 1143 条中 1078 条被映射。
 
 **v1.2 变更**: 根据 review 意见调整命名（纪事长卷→剧情梗概、馆藏文库→PRTS 文库）、明确篇章类型前缀为数据规律归纳、Baker「我」默认角色 chr_0003_endminf、Baker topic 排序策略。
 
@@ -18,7 +20,7 @@ type: Fleeting
 
 ### 1.1 背景
 
-现有 story 模块（`src/pages/story/StoryOverview.tsx`，29 行）仅拉取 `PrtsDocument` 单表渲染标题网格，`StoryDocument` 类型无正文字段，无详情路由。数据侧已确认游戏内存在完整叙事数据体系（剧情梗概 1143 段、PRTS 文献 462 条、富文本正文 676 篇），可支撑 PRD 的「纪事长卷」与「馆藏文库」两大板块。
+现有 story 模块（`src/pages/story/StoryOverview.tsx`，29 行）仅拉取 `PrtsDocument` 单表渲染标题网格，`StoryDocument` 类型无正文字段，无详情路由。数据侧已确认游戏内存在完整叙事数据体系（剧情梗概 1143 段、PRTS 文献 462 条、富文本正文 676 篇），可支撑 PRD 的「剧情梗概」与「PRTS 文库」两大板块。
 
 ### 1.2 目标
 
@@ -44,18 +46,19 @@ type: Fleeting
 
 ## 2. 数据探查结论
 
-### 2.1 剧情梗概（纪事长卷）
+### 2.1 剧情梗概
 
 | 表 | 规模 | 结构 | 说明 |
 |----|------|------|------|
 | `DialogSummaryMapTable` | 1078 keys | `dlg_*` → `summary_*`（字符串） | 对话组 → 梗概条目映射 |
 | `DialogSummaryTable` | 1143 keys | `{ id, text }` | 梗概文本（i18n id），i18n dict 按表可取 |
 
-- `dlg_*` key 编码了篇章/任务/场次：如 `dlg_e1m3_4` = 篇章 e1 · 任务 m3 · 第 4 场，天然有序，直接按 key 排序即得游戏内顺序。
+- `dlg_*` key 编码了篇章/任务/场次：如 `dlg_e1m3_4` = 篇章 e1 · 任务 m3 · 第 4 场，天然有序。已对全量 1078 个 key 验证存在四种格式变体：`dlg_e1m3_4`（常规）、`dlg_sm2l4m5_9`（l 段，293 条 sm 支线全部为此型）、`dlg_a1m8d1_1`（m 后 d 段，117 条）、`dlg_e1m1_4d2`（场次 d 后缀，65 条）。完整正则：`^dlg_([a-z]+)(\d+)(?:l(\d+))?m(\d+)(?:d(\d+))?_(\d+)(?:d(\d+))?$`。排序须按解析出的数值元组（chapter 数达 33、mission 数达 29、sceneNo 最大 13034，字符串排序必错乱）。
+- `DialogSummaryTable` 共 1143 条，其中 1078 条被 map 表引用（一一对应）；其余 65 条无对话组映射，初版以 map 表为准展示 1078 段，未映射条目不展示。
 - 前缀分布（**数据规律归纳，命名规则暂不明确**，实现时用 i18n search 校准命名）：`e`(346) 主线、`sm`(293) 支线、`c`(197) 干员故事、`f`(122) 地区事务、`gm`(87) 委托、`a`(19) 谷地支线、`db`(13) 协议空间、`m`(1) 其他。实现阶段需用游戏内文本校准各类型的实际含义。
 - 梗概文本样例质量良好（如 `summary_e1m1_1_001`：「你与佩丽卡准备徒步前往枢纽区基地。」）。
 
-### 2.2 PRTS 文库（馆藏文库）
+### 2.2 PRTS 文库
 
 ```mermaid
 entityRelationshipDiagram
@@ -109,9 +112,9 @@ entityRelationshipDiagram
 | 9 | 1+ | 表情回应（`contentParams` JSON：`emojiResPath`+`npcIds`+`npcCount`） | pin reaction 角标，附着在前序消息 |
 | 10 | 20 | PRTS 收藏分享（`contentParams` 含 `nar_*` 条目 id） | 分享卡片（可跳转文献详情） |
 | 12 | 44 | 任务链接（`linkMissionId`） | 任务卡片 |
-| 4/5/6/8/11 | ~31 | 视频/语音/物品卡/转发卡/投票（均为 `sns_test_*` 测试会话） | 未知类型跳过不渲染 |
+| 4/5/6/8/11 | 7 | 视频/语音/物品卡/转发卡/投票（均为 `sns_test_*` 测试会话） | 未知类型跳过不渲染 |
 
-**分支模型**：`dialogOptionIds` 非空的节点为分支点（931 处），各选项 `optionNextContentId` 指向不同后续节点，分支最终汇合（固定路径）。切换选项即从分支点沿新 `optionNextContentId` 重新遍历。
+**分支模型**：`dialogOptionIds` 非空的节点为分支点（999 处，选项数 1/2/3 个分别 621/330/48）。**分支点节点本身无消息文本**（999/999 `content.id` 为空，是纯选项容器），不得渲染为消息气泡；选中选项成为「我」发出的消息。各选项 `optionNextContentId` 指向不同后续节点，分支最终汇合（固定路径）。切换选项即从分支点沿新 `optionNextContentId` 重新遍历。
 
 **素材**：头像 `sprites/charroundicon/{icon}.png`（`icon_sns_npc_*` / `icon_round_chr_*`，61+30 个）；表情包 `sprites/sns/emoji/sns_emoji_*.png`（43）；图片消息 `sprites/sns/picture/sns_image_*.png`（37）。
 
@@ -187,7 +190,7 @@ Sidebar 与 ArchiveHome：更新 story 文案，并在 chronicle（编年）分�
 ### 4.1 类型设计（`src/lib/types.ts` 新增）
 
 ```ts
-// 纪事长卷
+// 剧情梗概
 export interface StoryRecapScene {        // 一场戏的梗概
   id: string                              // summary id
   dlgId: string                           // dlg_e1m3_4
@@ -204,7 +207,7 @@ export interface StoryRecapChapter {      // 篇章 → 任务两级导航
   missions: { missionId: string; scenes: StoryRecapScene[] }[]
 }
 
-// 馆藏文库
+// PRTS 文库
 export interface PrtsCategory { id: string; name: string; order: number; itemCount: number }
 export interface PrtsVolume {             // 卷（PrtsFirstLv）
   id: string; categoryId: string; name: string; subName: string
@@ -258,8 +261,10 @@ export interface BakerMessage {
 }
 export interface BakerOption { id: string; text: string; emojiUrl?: string }
 export interface BakerBeat {              // 消息流节点：消息 | 分支点
-  messages: BakerMessage[]                // 分支点前的连续消息段
+  messages: BakerMessage[]                // 分支点前的连续消息段（分支点 beat 为空数组）
   options?: BakerOption[]                 // 非空即分支点
+  selectedOptionId?: string               // 分支点当前选中项（choices 或默认第一项）
+  branchId?: number                       // 分支点 contentId，切换回调用
 }
 ```
 
@@ -273,7 +278,7 @@ function resolveDialog(
 ): BakerBeat[]
 ```
 
-- 从 `SNSConst.snsDialogStartId`（"1"）开始沿 `nextContentId` 遍历；遇 `dialogOptionIds` 非空节点记为分支点，取 `choices[contentId]` 或第一项的 `optionNextContentId` 继续；`nextContentId <= 0` 结束。
+- 从 `SNSConst.snsDialogStartId`（"1"）开始沿 `nextContentId` 遍历；遇 `dialogOptionIds` 非空节点记为分支点（节点本身无消息文本，不产生气泡），取 `choices[contentId]` 或第一项的 `optionNextContentId` 继续；`nextContentId <= 0` 结束。
 - 环保护：visited set 上限防御，异常即截断。
 - 切换分支：更新 `choices`（同时丢弃该分支点之后的旧选择）→ 重新执行 `resolveDialog` → 重渲染后续消息。计算量极小（单场 ≤ 百级节点），无需缓存。
 - contentType 9（表情回应）在遍历时归并到其前序消息（按 `preContentId` 归属），不作为独立气泡。
@@ -293,8 +298,8 @@ function resolveDialog(
 
 ### 4.5 适配要点
 
-- **梗概排序**：解析 `dlg_{prefix}{a}m{b}_{c}`，按 `(chapterType, chapterId 数值, missionId 数值, sceneNo)` 排序；无法解析的 key 归入「其他」分组并记录 console 警告，不丢弃数据。**章节类型前缀为数据规律归纳，命名规则暂不明确，实现阶段需用游戏内文本校准**。
-- **编号生成**：`code = ${chapterId.toUpperCase()}·M${m}·场${String(c).padStart(2,'0')}`。
+- **梗概排序**：解析 `dlg_{prefix}{a}(l{x})?m{b}(d{y})?_{c}(d{z})?` 四种变体（见 §2.1），按解析出的数值元组 `(chapterType, chapterNum, lvNum, missionNum, missionSub, sceneNo, sceneSub)` 排序，禁止字符串排序；无法解析的 key 归入「其他」分组并记录 console 警告，不丢弃数据。**章节类型前缀为数据规律归纳，命名规则暂不明确，实现阶段需用游戏内文本校准**。
+- **编号生成**：`code = ${chapterId.toUpperCase()}·M${m}·${sceneLabel}${String(c).padStart(2,'0')}`，`sceneLabel` 取 `t('story.scene')`（「场」跟随语言，禁止硬编码）。
 - **卷图标回退**：依次尝试 `sprites/prts/icon/{icon}.png` → `sprites/prts/{icon}.png` → 占位图形（`onError` 链式回退）。
 - **多媒体剧本**：`PrtsAllItem.contentId`（`radio_*`）→ `RadioTable[contentId].radioSingleDataList`，speaker/line 均经 i18n dict 解析。
 - **正文展开**：`RichContentTable[contentId]` → `title` + `contentList[].content`，每段文本直接交由现有 `<RichText>` 渲染（已支持 `<image>`、color、b、hyperlink）。
