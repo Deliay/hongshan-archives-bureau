@@ -307,17 +307,15 @@ describe('buildMissionQuestTree', () => {
     objectives: [],
   })
 
-  it('builds a linear chain from prevQuestIdList', () => {
+  it('flattens main-path quests into a flat spine (no nesting)', () => {
     const quests = [
       mk('a1m2_q#3'),
       mk('a1m2_q#4', ['a1m2_q#3']),
       mk('a1m2_q#Day1', ['a1m2_q#4']),
     ]
     const tree = buildMissionQuestTree(['a1m2_q#3', 'a1m2_q#4', 'a1m2_q#Day1'], quests)
-    expect(tree).toHaveLength(1)
-    expect(tree[0].questId).toBe('a1m2_q#3')
-    expect(tree[0].children.map(c => c.questId)).toEqual(['a1m2_q#4'])
-    expect(tree[0].children[0].children[0].questId).toBe('a1m2_q#Day1')
+    expect(tree.map(n => n.questId)).toEqual(['a1m2_q#3', 'a1m2_q#4', 'a1m2_q#Day1'])
+    expect(tree.every(n => n.children.length === 0)).toBe(true)
   })
 
   it('attaches branch quests to their main-path parent', () => {
@@ -327,9 +325,20 @@ describe('buildMissionQuestTree', () => {
       mk('sm2l4m5_q#10', ['sm2l4m5_q#7', 'sm2l4m5_q#8'], false),
     ]
     const tree = buildMissionQuestTree(['sm2l4m5_q#7'], quests)
-    // q#7 root; q#8 orphan root; q#10 attached to q#7 (first main-path prev)
+    // q#7 spine root; q#8 orphan root; q#10 attached to q#7 (first main-path prev)
     expect(tree.map(n => n.questId)).toEqual(['sm2l4m5_q#7', 'sm2l4m5_q#8'])
     expect(tree[0].children.map(c => c.questId)).toEqual(['sm2l4m5_q#10'])
+  })
+
+  it('nests branch-on-branch quests under their branch parent', () => {
+    const quests = [
+      mk('q#1'),
+      mk('q#B1', ['q#1'], false),
+      mk('q#B2', ['q#B1'], false),
+    ]
+    const tree = buildMissionQuestTree(['q#1'], quests)
+    expect(tree[0].children.map(c => c.questId)).toEqual(['q#B1'])
+    expect(tree[0].children[0].children.map(c => c.questId)).toEqual(['q#B2'])
   })
 
   it('treats quests whose prev is not in the questDic as roots', () => {

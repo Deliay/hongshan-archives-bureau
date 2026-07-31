@@ -156,6 +156,8 @@ type: Permanent
 2. `buildMissionQuestTree(mainPathQuests, quests)` 纯函数构建依赖树：以 `prevQuestIdList` 中「在主路径内且序号最小」的 prev 为父（多父确定性收编）；prev 不存在/为空视为根；孤儿分支 quest 按主路径序与 questId 排序；带环保护（re-entrant 节点跳过）与无根回退。
 3. 详情页「任务目标」改为递归树渲染：quest 节点缩进 + `border-l` 连接线 + 主路径徽标，目标项（objectiveList）挂在该 quest 节点下。
 
+**二轮优化（树过深）**：主路径 quest 原本按 `prevQuestIdList` 逐层嵌套（a1m2 线性链深达 17 层）。优化为**主路径平铺为脊柱**——所有主路径 quest 直接作为根节点按 `mainPathQuests` 顺序平铺，仅分支 quest 挂载到其主路径/分支父节点下缩进渲染；分支嵌套深度 = 分支链深度 + 1（线性任务 0 层嵌套）。缩进从 `ml-4 pl-4` 收紧为 `ml-3 pl-3`。
+
 **涉及文件**：
 - `src/lib/types.ts` — `MissionQuestTreeNode`
 - `src/lib/adapter.ts` — `buildMissionQuestTree`
@@ -163,11 +165,11 @@ type: Permanent
 - `src/lib/__tests__/adapter-story.test.ts` — 树构建 4 例
 
 **验证结果**：
-- ✅ `npx vitest run src/lib/__tests__/adapter-story.test.ts`：32/32 passed
-- ✅ Playwright 冒烟：a1m2 渲染 17 个树节点带「主路径」徽标；sm2l4m5 分支 quest `q#8` 挂在依赖的 `q#6` 下、多父 `q#10` 挂在主路径 `q#7` 下；无 console 错误
+- ✅ `npx vitest run src/lib/__tests__/adapter-story.test.ts`：33/33 passed（树构建 5 例）
+- ✅ Playwright 冒烟（优化后）：a1m2 线性链 17 节点平铺、0 层嵌套；sm2l4m5 分支 quest `q#8` 挂在 `q#6` 下（1 层嵌套）、多父 `q#10` 挂在主路径 `q#7` 下；无 console 错误
 - ✅ `npm run lint`：0 errors
 - ✅ `npm run build`：构建成功
-- ✅ commit `9f90c78`
+- ✅ commit `9f90c78` + 深度优化待提交
 
 ---
 

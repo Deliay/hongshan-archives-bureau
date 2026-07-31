@@ -458,12 +458,17 @@ export function buildMissionQuestTree(
 
   const mainIndex = new Map<string, number>()
   mainPathQuests.forEach((id, i) => { mainIndex.set(id, i) })
+  const isSpine = (id: string) => mainIndex.has(id)
 
   const parentOf = new Map<string, string | null>()
   const childrenMap = new Map<string, string[]>()
 
   for (const q of quests) {
-    const validPrevs = q.prevQuestIds.filter(p => questMap.has(p))
+    if (isSpine(q.questId)) {
+      parentOf.set(q.questId, null)
+      continue
+    }
+    const validPrevs = q.prevQuestIds.filter(p => questMap.has(p) && p !== q.questId)
     let parent: string | null = null
     if (validPrevs.length > 0) {
       const sorted = [...validPrevs].sort((a, b) => {
@@ -503,10 +508,12 @@ export function buildMissionQuestTree(
     return { ...q, children }
   }
 
-  const roots = [...parentOf.entries()]
-    .filter(([, parent]) => !parent)
+  const spineRoots = mainPathQuests.filter(id => questMap.has(id))
+  const orphanRoots = [...parentOf.entries()]
+    .filter(([id, parent]) => !parent && !isSpine(id))
     .map(([id]) => id)
     .sort(sortIds)
+  const roots = [...spineRoots, ...orphanRoots]
   if (roots.length === 0 && quests.length > 0) roots.push(quests[0].questId)
   return roots.map(build).filter((n): n is MissionQuestTreeNode => n !== null)
 }

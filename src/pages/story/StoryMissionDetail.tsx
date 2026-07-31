@@ -107,7 +107,7 @@ function QuestNode({ node }: { node: MissionQuestTreeNode }) {
         </div>
       )}
       {node.children.length > 0 && (
-        <div className="ml-4 mt-1 pl-4 border-l border-archive-gold/20 space-y-3">
+        <div className="ml-3 mt-1 pl-3 border-l border-archive-gold/20 space-y-3">
           {node.children.map(child => (
             <QuestNode key={child.questId} node={child} />
           ))}
