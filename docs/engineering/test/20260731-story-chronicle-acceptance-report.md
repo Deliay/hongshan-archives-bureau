@@ -124,7 +124,7 @@ type: Permanent
 - ✅ Playwright 冒烟：recap 页不再出现「谷地支线/主线/干员故事」，下拉含 E/SM/A/DB/OTHER，无 console 错误
 - ✅ `npm run lint`：0 errors
 - ✅ `npm run build`：构建成功
-- ⏳ 提交后回填 commit hash
+- ✅ commit `39562c0`
 
 ---
 
@@ -152,7 +152,7 @@ type: Permanent
 | 2.1 | 剧情梗概任务 id 未渲染任务名 | 未接入 TextTable `{missionId}_name`；`StoryRecapMission` 无 `name` 字段；页面直接渲染 `missionId` | ✅ 已修复 | `965882d` |
 | 2.2 | 任务名排版换行 | 未设 `whitespace-nowrap`，侧边栏任务项上下两行 | ✅ 已修复 | `965882d` |
 | 2.3 | missionId 穿透进入 | 功能未规划落地 | ✅ 已实现（任务详情页 + 深链），方案见 §7.2.3 | `2325081` |
-| 2.4 | 章节类型标签为臆测分类名称 | 依据 dlg key 前缀臆测归纳 | ✅ 已修复（改为原始前缀字母） | 待提交 |
+| 2.4 | 章节类型标签为臆测分类名称 | 依据 dlg key 前缀臆测归纳 | ✅ 已修复（改为原始前缀字母） | `39562c0` |
 
 ---
 
