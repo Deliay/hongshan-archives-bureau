@@ -76,7 +76,7 @@ type: Permanent
 - ✅ `npx vitest run src/lib/__tests__/adapter-story.test.ts`：21/21 passed（含新增 1 例）
 - ✅ `npm run lint`：0 errors
 - ✅ `npm run build`：构建成功（含 tsc）
-- ⏳ 提交后回填 commit hash
+- ✅ commit `30191ca`
 ---
 
 ### 2.2 任务名排版换行
@@ -94,7 +94,7 @@ type: Permanent
 **验证结果**：
 - ✅ `npm run lint`：0 errors
 - ✅ `npm run build`：构建成功（含 tsc）
-- ⏳ 提交后回填 commit hash
+- ✅ commit `30191ca`
 ---
 
 ### 2.3 missionId 穿透进入（暂缓）
@@ -141,7 +141,7 @@ type: Permanent
 **验证结果**：
 - ✅ `npm run lint`：0 errors
 - ✅ `npm run build`：构建成功
-- ⏳ 提交后回填 commit hash
+- ✅ commit `30191ca`
 
 ---
 
@@ -170,7 +170,7 @@ type: Permanent
 | 2.2 | 任务名排版换行 | 未设 `whitespace-nowrap`，侧边栏任务项上下两行 | ✅ 已修复 | `965882d` |
 | 2.3 | missionId 穿透进入 | 功能未规划落地 | ✅ 已实现（任务详情页 + 深链），方案见 §7.2.3 | `2325081` |
 | 2.4 | 章节类型标签为臆测分类名称 | 依据 dlg key 前缀臆测归纳 | ✅ 已修复（改为原始前缀字母） | `39562c0` |
-| 2.5 | 任务详情页文本未用 RichText 渲染 | 直接输出纯文本 | ✅ 已修复 | 待提交 |
+| 2.5 | 任务详情页文本未用 RichText 渲染 | 直接输出纯文本 | ✅ 已修复 | `30191ca` |
 
 ---
 
