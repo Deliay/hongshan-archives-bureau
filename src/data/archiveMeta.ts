@@ -11,6 +11,7 @@ export const MODULE_CODES: Record<string, string> = {
   factory: 'HSA-FAC',
   search: 'HSA-SRC',
   story: 'HSA-STY',
+  baker: 'HSA-BKR',
   activity: 'HSA-ACT',
   updates: 'HSA-UPD',
 }

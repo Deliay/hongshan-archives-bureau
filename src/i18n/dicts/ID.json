@@ -204,14 +204,16 @@
     "racesDesc": "Jelajahi ras",
     "search": "Cari arsip",
     "searchDesc": "Cari di semua arsip",
-    "story": "Cerita",
-    "storyDesc": "Baca cerita dan lore",
+    "story": "Kronik Cerita",
+    "storyDesc": "Ringkasan cerita, perpustakaan PRTS & obrolan Baker",
     "threat": "Ancaman",
     "threatDesc": "Analisis data ancaman",
     "updates": "Catatan pembaruan",
     "updatesDesc": "Lihat riwayat pembaruan",
     "weapons": "File Senjata",
-    "weaponsDesc": "Cari data senjata"
+    "weaponsDesc": "Cari data senjata",
+    "baker": "Baker",
+    "bakerDesc": "Alur cerita obrolan"
   },
   "operator": {
     "allElements": "Semua elemen",
@@ -304,7 +306,28 @@
     "subtitle": "Arsip data terbuka Endfield"
   },
   "story": {
-    "title": "Catatan cerita"
+    "title": "Catatan cerita",
+    "recap": "Ringkasan cerita",
+    "recapDesc": "Ringkasan resmi",
+    "library": "Perpustakaan PRTS",
+    "libraryDesc": "Dokumen dunia",
+    "spoilerHint": "Peringatan spoiler",
+    "scene": "Adegan",
+    "typeAll": "Semua",
+    "chapterType": {
+      "e": "Cerita utama",
+      "sm": "Misi sampingan",
+      "c": "Cerita operator",
+      "f": "Urusan wilayah",
+      "gm": "Komisi",
+      "a": "Misi lembah",
+      "db": "Ruang protokol",
+      "m": "Lainnya",
+      "other": "Lainnya"
+    },
+    "emptyContent": "Konten tidak tersedia",
+    "audioTranscript": "Transkrip audio",
+    "backToVolume": "Kembali ke volume"
   },
   "update": {
     "added": "Ditambahkan",
@@ -401,5 +424,26 @@
     "regionValley4": "Lembah IV",
     "priming": "Perlu isian awal",
     "reactorSlots": "Buffer {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "Ringkasan",
+    "library": "Perpustakaan",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "Semua",
+      "operator": "Operator",
+      "contact": "Kontak",
+      "group": "Grup"
+    },
+    "selectChat": "Pilih kontak",
+    "emptyChat": "Tidak ada pesan",
+    "sessionSeparator": "Sesi {{n}}",
+    "selfName": "Saya",
+    "reactedBy": "Ditanggapi oleh {{name}}",
+    "sharedArchive": "Arsip bersama",
+    "missionLink": "Tautan misi"
   }
 }

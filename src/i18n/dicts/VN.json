@@ -204,14 +204,16 @@
     "racesDesc": "Khám phá chủng tộc",
     "search": "Tìm kiếm hồ sơ",
     "searchDesc": "Tìm kiếm trong tất cả hồ sơ",
-    "story": "Câu chuyện",
-    "storyDesc": "Đọc cốt truyện và truyền thuyết",
+    "story": "Biên niên truyện",
+    "storyDesc": "Tóm tắt truyện, thư viện PRTS & chat Baker",
     "threat": "Mối đe dọa",
     "threatDesc": "Phân tích dữ liệu mối đe dọa",
     "updates": "Nhật ký cập nhật",
     "updatesDesc": "Xem lịch sử cập nhật",
     "weapons": "Hồ Sơ Vũ Khí",
-    "weaponsDesc": "Tra cứu dữ liệu vũ khí"
+    "weaponsDesc": "Tra cứu dữ liệu vũ khí",
+    "baker": "Baker",
+    "bakerDesc": "Cốt truyện chat"
   },
   "operator": {
     "allElements": "Tất cả nguyên tố",
@@ -304,7 +306,28 @@
     "subtitle": "Kho dữ liệu mở Endfield"
   },
   "story": {
-    "title": "Ghi chép cốt truyện"
+    "title": "Ghi chép cốt truyện",
+    "recap": "Tóm tắt truyện",
+    "recapDesc": "Tóm tắt chính thức",
+    "library": "Thư viện PRTS",
+    "libraryDesc": "Tài liệu thế giới",
+    "spoilerHint": "Cảnh báo spoiler",
+    "scene": "Cảnh",
+    "typeAll": "Tất cả",
+    "chapterType": {
+      "e": "Truyện chính",
+      "sm": "Nhiệm vụ phụ",
+      "c": "Truyện điều hành viên",
+      "f": "Vùng sự vụ",
+      "gm": "Nhiệm vụ ủy thác",
+      "a": "Nhiệm vụ thung lũng",
+      "db": "Không gian giao thức",
+      "m": "Khác",
+      "other": "Khác"
+    },
+    "emptyContent": "Nội dung chưa có",
+    "audioTranscript": "Bản ghi âm",
+    "backToVolume": "Quay lại tập"
   },
   "update": {
     "added": "Đã thêm",
@@ -401,5 +424,26 @@
     "regionValley4": "Thung lũng IV",
     "priming": "Cần nạp trước",
     "reactorSlots": "Vùng đệm {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "Tóm tắt",
+    "library": "Thư viện",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "Tất cả",
+      "operator": "Điều hành viên",
+      "contact": "Liên hệ",
+      "group": "Nhóm"
+    },
+    "selectChat": "Chọn liên hệ",
+    "emptyChat": "Không có tin nhắn",
+    "sessionSeparator": "Phiên {{n}}",
+    "selfName": "Tôi",
+    "reactedBy": "{{name}} đã phản ứng",
+    "sharedArchive": "Lưu trữ chia sẻ",
+    "missionLink": "Liên kết nhiệm vụ"
   }
 }

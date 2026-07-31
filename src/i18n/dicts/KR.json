@@ -204,14 +204,16 @@
     "racesDesc": "종족 자료 수집",
     "search": "아카이브 검색",
     "searchDesc": "모든 아카이브에서 검색",
-    "story": "가이드 기록",
-    "storyDesc": "서사 자료 아카이브",
+    "story": "스토리 크로니클",
+    "storyDesc": "스토리 요약, PRTS 도서관 & Baker 채팅",
     "threat": "위협 기록",
     "threatDesc": "적대 생물 및 무장 정보",
     "updates": "업데이트 로그",
     "updatesDesc": "버전 간 데이터 변경",
     "weapons": "무기 도감",
-    "weaponsDesc": "모듈형 무기 기록"
+    "weaponsDesc": "모듈형 무기 기록",
+    "baker": "Baker",
+    "bakerDesc": "채팅 앱 스토리"
   },
   "operator": {
     "allElements": "모든 원소",
@@ -304,7 +306,28 @@
     "subtitle": "탈로스 II 공식 아카이브 관리 및 열조 시스템"
   },
   "story": {
-    "title": "스토리 기록"
+    "title": "스토리 기록",
+    "recap": "스토리 요약",
+    "recapDesc": "공식 스토리 요약",
+    "library": "PRTS 도서관",
+    "libraryDesc": "세계관 문서",
+    "spoilerHint": "스포일러 주의",
+    "scene": "장면",
+    "typeAll": "전체",
+    "chapterType": {
+      "e": "메인 스토리",
+      "sm": "사이드 미션",
+      "c": "오퍼레이터 스토리",
+      "f": "지역 퀘스트",
+      "gm": "의뢰",
+      "a": "밸리 사이드",
+      "db": "프로토콜 스페이스",
+      "m": "기타",
+      "other": "기타"
+    },
+    "emptyContent": "콘텐츠 없음",
+    "audioTranscript": "음성 전사",
+    "backToVolume": "권으로 돌아가기"
   },
   "update": {
     "added": "추가",
@@ -401,5 +424,26 @@
     "regionValley4": "제4계곡",
     "priming": "사전 투입 필요",
     "reactorSlots": "버퍼 {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "요약",
+    "library": "도서관",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "전체",
+      "operator": "오퍼레이터",
+      "contact": "연락처",
+      "group": "그룹 채팅"
+    },
+    "selectChat": "연락처를 선택하세요",
+    "emptyChat": "메시지 없음",
+    "sessionSeparator": "세션 {{n}}",
+    "selfName": "나",
+    "reactedBy": "{{name}} 의 반응",
+    "sharedArchive": "PRTS 공유 아카이브",
+    "missionLink": "미션 링크"
   }
 }

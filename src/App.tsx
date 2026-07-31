@@ -28,6 +28,10 @@ import { ListSkeleton } from './components/ui/ListSkeleton'
 const FactoryRecipes = lazy(() => import('./pages/factory/FactoryRecipes'))
 const FactoryChains = lazy(() => import('./pages/factory/FactoryChains'))
 import StoryOverview from './pages/story/StoryOverview'
+import StoryRecap from './pages/story/StoryRecap'
+import StoryLibrary from './pages/story/StoryLibrary'
+import StoryDocumentDetail from './pages/story/StoryDocumentDetail'
+import BakerTerminal from './pages/baker/BakerTerminal'
 import ActivityArchive from './pages/activities/ActivityArchive'
 import ArchiveSearch from './pages/search/ArchiveSearch'
 import UpdateHome from './pages/updates/UpdateHome'
@@ -66,6 +70,10 @@ function AppRoutes() {
               <Route path="chains" element={<Suspense fallback={<ListSkeleton />}><FactoryChains /></Suspense>} />
             </Route>
             <Route path="story" element={<StoryOverview />} />
+            <Route path="story/recap" element={<StoryRecap />} />
+            <Route path="story/library" element={<StoryLibrary />} />
+            <Route path="story/library/:itemId" element={<StoryDocumentDetail />} />
+            <Route path="baker" element={<BakerTerminal />} />
             <Route path="activities" element={<ActivityArchive />} />
             <Route path="search" element={<ArchiveSearch />} />
             <Route path="updates" element={<UpdateHome />} />

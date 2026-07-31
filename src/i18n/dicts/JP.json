@@ -204,14 +204,16 @@
     "racesDesc": "種族資料集",
     "search": "檔案検索",
     "searchDesc": "全檔案から検索",
-    "story": "ガイド記録",
-    "storyDesc": "叙事資料アーカイブ",
+    "story": "ストリークロニクル",
+    "storyDesc": "ストーリー要約、PRTS図書館＆Bakerチャット",
     "threat": "脅威記録",
     "threatDesc": "敵対生物と武装情報",
     "updates": "更新ログ",
     "updatesDesc": "バージョン間のデータ変更",
     "weapons": "武器記録",
-    "weaponsDesc": "モジュール式武器記録"
+    "weaponsDesc": "モジュール式武器記録",
+    "baker": "Baker",
+    "bakerDesc": "チャットアプリのストーリー"
   },
   "operator": {
     "allElements": "すべての元素",
@@ -304,7 +306,28 @@
     "subtitle": "タロスII公式檔案管理・閲覧システム"
   },
   "story": {
-    "title": "劇情記録"
+    "title": "劇情記録",
+    "recap": "ストーリー要約",
+    "recapDesc": "公式ストーリー要約",
+    "library": "PRTS図書館",
+    "libraryDesc": "世界観文献",
+    "spoilerHint": "ネタバレ注意",
+    "scene": "シーン",
+    "typeAll": "すべて",
+    "chapterType": {
+      "e": "メインストーリー",
+      "sm": "サイドミッション",
+      "c": "オペレーター ストーリー",
+      "f": "地域クエスト",
+      "gm": "依頼",
+      "a": "バレー サイド",
+      "db": "プロトコル スペース",
+      "m": "その他",
+      "other": "その他"
+    },
+    "emptyContent": "コンテンツなし",
+    "audioTranscript": "音声書き起こし",
+    "backToVolume": "巻に戻る"
   },
   "update": {
     "added": "追加",
@@ -401,5 +424,26 @@
     "regionValley4": "四号谷地",
     "priming": "事前投入が必要",
     "reactorSlots": "バッファ {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "要約",
+    "library": "図書館",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "すべて",
+      "operator": "オペレーター",
+      "contact": "連絡先",
+      "group": "グループチャット"
+    },
+    "selectChat": "連絡先を選択",
+    "emptyChat": "メッセージなし",
+    "sessionSeparator": "セッション {{n}}",
+    "selfName": "私",
+    "reactedBy": "{{name}} のリアクション",
+    "sharedArchive": "PRTS 共有アーカイブ",
+    "missionLink": "ミッションリンク"
   }
 }

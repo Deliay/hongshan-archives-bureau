@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText } from '../lib/api'
+import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText, fetchTableEntry, fetchTableDictEntry } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
+import { useI18n } from '../i18n'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, ASSET_BASE } from '../lib/adapter'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic } from '../lib/types'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, adaptRecapChapter, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat } from '../lib/adapter'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
@@ -13,6 +14,7 @@ import type { FactoryRecipe, FactoryMachine, FactoryItemIndex, ChainGraph, Chain
 import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '../lib/factory/recipes'
 import { buildChainGraph } from '../lib/factory/chain'
 import { getFactoryRegion } from '../lib/factory/regions'
+import type { ResolveContext } from '../lib/baker'
 
 // AttributeType enum name → blackboard key (from TianShiTools Attributes.cs)
 const ATTRIBUTE_TYPE_MAP: Record<number, string> = {
@@ -1306,4 +1308,175 @@ export function useCraftingChain(targets: ChainTarget[], regionId?: string): Use
   }, [factoryData, targets, chainData, liquids, beltTable, pipeTable, regionId])
 
   return { data: graph, loading, error, refetch }
+}
+
+// ===== Story Chronicle hooks =====
+
+export function useStoryRecap(): UseDataResult<{
+  scenes: StoryRecapScene[]
+  chapters: StoryRecapChapter[]
+  stats: { total: number; byType: Record<string, number> }
+}> {
+  const { locale } = useLocale()
+  const { t } = useI18n()
+  return useData(async () => {
+    const [mapRaw, summaryRaw, summaryI18n] = await Promise.all([
+      getCachedData<Record<string, string>>('DialogSummaryMapTable', () => fetchTableAll('DialogSummaryMapTable')),
+      getCachedData<Record<string, any>>('DialogSummaryTable', () => fetchTableAll('DialogSummaryTable')),
+      getTableI18nDict('DialogSummaryTable', locale),
+    ])
+    const scenes = Object.entries(mapRaw)
+      .map(([dlgKey, summaryId]) => {
+        const summary = summaryRaw[summaryId]
+        if (!summary) return null
+        const scene = adaptRecapScene(dlgKey, summaryId, summary, summaryI18n, t('story.scene'))
+        if (!scene) console.warn(`[story-recap] unrecognized dlg key: ${dlgKey}`)
+        return scene ?? adaptRecapFallbackScene(dlgKey, summaryId, summary, summaryI18n, t('story.scene'))
+      })
+      .filter((s): s is StoryRecapScene => s !== null)
+    const chapters = adaptRecapChapter(scenes)
+    const byType: Record<string, number> = {}
+    for (const s of scenes) byType[s.chapterType] = (byType[s.chapterType] ?? 0) + 1
+    return { scenes, chapters, stats: { total: scenes.length, byType } }
+  }, [locale])
+}
+
+export function usePrtsLibrary(): UseDataResult<{
+  categories: PrtsCategory[]
+  volumes: PrtsVolume[]
+  items: PrtsItem[]
+}> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [catRaw, volRaw, itemRaw, catI18n, volI18n, itemI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('PrtsCategory', () => fetchTableAll('PrtsCategory')),
+      getCachedData<Record<string, any>>('PrtsFirstLv', () => fetchTableAll('PrtsFirstLv')),
+      getCachedData<Record<string, any>>('PrtsAllItem', () => fetchTableAll('PrtsAllItem')),
+      getTableI18nDict('PrtsCategory', locale),
+      getTableI18nDict('PrtsFirstLv', locale),
+      getTableI18nDict('PrtsAllItem', locale),
+    ])
+    const categories = Object.entries(catRaw).map(([k, v]) => adaptPrtsCategory({ ...(v as any), $key: k }, catI18n))
+    const volumes = Object.entries(volRaw).map(([k, v]) => adaptPrtsVolume({ ...(v as any), $key: k }, volI18n))
+    const items = Object.entries(itemRaw).map(([k, v]) => adaptPrtsItem({ ...(v as any), $key: k }, itemI18n))
+    for (const cat of categories) {
+      cat.itemCount = items.filter((i) => volumes.find((v) => v.id === i.volumeId && v.categoryId === cat.id)).length
+    }
+    return { categories, volumes, items }
+  }, [locale])
+}
+
+export function usePrtsItemDetail(itemId: string): UseDataResult<PrtsItemDetail | null> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [itemRaw, volRaw, itemI18n, volI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('PrtsAllItem', () => fetchTableAll('PrtsAllItem')),
+      getCachedData<Record<string, any>>('PrtsFirstLv', () => fetchTableAll('PrtsFirstLv')),
+      getTableI18nDict('PrtsAllItem', locale),
+      getTableI18nDict('PrtsFirstLv', locale),
+    ])
+    const item = itemRaw[itemId]
+    if (!item) return null
+    const base = adaptPrtsItem({ ...item, $key: itemId }, itemI18n)
+    const volume = volRaw[base.volumeId]
+    const detail: PrtsItemDetail = {
+      ...base,
+      volumeName: resolveI18n(volume?.name, volI18n),
+      categoryId: volume?.categoryId ?? '',
+      contents: [],
+    }
+    if (base.type === 'multi_media') {
+      const [radio, radioI18n] = await Promise.all([
+        getCachedData<any>('RadioTable', () => fetchTableEntry('RadioTable', base.contentId), base.contentId),
+        getCachedData<Record<string, string>>(`I18nDict_${locale}_RadioTable`,
+          () => fetchTableDictEntry('RadioTable', base.contentId, locale), base.contentId),
+      ])
+      detail.script = (radio?.radioSingleDataList ?? []).map((r: any) => ({
+        speaker: resolveI18n(r.actorName, radioI18n),
+        line: resolveI18n(r.radioText, radioI18n),
+      }))
+    } else {
+      const [richRaw, richI18n] = await Promise.all([
+        getCachedData<Record<string, any>>('RichContentTable', () => fetchTableAll('RichContentTable')),
+        getTableI18nDict('RichContentTable', locale),
+      ])
+      const rich = richRaw[base.contentId]
+      if (rich) {
+        detail.contents = [{
+          title: resolveI18n(rich.title, richI18n),
+          segments: (rich.contentList ?? []).map((c: any) => resolveI18n(c.content, richI18n)),
+        }]
+      }
+    }
+    return detail
+  }, [locale, itemId])
+}
+
+export function useBakerChats(): UseDataResult<{ chats: BakerChat[]; topics: BakerTopic[] }> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [chatRaw, topicRaw, dialogRaw, chatI18n, topicI18n, dialogI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('SNSChatTable', () => fetchTableAll('SNSChatTable')),
+      getCachedData<Record<string, any>>('SNSDialogTopicTable', () => fetchTableAll('SNSDialogTopicTable')),
+      getCachedData<Record<string, any>>('SNSDialogTable', () => fetchTableAll('SNSDialogTable')),
+      getTableI18nDict('SNSChatTable', locale),
+      getTableI18nDict('SNSDialogTopicTable', locale),
+      getTableI18nDict('SNSDialogTable', locale),
+    ])
+    const chats = Object.entries(chatRaw).map(([k, v]) => adaptBakerChat({ ...(v as any), $key: k }, chatI18n))
+    const lastMessagePreview = (dialog: any): string => {
+      const nodes = dialog?.dialogContentData ?? {}
+      let id = '1', last = ''
+      const visited = new Set<string>()
+      while (id && id !== '-1' && id !== '0' && !visited.has(id)) {
+        visited.add(id)
+        const node = nodes[id]
+        if (!node) break
+        if (node.contentType === 1 && node.content?.id) last = resolveI18n(node.content, dialogI18n)
+        id = String(node.nextContentId)
+      }
+      return last
+    }
+    const topics = Object.entries(topicRaw).map(([k, v]: [string, any]) => ({
+      topicId: k,
+      topicName: resolveI18n(v.topicName, topicI18n),
+      sortId: v.sortId ?? 0,
+      dialogs: (v.includeDialogIds ?? []).map((did: string) => ({
+        dialogId: did,
+        preview: lastMessagePreview(dialogRaw[did]),
+      })),
+    }))
+    return { chats, topics: topics.sort((a, b) => a.sortId - b.sortId) }
+  }, [locale])
+}
+
+export function useBakerDialog(chatId: string | null): UseDataResult<{
+  dialogs: { dialogId: string; topicId: string; nodes: Record<string, any> }[]
+  options: Record<string, any>
+  ctx: Omit<ResolveContext, 'speaker'>
+} | null> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    if (!chatId) return null
+    const [dialogRaw, optionRaw, topicRaw, constRaw, dialogI18n, optionI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('SNSDialogTable', () => fetchTableAll('SNSDialogTable')),
+      getCachedData<Record<string, any>>('SNSDialogOptionTable', () => fetchTableAll('SNSDialogOptionTable')),
+      getCachedData<Record<string, any>>('SNSDialogTopicTable', () => fetchTableAll('SNSDialogTopicTable')),
+      getCachedData<Record<string, any>>('SNSConst', () => fetchTableAll('SNSConst')),
+      getTableI18nDict('SNSDialogTable', locale),
+      getTableI18nDict('SNSDialogOptionTable', locale),
+    ])
+    const topicSort = new Map(Object.entries(topicRaw).map(([k, v]: [string, any]) => [k, v.sortId ?? 0]))
+    const dialogs = Object.entries(dialogRaw)
+      .filter(([, d]: [string, any]) => d.chatId === chatId)
+      .map(([k, d]: [string, any]) => ({ dialogId: k, topicId: d.topicId ?? '', nodes: d.dialogContentData ?? {} }))
+      .sort((a, b) =>
+        (topicSort.get(a.topicId) ?? 0) - (topicSort.get(b.topicId) ?? 0) ||
+        a.dialogId.localeCompare(b.dialogId))
+    return {
+      dialogs,
+      options: optionRaw,
+      ctx: { dialogI18n, optionI18n, startId: String(constRaw?.snsDialogStartId ?? '1') },
+    }
+  }, [locale, chatId])
 }

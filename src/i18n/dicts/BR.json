@@ -204,14 +204,16 @@
     "racesDesc": "Explorar raças e etnias",
     "search": "Pesquisa de arquivos",
     "searchDesc": "Pesquisar em todos os arquivos",
-    "story": "História",
-    "storyDesc": "Ler história e lore",
+    "story": "Crônica da história",
+    "storyDesc": "Resumos, biblioteca PRTS e chat Baker",
     "threat": "Ameaça",
     "threatDesc": "Analisar dados de ameaças",
     "updates": "Registro de atualizações",
     "updatesDesc": "Ver histórico de atualizações",
     "weapons": "Arquivos de Armas",
-    "weaponsDesc": "Consultar banco de dados de armas"
+    "weaponsDesc": "Consultar banco de dados de armas",
+    "baker": "Baker",
+    "bakerDesc": "Histórias do chat"
   },
   "operator": {
     "allElements": "Todos os elementos",
@@ -304,7 +306,28 @@
     "subtitle": "Arquivo de dados abertos de Endfield"
   },
   "story": {
-    "title": "Registros de história"
+    "title": "Registros de história",
+    "recap": "Resumo da história",
+    "recapDesc": "Resumos oficiais",
+    "library": "Biblioteca PRTS",
+    "libraryDesc": "Documentos do mundo",
+    "spoilerHint": "Aviso de spoiler",
+    "scene": "Cena",
+    "typeAll": "Todos",
+    "chapterType": {
+      "e": "História principal",
+      "sm": "Missão secundária",
+      "c": "História do operador",
+      "f": "Assuntos regionais",
+      "gm": "Comissão",
+      "a": "Missão do vale",
+      "db": "Espaço de protocolo",
+      "m": "Outro",
+      "other": "Outro"
+    },
+    "emptyContent": "Conteúdo indisponível",
+    "audioTranscript": "Transcrição de áudio",
+    "backToVolume": "Voltar ao volume"
   },
   "update": {
     "added": "Adicionado",
@@ -401,5 +424,26 @@
     "regionValley4": "Vale IV",
     "priming": "Requer carga prévia",
     "reactorSlots": "Reservas {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "Resumo",
+    "library": "Biblioteca",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "Todos",
+      "operator": "Operadores",
+      "contact": "Contatos",
+      "group": "Grupos"
+    },
+    "selectChat": "Selecione um contato",
+    "emptyChat": "Sem mensagens",
+    "sessionSeparator": "Sessão {{n}}",
+    "selfName": "Eu",
+    "reactedBy": "Reagido por {{name}}",
+    "sharedArchive": "Arquivo compartilhado",
+    "missionLink": "Link da missão"
   }
 }

@@ -204,14 +204,16 @@
     "racesDesc": "Rassen und Ethnien erkunden",
     "search": "Archivsuche",
     "searchDesc": "Suche in allen Archiven",
-    "story": "Geschichte",
-    "storyDesc": "Geschichte und Überlieferungen lesen",
+    "story": "Story-Chronik",
+    "storyDesc": "Zusammenfassungen, PRTS-Bibliothek & Baker-Chat",
     "threat": "Bedrohung",
     "threatDesc": "Bedrohungsdaten analysieren",
     "updates": "Update-Protokoll",
     "updatesDesc": "Update-Verlauf ansehen",
     "weapons": "Waffendateien",
-    "weaponsDesc": "Waffendatenbank abfragen"
+    "weaponsDesc": "Waffendatenbank abfragen",
+    "baker": "Baker",
+    "bakerDesc": "Chat-Storylines"
   },
   "operator": {
     "allElements": "Alle Elemente",
@@ -304,7 +306,28 @@
     "subtitle": "Offenes Endfield-Datenarchiv"
   },
   "story": {
-    "title": "Geschichtsaufzeichnungen"
+    "title": "Geschichtsaufzeichnungen",
+    "recap": "Story-Zusammenfassung",
+    "recapDesc": "Offizielle Zusammenfassungen",
+    "library": "PRTS-Bibliothek",
+    "libraryDesc": "Weltdokumente",
+    "spoilerHint": "Spoiler-Warnung",
+    "scene": "Szene",
+    "typeAll": "Alle",
+    "chapterType": {
+      "e": "Hauptgeschichte",
+      "sm": "Nebenmission",
+      "c": "Operator-Geschichte",
+      "f": "Regionalangelegenheiten",
+      "gm": "Auftrag",
+      "a": "Tal-Nebenmission",
+      "db": "Protokollraum",
+      "m": "Sonstiges",
+      "other": "Sonstiges"
+    },
+    "emptyContent": "Kein Inhalt verfügbar",
+    "audioTranscript": "Audio-Transkript",
+    "backToVolume": "Zurück zum Band"
   },
   "update": {
     "added": "Hinzugefügt",
@@ -401,5 +424,26 @@
     "regionValley4": "Tal IV",
     "priming": "Vorbefüllung nötig",
     "reactorSlots": "Puffer {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "Zusammenfassung",
+    "library": "Bibliothek",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "Alle",
+      "operator": "Operatoren",
+      "contact": "Kontakte",
+      "group": "Gruppen"
+    },
+    "selectChat": "Kontakt auswählen",
+    "emptyChat": "Keine Nachrichten",
+    "sessionSeparator": "Sitzung {{n}}",
+    "selfName": "Ich",
+    "reactedBy": "Reaktion von {{name}}",
+    "sharedArchive": "Geteiltes Archiv",
+    "missionLink": "Auftragslink"
   }
 }

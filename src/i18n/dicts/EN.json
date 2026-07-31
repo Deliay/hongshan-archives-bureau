@@ -204,14 +204,16 @@
     "racesDesc": "Race archive",
     "search": "Archive Search",
     "searchDesc": "Search across all archives",
-    "story": "Tutorials",
-    "storyDesc": "Narrative archive",
+    "story": "Story Chronicle",
+    "storyDesc": "Story recaps, PRTS library & Baker chat",
     "threat": "Threat Files",
     "threatDesc": "Hostile creatures and armed intelligence",
     "updates": "Update Logs",
     "updatesDesc": "Inter-version data changes",
     "weapons": "Weapon Files",
-    "weaponsDesc": "Modular weapon records"
+    "weaponsDesc": "Modular weapon records",
+    "baker": "Baker",
+    "bakerDesc": "Chat app storylines"
   },
   "operator": {
     "allElements": "All Elements",
@@ -304,7 +306,28 @@
     "subtitle": "Talos-II Official Archive Management and Retrieval System"
   },
   "story": {
-    "title": "Story Records"
+    "title": "Story Records",
+    "recap": "Story Recap",
+    "recapDesc": "Official story recaps",
+    "library": "PRTS Library",
+    "libraryDesc": "Worldview documents",
+    "spoilerHint": "Spoiler warning",
+    "scene": "Scene",
+    "typeAll": "All",
+    "chapterType": {
+      "e": "Main Story",
+      "sm": "Side Mission",
+      "c": "Operator Story",
+      "f": "Region Affairs",
+      "gm": "Commission",
+      "a": "Valley Side",
+      "db": "Protocol Space",
+      "m": "Other",
+      "other": "Other"
+    },
+    "emptyContent": "No content available",
+    "audioTranscript": "Audio Transcript",
+    "backToVolume": "Back to volume"
   },
   "update": {
     "added": "Added",
@@ -401,5 +424,26 @@
     "regionValley4": "Valley IV",
     "priming": "Priming required",
     "reactorSlots": "Buffers {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "Recap",
+    "library": "Library",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "All",
+      "operator": "Operators",
+      "contact": "Contacts",
+      "group": "Groups"
+    },
+    "selectChat": "Select a contact",
+    "emptyChat": "No messages",
+    "sessionSeparator": "Session {{n}}",
+    "selfName": "Me",
+    "reactedBy": "Reacted by {{name}}",
+    "sharedArchive": "Shared archive",
+    "missionLink": "Mission link"
   }
 }

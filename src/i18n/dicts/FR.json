@@ -204,14 +204,16 @@
     "racesDesc": "Explorer races et ethnies",
     "search": "Recherche d'archives",
     "searchDesc": "Rechercher dans toutes les archives",
-    "story": "Histoire",
-    "storyDesc": "Lire l'histoire et le lore",
+    "story": "Chronique de l'histoire",
+    "storyDesc": "Résumés, bibliothèque PRTS et chat Baker",
     "threat": "Menace",
     "threatDesc": "Analyser les données de menace",
     "updates": "Journal des mises à jour",
     "updatesDesc": "Voir l'historique des mises à jour",
     "weapons": "Dossiers des armes",
-    "weaponsDesc": "Consulter la base de données d'armes"
+    "weaponsDesc": "Consulter la base de données d'armes",
+    "baker": "Baker",
+    "bakerDesc": "Scénarios de chat"
   },
   "operator": {
     "allElements": "Tous les éléments",
@@ -304,7 +306,28 @@
     "subtitle": "Archive de données ouvertes d'Endfield"
   },
   "story": {
-    "title": "Archives narratives"
+    "title": "Archives narratives",
+    "recap": "Résumé de l'histoire",
+    "recapDesc": "Résumés officiels",
+    "library": "Bibliothèque PRTS",
+    "libraryDesc": "Documents de l'univers",
+    "spoilerHint": "Attention spoiler",
+    "scene": "Scène",
+    "typeAll": "Tous",
+    "chapterType": {
+      "e": "Histoire principale",
+      "sm": "Mission secondaire",
+      "c": "Histoire de l'opérateur",
+      "f": "Affaires régionales",
+      "gm": "Mandat",
+      "a": "Mission de la vallée",
+      "db": "Espace de protocole",
+      "m": "Autre",
+      "other": "Autre"
+    },
+    "emptyContent": "Contenu non disponible",
+    "audioTranscript": "Transcription audio",
+    "backToVolume": "Retour au volume"
   },
   "update": {
     "added": "Ajouté",
@@ -401,5 +424,26 @@
     "regionValley4": "Vallée IV",
     "priming": "Pré-chargement requis",
     "reactorSlots": "Tampons {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "Résumé",
+    "library": "Bibliothèque",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "Tous",
+      "operator": "Opérateurs",
+      "contact": "Personnes",
+      "group": "Groupes"
+    },
+    "selectChat": "Sélectionnez un contact",
+    "emptyChat": "Aucun message",
+    "sessionSeparator": "Partie {{n}}",
+    "selfName": "Moi",
+    "reactedBy": "Réaction de {{name}}",
+    "sharedArchive": "Archive partagée",
+    "missionLink": "Lien de mission"
   }
 }

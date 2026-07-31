@@ -1,7 +1,11 @@
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange } from './types'
+import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage } from './types'
 import { ACTIVITY_TYPE_GROUPS } from '../data/constants'
 
 export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
+
+export function getSpriteUrl(path: string): string {
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/${path}.png`
+}
 
 export function resolveI18n(field: { id?: number | string; text?: string } | null | undefined, i18nMap?: Record<string, string>): string {
   if (!field) return ''
@@ -280,4 +284,184 @@ export function adaptActivity(
 
 // ---------- helpers ----------
 
+// ===== Story Chronicle =====
+
+const DLG_KEY_RE = /^dlg_([a-z]+)(\d+)(?:l(\d+))?m(\d+)(?:d(\d+))?_(\d+)(?:d(\d+))?$/
+
+export function adaptRecapScene(
+  dlgKey: string,
+  summaryId: string,
+  summaryText: { id?: number | string; text?: string },
+  i18nMap: Record<string, string> | undefined,
+  sceneLabel: string,
+): StoryRecapScene | null {
+  const m = DLG_KEY_RE.exec(dlgKey)
+  if (!m) return null
+  const [, chapterType, chapterNum, lvNum, missionNum, missionSub, sceneNo, sceneSub] = m
+  const chapterId = `${chapterType}${chapterNum}`
+  const missionId = `${chapterId}${lvNum ? `l${lvNum}` : ''}m${missionNum}${missionSub ? `d${missionSub}` : ''}`
+  const code = `${chapterId.toUpperCase()}·M${missionNum}·${sceneLabel}${String(sceneNo).padStart(2, '0')}${sceneSub ? `d${sceneSub}` : ''}`
+  return {
+    id: summaryId,
+    dlgId: dlgKey,
+    chapterId,
+    missionId,
+    sceneNo: Number(sceneNo),
+    sceneSub: sceneSub ? Number(sceneSub) : 0,
+    chapterType,
+    code,
+    text: resolveI18n(summaryText, i18nMap),
+  }
+}
+
+export function adaptRecapFallbackScene(
+  dlgKey: string,
+  summaryId: string,
+  summaryText: { id?: number | string; text?: string },
+  i18nMap: Record<string, string> | undefined,
+  sceneLabel: string,
+): StoryRecapScene {
+  return {
+    id: summaryId,
+    dlgId: dlgKey,
+    chapterId: 'other',
+    missionId: dlgKey,
+    sceneNo: 0,
+    sceneSub: 0,
+    chapterType: 'other',
+    code: `${dlgKey}·${sceneLabel}--`,
+    text: resolveI18n(summaryText, i18nMap),
+  }
+}
+
+type SortTuple = [string, number, number, number, number, number, number]
+
+function dlgSortKey(s: StoryRecapScene): SortTuple {
+  const m = DLG_KEY_RE.exec(s.dlgId)
+  if (!m) return [s.chapterType, 999, 0, 999, 0, 999, 0]
+  const [, ct, cn, lv, mn, md, sn, sd] = m
+  return [ct, Number(cn), Number(lv ?? 0), Number(mn), Number(md ?? 0), Number(sn), Number(sd ?? 0)]
+}
+
+function compareTuple(a: SortTuple, b: SortTuple): number {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] === b[i]) continue
+    return typeof a[i] === 'string'
+      ? (a[i] as string).localeCompare(b[i] as string)
+      : (a[i] as number) - (b[i] as number)
+  }
+  return 0
+}
+
+export function adaptRecapChapter(scenes: StoryRecapScene[]): StoryRecapChapter[] {
+  const sorted = [...scenes].sort((a, b) => compareTuple(dlgSortKey(a), dlgSortKey(b)))
+  const chapters: StoryRecapChapter[] = []
+  let chapter: StoryRecapChapter | null = null
+  let mission: StoryRecapMission | null = null
+  for (const s of sorted) {
+    if (!chapter || chapter.chapterId !== s.chapterId) {
+      chapter = { chapterId: s.chapterId, chapterType: s.chapterType, missions: [] }
+      chapters.push(chapter)
+      mission = null
+    }
+    if (!mission || mission.missionId !== s.missionId) {
+      mission = { missionId: s.missionId, scenes: [] }
+      chapter.missions.push(mission)
+    }
+    mission.scenes.push(s)
+  }
+  return chapters
+}
+
+export function adaptPrtsCategory(raw: any, i18nMap?: Record<string, string>): PrtsCategory {
+  return {
+    id: raw.$key ?? '',
+    name: resolveI18n(raw.name, i18nMap),
+    order: raw.order ?? 0,
+    itemCount: 0,
+  }
+}
+
+export function adaptPrtsVolume(raw: any, i18nMap?: Record<string, string>): PrtsVolume {
+  return {
+    id: raw.$key ?? '',
+    categoryId: raw.categoryId ?? '',
+    name: resolveI18n(raw.name, i18nMap),
+    subName: resolveI18n(raw.subName, i18nMap),
+    iconUrl: raw.icon ? getSpriteUrl(`prts/icon/${raw.icon}`) : '',
+    order: raw.order ?? 0,
+    itemIds: raw.itemIds ?? [],
+  }
+}
+
+export function adaptPrtsItem(raw: any, i18nMap?: Record<string, string>): PrtsItem {
+  return {
+    id: raw.$key ?? '',
+    volumeId: raw.firstLvId ?? '',
+    type: raw.type ?? 'text',
+    name: resolveI18n(raw.name, i18nMap),
+    desc: resolveI18n(raw.desc, i18nMap),
+    order: raw.order ?? 0,
+    contentId: raw.contentId ?? '',
+  }
+}
+
+const CHAT_TYPE_MAP: Record<number, BakerChat['kind']> = {
+  1: 'contact',
+  2: 'group',
+  3: 'operator',
+}
+
+export function adaptBakerChat(raw: any, i18nMap?: Record<string, string>): BakerChat {
+  return {
+    id: raw.$key ?? '',
+    kind: CHAT_TYPE_MAP[raw.chatType] ?? 'contact',
+    name: resolveI18n(raw.name, i18nMap),
+    iconUrl: raw.icon ? getSpriteUrl(`charroundicon/${raw.icon}`) : '',
+    isSettlementChannel: raw.isSettlementChannel ?? false,
+  }
+}
+
+export interface BakerSpeakerContext {
+  chatMap: Record<string, BakerChat>
+  selfName: string
+  selfIconUrl: string
+}
+
+export function resolveContentType(type: number): BakerMessage['kind'] | null {
+  const map: Record<number, BakerMessage['kind']> = {
+    1: 'text',
+    2: 'image',
+    7: 'system',
+    10: 'share',
+    12: 'mission',
+  }
+  return map[type] ?? null
+}
+
+export function adaptBakerMessage(
+  dialogId: string,
+  contentId: string,
+  raw: any,
+  ctx: BakerSpeakerContext,
+  i18nMap?: Record<string, string>,
+): BakerMessage | null {
+  const kind = resolveContentType(raw.contentType)
+  if (!kind) return null
+  const isSelf = raw.speaker === 'endmin'
+  const speakerChat = isSelf ? undefined : ctx.chatMap[raw.speaker]
+  return {
+    id: `${dialogId}:${contentId}`,
+    speakerId: raw.speaker ?? '',
+    isSelf,
+    speakerName: isSelf ? ctx.selfName : speakerChat?.name ?? '',
+    speakerIconUrl: isSelf ? ctx.selfIconUrl : speakerChat?.iconUrl ?? '',
+    kind,
+    text: resolveI18n(raw.content, i18nMap),
+    imageUrl: kind === 'image' && raw.contentParam?.[0]
+      ? getSpriteUrl(`sns/picture/${raw.contentParam[0]}`)
+      : undefined,
+    reactions: undefined,
+  }
+}
 

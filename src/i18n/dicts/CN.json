@@ -204,14 +204,16 @@
     "racesDesc": "种族资料归集",
     "search": "档案搜索",
     "searchDesc": "在所有档案中搜索",
-    "story": "教学记录",
-    "storyDesc": "叙事资料归档",
+    "story": "剧情纪事",
+    "storyDesc": "剧情梗概、PRTS 文库与 Baker 聊天终端",
     "threat": "威胁档案",
     "threatDesc": "敌对生物与武装情报",
     "updates": "更新日志",
     "updatesDesc": "版本间数据变更",
     "weapons": "武器图鉴",
-    "weaponsDesc": "模块化武器记录"
+    "weaponsDesc": "模块化武器记录",
+    "baker": "Baker",
+    "bakerDesc": "聊天软件会话剧情"
   },
   "operator": {
     "allElements": "全部元素",
@@ -304,7 +306,28 @@
     "subtitle": "塔卫二官方档案管理与调阅系统"
   },
   "story": {
-    "title": "剧情记录"
+    "title": "剧情记录",
+    "recap": "剧情梗概",
+    "recapDesc": "官方剧情梗概连续阅读",
+    "library": "PRTS 文库",
+    "libraryDesc": "六类世界观文献",
+    "spoilerHint": "以下内容包含剧透",
+    "scene": "场",
+    "typeAll": "全部",
+    "chapterType": {
+      "e": "主线",
+      "sm": "支线",
+      "c": "干员故事",
+      "f": "地区事务",
+      "gm": "委托",
+      "a": "谷地支线",
+      "db": "协议空间",
+      "m": "其他",
+      "other": "其他"
+    },
+    "emptyContent": "正文暂缺",
+    "audioTranscript": "音像转写",
+    "backToVolume": "返回所属卷"
   },
   "update": {
     "added": "新增",
@@ -401,5 +424,26 @@
     "regionValley4": "四号谷地",
     "priming": "需预填充",
     "reactorSlots": "缓存区 {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "剧情梗概",
+    "library": "PRTS 文库",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "全部",
+      "operator": "干员",
+      "contact": "联系人",
+      "group": "群聊"
+    },
+    "selectChat": "选择联系人开始阅读",
+    "emptyChat": "暂无消息",
+    "sessionSeparator": "场次 {{n}}",
+    "selfName": "我",
+    "reactedBy": "{{name}} 回应",
+    "sharedArchive": "PRTS 文献分享",
+    "missionLink": "任务链接"
   }
 }

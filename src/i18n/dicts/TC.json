@@ -204,14 +204,16 @@
     "racesDesc": "種族資料歸集",
     "search": "檔案搜索",
     "searchDesc": "在所有檔案中搜索",
-    "story": "教學紀錄",
-    "storyDesc": "敘事資料歸檔",
+    "story": "劇情紀事",
+    "storyDesc": "劇情梗概、PRTS 文庫與 Baker 聊天終端",
     "threat": "威脅檔案",
     "threatDesc": "敵對生物與武裝情報",
     "updates": "更新日誌",
     "updatesDesc": "版本間數據變更",
     "weapons": "武器圖鑑",
-    "weaponsDesc": "模組化武器記錄"
+    "weaponsDesc": "模組化武器記錄",
+    "baker": "Baker",
+    "bakerDesc": "聊天軟體對話劇情"
   },
   "operator": {
     "allElements": "全部元素",
@@ -304,7 +306,28 @@
     "subtitle": "塔衛二官方檔案管理與調閱系統"
   },
   "story": {
-    "title": "劇情記錄"
+    "title": "劇情記錄",
+    "recap": "劇情梗概",
+    "recapDesc": "官方劇情梗概連續閱讀",
+    "library": "PRTS 文庫",
+    "libraryDesc": "六類世界觀文獻",
+    "spoilerHint": "以下內容包含劇透",
+    "scene": "場",
+    "typeAll": "全部",
+    "chapterType": {
+      "e": "主線",
+      "sm": "支線",
+      "c": "幹員故事",
+      "f": "地區事務",
+      "gm": "委託",
+      "a": "谷地支線",
+      "db": "協議空間",
+      "m": "其他",
+      "other": "其他"
+    },
+    "emptyContent": "正文暫缺",
+    "audioTranscript": "音像轉寫",
+    "backToVolume": "返回所屬卷"
   },
   "update": {
     "added": "新增",
@@ -401,5 +424,26 @@
     "regionValley4": "四號谷地",
     "priming": "需預填充",
     "reactorSlots": "緩存區 {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "劇情梗概",
+    "library": "PRTS 文庫",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "全部",
+      "operator": "幹員",
+      "contact": "聯絡人",
+      "group": "群組聊天"
+    },
+    "selectChat": "選擇聯絡人開始閱讀",
+    "emptyChat": "暫無訊息",
+    "sessionSeparator": "場次 {{n}}",
+    "selfName": "我",
+    "reactedBy": "{{name}} 回應",
+    "sharedArchive": "PRTS 文獻分享",
+    "missionLink": "任務連結"
   }
 }

@@ -204,14 +204,16 @@
     "racesDesc": "Esplora razze",
     "search": "Ricerca archivio",
     "searchDesc": "Cerca in tutti gli archivi",
-    "story": "Storia",
-    "storyDesc": "Leggi storia e lore",
+    "story": "Cronaca della storia",
+    "storyDesc": "Riassunti, biblioteca PRTS e chat Baker",
     "threat": "Minaccia",
     "threatDesc": "Analizza dati minaccia",
     "updates": "Registro aggiornamenti",
     "updatesDesc": "Vedi cronologia aggiornamenti",
     "weapons": "File delle armi",
-    "weaponsDesc": "Consulta database armi"
+    "weaponsDesc": "Consulta database armi",
+    "baker": "Baker",
+    "bakerDesc": "Trame della chat"
   },
   "operator": {
     "allElements": "Tutti gli elementi",
@@ -304,7 +306,28 @@
     "subtitle": "Archivio dati aperto di Endfield"
   },
   "story": {
-    "title": "Archivi narrativi"
+    "title": "Archivi narrativi",
+    "recap": "Riassunto della storia",
+    "recapDesc": "Riassunti ufficiali",
+    "library": "Biblioteca PRTS",
+    "libraryDesc": "Documenti del mondo",
+    "spoilerHint": "Avviso spoiler",
+    "scene": "Scena",
+    "typeAll": "Tutti",
+    "chapterType": {
+      "e": "Storia principale",
+      "sm": "Missione secondaria",
+      "c": "Storia dell'operatore",
+      "f": "Affari regionali",
+      "gm": "Commissione",
+      "a": "Missione della valle",
+      "db": "Spazio protocollo",
+      "m": "Altro",
+      "other": "Altro"
+    },
+    "emptyContent": "Nessun contenuto disponibile",
+    "audioTranscript": "Trascrizione audio",
+    "backToVolume": "Torna al volume"
   },
   "update": {
     "added": "Aggiunto",
@@ -401,5 +424,26 @@
     "regionValley4": "Valle IV",
     "priming": "Pre-caricamento richiesto",
     "reactorSlots": "Buffer {{used}}/{{total}}"
+  },
+  "breadcrumb": {
+    "recap": "Riassunto",
+    "library": "Biblioteca",
+    "baker": "Baker"
+  },
+  "baker": {
+    "title": "Baker",
+    "tab": {
+      "all": "Tutti",
+      "operator": "Operatori",
+      "contact": "Contatti",
+      "group": "Gruppi"
+    },
+    "selectChat": "Seleziona un contatto",
+    "emptyChat": "Nessun messaggio",
+    "sessionSeparator": "Sessione {{n}}",
+    "selfName": "Io",
+    "reactedBy": "Reazione di {{name}}",
+    "sharedArchive": "Archivio condiviso",
+    "missionLink": "Collegamento missione"
   }
 }
