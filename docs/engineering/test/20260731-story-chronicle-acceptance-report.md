@@ -9,6 +9,8 @@ type: Permanent
 > 本轮受理 4 项验收反馈：①剧情梗概任务 id 需渲染 `TextTable` 中的任务名（已修复）；②任务名排版换行（已修复）；③missionId 穿透进入（已实现为任务详情页）；④章节类型臆测标签去除（已修复，改为原始前缀字母）。
 >
 > **重大数据源更新（2026-07-31）**：验收发现任务权威数据源为 `MissionRuntimeAsset`（任务列表 + 任务详情 json）。已据此完成数据调查，并将「任务目录接入 + 穿透详情 + 分区重构」方案写入 §7，其中 §7.2.3 穿透详情已实施，分区重构待产品确认。
+>
+> **objectiveList condition 渲染方案（§8）**：已完成 quest `objectiveList` 的 condition 数据结构与引用表全量调查（40+ 种 `$type`、活动阶段链路等），渲染方案见 §8，待实施。
 
 **关联 PRD**: [[20260730-story-chronicle|剧情纪事]]
 **关联技术方案**: [[20260730-story-chronicle|剧情纪事 - 技术提案]]
@@ -401,3 +403,120 @@ type: Permanent
 - ✅ `npm run build`：构建成功（含 tsc）
 - ✅ Playwright 冒烟：`/archive/story/mission/a1m2` 渲染任务名「迟到的特训」、任务描述、`a1m2_q#*` 目标清单、「任务目标 / 主路径」分区；recap 页任务名链接存在；无 console/page 错误
 - ✅ 真实数据管道验证：490 任务目录提取；`c33m1d5 → c33m1_name`、`m1m77 → m1m74_desc_001`、`dm01m5` 直出字符串等边界均正确解析
+
+---
+
+## 8. 任务目标 condition 数据渲染方案（规划，未实施）
+
+> 验收反馈需解析 quest 的 `objectiveList`（含 `_activityStageId`、`ActivityConditionalMultiStageCompleteConditionTable` 等表），整理渲染方案。本节约 2026-07-31 全量数据调查结论与方案。
+
+### 8.1 objectiveList 数据结构（调查结论）
+
+每个 quest 的 `objectiveList[]` 元素结构：
+
+```jsonc
+{
+  "multiple": false,
+  "condition": {
+    "$type": "Beyond.Gameplay.CheckActivityConditionalStageStatus, Gameplay.Beyond",
+    "uniqueId": "86c2ba68",
+    "useCurrentScope": false,
+    "scopeMask": 1,
+    "useGraphScope": true,
+    "_activityStageId": { "constValue": "dungeon_fighting_5" },
+    "_comparer": { "constValue": 3 },
+    "_progressToCompare": { "constValue": 1 }
+  },
+  "description": {},                          // TextTable key（79% 目标有，3483/4407）
+  "useMultipleDescription": false,
+  "multipleDescription": [],
+  "showProgressMethod": 0,
+  "mapSubCondition": false,
+  "trackingInfoList": [],
+  "isObjectiveWrapper": false, "wrapperSystemType": 0, "objectiveWrapperStep": 0,
+  "isBlockObjective": true
+}
+```
+
+要点：
+- **`condition` 是类型化条件**：`$type` 为 C# 类全名（`Beyond.Gameplay.Xxx`），常量字段统一用 `{ constValue }` 包装，布尔/枚举字段（`scopeMask`、`useGraphScope`）直接裸露。
+- **`CombineCondition`**（250 个）：`conditionEvalString`（如 `"{0} and (({1} and {2}) or {3})"`）+ `subConditions[]` 递归布尔组合。
+- **`compareOperator` 恒为 3**（CompleteConditionTable 182 个 + GameMechanicConditionTable 297 个全部为 3），`progressToCompare` 为进度阈值。
+
+### 8.2 condition `$type` 清单与引用表（全量 3289 个 objective）
+
+| $type（简短名） | 数量 | 关键字段 → 引用表 |
+|------|-----|------|
+| `GameConditionServerPlaceHolder` | 1514 | `_comparer`/`_progressToCompare`（通用进度占位） |
+| `ReachDestination` | 531 | `_areaId`（区域）、`_mapId`（地图）→ 区域/地图命名表 |
+| `CheckTalkOptionFinish` | 328 | `_dialogId`（dlg key）、`_finishId` |
+| `CombineCondition` | 250 | `conditionEvalString` + `subConditions[]` 递归 |
+| `WeekRaidPlayerHasItem` | 126 | `_itemId`（item_*）→ ItemTable |
+| `CheckLevelScriptPropertyBool/Int` | 97 | `_mapId`、`_scriptId`、`_key`、`_value` |
+| `CheckSnapshotIdentifySuccess` | 68 | `_identifyGroupId` |
+| `CheckQuestState` | 55 | `_questId`、`_targetQuestState` → 同任务 quest |
+| `CheckScriptMonsterKilled` | 51 | `_sceneId`、`_scriptId`、`_slotIds` |
+| `CheckMissionState` | 46 | `_missionId`、`_targetMissionState` → 其它任务 |
+| `CheckMoney` | 40 | `_moneyId`（item_*）、`_comparer`、`_progressToCompare` |
+| **`CheckActivityConditionalStageStatus`** | **30** | **`_activityStageId` → 活动阶段链路（§8.3）** |
+| `CheckMonsterKilled` | 21 | `_sceneId`、`_enemyIds[]`（logicId）→ 敌人表 |
+| `PlayerHasItemInItemBag` / `PlayerHasItem` | 29 | `_itemId`、计数 → ItemTable |
+| `CheckAdventureLevel` / `CheckWorldLevel` | 18 | 等级阈值 |
+| `CheckPlayerInMap` | 14 | `_mapId` |
+| 其余 20+ 单双次类型 | <10 各 | 引导/科技/建筑/统计/黑盒/FMV 等 |
+
+**objective 主文本**：`description`（TextTable key）覆盖 79%，是首要展示内容；condition 作为补充结构化信息。
+
+### 8.3 活动阶段链路（`_activityStageId` 重点）
+
+`CheckActivityConditionalStageStatus._activityStageId`（如 `dungeon_fighting_5`、`cleaning_test_5`）的解析链：
+
+```
+_activityStageId (dungeon_fighting_5)
+ ├─ ActivityConditionalMultiStageStageToActivityTable[stageId]
+ │     → { activityId, desc(i18n id), rewardId }          ← 阶段显示名/描述
+ └─ ActivityConditionalMultiStageCompleteConditionTable[stageId].conditionList[]
+       → [{ compareOperator, conditionId, conditionType, parameters[], progressToCompare }]
+            └─ conditionType 分派（数据归纳）：
+                 5052 → dungeon fighting：param[0]=levelId(dung01_actmonster05)
+                        → ActivityDungeonFightingStageTable[levelId] → { levelId, questId }
+                        → questId → 所属任务 → 任务名
+                 5031 → indie hard 副本通关：param[0]=indie_hard009
+                 18   → quest 状态：params=[questId, comparer, targetState]
+                 19   → mission 状态：params=[missionId, comparer, targetState]
+                 6511/6069 → 统计值（E_StatType_DailyStaminaCost / GameEnterNum / ActivityLogin）
+                 6006 → 收集/交互物（TrchestCommon / CampfireCommon / map02_lv007）
+                 5915 → 提交食材（activity_submit_food_2_stage_4）
+                 6053 → 设施电力（power_pole_3 + map）
+                 6502/6503 → 收集计数（阈值 20/40/60）
+                 6070/6071 → 副本难度（indie_hard001 / dungeon_highdifficulty）
+                 5014 → 地图/枢纽（map02_lv002 / sp_hub_1）
+                 4507 → 数量条件（3/6）
+```
+
+同时存在 `ActivityConditionalMultiStageConditionTable`（41 个，活动解锁条件，含 `desc` i18n id + `blockShow`）与 `GameMechanicConditionTable`（297 个，`desc` i18n id + `gameMechanicsId` + 同款 compareOperator/progressToCompare）。
+
+### 8.4 渲染策略
+
+1. **主文本优先**：`objective.description` 经 TextTable 解析直接展示（已具备 `resolveRuntimeText` 能力）。
+2. **结构化补充**：condition 按 `$type` 分派到格式化器，输出可读描述（如「前往地图 map01_lv007 的 e11m4_004」/「在 dungeons_fighting 达到 X 进度」）；`CombineCondition` 按 `conditionEvalString` 递归渲染子条件树（运算符 and/or）。
+3. **深链解析**：跟随引用表解析名称（阶段名 → StageToActivityTable.desc；任务名 → 任务；道具名 → ItemTable；等级/统计值直出数字），统一经 TextTable resolver 本地化。
+4. **兜底**：未知 `$type` 渲染原始字段列表（`field: value`），不丢数据。
+5. **优先级**：description 为空时展示 condition 渲染结果；description 存在时以 description 为主、condition 细节作为次要行（含 progressToCompare 进度）。
+
+### 8.5 实施规划
+
+| 阶段 | 内容 |
+|------|------|
+| 阶段一 | `constValue` 解包 + `$type` 分派框架 + `CombineCondition` 递归 + 兜底；单测 |
+| 阶段二 | 高频类型格式化器（ReachDestination / CheckTalkOptionFinish / CheckQuestState / CheckMissionState / PlayerHasItem 系 / CheckActivityConditionalStageStatus） |
+| 阶段三 | 活动阶段链路数据接入（StageToActivity + CompleteCondition + DungeonFightingStage），任务/道具/区域名称深链 |
+| 阶段四 | 任务详情页目标节点接入渲染；UT / E2E + lint / test / build 验证 |
+
+### 8.6 风险与待确认
+
+- **conditionType 语义为数据归纳**：18/19/5031/5052/6502… 等枚举含义依据参数形态推断，需游戏内文本校准（对齐原提案「命名规则暂不明确」约束）。
+- **`_comparer` 恒为 3**：其余取值（0/1/2…）未见样例，比较运算语义需实测确认。
+- **区域/地图命名表未定位**：`ReachDestination._areaId`（如 `e11m4_004`）在本地表中未检索到对应表，需进一步排查。
+- **`GameConditionServerPlaceHolder`（1514 个）** 占绝对多数但字段仅比较器+进度，很可能对应 objective.description 已有文案；渲染以 description 为主即可。
+- **CombineCondition 表达式解析**：`conditionEvalString` 的占位符与运算符解析需严格测试。
