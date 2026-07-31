@@ -128,6 +128,23 @@ type: Permanent
 
 ---
 
+### 2.5 任务详情页文本未用 RichText 渲染
+
+**问题描述**：任务详情页 `/archive/story/mission/:missionId` 的任务描述与 quest 目标文本以纯文本渲染，未使用富文本组件。
+
+**根因分析**：`StoryMissionDetail.tsx` 直接以 `<p>` / `<li>` 输出解析后的文本，未接入 `<RichText>`（游戏内文本含 `<color>`、`<b>`、`<image>` 等标记）。
+
+**修复方案**：任务描述、quest 描述、quest 目标描述统一经 `<RichText text={...} />` 渲染（沿用全站规范，参照 `StoryDocumentDetail` / `EquipmentDetail`）。
+
+**涉及文件**：`src/pages/story/StoryMissionDetail.tsx`
+
+**验证结果**：
+- ✅ `npm run lint`：0 errors
+- ✅ `npm run build`：构建成功
+- ⏳ 提交后回填 commit hash
+
+---
+
 ## 3. missionId 穿透进入方案（规划，未实施）
 
 > ⚠️ 已由 §7 重构方案取代（接入 `MissionRuntimeAsset` 后，穿透详情展示 MRA 任务 json 内容，见 §7.2.3）。本节保留早期基于「页内锚点深链」的规划备查。
@@ -153,6 +170,7 @@ type: Permanent
 | 2.2 | 任务名排版换行 | 未设 `whitespace-nowrap`，侧边栏任务项上下两行 | ✅ 已修复 | `965882d` |
 | 2.3 | missionId 穿透进入 | 功能未规划落地 | ✅ 已实现（任务详情页 + 深链），方案见 §7.2.3 | `2325081` |
 | 2.4 | 章节类型标签为臆测分类名称 | 依据 dlg key 前缀臆测归纳 | ✅ 已修复（改为原始前缀字母） | `39562c0` |
+| 2.5 | 任务详情页文本未用 RichText 渲染 | 直接输出纯文本 | ✅ 已修复 | 待提交 |
 
 ---
 

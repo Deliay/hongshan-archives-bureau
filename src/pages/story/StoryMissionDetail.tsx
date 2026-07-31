@@ -3,6 +3,7 @@ import { useMissionDetail } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { Badge } from '../../components/ui/Badge'
+import { RichText } from '../../lib/richText'
 
 export default function StoryMissionDetail() {
   const { missionId } = useParams<{ missionId: string }>()
@@ -51,9 +52,13 @@ export default function StoryMissionDetail() {
 
       <section className="mb-8">
         <h3 className="text-xs font-mono text-archive-gold uppercase mb-2">{t('story.missionDesc')}</h3>
-        <p className="text-sm text-archive-ivory leading-relaxed">
-          {mission.description || t('story.noDescription')}
-        </p>
+        {mission.description ? (
+          <p className="text-sm text-archive-ivory leading-relaxed">
+            <RichText text={mission.description} />
+          </p>
+        ) : (
+          <p className="text-sm text-archive-dust">{t('story.noDescription')}</p>
+        )}
       </section>
 
       <section>
@@ -99,12 +104,14 @@ function QuestCard({ quest }: QuestCardProps) {
     <div className="border border-archive-border rounded-lg p-3 bg-archive-file">
       <div className="font-mono text-xs text-archive-gold mb-1">{quest.questId}</div>
       {quest.description && (
-        <p className="text-sm text-archive-ivory leading-relaxed mb-2">{quest.description}</p>
+        <p className="text-sm text-archive-ivory leading-relaxed mb-2"><RichText text={quest.description} /></p>
       )}
       {quest.objectives.length > 0 && (
         <ul className="list-disc list-inside text-sm text-archive-dust space-y-0.5">
           {quest.objectives.map(o => (
-            <li key={o.description || quest.questId}>{o.description || '·'}</li>
+            <li key={o.description || quest.questId}>
+              {o.description ? <RichText text={o.description} /> : '·'}
+            </li>
           ))}
         </ul>
       )}
