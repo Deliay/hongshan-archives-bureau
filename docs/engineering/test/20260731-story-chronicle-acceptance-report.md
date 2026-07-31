@@ -169,7 +169,7 @@ type: Permanent
 - ✅ Playwright 冒烟（优化后）：a1m2 线性链 17 节点平铺、0 层嵌套；sm2l4m5 分支 quest `q#8` 挂在 `q#6` 下（1 层嵌套）、多父 `q#10` 挂在主路径 `q#7` 下；无 console 错误
 - ✅ `npm run lint`：0 errors
 - ✅ `npm run build`：构建成功
-- ✅ commit `9f90c78` + 深度优化待提交
+- ✅ commit `9f90c78` + `f40185e`（深度优化）
 
 ---
 
