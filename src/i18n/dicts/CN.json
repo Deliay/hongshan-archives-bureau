@@ -314,17 +314,6 @@
     "spoilerHint": "以下内容包含剧透",
     "scene": "场",
     "typeAll": "全部",
-    "chapterType": {
-      "e": "主线",
-      "sm": "支线",
-      "c": "干员故事",
-      "f": "地区事务",
-      "gm": "委托",
-      "a": "谷地支线",
-      "db": "协议空间",
-      "m": "其他",
-      "other": "其他"
-    },
     "emptyContent": "正文暂缺",
     "audioTranscript": "音像转写",
     "backToVolume": "返回所属卷",

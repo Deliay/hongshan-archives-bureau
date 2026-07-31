@@ -314,17 +314,6 @@
     "spoilerHint": "Spoiler-Warnung",
     "scene": "Szene",
     "typeAll": "Alle",
-    "chapterType": {
-      "e": "Hauptgeschichte",
-      "sm": "Nebenmission",
-      "c": "Operator-Geschichte",
-      "f": "Regionalangelegenheiten",
-      "gm": "Auftrag",
-      "a": "Tal-Nebenmission",
-      "db": "Protokollraum",
-      "m": "Sonstiges",
-      "other": "Sonstiges"
-    },
     "emptyContent": "Kein Inhalt verfügbar",
     "audioTranscript": "Audio-Transkript",
     "backToVolume": "Zurück zum Band",

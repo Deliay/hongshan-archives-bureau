@@ -314,17 +314,6 @@
     "spoilerHint": "Cảnh báo spoiler",
     "scene": "Cảnh",
     "typeAll": "Tất cả",
-    "chapterType": {
-      "e": "Truyện chính",
-      "sm": "Nhiệm vụ phụ",
-      "c": "Truyện điều hành viên",
-      "f": "Vùng sự vụ",
-      "gm": "Nhiệm vụ ủy thác",
-      "a": "Nhiệm vụ thung lũng",
-      "db": "Không gian giao thức",
-      "m": "Khác",
-      "other": "Khác"
-    },
     "emptyContent": "Nội dung chưa có",
     "audioTranscript": "Bản ghi âm",
     "backToVolume": "Quay lại tập",

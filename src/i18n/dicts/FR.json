@@ -314,17 +314,6 @@
     "spoilerHint": "Attention spoiler",
     "scene": "Scène",
     "typeAll": "Tous",
-    "chapterType": {
-      "e": "Histoire principale",
-      "sm": "Mission secondaire",
-      "c": "Histoire de l'opérateur",
-      "f": "Affaires régionales",
-      "gm": "Mandat",
-      "a": "Mission de la vallée",
-      "db": "Espace de protocole",
-      "m": "Autre",
-      "other": "Autre"
-    },
     "emptyContent": "Contenu non disponible",
     "audioTranscript": "Transcription audio",
     "backToVolume": "Retour au volume",

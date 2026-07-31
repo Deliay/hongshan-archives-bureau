@@ -6,6 +6,8 @@ import { ListSkeleton } from '../../components/ui/ListSkeleton'
 
 const CHAPTER_TYPES = ['e', 'sm', 'c', 'f', 'gm', 'a', 'db', 'm', 'other']
 
+const chapterTypeLabel = (ct: string) => (ct === 'other' ? 'OTHER' : ct.toUpperCase())
+
 export default function StoryRecap() {
   const { t } = useI18n()
   const { data, loading, error } = useStoryRecap()
@@ -44,7 +46,7 @@ export default function StoryRecap() {
         >
           <option value="">{t('story.typeAll')}</option>
           {CHAPTER_TYPES.map(ct => (
-            <option key={ct} value={ct}>{t(`story.chapterType.${ct}`)}</option>
+            <option key={ct} value={ct}>{chapterTypeLabel(ct)}</option>
           ))}
         </select>
         <span className="text-xs text-archive-dust">{t('story.spoilerHint')}</span>
@@ -55,7 +57,7 @@ export default function StoryRecap() {
           {filteredChapters.map(ch => (
             <div key={ch.chapterId}>
               <div className="text-xs font-mono text-archive-gold uppercase mb-1">
-                {t(`story.chapterType.${ch.chapterType}`)} {ch.chapterId.toUpperCase()}
+                {ch.chapterId.toUpperCase()}
               </div>
               {ch.missions.map(m => (
                 <button

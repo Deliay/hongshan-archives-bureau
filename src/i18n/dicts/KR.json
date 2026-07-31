@@ -314,17 +314,6 @@
     "spoilerHint": "스포일러 주의",
     "scene": "장면",
     "typeAll": "전체",
-    "chapterType": {
-      "e": "메인 스토리",
-      "sm": "사이드 미션",
-      "c": "오퍼레이터 스토리",
-      "f": "지역 퀘스트",
-      "gm": "의뢰",
-      "a": "밸리 사이드",
-      "db": "프로토콜 스페이스",
-      "m": "기타",
-      "other": "기타"
-    },
     "emptyContent": "콘텐츠 없음",
     "audioTranscript": "음성 전사",
     "backToVolume": "권으로 돌아가기",

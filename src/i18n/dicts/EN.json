@@ -314,17 +314,6 @@
     "spoilerHint": "Spoiler warning",
     "scene": "Scene",
     "typeAll": "All",
-    "chapterType": {
-      "e": "Main Story",
-      "sm": "Side Mission",
-      "c": "Operator Story",
-      "f": "Region Affairs",
-      "gm": "Commission",
-      "a": "Valley Side",
-      "db": "Protocol Space",
-      "m": "Other",
-      "other": "Other"
-    },
     "emptyContent": "No content available",
     "audioTranscript": "Audio Transcript",
     "backToVolume": "Back to volume",

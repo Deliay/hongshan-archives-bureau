@@ -314,17 +314,6 @@
     "spoilerHint": "Peringatan spoiler",
     "scene": "Adegan",
     "typeAll": "Semua",
-    "chapterType": {
-      "e": "Cerita utama",
-      "sm": "Misi sampingan",
-      "c": "Cerita operator",
-      "f": "Urusan wilayah",
-      "gm": "Komisi",
-      "a": "Misi lembah",
-      "db": "Ruang protokol",
-      "m": "Lainnya",
-      "other": "Lainnya"
-    },
     "emptyContent": "Konten tidak tersedia",
     "audioTranscript": "Transkrip audio",
     "backToVolume": "Kembali ke volume",
