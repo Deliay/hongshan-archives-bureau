@@ -93,7 +93,7 @@ function QuestNode({ node }: { node: MissionQuestTreeNode }) {
         <p className="text-sm text-archive-ivory leading-relaxed mt-1"><RichText text={node.description} /></p>
       )}
       {node.objectives.length > 0 && (
-        <ul className="list-disc list-inside text-sm text-archive-dust space-y-0.5 mt-1">
+        <ul className="list-none text-sm text-archive-dust space-y-0.5 mt-1">
           {node.objectives.map(o => (
             <li key={o.description || node.questId}>
               {o.description ? <RichText text={o.description} /> : '·'}
