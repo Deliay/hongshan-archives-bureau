@@ -76,7 +76,7 @@ type: Permanent
 - ✅ `npx vitest run src/lib/__tests__/adapter-story.test.ts`：21/21 passed（含新增 1 例）
 - ✅ `npm run lint`：0 errors
 - ✅ `npm run build`：构建成功（含 tsc）
-- ✅ commit `30191ca`
+- ✅ commit `965882d`
 ---
 
 ### 2.2 任务名排版换行
@@ -94,7 +94,7 @@ type: Permanent
 **验证结果**：
 - ✅ `npm run lint`：0 errors
 - ✅ `npm run build`：构建成功（含 tsc）
-- ✅ commit `30191ca`
+- ✅ commit `965882d`
 ---
 
 ### 2.3 missionId 穿透进入（暂缓）
