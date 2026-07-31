@@ -527,7 +527,7 @@ docs/engineering/references/data-mapping-tables.md  # 新表映射
 
 ## 11. 验收标准
 
-- [ ] 技术方案评审通过
+- [x] 技术方案评审通过
 - [ ] story 四个页面与 Baker 页面按 PRD 验收标准实现
 - [ ] 14 语言 i18n 无占位、无缺失
 - [ ] `data-mapping-tables.md` 更新完成
