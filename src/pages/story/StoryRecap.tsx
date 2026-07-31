@@ -57,7 +57,7 @@ export default function StoryRecap() {
                   onClick={() => handleNavClick(m.missionId)}
                   className="block pl-4 text-sm text-archive-dust hover:text-archive-gold cursor-pointer w-full text-left"
                 >
-                  {m.missionId}
+                  <span className="break-words">{m.name} <span className="font-mono text-[11px] text-archive-dust/70">{m.missionId}</span></span>
                 </button>
               ))}
             </div>
@@ -69,8 +69,9 @@ export default function StoryRecap() {
             <div key={ch.chapterId}>
               {ch.missions.map(m => (
                 <div key={m.missionId} id={`mission-${m.missionId}`} className="mb-8">
-                  <div className="text-xs font-mono text-archive-dust border-b border-archive-border pb-2 mb-4">
-                    {m.missionId}
+                  <div className="flex items-baseline gap-2 whitespace-nowrap border-b border-archive-border pb-2 mb-4">
+                    <span className="text-sm text-archive-ivory">{m.name}</span>
+                    <span className="font-mono text-xs text-archive-gold">{m.missionId}</span>
                   </div>
                   {m.scenes.map(scene => (
                     <div key={scene.id} className="relative pl-6 border-l-2 border-archive-gold/30 mb-4">

@@ -353,7 +353,7 @@ function compareTuple(a: SortTuple, b: SortTuple): number {
   return 0
 }
 
-export function adaptRecapChapter(scenes: StoryRecapScene[]): StoryRecapChapter[] {
+export function adaptRecapChapter(scenes: StoryRecapScene[], missionNameMap?: Record<string, string>): StoryRecapChapter[] {
   const sorted = [...scenes].sort((a, b) => compareTuple(dlgSortKey(a), dlgSortKey(b)))
   const chapters: StoryRecapChapter[] = []
   let chapter: StoryRecapChapter | null = null
@@ -365,7 +365,7 @@ export function adaptRecapChapter(scenes: StoryRecapScene[]): StoryRecapChapter[
       mission = null
     }
     if (!mission || mission.missionId !== s.missionId) {
-      mission = { missionId: s.missionId, scenes: [] }
+      mission = { missionId: s.missionId, name: missionNameMap?.[s.missionId] || s.missionId, scenes: [] }
       chapter.missions.push(mission)
     }
     mission.scenes.push(s)

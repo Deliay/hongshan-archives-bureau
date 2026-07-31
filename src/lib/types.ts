@@ -443,6 +443,7 @@ export interface StoryRecapScene {
 
 export interface StoryRecapMission {
   missionId: string
+  name: string
   scenes: StoryRecapScene[]
 }
 

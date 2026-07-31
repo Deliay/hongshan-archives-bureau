@@ -1320,10 +1320,12 @@ export function useStoryRecap(): UseDataResult<{
   const { locale } = useLocale()
   const { t } = useI18n()
   return useData(async () => {
-    const [mapRaw, summaryRaw, summaryI18n] = await Promise.all([
+    const [mapRaw, summaryRaw, summaryI18n, textRaw, textI18n] = await Promise.all([
       getCachedData<Record<string, string>>('DialogSummaryMapTable', () => fetchTableAll('DialogSummaryMapTable')),
       getCachedData<Record<string, any>>('DialogSummaryTable', () => fetchTableAll('DialogSummaryTable')),
       getTableI18nDict('DialogSummaryTable', locale),
+      getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable')),
+      getTableI18nDict('TextTable', locale),
     ])
     const scenes = Object.entries(mapRaw)
       .map(([dlgKey, summaryId]) => {
@@ -1334,7 +1336,14 @@ export function useStoryRecap(): UseDataResult<{
         return scene ?? adaptRecapFallbackScene(dlgKey, summaryId, summary, summaryI18n, t('story.scene'))
       })
       .filter((s): s is StoryRecapScene => s !== null)
-    const chapters = adaptRecapChapter(scenes)
+    const missionNameMap: Record<string, string> = {}
+    for (const s of scenes) {
+      if (s.missionId in missionNameMap) continue
+      const entry = textRaw[`${s.missionId}_name`]
+      const name = resolveI18n(entry, textI18n)
+      if (name) missionNameMap[s.missionId] = name
+    }
+    const chapters = adaptRecapChapter(scenes, missionNameMap)
     const byType: Record<string, number> = {}
     for (const s of scenes) byType[s.chapterType] = (byType[s.chapterType] ?? 0) + 1
     return { scenes, chapters, stats: { total: scenes.length, byType } }

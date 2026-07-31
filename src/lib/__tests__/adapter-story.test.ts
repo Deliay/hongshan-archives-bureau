@@ -92,6 +92,16 @@ describe('adaptRecapChapter', () => {
     expect(chapters).toHaveLength(1)
     expect(chapters[0].missions).toHaveLength(2)
   })
+
+  it('resolves mission name from map and falls back to missionId', () => {
+    const scenes = [
+      { id: '1', dlgId: 'dlg_e1m1_1', chapterId: 'e1', missionId: 'e1m1', sceneNo: 1, sceneSub: 0, chapterType: 'e', code: '', text: '' },
+      { id: '2', dlgId: 'dlg_e1m2_1', chapterId: 'e1', missionId: 'e1m2', sceneNo: 1, sceneSub: 0, chapterType: 'e', code: '', text: '' },
+    ]
+    const chapters = adaptRecapChapter(scenes, { e1m1: '迟到的特训' })
+    expect(chapters[0].missions[0].name).toBe('迟到的特训')
+    expect(chapters[0].missions[1].name).toBe('e1m2')
+  })
 })
 
 describe('adaptPrtsCategory', () => {
