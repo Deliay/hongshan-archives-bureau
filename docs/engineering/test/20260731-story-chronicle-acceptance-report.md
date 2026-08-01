@@ -680,7 +680,7 @@ _activityStageId (dungeon_fighting_5)
 
 ### 9.8 测试与验证计划（已实施，2026-08-01）
 
-**实现落点**（commit 见下）：
+**实现落点**（commit `ccee9e8`）：
 - 纯函数聚合（`src/lib/missionConditionNames.ts`）：`buildEnemySummary` / `buildDungeonDetail` / `buildStageDetail` / `extractParamStrings`，类型 `EnemySummary` / `DungeonDetail` / `DungeonEnemy` / 扩展 `ActivityStageDetail`。
 - resolver（`src/hooks/useData.ts` `getMissionConditionResolver`）：新增并行加载 `ActivityConditionalMultiStageTable` / `ActivityConditionalMultiStageConditionTable` / `ActivityTable` / `DungeonTable` / `EnemyTemplateDisplayInfoTable` / `RewardTable`（+ i18n）；`MissionConditionResolver` 新增 `enemySummary` / `dungeonDetail` / `rewardTable`。
 - 组件：`EnemyUnit.tsx`（按 `{enemyId, level}` 渲染，props 注入 `EnemySummary`）、`DungeonPanel.tsx`（dungeon 名/desc/levelDesc/featureDesc/图片/敌人/奖励分组，委托 `RewardPanel`）、`ActivityStagePanel.tsx`（阶段名/活动名/所属任务/解锁/关联 quest/活动奖励/dungeon 区块）。
