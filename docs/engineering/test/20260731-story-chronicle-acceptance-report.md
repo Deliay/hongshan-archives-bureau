@@ -509,8 +509,8 @@ _activityStageId (dungeon_fighting_5)
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | 阶段一 | `constValue` 解包 + `$type` 分派框架 + `CombineCondition` 递归 + 兜底；单测 | ✅ 已实施（commit `d15ae29`） |
-| 阶段二 | 高频类型格式化器（ReachDestination / CheckTalkOptionFinish / CheckQuestState / CheckMissionState / PlayerHasItem 系 / CheckActivityConditionalStageStatus） | ✅ 已实施（commit 见下） |
-| 阶段三 | 活动阶段链路数据接入（StageToActivity + CompleteCondition + DungeonFightingStage），任务/道具/区域名称深链 | 待实施 |
+| 阶段二 | 高频类型格式化器（ReachDestination / CheckTalkOptionFinish / CheckQuestState / CheckMissionState / PlayerHasItem 系 / CheckActivityConditionalStageStatus） | ✅ 已实施（commit `a616130`） |
+| 阶段三 | 活动阶段链路数据接入（StageToActivity + CompleteCondition + DungeonFightingStage），任务/道具/区域名称深链 | ✅ 已实施（commit 见下） |
 | 阶段四 | 任务详情页目标节点接入渲染；UT / E2E + lint / test / build 验证 | 待实施 |
 
 **阶段一实现**（`src/lib/missionCondition.ts`，commit `d15ae29`）：
@@ -529,6 +529,16 @@ _activityStageId (dungeon_fighting_5)
 - 已注册 12 个高频类型：`ReachDestination`（map/area）、`CheckTalkOptionFinish`（dialog）、`CheckQuestState`（quest）、`CheckMissionState`（mission）、`CheckActivityConditionalStageStatus`（stage）、`PlayerHasItem`/`PlayerHasItemInItemBag`（item/count）、`WeekRaidPlayerHasItem`（item）、`CheckMoney`（item/count）、`CheckAdventureLevel`/`CheckWorldLevel`/`CheckUnlockWorldLevel`（level）。
 - 未注册类型（如 `GameConditionServerPlaceHolder`）继续回退 `fields`。
 - 阶段二测试新增 11 例（27 例全部通过）；lint / build 通过。
+
+**阶段三实现**（commit `5685fe7`，`src/lib/missionConditionNames.ts` + `src/hooks/useData.ts`）：
+
+- 纯函数 `resolveConditionArgs(render, resolveArg)`：按 `argName` 逐项把原始 id 替换为可读名称，不可解析项保持原值；`CombineCondition` 子条件递归；不改输入。
+- `useMissionDetail` 返回 `{ mission, conditionResolver }`（`MissionDetailData`），`conditionResolver` 提供：
+  - `resolveArg`：`stage`→StageToActivityTable.desc（i18n 表字典，84/183 可解析，含 a1m2 全部 dungeon_fighting 关卡）、`map`→LevelDescTable.showName（北部禁区/供能高地/深谷旧街）、`item`→ItemTable.name、`mission`→TextTable `${id}_name`、`quest`→本任务 questDic 的描述（override 或首个目标）；其余 arg 保留原值。
+  - `stageDetail(stageId)`：StageToActivityTable + ActivityDungeonFightingStageTable + ActivityConditionalMultiStageCompleteConditionTable 拼接活动阶段详情（阶段名/activityId/rewardId/关联 questId/levelId/conditionList）。
+- 精度说明：`{id,text}` 大整数 id 依赖 api.ts `safeParse` 转字符串保留精度，`resolveI18n` 才能在 i18n 字典命中。
+- 端到端验证：a1m2-v2 的 6 个 `CheckActivityConditionalStageStatus` 目标均解析出阶段名与关联 quest（如 `a1m2_q#11 → dungeon_fighting_5 → a1m2_q#Day5`）。
+- 测试新增 4 例（`missionConditionNames.test.ts`）；lint / test / build 通过。
 
 ### 8.6 风险与待确认
 
