@@ -401,6 +401,7 @@
     "fetchingTableEntry": "正在載入條目…",
     "fetchingMissionList": "正在調閱任務清單…",
     "fetchingMissionDetail": "正在調閱任務詳情…",
+    "fetchingMissionBrief": "正在調閱任務摘要…",
     "fetchingTableIndex": "正在載入索引…",
     "fetchingText": "正在獲取文本…",
     "fetchingVersion": "正在獲取版本資訊…"

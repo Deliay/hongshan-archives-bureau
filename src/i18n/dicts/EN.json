@@ -401,6 +401,7 @@
     "fetchingTableEntry": "Loading entry…",
     "fetchingMissionList": "Loading mission list…",
     "fetchingMissionDetail": "Loading mission detail…",
+    "fetchingMissionBrief": "Loading mission brief…",
     "fetchingTableIndex": "Loading index…",
     "fetchingText": "Fetching text…",
     "fetchingVersion": "Fetching version info…"

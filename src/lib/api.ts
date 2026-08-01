@@ -118,3 +118,9 @@ export async function fetchMissionDetail(missionId: string): Promise<any> {
     fetchJson(`${MISSION_ASSET_BASE}/raw/Data/Json/MissionRuntimeAsset/${missionId}.json`),
     'api.fetchingMissionDetail', { missionId })
 }
+
+export async function fetchMissionBrief(): Promise<any[]> {
+  return trackFetch('正在调阅 任务摘要', () =>
+    fetchJson(`${MISSION_ASSET_BASE}/AllBrief/MissionRuntimeAsset`),
+    'api.fetchingMissionBrief')
+}

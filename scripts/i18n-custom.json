@@ -5039,6 +5039,22 @@
     "ID": "Memuat detail misi…",
     "IT": "Caricamento dettagli missione…"
   },
+  "api.fetchingMissionBrief": {
+    "CN": "正在调阅任务摘要…",
+    "TC": "正在調閱任務摘要…",
+    "EN": "Loading mission brief…",
+    "JP": "任務概要を読み込み中…",
+    "KR": "임무 요약 불러오는 중…",
+    "RU": "Загрузка краткого описания заданий…",
+    "MX": "Cargando resumen de misiones…",
+    "BR": "Carregando resumo de missões…",
+    "DE": "Missionsübersicht wird geladen…",
+    "FR": "Chargement du résumé des missions…",
+    "VN": "Đang tải tóm tắt nhiệm vụ…",
+    "TH": "กำลังโหลดสรุปภารกิจ…",
+    "ID": "Memuat ringkasan misi…",
+    "IT": "Caricamento riassunto missioni…"
+  },
   "api.fetchingTableIndex": {
     "CN": "正在加载索引…",
     "TC": "正在載入索引…",

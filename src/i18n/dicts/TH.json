@@ -401,6 +401,7 @@
     "fetchingTableEntry": "กำลังโหลดรายการ…",
     "fetchingMissionList": "กำลังโหลดรายการภารกิจ…",
     "fetchingMissionDetail": "กำลังโหลดรายละเอียดภารกิจ…",
+    "fetchingMissionBrief": "กำลังโหลดสรุปภารกิจ…",
     "fetchingTableIndex": "กำลังโหลดดัชนี…",
     "fetchingText": "กำลังโหลดข้อความ…",
     "fetchingVersion": "กำลังโหลดข้อมูลเวอร์ชัน…"

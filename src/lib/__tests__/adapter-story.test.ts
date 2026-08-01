@@ -13,6 +13,7 @@ import {
   getSpriteUrl,
   resolveRuntimeText,
   extractMissionIds,
+  buildMissionNameMapFromBrief,
   adaptMissionRuntime,
   buildMissionQuestTree,
   type BakerSpeakerContext,
@@ -258,6 +259,36 @@ describe('extractMissionIds', () => {
       'Data/Json/MissionRuntimeAsset/hidden68_m1m80_meta.json',
     ]
     expect(extractMissionIds(paths)).toEqual(['a1m2', 'hidden68_m1m80'])
+  })
+})
+
+describe('buildMissionNameMapFromBrief', () => {
+  const resolveKey = (key: string) => `T:${key}`
+
+  it('maps missionId to resolved name from brief missionName key', () => {
+    const brief = [
+      { missionId: 'e11m7d5', missionName: { key: 'e11m7_name' }, missionType: 0 },
+      { missionId: 'a1m2', missionName: { key: 'a1m2_name' } },
+    ]
+    expect(buildMissionNameMapFromBrief(brief, resolveKey)).toEqual({
+      e11m7d5: 'T:e11m7_name',
+      a1m2: 'T:a1m2_name',
+    })
+  })
+
+  it('skips entries without a resolvable name (empty brief or no key)', () => {
+    const brief = [
+      { missionId: 'hidden58', missionName: {} },
+      { missionId: 'hidden52' },
+      { missionId: '', missionName: { key: 'x_name' } },
+    ]
+    expect(buildMissionNameMapFromBrief(brief, resolveKey)).toEqual({})
+  })
+
+  it('handles empty brief and plain-string names', () => {
+    expect(buildMissionNameMapFromBrief([], resolveKey)).toEqual({})
+    const brief = [{ missionId: 'a1m1', missionName: '直接文本' }]
+    expect(buildMissionNameMapFromBrief(brief, resolveKey)).toEqual({ a1m1: '直接文本' })
   })
 })
 

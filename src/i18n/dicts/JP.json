@@ -401,6 +401,7 @@
     "fetchingTableEntry": "エントリを読み込み中…",
     "fetchingMissionList": "任務リストを読み込み中…",
     "fetchingMissionDetail": "任務詳細を読み込み中…",
+    "fetchingMissionBrief": "任務概要を読み込み中…",
     "fetchingTableIndex": "インデックスを読み込み中…",
     "fetchingText": "テキストを取得中…",
     "fetchingVersion": "バージョン情報を取得中…"

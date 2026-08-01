@@ -85,7 +85,7 @@ export default function StoryRecap() {
                     onClick={() => handleNavClick(m.missionId)}
                     className={`block pl-4 text-sm w-full text-left cursor-pointer transition-colors ${active ? 'text-archive-gold border-l-2 border-archive-gold' : 'text-archive-dust hover:text-archive-gold'}`}
                   >
-                    <span className="break-words">{m.name} <span className="font-mono text-[11px] text-archive-dust/70">{m.missionId}</span></span>
+                    <span className="break-words">{m.name !== m.missionId ? `${m.name} ` : ''}<span className="font-mono text-[11px] text-archive-dust/70">{m.missionId}</span></span>
                   </button>
                 )
               })}

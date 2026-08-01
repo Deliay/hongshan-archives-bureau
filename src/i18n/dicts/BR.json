@@ -401,6 +401,7 @@
     "fetchingTableEntry": "Carregando entrada…",
     "fetchingMissionList": "Carregando lista de missões…",
     "fetchingMissionDetail": "Carregando detalhes da missão…",
+    "fetchingMissionBrief": "Carregando resumo de missões…",
     "fetchingTableIndex": "Carregando índice…",
     "fetchingText": "Obtendo texto…",
     "fetchingVersion": "Obtendo informações da versão…"

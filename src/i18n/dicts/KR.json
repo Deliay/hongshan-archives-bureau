@@ -401,6 +401,7 @@
     "fetchingTableEntry": "항목 불러오는 중…",
     "fetchingMissionList": "임무 목록 불러오는 중…",
     "fetchingMissionDetail": "임무 상세 불러오는 중…",
+    "fetchingMissionBrief": "임무 요약 불러오는 중…",
     "fetchingTableIndex": "인덱스 불러오는 중…",
     "fetchingText": "텍스트를 불러오는 중…",
     "fetchingVersion": "버전 정보를 불러오는 중…"

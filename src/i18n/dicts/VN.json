@@ -401,6 +401,7 @@
     "fetchingTableEntry": "Đang tải mục…",
     "fetchingMissionList": "Đang tải danh sách nhiệm vụ…",
     "fetchingMissionDetail": "Đang tải chi tiết nhiệm vụ…",
+    "fetchingMissionBrief": "Đang tải tóm tắt nhiệm vụ…",
     "fetchingTableIndex": "Đang tải chỉ mục…",
     "fetchingText": "Đang tải văn bản…",
     "fetchingVersion": "Đang tải thông tin phiên bản…"

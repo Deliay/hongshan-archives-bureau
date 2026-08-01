@@ -401,6 +401,7 @@
     "fetchingTableEntry": "Загрузка записи…",
     "fetchingMissionList": "Загрузка списка заданий…",
     "fetchingMissionDetail": "Загрузка деталей задания…",
+    "fetchingMissionBrief": "Загрузка краткого описания заданий…",
     "fetchingTableIndex": "Загрузка индекса…",
     "fetchingText": "Получение текста…",
     "fetchingVersion": "Получение информации о версии…"

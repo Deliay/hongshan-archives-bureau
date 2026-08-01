@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText, fetchTableEntry, fetchTableDictEntry, fetchMissionList, fetchMissionDetail } from '../lib/api'
+import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText, fetchTableEntry, fetchTableDictEntry, fetchMissionList, fetchMissionDetail, fetchMissionBrief } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
 import { useI18n } from '../i18n'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
 import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, buildRecapChaptersFromMissions, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, buildRecapChaptersFromMissions, buildMissionNameMapFromBrief, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
 import type { ActivityStageDetail, EnemySummary, DungeonDetail, StageDetailContext } from '../lib/missionConditionNames'
 import { buildEnemySummary, buildDungeonDetail, buildStageDetail } from '../lib/missionConditionNames'
 import { formatBlackboard } from '../lib/formatText'
@@ -1322,13 +1322,14 @@ export function useStoryRecap(): UseDataResult<{
   const { locale } = useLocale()
   const { t } = useI18n()
   return useData(async () => {
-    const [mapRaw, summaryRaw, summaryI18n, textRaw, textI18n, missionPaths] = await Promise.all([
+    const [mapRaw, summaryRaw, summaryI18n, textRaw, textI18n, missionPaths, brief] = await Promise.all([
       getCachedData<Record<string, string>>('DialogSummaryMapTable', () => fetchTableAll('DialogSummaryMapTable')),
       getCachedData<Record<string, any>>('DialogSummaryTable', () => fetchTableAll('DialogSummaryTable')),
       getTableI18nDict('DialogSummaryTable', locale),
       getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable')),
       getTableI18nDict('TextTable', locale),
       getCachedData<string[]>('MissionRuntimeList', () => fetchMissionList()).catch(() => [] as string[]),
+      getCachedData<any[]>('MissionRuntimeBrief', () => fetchMissionBrief()).catch(() => [] as any[]),
     ])
     const realMissionIds = extractMissionIds(missionPaths)
     const scenes = Object.entries(mapRaw)
@@ -1341,10 +1342,11 @@ export function useStoryRecap(): UseDataResult<{
       })
       .filter((s): s is StoryRecapScene => s !== null)
       .filter((s) => realMissionIds.includes(s.missionId))
+    const resolveKey = (key: string) => resolveI18n(textRaw?.[key], textI18n) || key
+    const briefNameMap = buildMissionNameMapFromBrief(brief, resolveKey)
     const missionNameMap: Record<string, string> = {}
     for (const id of realMissionIds) {
-      const entry = textRaw[`${id}_name`]
-      const name = resolveI18n(entry, textI18n)
+      const name = briefNameMap[id]
       if (name) missionNameMap[id] = name
     }
     const chapters = buildRecapChaptersFromMissions(realMissionIds, scenes, missionNameMap)
@@ -1401,6 +1403,7 @@ async function getMissionConditionResolver(
     enemyRaw,
     enemyI18n,
     rewardRaw,
+    brief,
   ] = await Promise.all([
     getCachedData<Record<string, any>>('ActivityConditionalMultiStageStageToActivityTable', () => fetchTableAll('ActivityConditionalMultiStageStageToActivityTable').catch(() => ({}))),
     getTableI18nDict('ActivityConditionalMultiStageStageToActivityTable', locale).catch(() => ({}) as Record<string, string>),
@@ -1423,8 +1426,10 @@ async function getMissionConditionResolver(
     getCachedData<Record<string, any>>('EnemyTemplateDisplayInfoTable', () => fetchTableAll('EnemyTemplateDisplayInfoTable').catch(() => ({}))),
     getTableI18nDict('EnemyTemplateDisplayInfoTable', locale).catch(() => ({}) as Record<string, string>),
     getCachedData<Record<string, any>>('RewardTable', () => fetchTableAll('RewardTable').catch(() => ({}))),
+    getCachedData<any[]>('MissionRuntimeBrief', () => fetchMissionBrief()).catch(() => [] as any[]),
   ])
   const resolveTextKey = (key: string) => resolveI18n(textRaw?.[key], textI18n) || key
+  const briefNameMap = buildMissionNameMapFromBrief(brief, resolveTextKey)
   const stageName = (id: string) => {
     const entry = stageRaw?.[id]
     if (!entry) return id
@@ -1449,7 +1454,10 @@ async function getMissionConditionResolver(
         const entry = itemRaw?.[id]
         return entry ? resolveI18n(entry.name, itemI18n) || id : id
       }
-      case 'mission': return resolveTextKey(`${id}_name`)
+      case 'mission': {
+        const briefEntry = briefNameMap[id]
+        return briefEntry || resolveTextKey(`${id}_name`)
+      }
       case 'quest': return questDesc.get(id) ?? id
       default: return undefined
     }

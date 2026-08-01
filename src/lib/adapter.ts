@@ -439,6 +439,20 @@ export function extractMissionIds(paths: string[]): string[] {
   return ids
 }
 
+export function buildMissionNameMapFromBrief(
+  brief: any[],
+  resolveKey?: (key: string) => string,
+): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const entry of brief ?? []) {
+    const id = entry?.missionId
+    if (!id) continue
+    const name = resolveRuntimeText(entry?.missionName, resolveKey)
+    if (name) map[id] = name
+  }
+  return map
+}
+
 export function adaptMissionQuest(
   questId: string,
   quest: any,

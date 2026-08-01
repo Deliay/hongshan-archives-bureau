@@ -401,6 +401,7 @@
     "fetchingTableEntry": "Chargement de l'entrée…",
     "fetchingMissionList": "Chargement de la liste des missions…",
     "fetchingMissionDetail": "Chargement des détails de la mission…",
+    "fetchingMissionBrief": "Chargement du résumé des missions…",
     "fetchingTableIndex": "Chargement de l'index…",
     "fetchingText": "Récupération du texte…",
     "fetchingVersion": "Récupération des infos de version…"
