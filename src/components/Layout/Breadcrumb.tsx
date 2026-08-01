@@ -105,8 +105,8 @@ export default function Breadcrumb() {
       {segments.length >= 3 && (
         <>
           <span className="mx-1 text-archive-lead">›</span>
-          {isSubRoute ? (
-            <Badge variant="ghost">{listLabel[detailId] ?? detailId}</Badge>
+          {listLabel[detailId] ? (
+            <Badge variant="ghost">{listLabel[detailId]}</Badge>
           ) : (
             <DetailLabel listKey={listKey} id={detailId} />
           )}

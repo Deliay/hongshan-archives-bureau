@@ -180,6 +180,10 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
   test('面包屑在剧情梗概页正确显示', async ({ page }) => {
     await page.goto('/archive/story/recap')
     await expect(page.getByRole('link', { name: '档案局', exact: true })).toBeVisible({ timeout: 15000 })
+    const main = page.getByRole('main')
+    await expect(main.getByRole('link', { name: '剧情纪事', exact: true })).toBeVisible({ timeout: 5000 })
+    // recap 面包屑使用翻译文本而非原始路径
+    await expect(main.getByText('剧情梗概', { exact: true })).toBeVisible({ timeout: 5000 })
   })
 
   test('任务详情页目标节点渲染 condition 条件文本', async ({ page }) => {
