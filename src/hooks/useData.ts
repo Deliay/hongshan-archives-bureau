@@ -6,7 +6,8 @@ import { useI18n } from '../i18n'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
 import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, adaptRecapChapter, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, adaptRecapChapter, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
+import type { ActivityStageDetail } from '../lib/missionConditionNames'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
@@ -1361,6 +1362,99 @@ async function getMissionTextResolver(locale: string): Promise<(key: string) => 
   }
 }
 
+export type MissionConditionArgResolver = (argName: string, raw: string | number) => string | number | undefined
+
+export interface MissionConditionResolver {
+  resolveArg: MissionConditionArgResolver
+  stageDetail: (stageId: string) => ActivityStageDetail | null
+}
+
+async function getMissionConditionResolver(
+  locale: string,
+  missionRaw?: Record<string, any> | null,
+): Promise<MissionConditionResolver> {
+  const [
+    stageRaw,
+    stageI18n,
+    completeRaw,
+    dungStageRaw,
+    levelRaw,
+    levelI18n,
+    itemRaw,
+    itemI18n,
+    textRaw,
+    textI18n,
+  ] = await Promise.all([
+    getCachedData<Record<string, any>>('ActivityConditionalMultiStageStageToActivityTable', () => fetchTableAll('ActivityConditionalMultiStageStageToActivityTable').catch(() => ({}))),
+    getTableI18nDict('ActivityConditionalMultiStageStageToActivityTable', locale).catch(() => ({}) as Record<string, string>),
+    getCachedData<Record<string, any>>('ActivityConditionalMultiStageCompleteConditionTable', () => fetchTableAll('ActivityConditionalMultiStageCompleteConditionTable').catch(() => ({}))),
+    getCachedData<Record<string, any>>('ActivityDungeonFightingStageTable', () => fetchTableAll('ActivityDungeonFightingStageTable').catch(() => ({}))),
+    getCachedData<Record<string, any>>('LevelDescTable', () => fetchTableAll('LevelDescTable').catch(() => ({}))),
+    getTableI18nDict('LevelDescTable', locale).catch(() => ({}) as Record<string, string>),
+    getCachedData<Record<string, any>>('ItemTable', () => fetchTableAll('ItemTable').catch(() => ({}))),
+    getTableI18nDict('ItemTable', locale).catch(() => ({}) as Record<string, string>),
+    getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable')),
+    getTableI18nDict('TextTable', locale),
+  ])
+  const resolveTextKey = (key: string) => resolveI18n(textRaw?.[key], textI18n) || key
+  const stageName = (id: string) => {
+    const entry = stageRaw?.[id]
+    if (!entry) return id
+    return resolveI18n(entry.desc, stageI18n) || id
+  }
+  const questDesc = new Map<string, string>()
+  for (const [qid, q] of Object.entries<any>(missionRaw?.questDic ?? {})) {
+    const desc = q?.overrideMissionDesc
+      ? resolveRuntimeText(q?.descriptionOverride, resolveTextKey)
+      : resolveRuntimeText(q?.objectiveList?.[0]?.description, resolveTextKey)
+    if (desc) questDesc.set(qid, desc)
+  }
+  const resolveArg: MissionConditionArgResolver = (argName, raw) => {
+    const id = String(raw)
+    switch (argName) {
+      case 'stage': return stageName(id)
+      case 'map': {
+        const entry = levelRaw?.[id]
+        return entry ? resolveI18n(entry.showName, levelI18n) || id : id
+      }
+      case 'item': {
+        const entry = itemRaw?.[id]
+        return entry ? resolveI18n(entry.name, itemI18n) || id : id
+      }
+      case 'mission': return resolveTextKey(`${id}_name`)
+      case 'quest': return questDesc.get(id) ?? id
+      default: return undefined
+    }
+  }
+  const stageDetail = (stageId: string): ActivityStageDetail | null => {
+    const entry = stageRaw?.[stageId]
+    if (!entry) return null
+    const dung = dungStageRaw?.[stageId]
+    const conditions: ActivityStageDetail['conditions'] = (completeRaw?.[stageId]?.conditionList ?? []).map((c: any) => ({
+      conditionType: c.conditionType ?? 0,
+      compareOperator: c.compareOperator ?? 0,
+      progressToCompare: c.progressToCompare ?? 0,
+      conditionId: c.conditionId ?? '',
+      parameters: c.parameters ?? [],
+    }))
+    return {
+      stageId,
+      name: resolveI18n(entry.desc, stageI18n) || stageId,
+      activityId: entry.activityId ?? '',
+      rewardId: entry.rewardId ?? '',
+      questId: dung?.questId,
+      levelId: dung?.levelId,
+      conditions,
+    }
+  }
+  return { resolveArg, stageDetail }
+}
+
+export interface MissionDetailData {
+  mission: MissionRuntime
+  conditionResolver: MissionConditionResolver
+}
+
 export function useMissionCatalog(): UseDataResult<{ missionIds: string[] }> {
   return useData(async () => {
     const paths = await getCachedData<string[]>('MissionRuntimeList', () => fetchMissionList())
@@ -1368,15 +1462,16 @@ export function useMissionCatalog(): UseDataResult<{ missionIds: string[] }> {
   }, [])
 }
 
-export function useMissionDetail(missionId: string): UseDataResult<MissionRuntime | null> {
+export function useMissionDetail(missionId: string): UseDataResult<MissionDetailData | null> {
   const { locale } = useLocale()
   return useData(async () => {
     if (!missionId) return null
-    const [raw, resolveKey] = await Promise.all([
-      getCachedData<Record<string, any>>(`MissionRuntime_${missionId}`, () => fetchMissionDetail(missionId)),
+    const raw = await getCachedData<Record<string, any>>(`MissionRuntime_${missionId}`, () => fetchMissionDetail(missionId))
+    const [resolveKey, conditionResolver] = await Promise.all([
       getMissionTextResolver(locale),
+      getMissionConditionResolver(locale, raw),
     ])
-    return adaptMissionRuntime(raw, resolveKey)
+    return { mission: adaptMissionRuntime(raw, resolveKey), conditionResolver }
   }, [locale, missionId])
 }
 

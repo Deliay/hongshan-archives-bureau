@@ -11,7 +11,8 @@ import type { MissionQuestTreeNode } from '../../lib/types'
 export default function StoryMissionDetail() {
   const { missionId } = useParams<{ missionId: string }>()
   const { t } = useI18n()
-  const { data: mission, loading, error } = useMissionDetail(missionId || '')
+  const { data, loading, error } = useMissionDetail(missionId || '')
+  const mission = data?.mission ?? null
 
   const tree = useMemo(
     () => (mission ? buildMissionQuestTree(mission.mainPathQuests, mission.quests) : []),
