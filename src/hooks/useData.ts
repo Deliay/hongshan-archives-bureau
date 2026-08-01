@@ -1377,11 +1377,13 @@ export interface MissionConditionResolver {
   rewardTable: Record<string, any>
   missionTypeName: (missionType: number) => string
   missionImportanceName: (importance: number) => string
+  dialogScene: (dialogId: string) => StoryRecapScene | null
 }
 
 async function getMissionConditionResolver(
   locale: string,
   missionRaw?: Record<string, any> | null,
+  sceneLabel = 'scene',
 ): Promise<MissionConditionResolver> {
   const [
     stageRaw,
@@ -1407,6 +1409,9 @@ async function getMissionConditionResolver(
     rewardRaw,
     brief,
     missionTypeRaw,
+    dlgMapRaw,
+    dlgSummaryRaw,
+    dlgSummaryI18n,
   ] = await Promise.all([
     getCachedData<Record<string, any>>('ActivityConditionalMultiStageStageToActivityTable', () => fetchTableAll('ActivityConditionalMultiStageStageToActivityTable').catch(() => ({}))),
     getTableI18nDict('ActivityConditionalMultiStageStageToActivityTable', locale).catch(() => ({}) as Record<string, string>),
@@ -1431,6 +1436,9 @@ async function getMissionConditionResolver(
     getCachedData<Record<string, any>>('RewardTable', () => fetchTableAll('RewardTable').catch(() => ({}))),
     getCachedData<any[]>('MissionRuntimeBrief', () => fetchMissionBrief()).catch(() => [] as any[]),
     getCachedData<Record<string, any>>('MissionTypeInfoTable', () => fetchTableAll('MissionTypeInfoTable').catch(() => ({}))),
+    getCachedData<Record<string, string>>('DialogSummaryMapTable', () => fetchTableAll('DialogSummaryMapTable').catch(() => ({}))),
+    getCachedData<Record<string, any>>('DialogSummaryTable', () => fetchTableAll('DialogSummaryTable').catch(() => ({}))),
+    getTableI18nDict('DialogSummaryTable', locale).catch(() => ({}) as Record<string, string>),
   ])
   const resolveTextKey = (key: string) => resolveI18n(textRaw?.[key], textI18n) || key
   const briefNameMap = buildMissionNameMapFromBrief(brief, resolveTextKey)
@@ -1493,7 +1501,14 @@ async function getMissionConditionResolver(
     buildEnemySummary(enemyId, stageCtx.enemy, stageCtx.iconUrl!)
   const dungeonDetail = (dungeonId: string): DungeonDetail | null =>
     buildDungeonDetail(dungeonId, { dungeon: stageCtx.dungeon, enemy: stageCtx.enemy }, stageCtx.iconUrl!, stageCtx.picUrl!)
-  return { resolveArg, stageDetail, enemySummary, dungeonDetail, rewardTable: rewardRaw, missionTypeName, missionImportanceName }
+  const dialogScene = (dialogId: string): StoryRecapScene | null => {
+    const summaryId = dlgMapRaw?.[dialogId]
+    if (!summaryId) return null
+    const summary = dlgSummaryRaw?.[summaryId]
+    if (!summary) return null
+    return adaptRecapScene(dialogId, summaryId, summary, dlgSummaryI18n, sceneLabel)
+  }
+  return { resolveArg, stageDetail, enemySummary, dungeonDetail, rewardTable: rewardRaw, missionTypeName, missionImportanceName, dialogScene }
 }
 
 export interface MissionDetailData {
@@ -1510,15 +1525,16 @@ export function useMissionCatalog(): UseDataResult<{ missionIds: string[] }> {
 
 export function useMissionDetail(missionId: string): UseDataResult<MissionDetailData | null> {
   const { locale } = useLocale()
+  const { t } = useI18n()
   return useData(async () => {
     if (!missionId) return null
     const raw = await getCachedData<Record<string, any>>(`MissionRuntime_${missionId}`, () => fetchMissionDetail(missionId))
     const [resolveKey, conditionResolver] = await Promise.all([
       getMissionTextResolver(locale),
-      getMissionConditionResolver(locale, raw),
+      getMissionConditionResolver(locale, raw, t('story.scene')),
     ])
     return { mission: adaptMissionRuntime(raw, resolveKey), conditionResolver }
-  }, [locale, missionId])
+  }, [locale, missionId, t])
 }
 
 export function useMissionScenes(missionId: string): UseDataResult<StoryRecapScene[]> {

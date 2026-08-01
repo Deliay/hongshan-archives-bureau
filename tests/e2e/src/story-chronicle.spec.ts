@@ -259,4 +259,17 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     expect(bodyText).toContain('武陵')
     expect(bodyText).toContain('应龙关')
   })
+
+  test('对话型目标渲染对应剧情梗概（DialogSummaryMapTable 解析）', async ({ page }) => {
+    // e1m3_q#17 目标是完成对话 dlg_e1m3_6，其 summaryId = summary_e1m3_6_001
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const scenes = page.getByTestId('quest-recap-scene')
+    await expect(scenes.first()).toBeVisible({ timeout: 30000 })
+    // 场景 code 由 DLG_KEY_RE 解析：E1·M3·场06
+    await expect(page.locator('body').getByText('E1·M3·场06', { exact: true }).first()).toBeVisible({ timeout: 5000 })
+    // 梗概文本来自 DialogSummaryTable CN
+    const bodyText = await page.locator('body').textContent() || ''
+    expect(bodyText).toContain('便携源石矿机')
+  })
 })

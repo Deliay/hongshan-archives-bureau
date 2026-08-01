@@ -10,7 +10,7 @@ import { RichText } from '../../lib/richText'
 import { buildMissionQuestTree } from '../../lib/adapter'
 import { ObjectiveCondition } from './ObjectiveCondition'
 import LevelDisplay from './LevelDisplay'
-import type { MissionQuestTreeNode } from '../../lib/types'
+import type { MissionQuestTreeNode, StoryRecapScene } from '../../lib/types'
 
 export default function StoryMissionDetail() {
   const { missionId } = useParams<{ missionId: string }>()
@@ -33,6 +33,7 @@ export function MissionDetailContent({
   const rewardTable = data?.conditionResolver?.rewardTable
   const missionTypeName = data?.conditionResolver?.missionTypeName
   const missionImportanceName = data?.conditionResolver?.missionImportanceName
+  const dialogScene = data?.conditionResolver?.dialogScene
 
   const tree = useMemo(
     () => (mission ? buildMissionQuestTree(mission.mainPathQuests, mission.quests) : []),
@@ -113,7 +114,7 @@ export function MissionDetailContent({
         {tree.length === 0 && <p className="text-archive-dust text-sm">{t('common.empty')}</p>}
         <div className="space-y-3">
           {tree.map(root => (
-            <QuestNode key={root.questId} node={root} resolveArg={resolveArg} stageDetail={stageDetail} rewardTable={rewardTable} />
+            <QuestNode key={root.questId} node={root} resolveArg={resolveArg} stageDetail={stageDetail} rewardTable={rewardTable} dialogScene={dialogScene} />
           ))}
         </div>
       </section>
@@ -126,11 +127,13 @@ function QuestNode({
   resolveArg,
   stageDetail,
   rewardTable,
+  dialogScene,
 }: {
   node: MissionQuestTreeNode
   resolveArg?: MissionConditionArgResolver
   stageDetail?: (stageId: string) => ActivityStageDetail | null
   rewardTable?: Record<string, any>
+  dialogScene?: (dialogId: string) => StoryRecapScene | null
 }) {
   const { t } = useI18n()
   return (
@@ -150,7 +153,7 @@ function QuestNode({
             {node.objectives.map(o => (
               <li key={o.description || o.condition?.type || node.questId} className="flex flex-col">
                 <span>{o.description ? <RichText text={o.description} /> : '·'}</span>
-                {o.condition && <ObjectiveCondition condition={o.condition} resolveArg={resolveArg} stageDetail={stageDetail} rewardTable={rewardTable} />}
+                {o.condition && <ObjectiveCondition condition={o.condition} resolveArg={resolveArg} stageDetail={stageDetail} rewardTable={rewardTable} dialogScene={dialogScene} />}
               </li>
             ))}
           </ul>
@@ -165,7 +168,7 @@ function QuestNode({
       {node.children.length > 0 && (
         <div className="ml-3 mt-1 pl-3 border-l border-archive-gold/20 space-y-3">
           {node.children.map(child => (
-            <QuestNode key={child.questId} node={child} resolveArg={resolveArg} stageDetail={stageDetail} rewardTable={rewardTable} />
+            <QuestNode key={child.questId} node={child} resolveArg={resolveArg} stageDetail={stageDetail} rewardTable={rewardTable} dialogScene={dialogScene} />
           ))}
         </div>
       )}
