@@ -6687,6 +6687,22 @@
     "ID": "Sedang diputar",
     "IT": "In riproduzione"
   },
+  "story.missionNav": {
+    "CN": "剧情导航",
+    "TC": "劇情導航",
+    "EN": "Mission Nav",
+    "JP": "任務ナビ",
+    "KR": "임무 내비",
+    "RU": "Навигация по заданиям",
+    "MX": "Navegación de misiones",
+    "BR": "Navegação de missões",
+    "DE": "Missionsnavigation",
+    "FR": "Navigation des missions",
+    "VN": "Điều hướng nhiệm vụ",
+    "TH": "นำทางภารกิจ",
+    "ID": "Navigasi misi",
+    "IT": "Navigazione missioni"
+  },
   "breadcrumb.recap": {
     "CN": "剧情梗概",
     "TC": "劇情梗概",

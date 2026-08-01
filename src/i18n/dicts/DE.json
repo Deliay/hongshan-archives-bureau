@@ -358,7 +358,8 @@
     "noScene": "Kein Geschichtstext",
     "expandDialog": "Dialog anzeigen",
     "collapseDialog": "Dialog ausblenden",
-    "audioNowPlaying": "Wird abgespielt"
+    "audioNowPlaying": "Wird abgespielt",
+    "missionNav": "Missionsnavigation"
   },
   "update": {
     "added": "Hinzugefügt",

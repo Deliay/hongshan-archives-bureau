@@ -358,7 +358,8 @@
     "noScene": "Không có văn bản cốt truyện",
     "expandDialog": "Hiển thị hội thoại",
     "collapseDialog": "Ẩn hội thoại",
-    "audioNowPlaying": "Đang phát"
+    "audioNowPlaying": "Đang phát",
+    "missionNav": "Điều hướng nhiệm vụ"
   },
   "update": {
     "added": "Đã thêm",

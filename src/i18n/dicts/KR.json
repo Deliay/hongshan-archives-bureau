@@ -358,7 +358,8 @@
     "noScene": "스토리 텍스트 없음",
     "expandDialog": "대화 보기",
     "collapseDialog": "대화 숨기기",
-    "audioNowPlaying": "재생 중"
+    "audioNowPlaying": "재생 중",
+    "missionNav": "임무 내비"
   },
   "update": {
     "added": "추가",

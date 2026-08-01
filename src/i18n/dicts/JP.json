@@ -358,7 +358,8 @@
     "noScene": "ストーリーテキストなし",
     "expandDialog": "会話を表示",
     "collapseDialog": "会話を隠す",
-    "audioNowPlaying": "再生中"
+    "audioNowPlaying": "再生中",
+    "missionNav": "任務ナビ"
   },
   "update": {
     "added": "追加",

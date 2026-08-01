@@ -67,6 +67,28 @@ export default function StoryRecap() {
             <option key={ct} value={ct}>{chapterTypeLabel(ct)}</option>
           ))}
         </select>
+        <span className="hidden md:inline text-xs text-archive-dust">{t('story.spoilerHint')}</span>
+      </div>
+
+      <div className="md:hidden px-6 pt-4">
+        <label className="flex items-center gap-2 text-xs text-archive-dust mb-1">
+          <span className="shrink-0">{t('story.missionNav')}</span>
+          <select
+            value={selectedMission?.missionId ?? ''}
+            onChange={(e) => e.target.value && handleNavClick(e.target.value)}
+            className="flex-1 min-w-0 bg-archive-file border border-archive-border text-archive-ivory text-sm rounded px-3 py-1.5"
+          >
+            {filteredChapters.map(ch => (
+              <optgroup key={ch.chapterId} label={ch.chapterId.toUpperCase()}>
+                {ch.missions.map(m => (
+                  <option key={m.missionId} value={m.missionId}>
+                    {m.name !== m.missionId ? `${m.name} · ${m.missionId}` : m.missionId}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
         <span className="text-xs text-archive-dust">{t('story.spoilerHint')}</span>
       </div>
 

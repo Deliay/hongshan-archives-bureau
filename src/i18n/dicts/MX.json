@@ -358,7 +358,8 @@
     "noScene": "Sin texto de historia",
     "expandDialog": "Mostrar diálogo",
     "collapseDialog": "Ocultar diálogo",
-    "audioNowPlaying": "Reproduciendo"
+    "audioNowPlaying": "Reproduciendo",
+    "missionNav": "Navegación de misiones"
   },
   "update": {
     "added": "Añadido",

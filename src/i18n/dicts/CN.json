@@ -358,7 +358,8 @@
     "noScene": "暂无剧情文本",
     "expandDialog": "展开对话",
     "collapseDialog": "收起对话",
-    "audioNowPlaying": "正在播放"
+    "audioNowPlaying": "正在播放",
+    "missionNav": "剧情导航"
   },
   "update": {
     "added": "新增",
