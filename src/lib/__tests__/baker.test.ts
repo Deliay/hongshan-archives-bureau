@@ -87,32 +87,49 @@ describe('resolveDialog', () => {
     expect(branchBeat!.messages).toHaveLength(0)
     expect(branchBeat!.options).toHaveLength(2)
     expect(branchBeat!.selectedOptionId).toBe('opt1')
+    // 选项分支不产生「我」的气泡
+    expect(beats.some(b => b.messages.some(m => m.isSelf))).toBe(false)
   })
 
-  it('selected option becomes self message', () => {
+  it('selected option does not become a self bubble', () => {
+    const nodes: Record<string, any> = {
+      '1': makeNode({ dialogOptionIds: ['opt1'], content: { id: null }, nextContentId: -1 }),
+      '2': makeNode({ content: { id: 2, text: 'npc reply' }, speaker: 'npc1', nextContentId: -1 }),
+    }
+    const options: Record<string, any> = {
+      opt1: { optionDesc: { text: 'Choice A' }, optionNextContentId: 2, optionResPath: '', optionNPCIds: [] },
+    }
+    const beats = resolveDialog('d1', nodes, options, { 1: 'opt1' }, makeCtx({ dialogI18n: { '2': 'npc reply' } }))
+    const selfMsgs = beats.flatMap(b => b.messages).filter(m => m.isSelf)
+    expect(selfMsgs).toHaveLength(0)
+    // 分支选中后沿 optionNextContentId 继续走 NPC 回复
+    const texts = beats.flatMap(b => b.messages).map(m => m.text)
+    expect(texts).toContain('npc reply')
+  })
+
+  it('option with optionResPath builds sticker asset under sns/sticker/', () => {
     const nodes: Record<string, any> = {
       '1': makeNode({ dialogOptionIds: ['opt1'], content: { id: null }, nextContentId: -1 }),
     }
     const options: Record<string, any> = {
-      opt1: { optionDesc: { text: 'Choice A' }, optionNextContentId: -1, optionResPath: '', optionNPCIds: [] },
+      opt1: { optionDesc: { text: '' }, optionNextContentId: -1, optionResPath: 'sns_sticker_001', optionNPCIds: [] },
     }
     const beats = resolveDialog('d1', nodes, options, {}, makeCtx())
-    const selfBeat = beats.find(b => b.messages.some(m => m.isSelf))
-    expect(selfBeat).toBeDefined()
-    expect(selfBeat!.messages[0].kind).toBe('text')
+    const branchBeat = beats.find(b => b.options)
+    expect(branchBeat!.options![0].emojiUrl).toContain('sns/sticker/sns_sticker_001')
+    expect(branchBeat!.options![0].emojiUrl).not.toContain('sns/emoji/sns_sticker_001')
   })
 
-  it('option with optionResPath becomes sticker', () => {
+  it('option with emoji resPath builds emoji asset under sns/emoji/', () => {
     const nodes: Record<string, any> = {
       '1': makeNode({ dialogOptionIds: ['opt1'], content: { id: null }, nextContentId: -1 }),
     }
     const options: Record<string, any> = {
-      opt1: { optionDesc: { text: '' }, optionNextContentId: -1, optionResPath: 'sns_emoji_test', optionNPCIds: [] },
+      opt1: { optionDesc: { text: '' }, optionNextContentId: -1, optionResPath: 'sns_emoji_007', optionNPCIds: [] },
     }
     const beats = resolveDialog('d1', nodes, options, {}, makeCtx())
-    const selfBeat = beats.find(b => b.messages.some(m => m.isSelf))
-    expect(selfBeat!.messages[0].kind).toBe('sticker')
-    expect(selfBeat!.messages[0].imageUrl).toContain('sns_emoji_test')
+    const branchBeat = beats.find(b => b.options)
+    expect(branchBeat!.options![0].emojiUrl).toContain('sns/emoji/sns_emoji_007')
   })
 
   it('contentType 9 merges into previous message reactions', () => {

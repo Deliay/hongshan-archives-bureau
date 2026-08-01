@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useI18n } from '../../i18n'
-import type { BakerChat } from '../../lib/types'
+import type { BakerChat, BakerTopic } from '../../lib/types'
 
 interface BakerContactListProps {
   chats: BakerChat[]
+  topics: BakerTopic[]
   activeChatId: string | null
+  activeTopicId: string | null
   onSelect: (chatId: string) => void
+  onSelectTopic: (topicId: string) => void
 }
 
 type TabKey = 'all' | 'operator' | 'contact' | 'group'
@@ -17,7 +20,7 @@ const TAB_KIND_MAP: Record<TabKey, BakerChat['kind'] | null> = {
   group: 'group',
 }
 
-export function BakerContactList({ chats, activeChatId, onSelect }: BakerContactListProps) {
+export function BakerContactList({ chats, topics, activeChatId, activeTopicId, onSelect, onSelectTopic }: BakerContactListProps) {
   const { t } = useI18n()
   const [tab, setTab] = useState<TabKey>('all')
 
@@ -32,7 +35,7 @@ export function BakerContactList({ chats, activeChatId, onSelect }: BakerContact
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex gap-1 p-2 border-b border-archive-border">
+      <div className="flex gap-1 p-2 border-b border-archive-border shrink-0">
         {tabs.map(({ key, label }) => (
           <button
             key={key}
@@ -50,28 +53,51 @@ export function BakerContactList({ chats, activeChatId, onSelect }: BakerContact
       </div>
       <div className="flex-1 overflow-y-auto">
         {filtered.map(chat => (
-          <button
-            key={chat.id}
-            type="button"
-            onClick={() => onSelect(chat.id)}
-            className={`w-full flex items-center gap-3 p-3 text-left transition-colors cursor-pointer ${
-              activeChatId === chat.id
-                ? 'bg-archive-file border-l-2 border-archive-gold'
-                : 'hover:bg-archive-file'
-            }`}
-          >
-            {chat.iconUrl ? (
-              <img
-                src={chat.iconUrl}
-                alt=""
-                className="w-10 h-10 rounded-full border border-archive-border object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full border border-archive-border bg-archive-file" />
+          <div key={chat.id}>
+            <button
+              type="button"
+              onClick={() => onSelect(chat.id)}
+              className={`w-full flex items-center gap-3 p-3 text-left transition-colors cursor-pointer ${
+                activeChatId === chat.id
+                  ? 'bg-archive-file border-l-2 border-archive-gold'
+                  : 'hover:bg-archive-file'
+              }`}
+            >
+              {chat.iconUrl ? (
+                <img
+                  src={chat.iconUrl}
+                  alt=""
+                  className="w-10 h-10 rounded-full border border-archive-border object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full border border-archive-border bg-archive-file" />
+              )}
+              <span className="text-sm text-archive-ivory truncate">{chat.name || chat.id}</span>
+            </button>
+            {activeChatId === chat.id && topics.length > 0 && (
+              <div className="pl-8 pr-2 pb-2 space-y-0.5">
+                {topics.map(topic => {
+                  const active = activeTopicId === topic.topicId
+                  const label = topic.topicName || topic.dialogs[0]?.preview?.slice(0, 20) || topic.topicId
+                  return (
+                    <button
+                      key={topic.topicId}
+                      type="button"
+                      onClick={() => onSelectTopic(topic.topicId)}
+                      className={`w-full text-left px-2 py-1 rounded text-xs transition-colors cursor-pointer ${
+                        active
+                          ? 'text-archive-gold bg-archive-gold/10'
+                          : 'text-archive-dust hover:text-archive-ivory'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
             )}
-            <span className="text-sm text-archive-ivory truncate">{chat.name || chat.id}</span>
-          </button>
+          </div>
         ))}
       </div>
     </div>

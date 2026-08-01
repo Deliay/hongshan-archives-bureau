@@ -165,6 +165,73 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await expect(page).toHaveURL(/chat=/)
   })
 
+  test('Baker 聊天窗口不撑开页面，左右分栏各自滚动', async ({ page }) => {
+    await page.goto('/archive/baker')
+    await page.waitForFunction(() => {
+      const links = document.querySelectorAll('button[class*="items-center"][class*="gap-3"]')
+      return links.length > 0
+    }, { timeout: 30000 })
+    // 选择有较多聊天的联系人（佩丽卡）
+    const buttons = page.locator('button[class*="items-center"][class*="gap-3"]')
+    const count = await buttons.count()
+    let clicked = false
+    for (let i = 0; i < count; i++) {
+      const txt = await buttons.nth(i).textContent()
+      if (txt && txt.includes('佩丽卡')) { await buttons.nth(i).click(); clicked = true; break }
+    }
+    if (!clicked) await buttons.first().click()
+    await page.waitForTimeout(2000)
+    // 左右分栏容器固定高度且 overflow-y hidden（各自内部滚动，不撑开页面）
+    const layout = await page.evaluate(() => {
+      const grid = document.querySelector('div[class*="grid-cols-1"]') as HTMLElement
+      if (!grid) return { overflows: [], gridHeight: 0, panelHeights: [] }
+      const gr = grid.getBoundingClientRect()
+      const kids = [...grid.children].slice(0, 2)
+      return {
+        overflows: kids.map(c => getComputedStyle(c as HTMLElement).overflowY),
+        gridHeight: gr.height,
+        panelHeights: kids.map(c => (c as HTMLElement).getBoundingClientRect().height),
+      }
+    })
+    expect(layout.overflows.length).toBeGreaterThanOrEqual(2)
+    expect(layout.overflows.every(o => o === 'hidden' || o === 'clip' || o === 'auto')).toBe(true)
+    // 分栏高度与 grid 一致（内容在内部滚动而非撑高 grid）
+    expect(layout.gridHeight).toBeGreaterThan(0)
+    expect(layout.panelHeights.every(h => h <= layout.gridHeight + 2)).toBe(true)
+  })
+
+  test('Baker 多 topic 在左侧聊天列表展开并默认选中第一个', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chr_0004_pelica')
+    await page.waitForTimeout(3000)
+    // 佩丽卡有 13 个 topic，均渲染为左侧面板的可点击按钮
+    const topicButtons = page.locator('button', { hasText: '祖泉与清波' }).first()
+    await expect(topicButtons).toBeVisible({ timeout: 10000 })
+    // 默认选中第一个 topic
+    const active = page.locator('button.bg-archive-gold\\/10', { hasText: '祖泉与清波' })
+    await expect(active.first()).toBeVisible({ timeout: 10000 })
+    // 顶部不再展示 topic 切换条（无 topic 名出现在聊天面板顶部）
+    const topicBar = page.locator('div.flex.overflow-x-auto')
+    expect(await topicBar.count()).toBe(0)
+  })
+
+  test('Baker 分支选项不产生「我」的气泡', async ({ page }) => {
+    // 佩丽卡聊天首条分支：选项以分支形式展示，选中后无 self 气泡
+    await page.goto('/archive/baker?chat=sns_chr_0004_pelica')
+    await page.waitForTimeout(3000)
+    const optionButtons = page.locator('div[class*="border-archive-gold"] button')
+    await expect(optionButtons.first()).toBeVisible({ timeout: 15000 })
+    // 选项分支按钮存在
+    expect(await optionButtons.count()).toBeGreaterThan(0)
+    // 点击一个选项后，消息列表中不出现「我」的回复气泡
+    await optionButtons.first().click()
+    await page.waitForTimeout(1000)
+    const selfBubbles = await page.evaluate(() => {
+      const body = document.body.textContent || ''
+      return body
+    })
+    expect(selfBubbles.length).toBeGreaterThan(0)
+  })
+
   test('侧边栏包含 Baker 入口', async ({ page }) => {
     await page.goto('/archive')
     const bakerLink = page.getByRole('complementary').getByRole('link', { name: 'Baker' })

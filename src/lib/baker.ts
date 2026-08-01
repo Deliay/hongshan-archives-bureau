@@ -27,6 +27,16 @@ export interface ResolveContext {
   startId?: string
 }
 
+export function getSnsAssetUrl(resPath: string): string {
+  if (!resPath) return ''
+  const sub = resPath.startsWith('sns_sticker_')
+    ? 'sticker'
+    : resPath.startsWith('sns_emoji_')
+      ? 'emoji'
+      : 'emoji'
+  return getSpriteUrl(`sns/${sub}/${resPath}`)
+}
+
 export function resolveDialog(
   dialogId: string,
   nodes: Record<string, RawNode>,
@@ -50,7 +60,6 @@ export function resolveDialog(
       const validIds = node.dialogOptionIds.filter((oid) => options[oid])
       if (!validIds.length) break
       const selectedId = choices[Number(currentId)] ?? validIds[0]
-      const selected = options[selectedId]
       beats.push({
         messages: [],
         branchId: Number(currentId),
@@ -58,23 +67,10 @@ export function resolveDialog(
         options: validIds.map((oid) => ({
           id: oid,
           text: resolveI18n(options[oid].optionDesc, ctx.optionI18n),
-          emojiUrl: options[oid].optionResPath ? getSpriteUrl(`sns/emoji/${options[oid].optionResPath}`) : undefined,
+          emojiUrl: options[oid].optionResPath ? getSnsAssetUrl(options[oid].optionResPath) : undefined,
         })),
       })
-      beats.push({
-        messages: [{
-          id: `${dialogId}:${currentId}:${selectedId}`,
-          speakerId: 'endmin',
-          isSelf: true,
-          speakerName: ctx.speaker.selfName,
-          speakerIconUrl: ctx.speaker.selfIconUrl,
-          kind: selected.optionResPath ? 'sticker' : 'text',
-          text: resolveI18n(selected.optionDesc, ctx.optionI18n),
-          imageUrl: selected.optionResPath ? getSpriteUrl(`sns/emoji/${selected.optionResPath}`) : undefined,
-          reactions: undefined,
-        }],
-      })
-      currentId = String(selected.optionNextContentId)
+      currentId = String(options[selectedId].optionNextContentId)
       continue
     }
 
@@ -99,7 +95,7 @@ function parseReaction(contentParams: string | undefined, ctx: ResolveContext) {
     const [r] = JSON.parse(contentParams)
     if (!r?.emojiResPath) return null
     return {
-      emojiUrl: getSpriteUrl(`sns/emoji/${r.emojiResPath}`),
+      emojiUrl: getSnsAssetUrl(r.emojiResPath),
       fromNames: (r.npcIds ?? []).map((id: string) => ctx.speaker.chatMap[id]?.name ?? id),
       count: r.npcCount ?? (r.npcIds?.length ?? 0),
     }

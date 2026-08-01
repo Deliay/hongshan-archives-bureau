@@ -881,3 +881,63 @@ _activityStageId (dungeon_fighting_5)
 | 11.7① | 播放界面不在画面内时不悬浮 | 面板随对话流滚动 | ✅ 已修复 | 本次提交 |
 | 11.7② | 展开多个对话出现多个播放界面 | 面板渲染在每个 DialogScript 内 | ✅ 已修复 | 本次提交 |
 | 11.7③ | 正在播放的台词无底色高亮 | 未标记当前行 | ✅ 已修复 | 本次提交 |
+
+---
+
+## 13. 验收问题（2026-08-02）：Baker 聊天界面
+
+> 本轮受理 5 项验收反馈（第 5 项 PRTS 分享卡片展示暂缓）：①聊天窗口撑开主区域，左右分栏应各自滚动；②聊天分支选项不应再产生气泡；③多 topic 顶部按钮无法切换，应移入左侧聊天列表展开并默认选第一个；④`sns_sticker_001` 对应资源目录应为 `sns/sticker/` 而非 `sns/emoji/`。
+
+### 13.1 聊天窗口撑开主区域（左右分栏各自滚动）
+
+**问题描述**：Baker 聊天内容把主区域撑开，整个页面出现滚动条（实测 `docScrollHeight` 8869px vs 视口 720px），左右分栏应各自内部滚动。
+
+**根因分析**：根容器 `h-[calc(100vh-4rem)] grid` 未设置 `overflow-hidden`，grid 行高按内容自适应（auto rows），子列随聊天内容膨胀至 8809px，连带页面整体滚动。
+
+**修复方案**（本次提交）：
+- 根容器加 `overflow-hidden`（配合既有 `h-[calc(100vh-4rem)]` 固定高度），grid 行不再随内容撑高。
+- 左右两个分栏容器各加 `overflow-y-hidden overflow-x-scroll`，配合其内部 `overflow-y-auto` 内容区实现各自独立滚动。
+- 实测 `docScrollHeight` 回落至 833px（仅剩 footer 正常高度），分栏高度与 grid 一致（656px）。
+
+**涉及文件**：`src/pages/baker/BakerTerminal.tsx`、`src/components/Baker/BakerChatPanel.tsx`（消息区 `flex-1 overflow-y-auto` 保留）、`src/components/Baker/BakerContactList.tsx`（列表区 `flex-1 overflow-y-auto` 保留）。
+
+### 13.2 聊天分支选项不再产生气泡
+
+**问题描述**：选中聊天分支选项后，除了选项分支展示外，还会多出一条「我」的气泡消息。
+
+**根因分析**：`resolveDialog` 遇到分支点（`dialogOptionIds` 非空）时，先 push 选项分支 beat，又额外 push 一条 `isSelf` 消息 beat（选中项文本/表情包气泡）。
+
+**修复方案**（本次提交）：删除分支点后的 self 消息 beat，只保留选项分支 beat（`selectedOptionId` 高亮选中态）；选中后沿 `optionNextContentId` 继续遍历后续 NPC 消息。
+
+**涉及文件**：`src/lib/baker.ts`；单测 `baker.test.ts` 更新（「selected option does not become a self bubble」「option with optionResPath builds sticker asset」）。
+
+### 13.3 多 topic 移入左侧聊天列表展开 + 默认选中第一个
+
+**问题描述**：①顶部 topic 按钮不可点击（纯展示 div），无法切换 topic；②topic 不应展示在顶部，应在左侧面板聊天列表内展开，默认选中第一个。
+
+**修复方案**（本次提交）：
+- 删除 `BakerChatPanel` 顶部的 topic 条（`flex overflow-x-auto gap-2` 块）。
+- `BakerContactList` 新增 `topics` / `activeTopicId` / `onSelectTopic` props：选中聊天后在其下方缩进展开 topic 列表（topicName，缺省回退预览文本），点击即切换。
+- `BakerTerminal` 新增 `activeTopicId` 状态；`useEffect` 在 topics 就绪后默认选中第一个；`beats` 过滤——未归入任何 topic 的主线对话始终展示，topic 对话仅展示当前选中 topic 的。
+
+**涉及文件**：`src/pages/baker/BakerTerminal.tsx`、`src/components/Baker/BakerContactList.tsx`、`src/components/Baker/BakerChatPanel.tsx`。
+
+**验证**：佩丽卡（13 topics）左侧列表展开「祖泉与清波」等 13 个 topic，默认选中第一个；点击「碾骨氏族」后高亮切换至该 topic。
+
+### 13.4 sns_sticker_001 资源目录修正
+
+**问题描述**：`sns_sticker_001` 对应资源为 `assets/.../sprites/sns/sticker/sns_sticker_001.png`，当前代码拼成 `sns/emoji/sns_sticker_001.png`（404）。
+
+**数据考证**：`SNSDialogOptionTable` 中 `optionResPath` 共 143 条：`sns_emoji_*` 140 条（`sns/emoji/` 200）、`sns_sticker_*` 3 条（`sns/sticker/` 200，`sns/emoji/` 404）；reaction `emojiResPath` 全部为 `sns_emoji_*`。
+
+**修复方案**（本次提交）：新增 `getSnsAssetUrl(resPath)`（`src/lib/baker.ts`），按前缀 `sns_sticker_` / `sns_emoji_` 决定子目录，统一用于选项 `emojiUrl` 与 reaction `emojiUrl`。
+
+**涉及文件**：`src/lib/baker.ts`；单测 +2（sticker → `sns/sticker/`、emoji → `sns/emoji/`）。
+
+### 13.5 验证结果
+
+- ✅ 单测 `baker.test.ts` 11/11（含更新 2 例 + 新增 2 例）
+- ✅ E2E +3（Baker 聊天窗口不撑开页面/左右分栏各自滚动、多 topic 展开并默认选中第一个、分支选项不产生气泡），story-chronicle 全量 36/36 通过
+- ✅ lint（verify-i18n PASSED）/ build / tsc 通过；vitest 全量仅存量 Sidebar 2 例基线失败
+
+> **待办（暂缓）**：PRTS 分享卡片（`contentType 10` share 消息）未做对应展示，后续单独验收。

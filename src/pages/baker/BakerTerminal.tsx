@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useBakerChats, useBakerDialog } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
@@ -19,6 +19,7 @@ export default function BakerTerminal() {
   const { data: dialogData, loading: dialogLoading } = useBakerDialog(chatId)
   const [choices, setChoices] = useState<Choice[]>([])
   const [mobileShowChat, setMobileShowChat] = useState(false)
+  const [activeTopicId, setActiveTopicId] = useState<string | null>(null)
 
   const activeChat = chatsData?.chats.find(c => c.id === chatId) ?? null
 
@@ -33,11 +34,35 @@ export default function BakerTerminal() {
     }
   }, [chatsData, t])
 
+  const topics = useMemo(() => {
+    if (!chatsData || !chatId) return []
+    return chatsData.topics.filter(top => top.dialogs.some(d => {
+      const dialog = dialogData?.dialogs.find(dd => dd.dialogId === d.dialogId)
+      return dialog != null
+    }))
+  }, [chatsData, chatId, dialogData])
+
+  const activeTopic = useMemo(() => {
+    if (!activeTopicId) return null
+    return topics.find(top => top.topicId === activeTopicId) ?? null
+  }, [topics, activeTopicId])
+
+  useEffect(() => {
+    if (topics.length > 0 && (!activeTopicId || !topics.some(top => top.topicId === activeTopicId))) {
+      setActiveTopicId(topics[0].topicId)
+    }
+  }, [topics, activeTopicId])
+
   const beats = useMemo(() => {
     if (!dialogData || !speakerCtx || !activeChat) return []
     const choicesMap = Object.fromEntries(choices.map(c => [c.branchId, c.optionId]))
     const allBeats = []
     for (const dialog of dialogData.dialogs) {
+      const isTopicDialog = topics.some(top => top.dialogs.some(d => d.dialogId === dialog.dialogId))
+      if (activeTopic) {
+        const inActiveTopic = activeTopic.dialogs.some(d => d.dialogId === dialog.dialogId)
+        if (isTopicDialog && !inActiveTopic) continue
+      }
       const resolved = resolveDialog(
         dialog.dialogId,
         dialog.nodes,
@@ -48,21 +73,18 @@ export default function BakerTerminal() {
       allBeats.push(...resolved)
     }
     return allBeats
-  }, [dialogData, speakerCtx, activeChat, choices])
-
-  const topics = useMemo(() => {
-    if (!chatsData || !chatId) return []
-    return chatsData.topics.filter(top => top.dialogs.some(d => {
-      const dialog = dialogData?.dialogs.find(dd => dd.dialogId === d.dialogId)
-      return dialog != null
-    }))
-  }, [chatsData, chatId, dialogData])
+  }, [dialogData, speakerCtx, activeChat, choices, activeTopic, topics])
 
   const handleSelect = useCallback((id: string) => {
     setSearchParams({ chat: id })
     setChoices([])
+    setActiveTopicId(null)
     setMobileShowChat(true)
   }, [setSearchParams])
+
+  const handleSelectTopic = useCallback((topicId: string) => {
+    setActiveTopicId(topicId)
+  }, [])
 
   const handleSwitchOption = useCallback((branchId: number, optionId: string) => {
     setChoices(prev => {
@@ -74,15 +96,18 @@ export default function BakerTerminal() {
   if (chatsLoading) return <ListSkeleton cards={8} />
 
   return (
-    <div className="h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-[300px_1fr]">
-      <div className={`${mobileShowChat ? 'hidden md:flex' : 'flex'} flex-col border-r border-archive-border`}>
+    <div className="h-[calc(100vh-4rem)] overflow-hidden grid grid-cols-1 md:grid-cols-[300px_1fr]">
+      <div className={`${mobileShowChat ? 'hidden md:flex' : 'flex'} flex-col border-r border-archive-border overflow-y-hidden overflow-x-scroll`}>
         <BakerContactList
           chats={chatsData?.chats ?? []}
+          topics={topics}
           activeChatId={chatId}
+          activeTopicId={activeTopicId}
           onSelect={handleSelect}
+          onSelectTopic={handleSelectTopic}
         />
       </div>
-      <div className={`${mobileShowChat ? 'flex' : 'hidden md:flex'} flex-col`}>
+      <div className={`${mobileShowChat ? 'flex' : 'hidden md:flex'} flex-col overflow-y-hidden overflow-x-scroll`}>
         {mobileShowChat && (
           <button
             type="button"
@@ -101,7 +126,6 @@ export default function BakerTerminal() {
         ) : (
           <BakerChatPanel
             chat={activeChat}
-            topics={topics}
             beats={beats}
             onSwitchOption={handleSwitchOption}
           />
