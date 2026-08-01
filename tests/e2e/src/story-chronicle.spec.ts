@@ -306,4 +306,25 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await expect(page.locator('body').getByText('dlg_e1m3_2_001', { exact: true }).first()).toBeVisible({ timeout: 10000 })
     await expect(page.locator('button[aria-label="Play"]').first()).toBeVisible({ timeout: 5000 })
   })
+
+  test('endminf 说话行的音频 URL 追加 _f 后缀', async ({ page }) => {
+    // e11m1 场景1 含 endminf 对话行（如 dlg_e11m1_1_012），其 audioOverride 应为 au_dlg_e11m1_1_012_f
+    const audioRequests: string[] = []
+    page.on('request', req => {
+      if (req.url().includes('audios/dialogs/vo/')) audioRequests.push(req.url())
+    })
+    await page.goto('/archive/story/mission/e11m1')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    // 展开 E11·M1·场01 场景块
+    const sceneCode = page.locator('body').getByText('E11·M1·场01', { exact: true }).first()
+    await expect(sceneCode).toBeVisible({ timeout: 15000 })
+    await sceneCode.locator('..').getByRole('button', { name: '展开对话' }).click()
+    // 定位含 dlg_e11m1_1_012（endminf 行）的行并点击其播放按钮
+    const line = page.locator('body').getByText('dlg_e11m1_1_012', { exact: true }).first()
+    await expect(line).toBeVisible({ timeout: 10000 })
+    await line.locator('..').getByRole('button', { name: 'Play' }).click()
+    await expect
+      .poll(async () => audioRequests.some(u => u.includes('au_dlg_e11m1_1_012_f')), { timeout: 10000 })
+      .toBe(true)
+  })
 })

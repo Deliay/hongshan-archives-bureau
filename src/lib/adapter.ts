@@ -340,11 +340,16 @@ export function adaptDialogLine(
   raw: any,
   i18nMap: Record<string, string> | undefined,
 ): DialogLine {
+  const actorNameId = raw?.actorNameId ?? ''
+  let audioOverride = raw?.audioOverride ?? ''
+  if (actorNameId === 'endminf' && audioOverride) {
+    audioOverride = `${audioOverride}_f`
+  }
   return {
     key,
-    actorNameId: raw?.actorNameId ?? '',
-    actorName: resolveI18n(raw?.actorName, i18nMap) || raw?.actorNameId || key,
-    audioOverride: raw?.audioOverride ?? '',
+    actorNameId,
+    actorName: resolveI18n(raw?.actorName, i18nMap) || actorNameId || key,
+    audioOverride,
     dialogText: resolveI18n(raw?.dialogText, i18nMap),
     emotionType: raw?.emotionType ?? 0,
   }

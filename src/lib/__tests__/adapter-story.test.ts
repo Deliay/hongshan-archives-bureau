@@ -107,6 +107,16 @@ describe('adaptDialogLine', () => {
     expect(line.dialogText).toBe('hi')
   })
 
+  it('appends _f to audioOverride when actorNameId is endminf', () => {
+    const line = adaptDialogLine('dlg_x_002', { actorNameId: 'endminf', audioOverride: 'au_dlg_x_002', dialogText: { text: 'hi' } }, i18nMap)
+    expect(line.audioOverride).toBe('au_dlg_x_002_f')
+  })
+
+  it('leaves audioOverride unchanged for other actors', () => {
+    const line = adaptDialogLine('dlg_x_003', { actorNameId: 'pelica', audioOverride: 'au_dlg_x_003', dialogText: { text: 'hi' } }, i18nMap)
+    expect(line.audioOverride).toBe('au_dlg_x_003')
+  })
+
   it('defaults missing fields', () => {
     const line = adaptDialogLine('dlg_x_002', {}, i18nMap)
     expect(line.actorNameId).toBe('')
