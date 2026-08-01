@@ -232,6 +232,56 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     expect(selfBubbles.length).toBeGreaterThan(0)
   })
 
+  test('Baker 页面加载后无窗口级滚动条', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chr_0004_pelica')
+    // 等待聊天消息气泡加载完成
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main [class*="rounded-lg"]').length > 0
+    }, { timeout: 30000 })
+    await page.waitForTimeout(500)
+    const noScroll = await page.evaluate(() => {
+      const de = document.documentElement
+      return de.scrollHeight <= de.clientHeight
+    })
+    expect(noScroll).toBe(true)
+  })
+
+  test('Baker 切换 topic 后聊天首条消息变化', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chr_0004_pelica')
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main [class*="rounded-lg"]').length > 0
+    }, { timeout: 30000 })
+    const firstBubble = page.locator('main [class*="rounded-lg"]').first()
+    const before = await firstBubble.textContent()
+    // 点击左侧第二个 topic
+    const topicButtons = page.locator('div[class*="pl-8"] button')
+    await expect(topicButtons.nth(1)).toBeVisible({ timeout: 10000 })
+    await topicButtons.nth(1).click()
+    await page.waitForTimeout(800)
+    const after = await firstBubble.textContent()
+    expect(after).not.toBe(before)
+  })
+
+  test('Baker 点击 topic 后 URL 携带 topic 参数', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chr_0004_pelica')
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('div[class*="pl-8"] button').length > 0
+    }, { timeout: 30000 })
+    const topicButtons = page.locator('div[class*="pl-8"] button')
+    await topicButtons.nth(1).click()
+    await expect(page).toHaveURL(/topic=/)
+  })
+
+  test('Baker URL 携带 topic 时左侧列表定位到对应 topic', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chr_0004_pelica&topic=topic_chr_0004_pelica_2')
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('div[class*="pl-8"] button').length > 0
+    }, { timeout: 30000 })
+    const topicButton = page.locator('div[class*="pl-8"] button[data-topic-id="topic_chr_0004_pelica_2"]')
+    await expect(topicButton).toBeVisible({ timeout: 10000 })
+    await expect(topicButton).toHaveClass(/bg-archive-gold\/10/)
+  })
+
   test('侧边栏包含 Baker 入口', async ({ page }) => {
     await page.goto('/archive')
     const bakerLink = page.getByRole('complementary').getByRole('link', { name: 'Baker' })

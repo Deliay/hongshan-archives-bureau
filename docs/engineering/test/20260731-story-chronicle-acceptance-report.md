@@ -941,3 +941,61 @@ _activityStageId (dungeon_fighting_5)
 - ✅ lint（verify-i18n PASSED）/ build / tsc 通过；vitest 全量仅存量 Sidebar 2 例基线失败
 
 > **待办（暂缓）**：PRTS 分享卡片（`contentType 10` share 消息）未做对应展示，后续单独验收。
+
+## 14. 验收问题（2026-08-02 二轮）：Baker 聊天界面
+
+> 本轮受理 6 项：①页面不应有任何窗口级滚动条；②「我」侧气泡贴右缘 + 双方头像与占位；③topic 切换存在固定内容残留；④聊天内容需要 padding；⑤topic 加入 URL query（`chat=xxx&topic=xxx`）；⑥URL 定位到聊天时左侧列表定位到对应干员 topic。
+
+### 14.1 页面级滚动条彻底消除 + 左右分栏各自滚动
+
+**问题描述**：`/archive/baker?chat=sns_chr_0004_pelica` 加载完成后，`documentElement.scrollHeight`（833px）> `clientHeight`（720px），仍有窗口级滚动条。
+
+**根因分析**：§13.1 的 `h-[calc(100vh-4rem)]` 只考虑了 header，未计入 main 的 padding（pt-6/pb-8）、面包屑与 footer（共约 160px），grid 656px + 周边高度仍溢出视口。
+
+**修复方案**（本次提交）：Baker 根容器改为全视口固定壳 `fixed inset-0 md:left-60 z-10 bg-archive-ink overflow-hidden grid`（桌面避开 240px 侧边栏，覆盖 footer/面包屑区）；左右分栏改为 `overflow-hidden`，各自内部 `overflow-y-auto` 滚动。
+
+**涉及文件**：`src/pages/baker/BakerTerminal.tsx`。
+
+### 14.2 「我」侧气泡贴右缘 + 双方头像与占位
+
+**问题描述**：`text-right` 一侧气泡因外层 wrapper 为块级占满全宽、气泡本身未 `ml-auto`，导致气泡离右缘过远；且 `showAvatar={chat.kind === 'group'}` 使联系人（contact）聊天双方头像均不渲染、无占位。
+
+**修复方案**（本次提交）：`BakerMessageBubble` 外层改用 `flex-row-reverse`（self 时头像靠右）+ 内容 wrapper `items-end` 使气泡贴右缘；删除 `showAvatar` 开关，双侧恒定渲染头像（self 用 `speakerIconUrl`，adapter 已注入 selfIconUrl），无图时渲染圆形占位。`BakerChatPanel` 增加 `p-4 space-y-2` padding。
+
+**涉及文件**：`src/components/Baker/BakerMessageBubble.tsx`、`src/components/Baker/BakerChatPanel.tsx`。
+
+### 14.3 topic 切换固定内容残留
+
+**问题描述**：切换佩丽卡 topic 后，聊天窗口首条消息不变（实测两个 topic 前 30 条气泡完全相同）。
+
+**根因分析**：`beats` 过滤为「主线对话始终展示 + 当前 topic 追加」，主线固定内容（a1m10/c16m1/gm02m16 等）恒在，首条消息不随 topic 变化。
+
+**修复方案**（本次提交）：当 `activeTopic` 存在时只渲染该 topic 所属对话，主线不再混入；切换 topic 后首条消息随之变化。E2E 断言：读取首条气泡文本，切换 topic 后文本变化。
+
+**涉及文件**：`src/pages/baker/BakerTerminal.tsx`。
+
+### 14.4 聊天内容 padding
+
+**修复方案**（本次提交）：`BakerChatPanel` 消息滚动容器加 `p-4 space-y-2`，气泡与容器边缘留白。
+
+### 14.5 RichText `<image>` emoji/sticker 资源目录修正（commit `c7bab95`）
+
+**问题描述**：对话正文富文本 `<image="sns_emoji_005">` 走 `getUISprite`（`src/lib/richText.tsx`）直接拼 `sprites/{path}.png`，漏掉 `sns/emoji/` 子目录，7 个 emoji 404。
+
+**修复方案**：`getUISprite` 按前缀区分 `sns_emoji_*` → `sns/emoji/`、`sns_sticker_*` → `sns/sticker/`，其余不变。单测 +3，全部 emoji curl 200。
+
+### 14.6 topic 加入 URL query + 左侧列表定位
+
+**需求**：`chat=xxx&topic=xxx` 双参数直达；URL 定位到聊天时左侧列表需定位到对应干员的 topic 位置。
+
+**修复方案**（本次提交）：
+- `activeTopicId` 改为由 `searchParams.get('topic')` 派生（无参数时回退第一个 topic，自动 `replace` 写入 URL）；无效 topic 回退第一个。
+- 点击 topic 时 `setSearchParams({ chat, topic })`，切换聊天时清除 topic。
+- `BakerContactList` 为 topic 按钮加 `data-topic-id`，`activeTopicId` 变化时 `scrollIntoView({ block: 'nearest' })` 定位。
+
+**涉及文件**：`src/pages/baker/BakerTerminal.tsx`、`src/components/Baker/BakerContactList.tsx`。
+
+### 14.7 验证结果
+
+- ✅ E2E +4：页面加载后无窗口级滚动条、切换 topic 首条消息变化、点击 topic 后 URL 携带 topic 参数、URL 携带 topic 时左侧列表定位对应 topic；Baker 全量 11/11 通过
+- ✅ 单测 `baker.test.ts` + `richText.test.tsx` 30/30；lint / build / tsc 通过

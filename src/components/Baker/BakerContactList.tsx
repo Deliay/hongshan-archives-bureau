@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useI18n } from '../../i18n'
 import type { BakerChat, BakerTopic } from '../../lib/types'
 
@@ -32,6 +32,12 @@ export function BakerContactList({ chats, topics, activeChatId, activeTopicId, o
   ]
 
   const filtered = TAB_KIND_MAP[tab] ? chats.filter(c => c.kind === TAB_KIND_MAP[tab]) : chats
+
+  useEffect(() => {
+    if (!activeTopicId) return
+    const el = document.querySelector(`[data-topic-id="${activeTopicId}"]`)
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [activeTopicId])
 
   return (
     <div className="h-full flex flex-col">
@@ -84,6 +90,7 @@ export function BakerContactList({ chats, topics, activeChatId, activeTopicId, o
                     <button
                       key={topic.topicId}
                       type="button"
+                      data-topic-id={topic.topicId}
                       onClick={() => onSelectTopic(topic.topicId)}
                       className={`w-full text-left px-2 py-1 rounded text-xs transition-colors cursor-pointer ${
                         active
