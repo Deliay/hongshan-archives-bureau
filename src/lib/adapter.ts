@@ -410,7 +410,7 @@ export function buildRecapChaptersFromMissions(
       scenes: missionScenes,
     })
   }
-  const result = [...chapters.values()]
+  const result = [...chapters.values()].sort((a, b) => a.chapterType.localeCompare(b.chapterType))
   for (const ch of result) {
     ch.missions.sort((a, b) => compareTuple(missionSortKey(a.missionId), missionSortKey(b.missionId)))
   }

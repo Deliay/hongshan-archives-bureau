@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useMissionDetail } from '../../hooks/useData'
+import { useMissionDetail, useMissionScenes } from '../../hooks/useData'
 import type { MissionConditionArgResolver } from '../../hooks/useData'
 import type { ActivityStageDetail } from '../../lib/missionConditionNames'
 import { useI18n } from '../../i18n'
@@ -13,8 +13,19 @@ import type { MissionQuestTreeNode } from '../../lib/types'
 
 export default function StoryMissionDetail() {
   const { missionId } = useParams<{ missionId: string }>()
+  return <MissionDetailContent missionId={missionId || ''} embedded={false} />
+}
+
+export function MissionDetailContent({
+  missionId,
+  embedded,
+}: {
+  missionId: string
+  embedded?: boolean
+}) {
   const { t } = useI18n()
-  const { data, loading, error } = useMissionDetail(missionId || '')
+  const { data, loading, error } = useMissionDetail(missionId)
+  const scenes = useMissionScenes(missionId)
   const mission = data?.mission ?? null
   const resolveArg = data?.conditionResolver?.resolveArg
   const stageDetail = data?.conditionResolver?.stageDetail
@@ -30,13 +41,15 @@ export default function StoryMissionDetail() {
   if (!mission) return <div className="text-archive-dust text-sm p-6">{t('common.empty')}</div>
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <Link
-        to="/archive/story/recap"
-        className="text-sm text-archive-dust hover:text-archive-gold transition-colors mb-4 inline-block"
-      >
-        &larr; {t('story.backToRecap')}
-      </Link>
+    <div className={embedded ? '' : 'max-w-3xl mx-auto p-6'}>
+      {!embedded && (
+        <Link
+          to="/archive/story/recap"
+          className="text-sm text-archive-dust hover:text-archive-gold transition-colors mb-4 inline-block"
+        >
+          &larr; {t('story.backToRecap')}
+        </Link>
+      )}
 
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -70,6 +83,24 @@ export default function StoryMissionDetail() {
           </p>
         ) : (
           <p className="text-sm text-archive-dust">{t('story.noDescription')}</p>
+        )}
+      </section>
+
+      <section className="mb-8">
+        <h3 className="text-xs font-mono text-archive-gold uppercase mb-3">{t('story.missionScenes')}</h3>
+        {scenes.loading ? (
+          <p className="text-sm text-archive-lead">{t('common.loadingArchive')}</p>
+        ) : scenes.data && scenes.data.length > 0 ? (
+          <div className="space-y-4">
+            {scenes.data.map(scene => (
+              <div key={scene.id} className="relative pl-6 border-l-2 border-archive-gold/30">
+                <div className="font-mono text-xs text-archive-gold mb-1">{scene.code}</div>
+                <p className="text-sm text-archive-ivory leading-relaxed">{scene.text}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-archive-lead italic">{t('story.noScene')}</p>
         )}
       </section>
 

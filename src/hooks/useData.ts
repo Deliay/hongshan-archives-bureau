@@ -1500,6 +1500,28 @@ export function useMissionDetail(missionId: string): UseDataResult<MissionDetail
   }, [locale, missionId])
 }
 
+export function useMissionScenes(missionId: string): UseDataResult<StoryRecapScene[]> {
+  const { locale } = useLocale()
+  const { t } = useI18n()
+  return useData(async () => {
+    if (!missionId) return []
+    const [mapRaw, summaryRaw, summaryI18n] = await Promise.all([
+      getCachedData<Record<string, string>>('DialogSummaryMapTable', () => fetchTableAll('DialogSummaryMapTable')),
+      getCachedData<Record<string, any>>('DialogSummaryTable', () => fetchTableAll('DialogSummaryTable')),
+      getTableI18nDict('DialogSummaryTable', locale),
+    ])
+    const scenes = Object.entries(mapRaw)
+      .map(([dlgKey, summaryId]) => {
+        const summary = summaryRaw[summaryId]
+        if (!summary) return null
+        return adaptRecapScene(dlgKey, summaryId, summary, summaryI18n, t('story.scene'))
+      })
+      .filter((s): s is StoryRecapScene => s !== null && s.missionId === missionId)
+      .sort((a, b) => a.sceneNo - b.sceneNo || a.sceneSub - b.sceneSub)
+    return scenes
+  }, [locale, missionId])
+}
+
 export function usePrtsLibrary(): UseDataResult<{
   categories: PrtsCategory[]
   volumes: PrtsVolume[]

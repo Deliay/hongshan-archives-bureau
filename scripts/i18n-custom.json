@@ -6031,6 +6031,22 @@
     "ID": "Tujuan misi",
     "IT": "Obiettivi"
   },
+  "story.missionScenes": {
+    "CN": "剧情梗概",
+    "TC": "劇情梗概",
+    "EN": "Story recap",
+    "JP": "ストーリー要約",
+    "KR": "스토리 요약",
+    "RU": "Краткий сюжет",
+    "MX": "Resumen de la historia",
+    "BR": "Resumo da história",
+    "DE": "Handlungsüberblick",
+    "FR": "Résumé de l'histoire",
+    "VN": "Tóm tắt cốt truyện",
+    "TH": "สรุปเนื้อเรื่อง",
+    "ID": "Ringkasan cerita",
+    "IT": "Riassunto della storia"
+  },
   "story.missionType": {
     "CN": "任务类型",
     "TC": "任務類型",

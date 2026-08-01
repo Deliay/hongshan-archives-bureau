@@ -124,7 +124,7 @@ describe('buildRecapChaptersFromMissions', () => {
     ]
     const chapters = buildRecapChaptersFromMissions(missionIds, scenes)
     const types = chapters.map(c => c.chapterType)
-    expect(types).toEqual(['a', 'hidden', 'sm', 'db'])
+    expect(types).toEqual(['a', 'db', 'hidden', 'sm'])
     const a = chapters.find(c => c.chapterType === 'a')!
     expect(a.missions.map(m => m.missionId)).toEqual(['a1m1', 'a1m2'])
     // a1m1 has 2 scenes, a1m2 has 1, hidden52 has 0

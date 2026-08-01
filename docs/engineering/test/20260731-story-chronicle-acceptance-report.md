@@ -729,3 +729,15 @@ _activityStageId (dungeon_fighting_5)
 - 保留 `adaptRecapChapter`（测试兼容）。
 
 **验证**：单测新增 `buildRecapChaptersFromMissions` 2 例（分组/排序/空场景挂接/名称解析）；E2E 更新导航过滤断言（不含 c1m1、含 a1m2 与 hidden）；lint/test/build 通过；E2E 21/21 通过。
+
+### 10.1 二次修订：master-detail 布局 + 路由任务参数
+
+**验收反馈（2026-08-01）**：①左侧列表 group 按 a-z 排序；②单个任务的剧情梗概放入详情页；③右侧直接显示详情页内容而非梗概；④路由体现所选任务（`/archive/story/recap?mission={missionId}`）。
+
+**实现**（commit `6d3f8b5`）：
+- `buildRecapChaptersFromMissions`：chapters 按 `chapterType` a-z 排序（原为任务文件插入顺序）。
+- 新增 `useMissionScenes(missionId)`（`src/hooks/useData.ts`）：加载 `DialogSummaryMapTable` + `DialogSummaryTable`，解析并过滤该任务的剧情梗概（按 sceneNo/sceneSub 排序）。
+- `StoryMissionDetail`：抽取可复用 `MissionDetailContent({ missionId, embedded })`，新增「剧情梗概」section（`story.missionScenes` i18n key，14 语言）；默认导出路由版（`useParams` 读取 missionId）。
+- `StoryRecap`：改为 master-detail —— 左侧 a-z 分组导航（选中态 gold 高亮），右侧内嵌 `MissionDetailContent`；点击导航更新 `?mission=`；首次加载默认选中第一个任务并写入路由（replace）；类型筛选保留 `mission` 参数。
+
+**验证**：E2E 新增「点击导航切换任务并更新路由 mission 参数」（22/22 通过）；单测/verify-i18n/lint/test/build 通过（仅存量 Sidebar 2 例基线失败）。
