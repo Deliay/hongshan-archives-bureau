@@ -7,10 +7,12 @@ type: Fleeting
 
 **对应产品文档**: [[20260730-story-chronicle|剧情纪事产品方案]]
 **对应技术方案**: [[20260730-story-chronicle|剧情纪事技术方案 v1.3]]
-**实现方案版本**: v1.1
+**实现方案版本**: v1.2
 **创建日期**: 2026-07-31
 **作者**: 前端工程
 **开发分支**: `feat/story-chronicle`
+
+**v1.2 变更（验收修订，2026-08-02）**: 依据验收报告同步最终实现——新增任务详情/对话/活动/音频相关文件与路由（MRA 数据源、任务目标树、场景对话展开、音频队列播放）；`StoryRecap` 改为 master-detail；`BakerTerminal` 改全视口固定壳 + topic URL 参数；`BakerContactList`/`BakerChatPanel`/`BakerMessageBubble` 组件签名按验收修订调整；i18n key 增删（移除 `story.chapterType.*`，新增 `story.noScene`/`story.prevQuest`/dungeon 与 stage 分组/对话展开/音频等）。差异详见 §9。
 
 **v1.1 变更**: review 修正——①dlg key 正则覆盖全部 4 种变体（原正则仅匹配 734/1078，丢失全部 293 条 sm 支线等 344 个 key）；②篇章/任务/场次排序改为数值元组（chapter 数达 33、mission 数达 29、sceneNo 最大 13034，字符串排序必然错乱）；③Tailwind class 改用真实 token（`archive-ink`/`archive-file`/`archive-ivory`，原 `archive-bg`/`archive-surface`/`archive-hover`/`archive-active`/`archive-text` 均不存在）；④修正 `MODULE_CODES` 形状（`Record<string, string>`）与 `RichText` prop（`text`）；⑤新增 `getSpriteUrl` 素材 helper（原 `resolveIconUrl` 未定义）；⑥图片消息 `contentParam` 为数组取首项；⑦Baker 发送者名称/头像经 `SNSChatTable` 解析；⑧`resolveDialog` 重写：分支点节点本身无消息文本（999/999 content 为空）不产生空气泡、选中项成为「我」的消息、contentType 9 归并 reactions、未知类型跳过；⑨补齐 `usePrtsItemDetail` / `useBakerDialog` 实现；⑩topic 预览取最后一条消息且使用正确的 i18n dict；⑪i18n 补 `story.chapterType.other` / `baker.sessionSeparator`，key 计数修正为 36。
 
@@ -1093,3 +1095,51 @@ baker: 'HSA-BKR',
 - [数据表映射参考](../references/data-mapping-tables.md)
 - [UI 常见陷阱参考](../references/ui-pitfalls.md)
 - [国际化规范](../references/i18n-spec.md)
+- [[../test/20260731-story-chronicle-acceptance-report|剧情纪事验收报告]]
+
+## 9. 验收修订（2026-08-02，与验收报告对齐）
+
+> 本节记录 v1.1 清单与最终落地实现之间的差异，详细根因/验证见验收报告。
+
+### 9.1 新增文件（v1.1 之后）
+
+| 文件 | 说明 |
+|------|------|
+| `src/lib/api.ts` `fetchMissionList` / `fetchMissionDetail` | MRA 任务列表/详情（vfs JsonData 端点） |
+| `src/lib/missionCondition.ts` | quest condition `$type` 分派框架 + 12 个高频类型格式化器 |
+| `src/lib/missionConditionNames.ts` | 名称深链解析（stage/map/item/mission/quest）+ `buildEnemySummary`/`buildDungeonDetail`/`buildStageDetail` |
+| `src/lib/missionConditionText.ts` | condition 渲染为 i18n 模板文本（`CombineCondition` 递归） |
+| `src/lib/audio.ts` / `src/lib/dialogAudio.ts` | 音频 HEAD 校验缓存 + 播放队列控制器（单例） |
+| `src/pages/story/StoryMissionDetail.tsx` | 任务详情页（`/archive/story/mission/:missionId`，`MissionDetailContent` 可复用内嵌） |
+| `src/pages/story/ObjectiveCondition.tsx` | 目标 condition 渲染（对话梗概内联、活动面板、dungeon） |
+| `src/pages/story/DialogScript.tsx` / `DialogPlayerBar.tsx` | 场景对话展开 + 音频控制面板（sticky 单例） |
+| `src/pages/story/ActivityStagePanel.tsx` / `DungeonPanel.tsx` / `EnemyUnit.tsx` | 活动阶段 / dungeon / 敌人独立组件 |
+| 单测 | `missionCondition.test.ts` / `missionConditionNames.test.ts` / `missionConditionText.test.ts` / `audio.test.ts` / `dialogAudio.test.ts` |
+
+### 9.2 变更文件（v1.1 之后）
+
+- **`StoryRecap.tsx`**：改为 master-detail——左侧 a-z 分组任务导航（`buildRecapChaptersFromMissions` 驱动），右侧内嵌 `MissionDetailContent`；`?mission=` 同步选中项；章节类型标签用前缀字母，`CHAPTER_TYPES` 10 组。
+- **`BakerTerminal.tsx`**：根容器改 `fixed inset-0 md:left-60 z-10 bg-archive-ink overflow-hidden grid`（全视口固定壳）；`activeTopicId` 由 `searchParams.get('topic')` 派生，点击 topic 写 URL，切换聊天清除；`beats` 过滤仅当前 topic 对话。
+- **`BakerContactList.tsx`**：新增 `topics` / `activeTopicId` / `onSelectTopic` props，选中联系人下展开 topic 列表（`data-topic-id`），`activeTopicId` 变化 `scrollIntoView` 定位。
+- **`BakerChatPanel.tsx`**：移除 `chat` / `topics` props（无顶部 topic 条），消息容器 `p-4 space-y-2`。
+- **`BakerMessageBubble.tsx`**：删除 `showAvatar` 开关，恒定渲染双侧头像（无图圆形占位）；`flex-row-reverse` + `items-end` 使「我」气泡贴右缘。
+- **`richText.tsx` `getUISprite`**：按前缀区分 `sns_emoji_*` → `sns/emoji/`、`sns_sticker_*` → `sns/sticker/`（修复正文富文本 emoji 404）。
+
+### 9.3 新增路由
+
+```
+/archive/story/mission/:missionId     StoryMissionDetail（任务详情页）
+/archive/story/recap?mission={missionId}   recap master-detail 选中任务
+/archive/baker?chat={chatId}&topic={topicId}  Baker 会话 + topic 直达
+```
+
+### 9.4 i18n 增删
+
+- **移除**：`story.chapterType.{e,sm,c,f,gm,a,db,m,other}`（9 个 key × 14 语言）。
+- **新增**：`story.noScene`、`story.prevQuest`、`stageMission`/`stageUnlock`/`stageRelatedQuest`/`stageRewards`、`enemyLv`、`dungeonSort`/`dungeonStamina`/`dungeonEnemies`/`dungeonFirstPass`/`dungeonCustom`/`dungeonExtra`/`dungeonHunter`、`story.expandDialog`/`story.collapseDialog`/`story.audioNowPlaying`、`story.missionDesc`/`missionObjectives`/`missionType`/`relatedOperator`/`relatedLevel`/`backToRecap`/`mainPath`/`branch`/`noDescription`、`story.obj*` 14 个 condition 模板 key、`api.fetchingMissionList`/`fetchingMissionDetail`/`fetchingMissionBrief`（14 语言全量，经 `generate-i18n-dicts.ts` 生成，verify-i18n PASSED）。
+
+### 9.5 验证状态
+
+- ✅ 单测：story adapter / baker / missionCondition 三件套 / audio / dialogAudio 全量通过（仅存量 Sidebar 2 例基线失败）。
+- ✅ E2E `story-chronicle.spec.ts`：36/36（含 Baker 二轮 11/11：无窗口级滚动条、切换 topic 首条消息变化、topic URL 参数、URL 定位 topic）。
+- ✅ lint（verify-i18n PASSED）/ build / tsc 通过。

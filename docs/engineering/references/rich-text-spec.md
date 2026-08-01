@@ -26,6 +26,18 @@ type: Permanent
 | `align` | 对齐 |
 | `image` | 图片。`<image="path">` 为孤立标签；`<image>path</image>` 使用内联文本作为 src |
 
+## image 标签资源子目录
+
+`<image="xxx">` 的 src 由 `getUISprite(path)`（`src/lib/richText.tsx`）生成 `sprites/{path}.png`。**部分资源带子目录，必须按前缀路由，禁止直接拼接**（2026-08-02 Baker 验收修复，详见 [[../test/20260731-story-chronicle-acceptance-report|验收报告]] §14.5）：
+
+| 前缀 | 最终路径 |
+|------|---------|
+| `sns_emoji_*` | `sprites/sns/emoji/{path}.png` |
+| `sns_sticker_*` | `sprites/sns/sticker/{path}.png` |
+| 其他 | `sprites/{path}.png`（原逻辑） |
+
+> 若遗漏子目录，资源 404（如 `<image="sns_emoji_005">` 拼成 `sprites/sns_emoji_005.png`）；新增资源前缀时先 curl 验证实际目录再编码。
+
 ## 超链接与样式前缀
 
 - `#` 前缀：可点击按钮，带 tooltip（`HyperlinkTag` + `HyperlinkTooltip`）。tooltip 内容来自 `HyperlinkTextTable`，可能本身包含富文本，需递归渲染。

@@ -95,6 +95,65 @@ type: Permanent
 | HyperlinkTextTable | string key | `name`, `desc`, `iconPath` | 富文本超链接提示 |
 | RichTextStyleTable | string key | `preDef[]`, `postDef[]` | 富文本样式定义 |
 
+## 剧情纪事相关
+
+### 剧情梗概与任务（Story Recap / Mission）
+
+| 表/端点 | 主键 | 关键字段 | 用途 |
+|---|---|---|---|
+| `DialogSummaryMapTable` | dlg key（`dlg_e1m3_4`） | → `summary_*` 梗概条目 id | 对话组 → 梗概映射（1078 条），导航数据源之一 |
+| `DialogSummaryTable` | summary id | `{ id, text }` | 梗概文本（i18n id） |
+| `MissionRuntimeAsset`（vfs JsonData） | missionId | `missionName.key`, `missionDescription.key`, `missionType`, `charId`, `levelId`, `mainPathQuests[]`, `questDic` | **任务权威数据源**（490 任务）；列表 `AllBrief/MissionRuntimeAsset`（980 条）提供任务名 |
+| `TextTable` | string key | `{missionId}_name` 等 | 任务/区域/标题类实体的显示名（`{id}_name` 规律） |
+| `DialogTextTable` | dlg 前缀 key | `actorName`, `audioOverride`, `dialogText`, `emotionType` | 场景完整对话脚本（`dlg_{chapter}...m_{mission}_{scene}_{NNN}`） |
+| `I18nTextTable_{locale}` | id | 文案 | TextTable 文案本体 |
+
+### PRTS 文库（Prts\* 系列）
+
+| 表名 | 主键 | 关键字段 | 用途 |
+|---|---|---|---|
+| `PrtsCategory` | categoryId | `name`, `order`, `tabIcon` | 六类文献（document/paper/digital/collection/report/media） |
+| `PrtsFirstLv` | firstLvId | `categoryId`, `icon`, `itemIds[]`, `name`, `subName`, `order` | 「卷」分组 |
+| `PrtsAllItem` | item id | `contentId`, `firstLvId`, `type`, `name`, `order` | **唯一条目源**（462 条，text/document/multi_media） |
+| `RichContentTable` | contentId | `title`, `contentList[].content` | 正文容器（676 篇，含 `<image>` 富文本） |
+| `RadioTable` | contentId（`radio_*`） | `radioSingleDataList[].actorName/radioText` | 音像剧本（2909 条，按需取单条） |
+| `PrtsReading` | term_* | `list.*.contentId` | 阅读物组 |
+
+### Baker 聊天（SNS 系列）
+
+| 表名 | 主键 | 关键字段 | 用途 |
+|---|---|---|---|
+| `SNSChatTable` | chatId | `chatType`(1=contact/2=group/3=operator), `name`, `icon`, `isSettlementChannel` | 会话（137 条） |
+| `SNSDialogTable` | dialogId | `chatId`, `topicId`, `relatedMissionId`, `dialogContentData` | 一场聊天（334 场），消息节点图 |
+| `SNSDialogOptionTable` | optionId | `optionDesc`, `optionNextContentId`, `optionResPath`, `optionNPCIds` | 分支选项（1425 条） |
+| `SNSDialogTopicTable` | topicId | `topicName`, `sortId`, `includeDialogIds[]` | 话题分组（117 条） |
+| `SNSConst` | — | `myselfSpeaker=endmin`, `snsDialogStartId=1` | 「我」与消息图入口 |
+
+**消息节点**（`dialogContentData[contentId]`）：`content{i18n}` / `contentType`(1 文本/2 图片/7 系统/9 表情回应/10 PRTS 分享/12 任务链接，4/5/6/8/11 测试类型) / `speaker` / `nextContentId` / `preContentId` / `dialogOptionIds[]` / `isEnd`。
+
+**Baker 素材路径**：
+- 头像：`sprites/charroundicon/{icon}.png`
+- 表情包：`sprites/sns/emoji/{resPath}.png`（`sns_emoji_*`）
+- 贴纸：`sprites/sns/sticker/{resPath}.png`（`sns_sticker_*`）
+- 图片消息：`sprites/sns/picture/{contentParam[0]}.png`
+- 正文富文本 `<image="sns_emoji_005">`：由 `getUISprite` 按前缀路由（见 [富文本规范参考](./rich-text-spec.md)）
+
+### 活动阶段 / dungeon / 奖励（任务目标关联）
+
+| 表名 | 主键 | 关键字段 | 用途 |
+|---|---|---|---|
+| `ActivityConditionalMultiStageTable` | activityId | `stageList[stageId]`: `name`, `missionId`, `sortId` | **活动主表**（31 条） |
+| `ActivityConditionalMultiStageStageToActivityTable` | stageId | `activityId`, `desc`, `rewardId` | 阶段 → 活动（183 条） |
+| `ActivityConditionalMultiStageCompleteConditionTable` | stageId | `conditionList[]`（conditionType 分派） | 完成条件 |
+| `ActivityConditionalMultiStageConditionTable` | stageId | `conditionList[]`: `desc`, `blockShow` | 解锁条件（`blockShow=true` 隐藏） |
+| `ActivityDungeonFightingStageTable` | stageId | `levelId`, `questId` | dungeon 战斗关联 |
+| `DungeonTable` | levelId | `dungeonName`, `dungeonDesc`, `enemyIds[]`/`enemyLevels[]`, `dungeonPicPath`, `rewardId` 等 | dungeon 关卡（图片 `sprites/dungeon/{pic}.png`） |
+| `ActivityTable` | activityId | `name`, `desc`, `rewardId`, `conditions[]` | 活动定义（`rewardId ≠ Dungeon.rewardId`） |
+| `RewardTable` | rewardId | `itemBundles[]`, `probItemBundles[]` | 奖励（复用 `RewardPanel`） |
+| `EnemyTemplateDisplayInfoTable` | enemyId | `name`, `nickname`, `templateId` | 敌人显示（图标 `sprites/monstericonbig/{templateId}.png`） |
+
+**i18n 注意**：上述所有 `{id}` 文本字段均为 17-19 位大整数，依赖 `api.ts safeParse` 转字符串保精度后才能命中表字典。
+
 ## I18n 配对规则
 
 每个表有独立的 i18n 字典。Hook 在获取表数据时并行获取对应字典，再传入 `adapt*`。禁止混用不同表的字典，否则会出现空文本或回退文本。
