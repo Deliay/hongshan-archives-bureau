@@ -12,7 +12,7 @@ type: Permanent
 >
 > **objectiveList condition 渲染方案（§8）**：已完成 quest `objectiveList` 的 condition 数据结构与引用表全量调查（40+ 种 `$type`、活动阶段链路等），渲染方案见 §8，待实施。
 >
-> **三阶段验收（阶段五，2026-08-01）**：收到 3 项反馈——①`_activityStageId` 关联的 Activity 数据表（MultiStage / Condition / CompleteCondition / Dungeon / Reward 等）需抽出独立组件渲染；②quest 需加边框区分；③依赖关系左侧画线 + 「←」替换为「前置任务」badge。调查与方案见 §9，待 review 后实施。
+> **三阶段验收（阶段五，2026-08-01）**：收到 3 项反馈——①`_activityStageId` 关联的 Activity 数据表（MultiStage / Condition / CompleteCondition / Dungeon / Reward 等）需抽出独立组件渲染；②quest 需加边框区分；③依赖关系左侧画线 + 「←」替换为「前置任务」badge。经 review 追加：奖励/ dungeon 各自独立组件、`Activity.rewardId ≠ Dungeon.rewardId`、dungeon 敌人与图片需渲染。调查与方案见 §9，待 review 后实施。
 
 **关联 PRD**: [[20260730-story-chronicle|剧情纪事]]
 **关联技术方案**: [[20260730-story-chronicle|剧情纪事 - 技术提案]]
@@ -564,7 +564,9 @@ _activityStageId (dungeon_fighting_5)
 
 ## 9. 三阶段验收问题方案（阶段五：活动关联组件 + quest 展示增强）
 
-> 三阶段验收反馈 3 项：①`_activityStageId` 关联的 Activity 数据表很多未渲染，需抽出独立组件；②单个 quest 需加边框与其他 quest 区分；③quest 依赖关系左侧需画依赖线，「←」字符替换为「前置任务」badge。本节记录调查结论与方案（待 review 后实施）。
+> 三阶段验收反馈 3 项：①`_activityStageId` 关联的 Activity 数据表很多未渲染，需抽出独立组件；②单个 quest 需加边框与其他 quest 区分；③quest 依赖关系左侧需画依赖线，「←」字符替换为「前置任务」badge。
+>
+> **review 追加意见（2026-08-01）**：①奖励单独抽组件、按 `rewardId` 渲染；②dungeon 单独抽组件、按 `dungeonId` 渲染 dungeon 内容及其奖励；③**注意 `Activity.rewardId` 与 `Dungeon.rewardId` 不同**，两者都依赖奖励组件渲染；④dungeon 的 `enemyIds` 需渲染（不限，其余字段尽可能渲染），`dungeonPicPath` 图片需在合适位置渲染。本节为修订后方案（待 review 后实施）。
 
 ### 9.1 数据调查结论（`dungeon_fighting_2` 完整关联链）
 
@@ -577,62 +579,104 @@ _activityStageId (dungeon_fighting_5)
 | `ActivityConditionalMultiStageCompleteConditionTable` | stageId | ✅ | `conditionList[]`：`conditionType=5052`、`parameters[0]=dung01_actmonster02`、`progressToCompare` |
 | `ActivityConditionalMultiStageConditionTable` | stageId | ✅ | `conditionList[]`：`conditionType=5902`、`desc{i18n}="完成前置关卡「物以类聚」后解锁"`、`blockShow` |
 | `ActivityDungeonFightingStageTable` | stageId | ✅ | `levelId=dung01_actmonster02`、`questId=a1m2_q#Day2` |
-| `DungeonTable`（外围） | levelId | ✅ | `dungeonName{i18n}="爆破练习"`、`dungeonDesc`、`costStamina`、`dungeonCategory`、`enemyIds[]`、`enemyLevels[]` |
-| `ActivityTable`（外围） | activityId | ✅ | `name{i18n}="生存特训"`、`type`、`rewardId` |
-| `RewardTable`（外围） | rewardId | ✅ | `itemBundles[]`：`{count=200, id=item_diamond}` → ItemTable 名称「嵌晶玉」 |
+| `DungeonTable`（外围） | levelId | ✅ | `dungeonName{i18n}="爆破练习"`、`dungeonDesc`、`dungeonLevelDesc`、`featureDesc`、`costStamina`、`dungeonCategory`、`enemyIds[]`、`enemyLevels[]`、`dungeonPicPath="dung_surviva_bomb"`、`sceneId`、`sortId`、`rewardId`（多数空）、`firstPassRewardId`（200/299）、`customRewardId`（12）、`extraRewardId`（41）、`hunterModeRewardId`（11） |
+| `ActivityTable`（外围） | activityId | ✅ | `name{i18n}="生存特训"`、`desc{i18n}`、`type`、`rewardId=reward_dungeon_fighting_overview`、`conditions[]`、`introMissionJumpId`、`introMissionQuestId` |
+| `RewardTable`（外围） | rewardId | ✅ | `itemBundles[]`：`{count, id}` → ItemTable 名称「嵌晶玉」；`probItemBundles[]`（概率奖励） |
+| `EnemyTemplateDisplayInfoTable`（外围） | enemyId | ✅ | `name{i18n}="碾骨撕裂牙兽"`、`nickname`、`description`、`abilityDescIds`、`distributionIds`、`templateId` |
 
 **调查要点**：
 1. **`MultiStageTable` 是活动主表**（31 条，全部含 `stageList`），stage 的 `name`（如「爆破练习」）、`missionId`（所属任务）、`sortId`（关卡序号）都在这张表；`StageToActivityTable`（183 条）仅含 `desc` 与 `rewardId`，两者互补。
 2. **解锁条件 `ConditionTable`** 的 `desc` 是现成文案（i18n 可直接解析，如「完成前置关卡「物以类聚」后解锁」），`conditionType=5902` 参数 `[0]=前一个 stageId`（如 `dungeon_fighting_1`）；`blockShow=true` 时 UI 应隐藏（引导/隐藏条件）。
 3. **完成条件 `CompleteConditionTable`** 无自带文案，需按 `conditionType` 分派：`5052`→DungeonTable levelId、`18`→questId、`19`→missionId、`5031`→indie 关卡、`6006/6053`→地图物件、`6511/6069`→统计值、`4507/6502/6503`→数量阈值（沿用 §8.3 分派表）。
 4. **dungeon 战斗关系**：`DungeonFightingStageTable` 以 stageId 为键给出 `levelId`（dungeon 关卡）与 `questId`（如 `a1m2_q#Day2` 对应同任务 quest，可经 questDesc map 解析出目标文案）。
-5. **i18n 大整数 id**：所有 `name/desc` 的 `{id}` 为 17-19 位大整数，依赖 `api.ts` `safeParse` 转字符串保精度后才能在表字典命中（已验证：`MultiStageTable` 327 个 key、`ActivityTable` 216 个 key 均可解析）。
+5. **i18n 大整数 id**：所有 `name/desc` 的 `{id}` 为 17-19 位大整数，依赖 `api.ts` `safeParse` 转字符串保精度后才能在表字典命中（已验证：`MultiStageTable` 327 个 key、`ActivityTable` 216 个 key、`DungeonTable`、`EnemyTemplateDisplayInfoTable` 均可解析）。
+6. **奖励链路**：`RewardTable[rewardId]` → `itemBundles[]`（固定奖励，`itemBundleVisibleList` 标识是否可见）+ `probItemBundles[]`（概率奖励）。现有 `RewardPanel` 组件已封装该渲染（`rewardIds: string[]` + `rewardTable`），可直接复用。
+7. **`Activity.rewardId` ≠ `Dungeon.rewardId`**：stage 的奖励来自 `StageToActivityTable.rewardId`（如 `reward_dungeon_actmonster_a1d2`），而 `DungeonTable[dung01_actmonster02].rewardId` 为空；dungeon 自身的奖励集中在 `firstPassRewardId`（200 个 dungeon 有，如 `dung01_bossrush02_03 → reward_dung01_bossrush02_03_firstpass`）、`customRewardId`（12）、`extraRewardId`（41）、`hunterModeRewardId`（11）。两个 rewardId 必须分别渲染。
+8. **dungeon 图片路径已验证**：`dungeonPicPath`（如 `dung_surviva_bomb`）对应 `{ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/dungeon/{path}.png`（HTTP 200，webp 679KB）。敌人图标复用现有 `{ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/monstericonbig/{templateId}.png`（参照 `EnemyDetail.tsx:174`）。
 
-### 9.2 方案：独立 Activity 关联组件（问题①）
+### 9.2 方案：独立 Reward 组件（review ①）
 
-**目标**：把「活动阶段」的关联数据从文本行升级为独立渲染块，复用现成 resolver 能力，不改动 objective condition 文本渲染主链路。
+**目标**：把「奖励」渲染从活动面板/详情内联逻辑中抽出，按 `rewardId` 渲染，供 Activity 与 Dungeon 两处复用。
+
+**结论：复用现有 `RewardPanel`**（`src/components/Items/RewardPanel.tsx`）：
+- 现有组件签名 `{ rewardIds: string[]; rewardTable: Record<string, any> }`，内部按 `rewardTable[rid].itemBundles`（固定）与 `probItemBundles`（随机）分类，经 `ItemTile` 渲染名称 + ×count，恰好满足需求（`ActivityTooltip.tsx:132`、`ItemTooltip.tsx:190` 已在用）。
+- 活动面板与 dungeon 面板均通过 props 传入 `rewardTable`（resolver 内已加载的 `RewardTable` + `ItemTable`），不新增数据获取。
+- 若 review 认为需独立「奖励卡片」展示形态（如面板标题「奖励」+ 分固定/随机），可在 `RewardPanel` 外层包一层分组容器，不改变其核心逻辑。
+
+### 9.3 方案：独立 Dungeon 组件（review ②④）
+
+**目标**：按 `dungeonId`（即 `DungeonFightingStageTable.levelId`，如 `dung01_actmonster02`）渲染 dungeon 关卡内容、敌人、图片与奖励。
 
 **类型扩展**（`src/lib/missionConditionNames.ts`）：
-- `ActivityStageDetail` 扩展字段：`activityName`（ActivityTable.name）、`stageName`（MultiStageTable.stageList.name，优先）、`missionId`、`sortId`、`timeId`、`rewardItems[]`（`{id, name, count}`，经 RewardTable + ItemTable）、`levelName`（DungeonTable.dungeonName）、`levelDesc`、`unlockTexts[]`（ConditionTable.desc i18n，`blockShow=true` 跳过）、`relatedQuestText`（DungeonFightingStageTable.questId → questDesc map）。
+- 新增 `DungeonDetail` 接口：
+  - `dungeonId`、`name`（DungeonTable.dungeonName i18n）、`desc`（dungeonDesc）、`levelDesc`（dungeonLevelDesc）、`featureDesc`（featureDesc，富文本，含 `<@gd.key>` 等标记）
+  - `picUrl`（`{ASSET_BASE}/sprites/dungeon/{dungeonPicPath}.png`，`dungeonPicPath` 为空时无图）
+  - `costStamina`、`dungeonCategory`、`sortId`、`sceneId`
+  - `enemies[]`：`{id, name, nickname, iconUrl, level}`（经 `EnemyTemplateDisplayInfoTable` 名称 + `enemyLevels[]` 对应等级）
+  - `rewards`: `{ fixed: string[]; firstPass: string[]; custom: string[]; extra: string[]; hunter: string[] }`（各 rewardId 分类，均复用 RewardPanel 渲染）
+  - 全部字段可空，组件兜底。
+
+**数据接入**（`src/hooks/useData.ts` `getMissionConditionResolver`）：
+- 新增并行加载：`EnemyTemplateDisplayInfoTable` + i18n、`RewardTable`（已有）+ i18n（ItemTable 已有）。
+- 新增 `dungeonDetail(dungeonId): DungeonDetail | null` 方法：拼 `DungeonTable` + `EnemyTemplateDisplayInfoTable` + `RewardTable` + `ItemTable`；`enemyIds[i]` 与 `enemyLevels[i]` 按索引对齐。
+
+**组件**（`src/pages/story/DungeonPanel.tsx`）：
+- 纯展示组件，props 注入 `detail: DungeonDetail` + `rewardTable` + `t`。
+- 展示结构：
+  - 头部：dungeon 名称 + `sortId`/`costStamina`/`dungeonCategory` 元信息 + `dungeonPicPath` 图片（`<img>` 首图位，`onError` 隐藏回退）。
+  - 描述：`desc`（富文本）→ `levelDesc`（威胁等级）→ `featureDesc`（机制说明，富文本）。
+  - 敌人列表：`enemies[]` 图标（monstericonbig）+ 名称 + 等级，横向排列。
+  - 奖励分组：`firstPassRewardId`（首通）→ `customRewardId` → `extraRewardId` → `hunterModeRewardId` → `rewardId`（若有），各渲染一个 `RewardPanel` 分组，组标题用 i18n key（`story.dungeonFirstPass` 等）。
+
+### 9.4 方案：独立 Activity 阶段组件（问题①，整合 review）
+
+**目标**：把「活动阶段」的关联数据从文本行升级为独立渲染块，`dungeon` 与 `reward` 分别委托 §9.3 / §9.2 组件。
+
+**类型扩展**（`src/lib/missionConditionNames.ts`）：
+- `ActivityStageDetail` 扩展字段：`activityName`（ActivityTable.name）、`stageName`（MultiStageTable.stageList.name，优先）、`missionId`、`sortId`、`timeId`、`activityRewardId`（StageToActivityTable.rewardId）、`unlockTexts[]`（ConditionTable.desc i18n，`blockShow=true` 跳过）、`relatedQuestText`（DungeonFightingStageTable.questId → questDesc map）、`dungeonDetail`（经 §9.3 `dungeonDetail()`，`DungeonFightingStageTable.levelId` 非空时）。
 - 保留现有 `stageDetail(stageId)` 签名，内部扩展返回；缺失表/未命中字段全部可空，组件兜底。
 
 **数据接入**（`src/hooks/useData.ts` `getMissionConditionResolver`）：
-- 新增并行加载：`ActivityConditionalMultiStageTable` + i18n、`ActivityConditionalMultiStageConditionTable` + i18n、`ActivityTable` + i18n、`DungeonTable` + i18n、`RewardTable` + i18n、`ItemTable`（已有）+ i18n。
-- `stageDetail(stageId)` 拼接 5+3 表返回 `ActivityStageDetail`；所有表 `getCachedData` 缓存 + `.catch(() => ({}))` 容错。
+- 新增并行加载：`ActivityConditionalMultiStageTable` + i18n、`ActivityConditionalMultiStageConditionTable` + i18n、`ActivityTable` + i18n、`DungeonTable` + i18n、`EnemyTemplateDisplayInfoTable` + i18n、`RewardTable`（已有）+ i18n。
+- `stageDetail(stageId)` 拼接 5+3 表返回 `ActivityStageDetail`；内部复用 `dungeonDetail()` 生成 dungeon 段；所有表 `getCachedData` 缓存 + `.catch(() => ({}))` 容错。
 
 **组件**（`src/pages/story/ActivityStagePanel.tsx`）：
-- `ObjectiveCondition` 中 `CheckActivityConditionalStageStatus` 类型分支改为渲染 `<ActivityStagePanel stageId={rawStageId} detail={stageDetail(...)} resolveArg={resolveArg} />`（仅当 resolver 提供 `stageDetail`；缺失时回退现有文本行）。
+- `ObjectiveCondition` 中 `CheckActivityConditionalStageStatus` 类型分支改为渲染 `<ActivityStagePanel stageId={rawStageId} detail={stageDetail(...)} rewardTable={rewardTable} resolveArg={resolveArg} />`（仅当 resolver 提供 `stageDetail`；缺失时回退现有文本行）。
 - 面板内容（信息分组展示）：
   - 头部：阶段名（stageName）+ 活动名（activityName）+ 关卡序号（sortId）+ 所属任务（missionId 链接到 `/archive/story/mission/:missionId`）。
   - 解锁条件：`unlockTexts[]`（i18n 文案直出；`blockShow=true` 跳过）。
   - 完成条件：按 `conditionType` 分派渲染（5052→levelName / 18→quest / 19→mission / 其余→参数直出），复用 §8.3 语义。
   - 关联 quest：`relatedQuestText`（同任务 quest 描述）。
-  - 奖励：`rewardItems[]` 名称 + ×count（复用 `ItemTile`/现有物品展示样式）。
+  - **活动奖励**：`activityRewardId` 经 `RewardPanel` 渲染（review ③：Activity 侧 rewardId）。
+  - **dungeon 区块**：`dungeonDetail` 存在时嵌入 `<DungeonPanel detail={...} rewardTable={...} />`（review ②④：dungeon 内容、敌人、图片、dungeon 侧奖励）。
 - 纯展示组件，无内部数据获取；数据经 props 注入，便于单测。
 
-### 9.3 方案：quest 节点边框（问题②）
+### 9.5 方案：quest 节点边框（问题②）
 
 `StoryMissionDetail.tsx` `QuestNode` 根容器加边框样式：
 - 主路径 quest：`border border-archive-border rounded-md p-3`（背景 `bg-archive-file/40` 区分主路径）。
 - 分支 quest：与主路径同款边框（或 `border-archive-gold/20`），保持缩进 + 左侧连接线不变。
 - 子节点缩进容器 `ml-3 pl-3 border-l` 保留，形成「外层 quest 卡片 + 内层依赖线」的层级。
 
-### 9.4 方案：依赖线 + 「前置任务」badge（问题③）
+### 9.6 方案：依赖线 + 「前置任务」badge（问题③）
 
 `QuestNode` 中 `node.prevQuestIds.length > 0` 的渲染从纯文本 `{'← '}{ids.join(', ')}` 改为：
 - 左侧连接线：quest 卡片内左上角垂直连线（`border-l-2 border-archive-gold/40` + 小竖线），与子节点缩进线衔接，形成依赖流向视觉。
 - 「前置任务」badge：复用 `Badge` 组件（variant="ghost" 或新增 seal/gold 小号），文案 `t('story.prevQuest')`，后接 mono 的 `prevQuestIds`（保留引用能力）。
-- 新增 i18n key `story.prevQuest`（14 语言，经 `generate-i18n-dicts.ts` 生成）。
+- 新增 i18n key `story.prevQuest` 与 dungeon 分组标题 keys（`story.dungeonFirstPass / dungeonCustom / dungeonExtra / dungeonHunter` 等，14 语言，经 `generate-i18n-dicts.ts` 生成）。
 
-### 9.5 测试与验证计划
+### 9.7 测试与验证计划
 
-- 单测：`missionConditionNames.test.ts` 增加 `stageDetail` 聚合纯函数测试（Mock 各表数据，断言拼接/容错/缺失字段兜底）；`ActivityStagePanel` 组件单测（若组件无 data fetch 则用 RTL 渲染断言各分组展示）。
-- E2E：`story-chronicle.spec.ts` 增加「a1m2 任务详情页活动面板展示」（断言出现「生存特训/爆破练习/解锁条件/奖励」等关键字）。
+- 单测：`missionConditionNames.test.ts` 增加 `stageDetail` / `dungeonDetail` 聚合纯函数测试（Mock 各表数据，断言拼接/容错/缺失字段兜底/enemyIds-enemyLevels 索引对齐）；`ActivityStagePanel` / `DungeonPanel` 组件单测（若组件无 data fetch 则用 RTL 渲染断言各分组展示）。
+- E2E：`story-chronicle.spec.ts` 增加「a1m2 任务详情页活动面板展示」（断言出现「生存特训/爆破练习/解锁条件/奖励」等关键字）与「dungeon 面板展示敌人与图片」（断言敌人名如「碾骨撕裂牙兽」出现、`<img>` 存在）。
 - 全量：lint / test / build；仅存量 Sidebar 2 例基线失败。
 
-### 9.6 风险与待确认
+### 9.8 风险与待确认
 
 - **`MultiStageTable` activity 名**：`ActivityTable.name`（如「生存特训」）比 `MultiStageTable` 自身更权威，取 `ActivityTable` 优先。
 - **`conditionType` 语义沿用数据归纳**：5052/5902 已验证，18/19/5031 等复用 §8.6 风险，面板内不臆测语义、展示原始参数兜底。
 - **`blockShow=true` 的解锁条件**：游戏内隐藏（引导条件），面板跳过展示，避免剧透/信息噪音。
 - **关联 quest 文案长度**：`relatedQuestText` 可能为长文本（整个目标描述），面板内截断或单行省略号展示。
+- **dungeon 奖励字段语义**：`rewardId`（30 个 dungeon 有）与 `firstPassRewardId`（200）/`customRewardId`/`extraRewardId`/`hunterModeRewardId` 的具体发放时机需游戏内校准；面板内按字段名分组展示（首通/定制/额外/猎手模式），不臆测数字。
+- **dungeon 图片缺失**：`dungeonPicPath` 空或图片 404 时 `<img>` 需 `onError` 隐藏回退，不影响文字内容。
+- **`enemyIds` 与 `enemyLevels` 对齐**：两者均为数组、长度一致（已验证 5/5）；索引错位时仅展示可对齐部分，避免越界。
