@@ -506,12 +506,21 @@ _activityStageId (dungeon_fighting_5)
 
 ### 8.5 实施规划
 
-| 阶段 | 内容 |
-|------|------|
-| 阶段一 | `constValue` 解包 + `$type` 分派框架 + `CombineCondition` 递归 + 兜底；单测 |
-| 阶段二 | 高频类型格式化器（ReachDestination / CheckTalkOptionFinish / CheckQuestState / CheckMissionState / PlayerHasItem 系 / CheckActivityConditionalStageStatus） |
-| 阶段三 | 活动阶段链路数据接入（StageToActivity + CompleteCondition + DungeonFightingStage），任务/道具/区域名称深链 |
-| 阶段四 | 任务详情页目标节点接入渲染；UT / E2E + lint / test / build 验证 |
+| 阶段 | 内容 | 状态 |
+|------|------|------|
+| 阶段一 | `constValue` 解包 + `$type` 分派框架 + `CombineCondition` 递归 + 兜底；单测 | ✅ 已实施（commit 见下） |
+| 阶段二 | 高频类型格式化器（ReachDestination / CheckTalkOptionFinish / CheckQuestState / CheckMissionState / PlayerHasItem 系 / CheckActivityConditionalStageStatus） | 待实施 |
+| 阶段三 | 活动阶段链路数据接入（StageToActivity + CompleteCondition + DungeonFightingStage），任务/道具/区域名称深链 | 待实施 |
+| 阶段四 | 任务详情页目标节点接入渲染；UT / E2E + lint / test / build 验证 | 待实施 |
+
+**阶段一实现**（`src/lib/missionCondition.ts`，commit `d15ae29`）：
+
+- `unwrapConstValue`：递归解包 `{ constValue }`，嵌套结构（如 `{ constValue: { scriptId } }`）渲染为 `key=value`。
+- `shortConditionType`：从 C# 全名 `Beyond.Gameplay.Xxx, Gameplay.Beyond` 提取短名，缺失回退 `Unknown`。
+- `extractConditionFields`：过滤元数据（`$type`/`uniqueId`/`scopeMask`/`useGraphScope`/`useCurrentScope`）与保留键（`subConditions`/`conditionEvalString`），数组展开为 `a, b`。
+- `renderMissionCondition`：`CombineCondition` 递归渲染 `subConditions` 子树并保留 `conditionEvalString`；其余按短名查 `registerMissionConditionFormatter` 分派，无格式化器则回退字段列表；空输入返回 `null`。
+- 接入 `adaptMissionQuest`：`MissionQuestObjective` 新增 `condition?: MissionConditionRender`（`types.ts`），携带 `resolveKey` 作为 `resolveText` 上下文。
+- 测试 `src/lib/__tests__/missionCondition.test.ts`：16 例通过（短名/解包/字段提取/Combine 递归/分派/上下文/回退/空输入）。
 
 ### 8.6 风险与待确认
 
