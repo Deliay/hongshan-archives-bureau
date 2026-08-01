@@ -540,7 +540,7 @@ _activityStageId (dungeon_fighting_5)
 - 端到端验证：a1m2-v2 的 6 个 `CheckActivityConditionalStageStatus` 目标均解析出阶段名与关联 quest（如 `a1m2_q#11 → dungeon_fighting_5 → a1m2_q#Day5`）。
 - 测试新增 4 例（`missionConditionNames.test.ts`）；lint / test / build 通过。
 
-**阶段四实现**（commit `TODO`，`src/lib/missionConditionText.ts` + `src/pages/story/ObjectiveCondition.tsx` + i18n 模板）：
+**阶段四实现**（commit `7368768`，`src/lib/missionConditionText.ts` + `src/pages/story/ObjectiveCondition.tsx` + i18n 模板）：
 
 - `renderConditionText(render, t)` 纯函数：按 `render.type` 静态映射到 i18n 模板 key 并传入语义 args；`CombineCondition` 递归渲染子条件并把 `conditionEvalString` 中的 `{n}` 占位符与 `and/or/not` 运算词替换为本地化文案；未知类型回退 `fields`（`name: value`），无可渲染内容返回 `null`。
 - `GameConditionServerPlaceHolder`（1514 个，全量最多）补注册 formatter：`_progressToCompare → progress`，渲染「进度达到 {{progress}}」。
