@@ -508,8 +508,8 @@ _activityStageId (dungeon_fighting_5)
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| 阶段一 | `constValue` 解包 + `$type` 分派框架 + `CombineCondition` 递归 + 兜底；单测 | ✅ 已实施（commit 见下） |
-| 阶段二 | 高频类型格式化器（ReachDestination / CheckTalkOptionFinish / CheckQuestState / CheckMissionState / PlayerHasItem 系 / CheckActivityConditionalStageStatus） | 待实施 |
+| 阶段一 | `constValue` 解包 + `$type` 分派框架 + `CombineCondition` 递归 + 兜底；单测 | ✅ 已实施（commit `d15ae29`） |
+| 阶段二 | 高频类型格式化器（ReachDestination / CheckTalkOptionFinish / CheckQuestState / CheckMissionState / PlayerHasItem 系 / CheckActivityConditionalStageStatus） | ✅ 已实施（commit 见下） |
 | 阶段三 | 活动阶段链路数据接入（StageToActivity + CompleteCondition + DungeonFightingStage），任务/道具/区域名称深链 | 待实施 |
 | 阶段四 | 任务详情页目标节点接入渲染；UT / E2E + lint / test / build 验证 | 待实施 |
 
@@ -521,6 +521,14 @@ _activityStageId (dungeon_fighting_5)
 - `renderMissionCondition`：`CombineCondition` 递归渲染 `subConditions` 子树并保留 `conditionEvalString`；其余按短名查 `registerMissionConditionFormatter` 分派，无格式化器则回退字段列表；空输入返回 `null`。
 - 接入 `adaptMissionQuest`：`MissionQuestObjective` 新增 `condition?: MissionConditionRender`（`types.ts`），携带 `resolveKey` 作为 `resolveText` 上下文。
 - 测试 `src/lib/__tests__/missionCondition.test.ts`：16 例通过（短名/解包/字段提取/Combine 递归/分派/上下文/回退/空输入）。
+
+**阶段二实现**（`src/lib/missionCondition.ts`，commit `a616130`）：
+
+- `MissionConditionRender` 以 `args`（语义模板变量）取代 `summary`：格式化器把原始 `_field` 名映射为语义 arg（`_mapId→map`、`_itemId→item`、`_progressToCompare→count` 等），页面（阶段四）按 `type` 映射到 `t('story.obj*')` 字面 key 渲染，保证 i18n verify 可见。
+- `conditionField`：按字段名取解包后的值；`argFormatter` + `registerArgFormatter` 声明式注册。
+- 已注册 12 个高频类型：`ReachDestination`（map/area）、`CheckTalkOptionFinish`（dialog）、`CheckQuestState`（quest）、`CheckMissionState`（mission）、`CheckActivityConditionalStageStatus`（stage）、`PlayerHasItem`/`PlayerHasItemInItemBag`（item/count）、`WeekRaidPlayerHasItem`（item）、`CheckMoney`（item/count）、`CheckAdventureLevel`/`CheckWorldLevel`/`CheckUnlockWorldLevel`（level）。
+- 未注册类型（如 `GameConditionServerPlaceHolder`）继续回退 `fields`。
+- 阶段二测试新增 11 例（27 例全部通过）；lint / build 通过。
 
 ### 8.6 风险与待确认
 
