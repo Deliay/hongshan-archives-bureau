@@ -357,7 +357,8 @@
     "dungeonHunter": "Награды режима охотника",
     "noScene": "Нет текста сюжета",
     "expandDialog": "Показать диалог",
-    "collapseDialog": "Скрыть диалог"
+    "collapseDialog": "Скрыть диалог",
+    "audioNowPlaying": "Сейчас играет"
   },
   "update": {
     "added": "Добавлено",

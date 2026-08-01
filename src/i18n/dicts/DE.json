@@ -357,7 +357,8 @@
     "dungeonHunter": "Belohnungen des Jägermodus",
     "noScene": "Kein Geschichtstext",
     "expandDialog": "Dialog anzeigen",
-    "collapseDialog": "Dialog ausblenden"
+    "collapseDialog": "Dialog ausblenden",
+    "audioNowPlaying": "Wird abgespielt"
   },
   "update": {
     "added": "Hinzugefügt",

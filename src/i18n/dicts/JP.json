@@ -357,7 +357,8 @@
     "dungeonHunter": "ハンターモード報酬",
     "noScene": "ストーリーテキストなし",
     "expandDialog": "会話を表示",
-    "collapseDialog": "会話を隠す"
+    "collapseDialog": "会話を隠す",
+    "audioNowPlaying": "再生中"
   },
   "update": {
     "added": "追加",

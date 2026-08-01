@@ -6671,6 +6671,22 @@
     "ID": "Sembunyikan dialog",
     "IT": "Nascondi dialogo"
   },
+  "story.audioNowPlaying": {
+    "CN": "正在播放",
+    "TC": "正在播放",
+    "EN": "Now playing",
+    "JP": "再生中",
+    "KR": "재생 중",
+    "RU": "Сейчас играет",
+    "MX": "Reproduciendo",
+    "BR": "Reproduzindo",
+    "DE": "Wird abgespielt",
+    "FR": "En lecture",
+    "VN": "Đang phát",
+    "TH": "กำลังเล่น",
+    "ID": "Sedang diputar",
+    "IT": "In riproduzione"
+  },
   "breadcrumb.recap": {
     "CN": "剧情梗概",
     "TC": "劇情梗概",

@@ -345,4 +345,39 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     // DialogTextTable dlg_gm01m23_2_001 渲染出来
     await expect(page.locator('body').getByText('dlg_gm01m23_2_001', { exact: true }).first()).toBeVisible({ timeout: 10000 })
   })
+
+  test('音频 HEAD 返回 404 时不显示播放按钮', async ({ page }) => {
+    // 拦截音频 HEAD 请求全部返回 404 → 播放按钮不出现
+    await page.route('**/audios/dialogs/vo/**', async route => {
+      if (route.request().method() === 'HEAD') await route.fulfill({ status: 404 })
+      else await route.continue()
+    })
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const sceneCode = page.locator('body').getByText('E1·M3·场06', { exact: true }).first()
+    await expect(sceneCode).toBeVisible({ timeout: 15000 })
+    await sceneCode.locator('..').getByRole('button', { name: '展开对话' }).click()
+    await expect(page.locator('body').getByText('dlg_e1m3_6_001', { exact: true }).first()).toBeVisible({ timeout: 10000 })
+    await page.waitForTimeout(1500)
+    // HEAD 404 → 播放按钮不出现
+    await expect(page.getByTestId('line-play-dlg_e1m3_6_001')).toHaveCount(0)
+  })
+
+  test('点击播放后显示控制面板，Next 可切换到下一条并自动续播', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const sceneCode = page.locator('body').getByText('E1·M3·场06', { exact: true }).first()
+    await expect(sceneCode).toBeVisible({ timeout: 15000 })
+    await sceneCode.locator('..').getByRole('button', { name: '展开对话' }).click()
+    await expect(page.getByTestId('line-play-dlg_e1m3_6_001')).toBeVisible({ timeout: 10000 })
+    // 点击第一条播放 → 控制面板出现
+    await page.getByTestId('line-play-dlg_e1m3_6_001').click()
+    const bar = page.getByTestId('dialog-player-bar')
+    await expect(bar).toBeVisible({ timeout: 5000 })
+    // 面板当前行 = 第一条
+    await expect(bar.getByText('dlg_e1m3_6_001', { exact: true })).toBeVisible({ timeout: 5000 })
+    // 点击 Next → 当前行切到下一条 dlg_e1m3_6_002
+    await bar.getByRole('button', { name: 'Next' }).click()
+    await expect(bar.getByText('dlg_e1m3_6_002', { exact: true })).toBeVisible({ timeout: 5000 })
+  })
 })

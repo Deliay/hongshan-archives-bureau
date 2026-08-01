@@ -741,3 +741,121 @@ _activityStageId (dungeon_fighting_5)
 - `StoryRecap`：改为 master-detail —— 左侧 a-z 分组导航（选中态 gold 高亮），右侧内嵌 `MissionDetailContent`；点击导航更新 `?mission=`；首次加载默认选中第一个任务并写入路由（replace）；类型筛选保留 `mission` 参数。
 
 **验证**：E2E 新增「点击导航切换任务并更新路由 mission 参数」（22/22 通过）；单测/verify-i18n/lint/test/build 通过（仅存量 Sidebar 2 例基线失败）。
+
+---
+
+## 11. 验收问题（2026-08-02）：对话展开与音频播放
+
+> 本轮受理 6 项验收反馈：①recap 面包屑未翻译；②任务详情 quest 目标内联剧情梗概；③剧情场景可展开完整对话脚本（DialogTextTable）；④endminf 说话行音频 URL 追加 `_f`；⑤无 DialogSummaryMapTable 摘要的对话目标仍可展开；⑥对话音频播放需 HEAD 校验 + 播放列表 + 控制面板。
+
+### 11.0 历史修复回填（§10 之后、本轮之前的中间提交）
+
+以下为 master-detail 布局（§10.1，commit `15a67ae`）之后陆续落地、尚未回填验收文档的修复/增强：
+
+**footer 去掉上边距**（commit `64aad93`）：`src/components/Layout/Footer.tsx` 移除 `mt-16`，消除底部大空隙。
+
+**任务名改用 AllBrief MissionRuntimeAsset**（commit `992ff94`）：quest 详情与列表页任务名改用 `https://endfield-assets.fffdan.com/vfs/JsonData/AllBrief/MissionRuntimeAsset`（980 条，490 条含 missionName）。
+- 新增 `fetchMissionBrief()`（`src/lib/api.ts`）、`buildMissionNameMapFromBrief(brief, resolveKey)`（adapter）。
+- `getMissionConditionResolver` 的 `mission` arg 优先走 brief 名，回退 `resolveTextKey(\`${id}_name\`)`；`useStoryRecap` 列表名同样走 brief。
+- `api.fetchingMissionBrief` i18n 14 语言；单测 +3；E2E 22/22。
+- 数据考证：`e11m7d5 → e11m7_name → 归途`；`hidden58` 的 missionName 为空 `{}`（回退原始 id）。
+
+**任务类型/重要性徽标 + 关卡大地图名 + 章节排序**（commit `03cd8b1`）：
+- `MISSION_VIEW_TYPE_CFG`（0=main_new/1=discovery/2=side/3=activity/4=other，对照旧本地 MissionTypeInfoTable.json 推导）与 `MISSION_IMPORTANCE_CFG`（0/1/2 → importance_1/2/3）。
+- `MissionRuntime` 新增 `importance`（`overrideImportance || baseMissionImportance || 0`，注意必须 `||` 而非 `??` 才能对 0 回退）；resolver 新增 `missionTypeName`/`missionImportanceName`。
+- 详情页徽标：任务类型（gold）+ 重要性（ghost）+ wrapper。
+- 关卡展示：`useLevelInfo` + `resolveLevelMapId`（levelId 本身命中 MapIdTable 优先，否则剥离 `_lv<数字>`）+ `LevelDisplay` 组件，渲染 `story.levelNameFormat`（各语言语序不同，verify-i18n 要求 MX/BR/DE/FR/VN/TH/ID/IT 与 EN 不同）。
+- 章节排序 `CHAPTER_ORDER_PRIORITY = { e:0, c:1, gm:2, sm:3, m:4 }`，其余 fallback 10。
+- 单测 +5（resolveLevelMapId 3 + importance 1 + 排序 1）；E2E +2（徽标 a1m2=活动任务/重要、关卡 e11m1=武陵·应龙关）24/24。
+
+### 11.1 recap 面包屑未翻译
+
+**问题描述**：`/archive/story/recap` 面包屑中「recap」显示为原始路径段而非翻译文本。
+
+**根因分析**：`Breadcrumb.tsx` 对 3 段路径 `/archive/story/recap` 的 `detailId='recap'` 走 `DetailLabel` 分支返回原始 id，未走 `listLabel`（`breadcrumb.recap` 已有 CN「剧情梗概」等 14 语言翻译）。
+
+**修复方案**（commit `b2c1773`）：3 段路径优先查 `listLabel[detailId]`，命中即用翻译文本渲染 Badge；未命中才走 `DetailLabel`。
+
+**涉及文件**：`src/components/Layout/Breadcrumb.tsx`；E2E 更新 `tests/e2e/src/story-chronicle.spec.ts` 面包屑断言（main 区域「剧情纪事」+「剧情梗概」）。
+
+**验证结果**：E2E 24/24 通过。
+
+### 11.2 quest 对话目标内联渲染剧情梗概
+
+**问题描述**：任务详情 quest 目标为「完成对话 dlg_e1m3_6」时，需将该 dialogId 对应的剧情梗概（DialogSummaryMapTable → DialogSummaryTable）内联渲染在目标下。
+
+**数据考证**：`DialogSummaryMapTable['dlg_e1m3_6'] = 'summary_e1m3_6_001'`，经 DialogSummaryTable i18n 解析出梗概文本（如「晶体外壳需要大量源矿。安德烈为你准备了自动采矿设备……」）；`e1m3_q#17` 的 `objectiveList[0].condition` 为 `CheckTalkOptionFinish`（`_dialogId=dlg_e1m3_6`）。
+
+**修复方案**（commit `05a9ea5`）：
+- `getMissionConditionResolver` 新增并行加载 `DialogSummaryMapTable` / `DialogSummaryTable`（+i18n），`MissionConditionResolver` 新增 `dialogScene(dialogId): StoryRecapScene | null`。
+- `ObjectiveCondition` 对 `CheckTalkOptionFinish` 条件调 `dialogScene` 渲染梗概场景（code + 文本，`data-testid="quest-recap-scene"`）；`StoryMissionDetail` 的 `QuestNode` 透传 `dialogScene`。
+
+**验证结果**：E2E 新增「对话型目标渲染对应剧情梗概」断言（`E1·M3·场06` + 便携源石矿机）25/25 通过。
+
+### 11.3 剧情场景可展开完整对话脚本
+
+**问题描述**：任务详情剧情梗概每个场景需可展开，渲染 DialogTextTable 中以该 dlgKey 为前缀的全部台词（actorName 说话人 + audioOverride 音频按钮 + dialogText 富文本）。
+
+**数据考证**：DialogTextTable 以 `dlg_{chapter}{lv}m{mission}_{scene}` 为前缀 + `_{NNN}` 为台词序号（如 `dlg_e1m3_6_001`~`dlg_e1m3_6_005`）；字段 `actorName{id,text}`、`actorNameId`、`audioOverride`、`dialogText{id,text}`、`emotionType`；i18n 大整数 id 依赖 `api.ts safeParse` 转字符串保精度后 `resolveI18n` 命中。
+
+**修复方案**（commit `a6366cb`）：
+- 类型 `DialogLine`（types.ts）；adapter `adaptDialogLine` / `buildDialogLines`（按 `${dlgKey}_` 前缀过滤 + localeCompare 排序）。
+- `useDialogScript(dlgKey)`（useData.ts）：并行加载 DialogTextTable + i18n。
+- `DialogScript` 组件（`src/pages/story/DialogScript.tsx`）：渲染说话人（actorName）+ 播放按钮（audioOverride 存在时）+ 台词（RichText）。
+- `StoryMissionDetail` 场景块新增「展开对话/收起对话」切换（`SceneBlock`，i18n `story.expandDialog`/`story.collapseDialog` 14 语言）。
+
+**验证结果**：单测 +5（adaptDialogLine 3 + buildDialogLines 2）；E2E +1（e1m3 场06 展开 → 佩丽卡/安德烈台词/播放按钮）26/26 通过。
+
+### 11.4 endminf 说话行 audioOverride 追加 `_f` 后缀
+
+**问题描述**：获得 audioOverride 时，若 `actorNameId=endminf`，需在当前 audioOverride 后追加 `_f`。
+
+**数据考证**：DialogTextTable 全量 477 条 `endminf` 行的 `audioOverride`（如 `au_dlg_c16m3_2_011`）无后缀 URL 404，追加 `_f`（`au_dlg_c16m3_2_011_f`）后 200；`endminm` 0 条。
+
+**修复方案**（commit `9c9c44b`）：`adaptDialogLine` 检测 `actorNameId==='endminf'` 时 `audioOverride += '_f'`。
+
+**验证结果**：单测 +2（endminf 追加 / 其他角色不变）；E2E +1（e11m1 场01 endminf 行点击播放请求 `_f` URL）28/28 通过。
+
+### 11.5 无 DialogSummaryMapTable 摘要的对话目标仍可展开
+
+**问题描述**：`dlg_gm01m23_2` 在 DialogTextTable 有台词（13 行）但不在 DialogSummaryMapTable（无摘要），`dialogScene` 返回 null 导致目标块不渲染、无展开按钮。
+
+**修复方案**（commit `96ca0c1`）：`ObjectiveCondition` 对 `CheckTalkOptionFinish` 只要有 `dialogId` 就渲染对话块（含「展开对话」按钮）；摘要场景（`scene.code`/`scene.text`）有则显示，无则只显示 dialogId + 展开按钮；展开后 DialogScript 从 DialogTextTable 加载台词。
+
+**验证结果**：E2E +1（gm01m23 展开 dlg_gm01m23_2_001）29/29 通过。
+
+### 11.6 对话音频播放优化（本轮）
+
+**验收反馈**：①展开对话时默认不显示播放按钮，对接口 HEAD 一发，200 才显示；②点击播放时将该条之后的音频加入播放列表，播放完成后自动播放后续一条；③播放控制面板需要显示（未设计则设计）；④历史问题与本次问题更新到验收文档。
+
+**设计**：
+- `checkAudioUrl(url)`（`src/lib/audio.ts`）：HEAD 请求 + 模块级缓存，`ok` 返回 200 才显示按钮。
+- `dialogAudio.ts` 队列控制器：模块级单例（Audio 元素 + `useSyncExternalStore`），`playFrom(tracks, startIndex)` 从点击行起建立队列，`ended`/`error` 自动推进下一条，`togglePlay`/`playNext`/`playPrev`/`stop`。
+- `DialogScript`：`useAudioAvailability` 对每行 audioOverride 发 HEAD，200 才渲染 `LinePlayButton`（`data-testid="line-play-{key}"`）；点击 `playFrom` 建立从该行起的播放队列。
+- `DialogPlayerBar` 控制面板（`src/pages/story/DialogPlayerBar.tsx`）：当前说话人/行号/台词、上一条/播放暂停/下一条/停止、进度条与时间，仅在队列活动时显示（`data-testid="dialog-player-bar"`）。
+- i18n 新增 `story.audioNowPlaying`（14 语言）。
+
+**实现落点**（本次 commit，待提交）：
+- `src/lib/audio.ts` — `checkAudioUrl` + `clearAudioUrlCache`
+- `src/lib/dialogAudio.ts`（新建）— 队列控制器
+- `src/pages/story/DialogScript.tsx` — HEAD 校验 + 队列播放
+- `src/pages/story/DialogPlayerBar.tsx`（新建）— 控制面板
+- `scripts/i18n-custom.json` + `src/i18n/dicts/*` — `story.audioNowPlaying`
+
+**验证结果**：
+- ✅ 单测 `audio.test.ts` +4（HEAD ok/not-ok/throw/cache）、`dialogAudio.test.ts` 新建 5 例（playFrom 队列/自动推进/末条停止/toggle/前后切换）
+- ✅ E2E +2：HEAD 404 不显示按钮、点击播放显示控制面板 + Next 切换下一条；全量 31/31 通过
+- ✅ lint（verify-i18n PASSED）/ build / tsc 通过；vitest 全量仅存量 Sidebar 2 例基线失败
+
+---
+
+## 12. 修复总览（§11 补充）
+
+| # | 问题 | 根因 | 状态 | 修复 commit |
+|---|------|------|------|-------------|
+| 11.1 | recap 面包屑未翻译 | 3 段路径 detailId 走 DetailLabel 返回原始 id | ✅ 已修复 | `b2c1773` |
+| 11.2 | quest 对话目标未内联剧情梗概 | 未接 DialogSummaryMapTable → DialogSummaryTable | ✅ 已修复 | `05a9ea5` |
+| 11.3 | 剧情场景不能展开完整对话 | 未接入 DialogTextTable 台词 | ✅ 已修复 | `a6366cb` |
+| 11.4 | endminf 音频 URL 404 | 未追加 `_f` 后缀 | ✅ 已修复 | `9c9c44b` |
+| 11.5 | 无摘要对话目标无展开按钮 | `dialogScene` 为 null 整块不渲染 | ✅ 已修复 | `96ca0c1` |
+| 11.6 | 音频播放需 HEAD 校验 + 队列 + 控制面板 | 功能未设计 | ✅ 已修复 | 本次提交 |

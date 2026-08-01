@@ -357,7 +357,8 @@
     "dungeonHunter": "Ricompense modalità cacciatore",
     "noScene": "Nessun testo della storia",
     "expandDialog": "Mostra dialogo",
-    "collapseDialog": "Nascondi dialogo"
+    "collapseDialog": "Nascondi dialogo",
+    "audioNowPlaying": "In riproduzione"
   },
   "update": {
     "added": "Aggiunto",

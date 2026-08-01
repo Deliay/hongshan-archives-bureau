@@ -357,7 +357,8 @@
     "dungeonHunter": "Phần thưởng chế độ thợ săn",
     "noScene": "Không có văn bản cốt truyện",
     "expandDialog": "Hiển thị hội thoại",
-    "collapseDialog": "Ẩn hội thoại"
+    "collapseDialog": "Ẩn hội thoại",
+    "audioNowPlaying": "Đang phát"
   },
   "update": {
     "added": "Đã thêm",

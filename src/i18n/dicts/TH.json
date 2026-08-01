@@ -357,7 +357,8 @@
     "dungeonHunter": "รางวัลโหมดฮันเตอร์",
     "noScene": "ไม่มีเนื้อเรื่อง",
     "expandDialog": "แสดงบทสนทนา",
-    "collapseDialog": "ซ่อนบทสนทนา"
+    "collapseDialog": "ซ่อนบทสนทนา",
+    "audioNowPlaying": "กำลังเล่น"
   },
   "update": {
     "added": "เพิ่มแล้ว",
