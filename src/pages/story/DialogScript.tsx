@@ -5,7 +5,6 @@ import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
 import { getAudioUrl, checkAudioUrl } from '../../lib/audio'
 import { useDialogAudio, playFrom, togglePlay, type DialogAudioTrack } from '../../lib/dialogAudio'
-import { DialogPlayerBar } from './DialogPlayerBar'
 
 export function DialogScript({ dlgKey }: { dlgKey: string }) {
   const { t } = useI18n()
@@ -32,15 +31,21 @@ export function DialogScript({ dlgKey }: { dlgKey: string }) {
     [lines, available, locale],
   )
 
+  const { currentIndex } = useDialogAudio()
+  const currentLineKey = tracks[currentIndex]?.lineKey
+
   if (loading) return <p className="text-sm text-archive-lead">{t('common.loadingArchive')}</p>
   if (error) return <p className="text-sm text-red-400">{t('common.loadFailed')}</p>
   if (!data || data.length === 0) return <p className="text-sm text-archive-lead italic">{t('story.noScene')}</p>
 
   return (
     <div className="space-y-3">
-      <DialogPlayerBar />
       {data.map(line => (
-        <div key={line.key} className="flex gap-3">
+        <div
+          key={line.key}
+          data-active={currentLineKey === line.key}
+          className={currentLineKey === line.key ? 'flex gap-3 rounded bg-archive-gold/10 px-1.5 py-1 -mx-1.5' : 'flex gap-3'}
+        >
           <div className="w-20 shrink-0 pt-0.5 text-right">
             <span className="text-xs font-medium text-archive-gold">{line.actorName}</span>
           </div>

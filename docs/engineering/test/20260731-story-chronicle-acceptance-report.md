@@ -847,6 +847,25 @@ _activityStageId (dungeon_fighting_5)
 - ✅ E2E +2：HEAD 404 不显示按钮、点击播放显示控制面板 + Next 切换下一条；全量 31/31 通过
 - ✅ lint（verify-i18n PASSED）/ build / tsc 通过；vitest 全量仅存量 Sidebar 2 例基线失败
 
+### 11.7 播放控制面板二次验收（悬浮 / 单例 / 当前行高亮）
+
+**验收反馈（2026-08-02）**：①播放界面在画面之外时需悬浮在顶部；②同时展开 2 个对话会显示 2 个播放界面（3 个则 3 个），需修复为单例；③正在播放的那句台词需加底色高亮（一个对话展开有很多句话）。
+
+**根因分析**：
+- ①②同源：`DialogPlayerBar` 此前渲染在 `DialogScript` 组件内部，而每个展开的对话都会实例化一个 `DialogScript`，导致每展开一个对话就多渲染一个控制面板；且它随对话内容流式滚动，离开视口后即不可见。
+- ③缺失：`DialogScript` 只通过 `LinePlayButton` 表达播放态（图标切换），当前行容器无视觉高亮。
+
+**修复方案**（commit，待提交）：
+- 单例控制面板：`DialogPlayerBar` 从 `DialogScript` 中移除，提升到 `StoryMissionDetail`/`MissionDetailContent` 顶层渲染一次（位于返回内容最前），无论展开多少个对话都只显示一个。
+- 悬浮置顶：面板改为 `sticky top-0 z-30` + `bg-archive-file/95 backdrop-blur shadow-lg`，滚动出对话区域后仍悬浮于页面顶部。
+- 当前行高亮：`DialogScript` 通过 `useDialogAudio` 取 `tracks[currentIndex]?.lineKey`，与每行 `line.key` 比对，命中行加 `bg-archive-gold/10` 底色并设 `data-active="true"`。
+
+**涉及文件**：`src/pages/story/DialogPlayerBar.tsx`（sticky + 单例宿主）、`src/pages/story/StoryMissionDetail.tsx`（顶层渲染 `DialogPlayerBar`）、`src/pages/story/DialogScript.tsx`（移除内部面板 + 当前行高亮）。
+
+**验证结果**：
+- ✅ E2E +3：HEAD 404 不显按钮（沿用）、「同时展开多个对话时控制面板只出现一个」（场06 + quest dlg_e1m3_2 双展开 → 1 个面板 + `data-active` 高亮行存在）、「控制面板 sticky 悬浮于页面顶部」（computed position=sticky + 滚动到底部仍在视口）；全量 33/33 通过
+- ✅ 单测 15/15、lint（verify-i18n PASSED）/ build / tsc 通过
+
 ---
 
 ## 12. 修复总览（§11 补充）
@@ -858,4 +877,7 @@ _activityStageId (dungeon_fighting_5)
 | 11.3 | 剧情场景不能展开完整对话 | 未接入 DialogTextTable 台词 | ✅ 已修复 | `a6366cb` |
 | 11.4 | endminf 音频 URL 404 | 未追加 `_f` 后缀 | ✅ 已修复 | `9c9c44b` |
 | 11.5 | 无摘要对话目标无展开按钮 | `dialogScene` 为 null 整块不渲染 | ✅ 已修复 | `96ca0c1` |
-| 11.6 | 音频播放需 HEAD 校验 + 队列 + 控制面板 | 功能未设计 | ✅ 已修复 | 本次提交 |
+| 11.6 | 音频播放需 HEAD 校验 + 队列 + 控制面板 | 功能未设计 | ✅ 已修复 | `c8f74c8` |
+| 11.7① | 播放界面不在画面内时不悬浮 | 面板随对话流滚动 | ✅ 已修复 | 本次提交 |
+| 11.7② | 展开多个对话出现多个播放界面 | 面板渲染在每个 DialogScript 内 | ✅ 已修复 | 本次提交 |
+| 11.7③ | 正在播放的台词无底色高亮 | 未标记当前行 | ✅ 已修复 | 本次提交 |

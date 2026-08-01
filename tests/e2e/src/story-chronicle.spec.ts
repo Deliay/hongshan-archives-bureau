@@ -380,4 +380,48 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await bar.getByRole('button', { name: 'Next' }).click()
     await expect(bar.getByText('dlg_e1m3_6_002', { exact: true })).toBeVisible({ timeout: 5000 })
   })
+
+  test('同时展开多个对话时控制面板只出现一个', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    // 展开剧情梗概场景（场06）的对话
+    const scene06 = page.locator('body').getByText('E1·M3·场06', { exact: true }).first()
+    await expect(scene06).toBeVisible({ timeout: 15000 })
+    await scene06.locator('..').getByRole('button', { name: '展开对话' }).click()
+    await expect(page.getByTestId('line-play-dlg_e1m3_6_001')).toBeVisible({ timeout: 10000 })
+    // 再展开一个 quest 对话目标（dlg_e1m3_2）的对话
+    const recapScenes = page.getByTestId('quest-recap-scene')
+    await expect(recapScenes.first()).toBeVisible({ timeout: 15000 })
+    let target: any = null
+    for (let i = 0; i < await recapScenes.count(); i++) {
+      const txt = await recapScenes.nth(i).textContent()
+      if (txt && txt.includes('dlg_e1m3_2')) { target = recapScenes.nth(i); break }
+    }
+    expect(target).not.toBeNull()
+    await target.getByRole('button', { name: '展开对话' }).click()
+    await expect(page.locator('body').getByText('dlg_e1m3_2_001', { exact: true }).first()).toBeVisible({ timeout: 10000 })
+    // 点击场06 第一条播放 → 控制面板只渲染一个
+    await page.getByTestId('line-play-dlg_e1m3_6_001').click()
+    await expect(page.getByTestId('dialog-player-bar')).toHaveCount(1)
+    // 播放时所在的那一行有高亮底色（data-active=true）
+    const activeLine = page.locator('[data-active="true"]')
+    await expect(activeLine).toBeVisible({ timeout: 5000 })
+  })
+
+  test('控制面板 sticky 悬浮于页面顶部', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const sceneCode = page.locator('body').getByText('E1·M3·场06', { exact: true }).first()
+    await expect(sceneCode).toBeVisible({ timeout: 15000 })
+    await sceneCode.locator('..').getByRole('button', { name: '展开对话' }).click()
+    await expect(page.getByTestId('line-play-dlg_e1m3_6_001')).toBeVisible({ timeout: 10000 })
+    await page.getByTestId('line-play-dlg_e1m3_6_001').click()
+    const bar = page.getByTestId('dialog-player-bar')
+    await expect(bar).toBeVisible({ timeout: 5000 })
+    // 面板使用 sticky 定位，滚动页面后仍可见于视口顶部
+    const position = await bar.evaluate(el => getComputedStyle(el).position)
+    expect(position).toBe('sticky')
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    await expect(bar).toBeInViewport({ timeout: 5000 })
+  })
 })

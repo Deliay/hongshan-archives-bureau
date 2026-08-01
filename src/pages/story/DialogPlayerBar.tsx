@@ -16,7 +16,10 @@ export function DialogPlayerBar() {
   if (!track) return null
   const pct = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0
   return (
-    <div data-testid="dialog-player-bar" className="mb-3 rounded border border-archive-gold/30 bg-archive-file/60 px-3 py-2">
+    <div
+      data-testid="dialog-player-bar"
+      className="sticky top-0 z-30 mb-3 rounded border border-archive-gold/30 bg-archive-file/95 px-3 py-2 shadow-lg backdrop-blur"
+    >
       <div className="flex items-center gap-2">
         <span className="text-[10px] uppercase tracking-wide text-archive-dust shrink-0">{t('story.audioNowPlaying')}</span>
         <span className="text-xs font-medium text-archive-gold truncate">{track.actorName}</span>

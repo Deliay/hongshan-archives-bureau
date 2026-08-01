@@ -10,6 +10,7 @@ import { RichText } from '../../lib/richText'
 import { buildMissionQuestTree } from '../../lib/adapter'
 import { ObjectiveCondition } from './ObjectiveCondition'
 import { DialogScript } from './DialogScript'
+import { DialogPlayerBar } from './DialogPlayerBar'
 import LevelDisplay from './LevelDisplay'
 import type { MissionQuestTreeNode, StoryRecapScene } from '../../lib/types'
 
@@ -47,6 +48,7 @@ export function MissionDetailContent({
 
   return (
     <div className={embedded ? '' : 'max-w-3xl mx-auto p-6'}>
+      <DialogPlayerBar />
       {!embedded && (
         <Link
           to="/archive/story/recap"
