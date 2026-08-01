@@ -355,7 +355,9 @@
     "dungeonCustom": "Individuelle Belohnungen",
     "dungeonExtra": "Zusätzliche Belohnungen",
     "dungeonHunter": "Belohnungen des Jägermodus",
-    "noScene": "Kein Geschichtstext"
+    "noScene": "Kein Geschichtstext",
+    "expandDialog": "Dialog anzeigen",
+    "collapseDialog": "Dialog ausblenden"
   },
   "update": {
     "added": "Hinzugefügt",

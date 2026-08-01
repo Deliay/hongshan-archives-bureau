@@ -453,6 +453,15 @@ export interface StoryRecapChapter {
   missions: StoryRecapMission[]
 }
 
+export interface DialogLine {
+  key: string
+  actorNameId: string
+  actorName: string
+  audioOverride: string
+  dialogText: string
+  emotionType: number
+}
+
 // ===== Mission Runtime (MissionRuntimeAsset) =====
 
 export interface MissionQuestObjective {

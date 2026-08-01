@@ -355,7 +355,9 @@
     "dungeonCustom": "Recompensas personalizadas",
     "dungeonExtra": "Recompensas extras",
     "dungeonHunter": "Recompensas do modo caçador",
-    "noScene": "Sem texto da história"
+    "noScene": "Sem texto da história",
+    "expandDialog": "Mostrar diálogo",
+    "collapseDialog": "Ocultar diálogo"
   },
   "update": {
     "added": "Adicionado",

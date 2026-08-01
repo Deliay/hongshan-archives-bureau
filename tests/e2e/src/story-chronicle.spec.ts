@@ -272,4 +272,20 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     const bodyText = await page.locator('body').textContent() || ''
     expect(bodyText).toContain('便携源石矿机')
   })
+
+  test('场景可展开完整对话（DialogTextTable + 说话人 + 音频按钮）', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    // 定位剧情梗概场景块中的 E1·M3·场06（首个出现），展开其完整对话
+    const sceneCode = page.locator('body').getByText('E1·M3·场06', { exact: true }).first()
+    await expect(sceneCode).toBeVisible({ timeout: 15000 })
+    await sceneCode.locator('..').getByRole('button', { name: '展开对话' }).click()
+    // DialogTextTable 中 dlg_e1m3_6_001 的说话人（actorName）与文本
+    await expect(page.locator('body').getByText('佩丽卡', { exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('body').getByText(/安德烈先生，我们把你要的东西找回来了/)).toBeVisible({ timeout: 5000 })
+    // actorNameId 文本行
+    await expect(page.locator('body').getByText('dlg_e1m3_6_001', { exact: true }).first()).toBeVisible({ timeout: 5000 })
+    // audioOverride 存在 → 播放按钮（aria-label="Play"）
+    await expect(page.locator('button[aria-label="Play"]').first()).toBeVisible({ timeout: 5000 })
+  })
 })

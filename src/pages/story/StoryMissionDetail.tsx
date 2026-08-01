@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMissionDetail, useMissionScenes } from '../../hooks/useData'
 import type { MissionConditionArgResolver } from '../../hooks/useData'
@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/Badge'
 import { RichText } from '../../lib/richText'
 import { buildMissionQuestTree } from '../../lib/adapter'
 import { ObjectiveCondition } from './ObjectiveCondition'
+import { DialogScript } from './DialogScript'
 import LevelDisplay from './LevelDisplay'
 import type { MissionQuestTreeNode, StoryRecapScene } from '../../lib/types'
 
@@ -98,10 +99,7 @@ export function MissionDetailContent({
         ) : scenes.data && scenes.data.length > 0 ? (
           <div className="space-y-4">
             {scenes.data.map(scene => (
-              <div key={scene.id} className="relative pl-6 border-l-2 border-archive-gold/30">
-                <div className="font-mono text-xs text-archive-gold mb-1">{scene.code}</div>
-                <p className="text-sm text-archive-ivory leading-relaxed">{scene.text}</p>
-              </div>
+              <SceneBlock key={scene.id} scene={scene} />
             ))}
           </div>
         ) : (
@@ -118,6 +116,31 @@ export function MissionDetailContent({
           ))}
         </div>
       </section>
+    </div>
+  )
+}
+
+function SceneBlock({ scene }: { scene: StoryRecapScene }) {
+  const { t } = useI18n()
+  const [expanded, setExpanded] = useState(false)
+  return (
+    <div className="relative pl-6 border-l-2 border-archive-gold/30">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="font-mono text-xs text-archive-gold">{scene.code}</div>
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="text-[11px] text-archive-dust hover:text-archive-gold transition-colors"
+        >
+          {expanded ? t('story.collapseDialog') : t('story.expandDialog')}
+        </button>
+      </div>
+      <p className="text-sm text-archive-ivory leading-relaxed">{scene.text}</p>
+      {expanded && (
+        <div className="mt-3">
+          <DialogScript dlgKey={scene.dlgId} />
+        </div>
+      )}
     </div>
   )
 }

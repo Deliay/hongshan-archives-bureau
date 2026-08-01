@@ -355,7 +355,9 @@
     "dungeonCustom": "Phần thưởng tùy chỉnh",
     "dungeonExtra": "Phần thưởng thêm",
     "dungeonHunter": "Phần thưởng chế độ thợ săn",
-    "noScene": "Không có văn bản cốt truyện"
+    "noScene": "Không có văn bản cốt truyện",
+    "expandDialog": "Hiển thị hội thoại",
+    "collapseDialog": "Ẩn hội thoại"
   },
   "update": {
     "added": "Đã thêm",

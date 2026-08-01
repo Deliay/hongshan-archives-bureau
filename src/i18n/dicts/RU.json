@@ -355,7 +355,9 @@
     "dungeonCustom": "Особые награды",
     "dungeonExtra": "Дополнительные награды",
     "dungeonHunter": "Награды режима охотника",
-    "noScene": "Нет текста сюжета"
+    "noScene": "Нет текста сюжета",
+    "expandDialog": "Показать диалог",
+    "collapseDialog": "Скрыть диалог"
   },
   "update": {
     "added": "Добавлено",

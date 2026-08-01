@@ -355,7 +355,9 @@
     "dungeonCustom": "รางวัลกำหนดเอง",
     "dungeonExtra": "รางวัลพิเศษ",
     "dungeonHunter": "รางวัลโหมดฮันเตอร์",
-    "noScene": "ไม่มีเนื้อเรื่อง"
+    "noScene": "ไม่มีเนื้อเรื่อง",
+    "expandDialog": "แสดงบทสนทนา",
+    "collapseDialog": "ซ่อนบทสนทนา"
   },
   "update": {
     "added": "เพิ่มแล้ว",

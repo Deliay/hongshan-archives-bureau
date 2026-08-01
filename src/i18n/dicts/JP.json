@@ -355,7 +355,9 @@
     "dungeonCustom": "カスタム報酬",
     "dungeonExtra": "追加報酬",
     "dungeonHunter": "ハンターモード報酬",
-    "noScene": "ストーリーテキストなし"
+    "noScene": "ストーリーテキストなし",
+    "expandDialog": "会話を表示",
+    "collapseDialog": "会話を隠す"
   },
   "update": {
     "added": "追加",

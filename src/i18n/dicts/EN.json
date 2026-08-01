@@ -355,7 +355,9 @@
     "dungeonCustom": "Custom rewards",
     "dungeonExtra": "Extra rewards",
     "dungeonHunter": "Hunter mode rewards",
-    "noScene": "No story text"
+    "noScene": "No story text",
+    "expandDialog": "Show dialog",
+    "collapseDialog": "Hide dialog"
   },
   "update": {
     "added": "Added",

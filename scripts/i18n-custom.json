@@ -6639,6 +6639,38 @@
     "ID": "Tidak ada teks cerita",
     "IT": "Nessun testo della storia"
   },
+  "story.expandDialog": {
+    "CN": "展开对话",
+    "TC": "展開對話",
+    "EN": "Show dialog",
+    "JP": "会話を表示",
+    "KR": "대화 보기",
+    "RU": "Показать диалог",
+    "MX": "Mostrar diálogo",
+    "BR": "Mostrar diálogo",
+    "DE": "Dialog anzeigen",
+    "FR": "Afficher le dialogue",
+    "VN": "Hiển thị hội thoại",
+    "TH": "แสดงบทสนทนา",
+    "ID": "Tampilkan dialog",
+    "IT": "Mostra dialogo"
+  },
+  "story.collapseDialog": {
+    "CN": "收起对话",
+    "TC": "收起對話",
+    "EN": "Hide dialog",
+    "JP": "会話を隠す",
+    "KR": "대화 숨기기",
+    "RU": "Скрыть диалог",
+    "MX": "Ocultar diálogo",
+    "BR": "Ocultar diálogo",
+    "DE": "Dialog ausblenden",
+    "FR": "Masquer le dialogue",
+    "VN": "Ẩn hội thoại",
+    "TH": "ซ่อนบทสนทนา",
+    "ID": "Sembunyikan dialog",
+    "IT": "Nascondi dialogo"
+  },
   "breadcrumb.recap": {
     "CN": "剧情梗概",
     "TC": "劇情梗概",

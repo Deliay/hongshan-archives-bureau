@@ -17,6 +17,8 @@ import {
   resolveLevelMapId,
   adaptMissionRuntime,
   buildMissionQuestTree,
+  adaptDialogLine,
+  buildDialogLines,
   type BakerSpeakerContext,
 } from '../adapter'
 import type { StoryRecapScene } from '../types'
@@ -73,6 +75,64 @@ describe('adaptRecapFallbackScene', () => {
     expect(result.chapterType).toBe('other')
     expect(result.chapterId).toBe('other')
     expect(result.code).toContain('bad_key')
+  })
+})
+
+describe('adaptDialogLine', () => {
+  const i18nMap = {
+    '330136286796346631': '佩丽卡',
+    '7588550129883126530': '安德烈先生，我们把你要的东西找回来了。',
+  }
+
+  it('maps actorNameId, audioOverride, dialogText and resolves i18n fields', () => {
+    const raw = {
+      actorName: { id: '330136286796346631', text: '' },
+      actorNameId: 'pelica',
+      audioOverride: 'au_dlg_e1m3_6_001',
+      dialogText: { id: '7588550129883126530', text: '' },
+      emotionType: 26,
+    }
+    const line = adaptDialogLine('dlg_e1m3_6_001', raw, i18nMap)
+    expect(line.key).toBe('dlg_e1m3_6_001')
+    expect(line.actorName).toBe('佩丽卡')
+    expect(line.actorNameId).toBe('pelica')
+    expect(line.audioOverride).toBe('au_dlg_e1m3_6_001')
+    expect(line.dialogText).toBe('安德烈先生，我们把你要的东西找回来了。')
+    expect(line.emotionType).toBe(26)
+  })
+
+  it('falls back to actorNameId when actorName has no i18n text', () => {
+    const line = adaptDialogLine('dlg_x_001', { actorName: { id: '0', text: '' }, actorNameId: 'andrew', dialogText: { text: 'hi' } }, i18nMap)
+    expect(line.actorName).toBe('andrew')
+    expect(line.dialogText).toBe('hi')
+  })
+
+  it('defaults missing fields', () => {
+    const line = adaptDialogLine('dlg_x_002', {}, i18nMap)
+    expect(line.actorNameId).toBe('')
+    expect(line.actorName).toBe('dlg_x_002')
+    expect(line.audioOverride).toBe('')
+    expect(line.dialogText).toBe('')
+    expect(line.emotionType).toBe(0)
+  })
+})
+
+describe('buildDialogLines', () => {
+  const i18nMap: Record<string, string> = {}
+
+  it('returns lines whose key starts with dlgKey_ sorted lexicographically', () => {
+    const raw = {
+      dlg_e1m3_6_005: { actorNameId: 'a', dialogText: { text: '5' } },
+      dlg_e1m3_6_001: { actorNameId: 'b', dialogText: { text: '1' } },
+      dlg_e1m3_6_002: { actorNameId: 'c', dialogText: { text: '2' } },
+      dlg_e1m3_7_001: { actorNameId: 'd', dialogText: { text: 'other' } },
+    }
+    const lines = buildDialogLines('dlg_e1m3_6', raw, i18nMap)
+    expect(lines.map(l => l.key)).toEqual(['dlg_e1m3_6_001', 'dlg_e1m3_6_002', 'dlg_e1m3_6_005'])
+  })
+
+  it('returns empty array when no matching keys', () => {
+    expect(buildDialogLines('dlg_zzz', { dlg_e1m3_6_001: {} }, i18nMap)).toEqual([])
   })
 })
 

@@ -1,4 +1,4 @@
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode } from './types'
+import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode } from './types'
 import { renderMissionCondition } from './missionCondition'
 import { ACTIVITY_TYPE_GROUPS } from '../data/constants'
 
@@ -333,6 +333,33 @@ export function adaptRecapFallbackScene(
     code: `${dlgKey}·${sceneLabel}--`,
     text: resolveI18n(summaryText, i18nMap),
   }
+}
+
+export function adaptDialogLine(
+  key: string,
+  raw: any,
+  i18nMap: Record<string, string> | undefined,
+): DialogLine {
+  return {
+    key,
+    actorNameId: raw?.actorNameId ?? '',
+    actorName: resolveI18n(raw?.actorName, i18nMap) || raw?.actorNameId || key,
+    audioOverride: raw?.audioOverride ?? '',
+    dialogText: resolveI18n(raw?.dialogText, i18nMap),
+    emotionType: raw?.emotionType ?? 0,
+  }
+}
+
+export function buildDialogLines(
+  dlgKey: string,
+  raw: Record<string, any>,
+  i18nMap: Record<string, string> | undefined,
+): DialogLine[] {
+  const prefix = `${dlgKey}_`
+  return Object.entries(raw)
+    .filter(([k]) => k.startsWith(prefix))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => adaptDialogLine(k, v, i18nMap))
 }
 
 type SortTuple = [string, number, number, number, number, number, number]

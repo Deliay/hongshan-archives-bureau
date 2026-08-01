@@ -355,7 +355,9 @@
     "dungeonCustom": "커스텀 보상",
     "dungeonExtra": "추가 보상",
     "dungeonHunter": "헌터 모드 보상",
-    "noScene": "스토리 텍스트 없음"
+    "noScene": "스토리 텍스트 없음",
+    "expandDialog": "대화 보기",
+    "collapseDialog": "대화 숨기기"
   },
   "update": {
     "added": "추가",

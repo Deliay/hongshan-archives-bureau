@@ -355,7 +355,9 @@
     "dungeonCustom": "定製獎勵",
     "dungeonExtra": "額外獎勵",
     "dungeonHunter": "獵手模式獎勵",
-    "noScene": "暫無劇情文本"
+    "noScene": "暫無劇情文本",
+    "expandDialog": "展開對話",
+    "collapseDialog": "收起對話"
   },
   "update": {
     "added": "新增",
