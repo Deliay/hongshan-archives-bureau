@@ -325,7 +325,21 @@
     "backToRecap": "Kembali ke ringkasan",
     "mainPath": "Jalur utama",
     "branch": "Cabang",
-    "noDescription": "Tidak ada deskripsi"
+    "noDescription": "Tidak ada deskripsi",
+    "objReachDestination": "Pergi ke {{area}} di {{map}}",
+    "objTalkOption": "Selesaikan dialog {{dialog}}",
+    "objQuestState": "Selesaikan tujuan {{quest}}",
+    "objMissionState": "Selesaikan misi {{mission}}",
+    "objStageStatus": "Selesaikan tahap aktivitas {{stage}}",
+    "objHasItem": "Memiliki {{item}}",
+    "objHasItemCount": "Memiliki {{item}} ×{{count}}",
+    "objHasMoney": "Punya {{count}} {{item}}",
+    "objAdventureLevel": "Capai level petualang {{level}}",
+    "objWorldLevel": "Capai level dunia {{level}}",
+    "objProgress": "Capai progres {{progress}}",
+    "objAnd": "dan",
+    "objOr": "atau",
+    "objNot": "bukan"
   },
   "update": {
     "added": "Ditambahkan",

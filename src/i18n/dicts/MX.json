@@ -325,7 +325,21 @@
     "backToRecap": "Volver al resumen",
     "mainPath": "Ruta principal",
     "branch": "Rama",
-    "noDescription": "Sin descripción"
+    "noDescription": "Sin descripción",
+    "objReachDestination": "Dirígete a {{area}} en {{map}}",
+    "objTalkOption": "Completa el diálogo {{dialog}}",
+    "objQuestState": "Completa el objetivo {{quest}}",
+    "objMissionState": "Completa la misión {{mission}}",
+    "objStageStatus": "Completa la etapa de actividad {{stage}}",
+    "objHasItem": "Posee {{item}}",
+    "objHasItemCount": "Posee {{count}}× {{item}}",
+    "objHasMoney": "Ten {{count}} {{item}}",
+    "objAdventureLevel": "Alcanza el nivel de aventurero {{level}}",
+    "objWorldLevel": "Alcanza el nivel mundial {{level}}",
+    "objProgress": "Alcanza el progreso {{progress}}",
+    "objAnd": "y",
+    "objOr": "o",
+    "objNot": "no"
   },
   "update": {
     "added": "Añadido",

@@ -325,7 +325,21 @@
     "backToRecap": "Quay lại tóm tắt",
     "mainPath": "Tuyến chính",
     "branch": "Nhánh",
-    "noDescription": "Không có mô tả"
+    "noDescription": "Không có mô tả",
+    "objReachDestination": "Đến {{area}} trong {{map}}",
+    "objTalkOption": "Hoàn thành hội thoại {{dialog}}",
+    "objQuestState": "Hoàn thành mục tiêu {{quest}}",
+    "objMissionState": "Hoàn thành nhiệm vụ {{mission}}",
+    "objStageStatus": "Hoàn thành giai đoạn hoạt động {{stage}}",
+    "objHasItem": "Sở hữu {{item}}",
+    "objHasItemCount": "Sở hữu {{count}}× {{item}}",
+    "objHasMoney": "Có {{count}} {{item}}",
+    "objAdventureLevel": "Đạt cấp độ phiêu lưu {{level}}",
+    "objWorldLevel": "Đạt cấp độ thế giới {{level}}",
+    "objProgress": "Đạt tiến độ {{progress}}",
+    "objAnd": "và",
+    "objOr": "hoặc",
+    "objNot": "không"
   },
   "update": {
     "added": "Đã thêm",

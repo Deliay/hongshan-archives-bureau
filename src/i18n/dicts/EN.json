@@ -325,7 +325,21 @@
     "backToRecap": "Back to recap",
     "mainPath": "Main Path",
     "branch": "Branch",
-    "noDescription": "No description"
+    "noDescription": "No description",
+    "objReachDestination": "Reach {{area}} in {{map}}",
+    "objTalkOption": "Finish dialogue {{dialog}}",
+    "objQuestState": "Complete objective {{quest}}",
+    "objMissionState": "Complete mission {{mission}}",
+    "objStageStatus": "Complete activity stage {{stage}}",
+    "objHasItem": "Hold {{item}}",
+    "objHasItemCount": "Hold {{count}}× {{item}}",
+    "objHasMoney": "Have {{count}} {{item}}",
+    "objAdventureLevel": "Reach adventure level {{level}}",
+    "objWorldLevel": "Reach world level {{level}}",
+    "objProgress": "Reach progress {{progress}}",
+    "objAnd": "and",
+    "objOr": "or",
+    "objNot": "not"
   },
   "update": {
     "added": "Added",

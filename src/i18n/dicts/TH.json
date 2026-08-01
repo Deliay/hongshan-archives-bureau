@@ -325,7 +325,21 @@
     "backToRecap": "กลับไปที่สรุป",
     "mainPath": "เส้นทางหลัก",
     "branch": "ทางแยก",
-    "noDescription": "ไม่มีคำอธิบาย"
+    "noDescription": "ไม่มีคำอธิบาย",
+    "objReachDestination": "ไปยัง {{area}} ใน {{map}}",
+    "objTalkOption": "จบบทสนทนา {{dialog}}",
+    "objQuestState": "ทำภารกิจเป้าหมาย {{quest}} ให้สำเร็จ",
+    "objMissionState": "ทำภารกิจ {{mission}} ให้สำเร็จ",
+    "objStageStatus": "ทำด่านกิจกรรม {{stage}} ให้สำเร็จ",
+    "objHasItem": "ถือครอง {{item}}",
+    "objHasItemCount": "ถือครอง {{item}} ×{{count}}",
+    "objHasMoney": "มี {{item}} {{count}}",
+    "objAdventureLevel": "ถึงระดับผจญภัย {{level}}",
+    "objWorldLevel": "ถึงระดับโลก {{level}}",
+    "objProgress": "ถึงความคืบหน้า {{progress}}",
+    "objAnd": "และ",
+    "objOr": "หรือ",
+    "objNot": "ไม่"
   },
   "update": {
     "added": "เพิ่มแล้ว",

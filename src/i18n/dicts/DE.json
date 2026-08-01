@@ -325,7 +325,21 @@
     "backToRecap": "Zurück zur Zusammenfassung",
     "mainPath": "Hauptweg",
     "branch": "Zweig",
-    "noDescription": "Keine Beschreibung"
+    "noDescription": "Keine Beschreibung",
+    "objReachDestination": "Erreiche {{area}} in {{map}}",
+    "objTalkOption": "Schließe Dialog {{dialog}} ab",
+    "objQuestState": "Schließe Ziel {{quest}} ab",
+    "objMissionState": "Schließe Mission {{mission}} ab",
+    "objStageStatus": "Schließe Aktivitätsstufe {{stage}} ab",
+    "objHasItem": "Besitze {{item}}",
+    "objHasItemCount": "Besitze {{count}}× {{item}}",
+    "objHasMoney": "Habe {{count}}× {{item}}",
+    "objAdventureLevel": "Erreiche Abenteuerstufe {{level}}",
+    "objWorldLevel": "Erreiche Weltstufe {{level}}",
+    "objProgress": "Erreiche Fortschritt {{progress}}",
+    "objAnd": "und",
+    "objOr": "oder",
+    "objNot": "nicht"
   },
   "update": {
     "added": "Hinzugefügt",

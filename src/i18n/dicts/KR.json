@@ -325,7 +325,21 @@
     "backToRecap": "요약으로 돌아가기",
     "mainPath": "메인 경로",
     "branch": "분기",
-    "noDescription": "설명 없음"
+    "noDescription": "설명 없음",
+    "objReachDestination": "{{map}}의 {{area}}로 이동",
+    "objTalkOption": "대화 {{dialog}} 완료",
+    "objQuestState": "임무 목표 {{quest}} 완료",
+    "objMissionState": "임무 {{mission}} 완료",
+    "objStageStatus": "활동 스테이지 {{stage}} 완료",
+    "objHasItem": "{{item}} 보유",
+    "objHasItemCount": "{{item}} {{count}}개 보유",
+    "objHasMoney": "{{item}} {{count}}개 보유",
+    "objAdventureLevel": "모험 레벨 {{level}} 달성",
+    "objWorldLevel": "월드 레벨 {{level}} 달성",
+    "objProgress": "진행도 {{progress}} 달성",
+    "objAnd": "및",
+    "objOr": "또는",
+    "objNot": "아님"
   },
   "update": {
     "added": "추가",

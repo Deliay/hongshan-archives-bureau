@@ -273,16 +273,25 @@ describe('high-frequency condition formatters', () => {
   })
 
   it('unregistered types still fall back to fields without args', () => {
+    const out = renderMissionCondition(cond('CheckSnapshotIdentifySuccess', {
+      _identifyGroupId: { constValue: 'grp_1' },
+      _progressToCompare: { constValue: 1 },
+    }))
+    expect(out!.type).toBe('CheckSnapshotIdentifySuccess')
+    expect(out!.args).toBeUndefined()
+    expect(out!.fields).toEqual([
+      { name: '_identifyGroupId', value: 'grp_1' },
+      { name: '_progressToCompare', value: 1 },
+    ])
+  })
+
+  it('GameConditionServerPlaceHolder maps progressToCompare as progress', () => {
     const out = renderMissionCondition(cond('GameConditionServerPlaceHolder', {
       _comparer: { constValue: 0 },
       _progressToCompare: { constValue: 1 },
     }))
     expect(out!.type).toBe('GameConditionServerPlaceHolder')
-    expect(out!.args).toBeUndefined()
-    expect(out!.fields).toEqual([
-      { name: '_comparer', value: 0 },
-      { name: '_progressToCompare', value: 1 },
-    ])
+    expect(out!.args).toEqual({ progress: 1 })
   })
 
   it('CombineCondition propagates formatter args to children', () => {

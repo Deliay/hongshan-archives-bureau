@@ -510,8 +510,8 @@ _activityStageId (dungeon_fighting_5)
 |------|------|------|
 | 阶段一 | `constValue` 解包 + `$type` 分派框架 + `CombineCondition` 递归 + 兜底；单测 | ✅ 已实施（commit `d15ae29`） |
 | 阶段二 | 高频类型格式化器（ReachDestination / CheckTalkOptionFinish / CheckQuestState / CheckMissionState / PlayerHasItem 系 / CheckActivityConditionalStageStatus） | ✅ 已实施（commit `a616130`） |
-| 阶段三 | 活动阶段链路数据接入（StageToActivity + CompleteCondition + DungeonFightingStage），任务/道具/区域名称深链 | ✅ 已实施（commit 见下） |
-| 阶段四 | 任务详情页目标节点接入渲染；UT / E2E + lint / test / build 验证 | 待实施 |
+| 阶段三 | 活动阶段链路数据接入（StageToActivity + CompleteCondition + DungeonFightingStage），任务/道具/区域名称深链 | ✅ 已实施（commit `5685fe7`） |
+| 阶段四 | 任务详情页目标节点接入渲染；UT / E2E + lint / test / build 验证 | ✅ 已实施（commit 见下） |
 
 **阶段一实现**（`src/lib/missionCondition.ts`，commit `d15ae29`）：
 
@@ -539,6 +539,16 @@ _activityStageId (dungeon_fighting_5)
 - 精度说明：`{id,text}` 大整数 id 依赖 api.ts `safeParse` 转字符串保留精度，`resolveI18n` 才能在 i18n 字典命中。
 - 端到端验证：a1m2-v2 的 6 个 `CheckActivityConditionalStageStatus` 目标均解析出阶段名与关联 quest（如 `a1m2_q#11 → dungeon_fighting_5 → a1m2_q#Day5`）。
 - 测试新增 4 例（`missionConditionNames.test.ts`）；lint / test / build 通过。
+
+**阶段四实现**（commit `TODO`，`src/lib/missionConditionText.ts` + `src/pages/story/ObjectiveCondition.tsx` + i18n 模板）：
+
+- `renderConditionText(render, t)` 纯函数：按 `render.type` 静态映射到 i18n 模板 key 并传入语义 args；`CombineCondition` 递归渲染子条件并把 `conditionEvalString` 中的 `{n}` 占位符与 `and/or/not` 运算词替换为本地化文案；未知类型回退 `fields`（`name: value`），无可渲染内容返回 `null`。
+- `GameConditionServerPlaceHolder`（1514 个，全量最多）补注册 formatter：`_progressToCompare → progress`，渲染「进度达到 {{progress}}」。
+- `ObjectiveCondition` 组件：`resolveConditionArgs` 解析名称后调 `renderConditionText`，`t` 走 `useI18n`。
+- `StoryMissionDetail`：目标节点 `<li>` 下挂载 `<ObjectiveCondition>`，quest 树递归传入 `resolveArg`；无 resolver 时（异常路径）直接渲染原始 args 不回退报错。
+- i18n 新增 14 个 `story.obj*` 模板 key（14 语言本土翻译，含 CN/EN/JP/KR/RU 等），经 `generate-i18n-dicts.ts` 重新生成；`verify-i18n` PASSED。
+- 真实数据验证：a1m2（6 个阶段 + 2 个对话 + 9 个进度条件）、m1m75（ReachDestination 解析出地图名）。
+- 测试新增 5 例（`missionConditionText.test.ts`，含 Combine and/or/not 与 fields 兜底）；E2E 新增 2 例（a1m2 阶段/对话、m1m75 地图/进度）；全量 lint / test / build 通过（仅存量 Sidebar 2 例基线失败）。
 
 ### 8.6 风险与待确认
 

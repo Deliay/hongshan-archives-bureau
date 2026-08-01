@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMissionDetail } from '../../hooks/useData'
+import type { MissionConditionArgResolver } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { Badge } from '../../components/ui/Badge'
 import { RichText } from '../../lib/richText'
 import { buildMissionQuestTree } from '../../lib/adapter'
+import { ObjectiveCondition } from './ObjectiveCondition'
 import type { MissionQuestTreeNode } from '../../lib/types'
 
 export default function StoryMissionDetail() {
@@ -13,6 +15,7 @@ export default function StoryMissionDetail() {
   const { t } = useI18n()
   const { data, loading, error } = useMissionDetail(missionId || '')
   const mission = data?.mission ?? null
+  const resolveArg = data?.conditionResolver?.resolveArg
 
   const tree = useMemo(
     () => (mission ? buildMissionQuestTree(mission.mainPathQuests, mission.quests) : []),
@@ -72,7 +75,7 @@ export default function StoryMissionDetail() {
         {tree.length === 0 && <p className="text-archive-dust text-sm">{t('common.empty')}</p>}
         <div className="space-y-3">
           {tree.map(root => (
-            <QuestNode key={root.questId} node={root} />
+            <QuestNode key={root.questId} node={root} resolveArg={resolveArg} />
           ))}
         </div>
       </section>
@@ -80,7 +83,7 @@ export default function StoryMissionDetail() {
   )
 }
 
-function QuestNode({ node }: { node: MissionQuestTreeNode }) {
+function QuestNode({ node, resolveArg }: { node: MissionQuestTreeNode; resolveArg?: MissionConditionArgResolver }) {
   const { t } = useI18n()
   return (
     <div>
@@ -94,10 +97,11 @@ function QuestNode({ node }: { node: MissionQuestTreeNode }) {
         <p className="text-sm text-archive-ivory leading-relaxed mt-1"><RichText text={node.description} /></p>
       )}
       {node.objectives.length > 0 && (
-        <ul className="list-none text-sm text-archive-dust space-y-0.5 mt-1">
+        <ul className="list-none text-sm text-archive-dust space-y-1 mt-1">
           {node.objectives.map(o => (
-            <li key={o.description || node.questId}>
-              {o.description ? <RichText text={o.description} /> : '·'}
+            <li key={o.description || o.condition?.type || node.questId} className="flex flex-col">
+              <span>{o.description ? <RichText text={o.description} /> : '·'}</span>
+              {o.condition && <ObjectiveCondition condition={o.condition} resolveArg={resolveArg} />}
             </li>
           ))}
         </ul>
@@ -110,7 +114,7 @@ function QuestNode({ node }: { node: MissionQuestTreeNode }) {
       {node.children.length > 0 && (
         <div className="ml-3 mt-1 pl-3 border-l border-archive-gold/20 space-y-3">
           {node.children.map(child => (
-            <QuestNode key={child.questId} node={child} />
+            <QuestNode key={child.questId} node={child} resolveArg={resolveArg} />
           ))}
         </div>
       )}

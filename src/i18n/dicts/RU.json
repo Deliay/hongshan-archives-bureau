@@ -325,7 +325,21 @@
     "backToRecap": "Назад к сводке",
     "mainPath": "Основной путь",
     "branch": "Ветка",
-    "noDescription": "Нет описания"
+    "noDescription": "Нет описания",
+    "objReachDestination": "Добраться до {{area}} в {{map}}",
+    "objTalkOption": "Завершить диалог {{dialog}}",
+    "objQuestState": "Выполнить цель {{quest}}",
+    "objMissionState": "Завершить задание {{mission}}",
+    "objStageStatus": "Завершить этап активности {{stage}}",
+    "objHasItem": "Обладать {{item}}",
+    "objHasItemCount": "Обладать {{item}} ×{{count}}",
+    "objHasMoney": "Иметь {{item}} ×{{count}}",
+    "objAdventureLevel": "Достичь приключенческого уровня {{level}}",
+    "objWorldLevel": "Достичь мирового уровня {{level}}",
+    "objProgress": "Достичь прогресса {{progress}}",
+    "objAnd": "и",
+    "objOr": "или",
+    "objNot": "не"
   },
   "update": {
     "added": "Добавлено",

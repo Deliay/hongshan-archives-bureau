@@ -152,4 +152,21 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await page.goto('/archive/story/recap')
     await expect(page.getByRole('link', { name: '档案局', exact: true })).toBeVisible({ timeout: 15000 })
   })
+
+  test('任务详情页目标节点渲染 condition 条件文本', async ({ page }) => {
+    await page.goto('/archive/story/mission/a1m2')
+    await expect(page.getByRole('heading', { name: /迟到的特训|a1m2/ })).toBeVisible({ timeout: 30000 })
+    const bodyText = await page.locator('body').textContent() || ''
+    expect(bodyText).toContain('任务目标')
+    expect(bodyText).toContain('完成活动阶段')
+    expect(bodyText).toContain('完成对话')
+  })
+
+  test('任务详情页目标节点渲染解析后的地图名称', async ({ page }) => {
+    await page.goto('/archive/story/mission/m1m75')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const bodyText = await page.locator('body').textContent() || ''
+    expect(bodyText).toContain('前往地图')
+    expect(bodyText).toContain('进度达到')
+  })
 })

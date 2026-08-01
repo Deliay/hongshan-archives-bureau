@@ -325,7 +325,21 @@
     "backToRecap": "返回剧情梗概",
     "mainPath": "主路径",
     "branch": "分支",
-    "noDescription": "暂无描述"
+    "noDescription": "暂无描述",
+    "objReachDestination": "前往地图 {{map}} 的 {{area}}",
+    "objTalkOption": "完成对话 {{dialog}}",
+    "objQuestState": "完成任务目标 {{quest}}",
+    "objMissionState": "完成任务 {{mission}}",
+    "objStageStatus": "完成活动阶段 {{stage}}",
+    "objHasItem": "持有 {{item}}",
+    "objHasItemCount": "持有 {{item}} ×{{count}}",
+    "objHasMoney": "拥有 {{count}} 个 {{item}}",
+    "objAdventureLevel": "冒险等级达到 {{level}}",
+    "objWorldLevel": "世界等级达到 {{level}}",
+    "objProgress": "进度达到 {{progress}}",
+    "objAnd": "且",
+    "objOr": "或",
+    "objNot": "非"
   },
   "update": {
     "added": "新增",

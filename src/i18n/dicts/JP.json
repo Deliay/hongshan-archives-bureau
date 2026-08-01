@@ -325,7 +325,21 @@
     "backToRecap": "要約に戻る",
     "mainPath": "メインルート",
     "branch": "分岐",
-    "noDescription": "説明なし"
+    "noDescription": "説明なし",
+    "objReachDestination": "マップ{{map}}の{{area}}へ向かう",
+    "objTalkOption": "会話「{{dialog}}」を完了する",
+    "objQuestState": "任務目標「{{quest}}」を達成する",
+    "objMissionState": "任務「{{mission}}」を完了する",
+    "objStageStatus": "アクティビティステージ「{{stage}}」を完了する",
+    "objHasItem": "{{item}}を所持する",
+    "objHasItemCount": "{{item}}を{{count}}個所持する",
+    "objHasMoney": "{{item}}を{{count}}個所持する",
+    "objAdventureLevel": "冒険レベル{{level}}に達する",
+    "objWorldLevel": "ワールドレベル{{level}}に達する",
+    "objProgress": "進行度{{progress}}に達する",
+    "objAnd": "かつ",
+    "objOr": "または",
+    "objNot": "なし"
   },
   "update": {
     "added": "追加",

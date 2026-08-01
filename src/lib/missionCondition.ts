@@ -104,6 +104,7 @@ registerArgFormatter('CheckMoney', { _moneyId: 'item', _progressToCompare: 'coun
 registerArgFormatter('CheckAdventureLevel', { _progressToCompare: 'level' })
 registerArgFormatter('CheckWorldLevel', { _progressToCompare: 'level' })
 registerArgFormatter('CheckUnlockWorldLevel', { _progressToCompare: 'level' })
+registerArgFormatter('GameConditionServerPlaceHolder', { _progressToCompare: 'progress' })
 
 export function renderMissionCondition(
   condition: unknown,

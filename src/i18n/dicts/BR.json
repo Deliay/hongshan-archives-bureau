@@ -325,7 +325,21 @@
     "backToRecap": "Voltar ao resumo",
     "mainPath": "Caminho principal",
     "branch": "Ramo",
-    "noDescription": "Sem descrição"
+    "noDescription": "Sem descrição",
+    "objReachDestination": "Vá até {{area}} em {{map}}",
+    "objTalkOption": "Complete o diálogo {{dialog}}",
+    "objQuestState": "Complete o objetivo {{quest}}",
+    "objMissionState": "Complete a missão {{mission}}",
+    "objStageStatus": "Complete a etapa da atividade {{stage}}",
+    "objHasItem": "Possua {{item}}",
+    "objHasItemCount": "Possua {{count}}× {{item}}",
+    "objHasMoney": "Tenha {{count}} {{item}}",
+    "objAdventureLevel": "Alcance o nível de aventureiro {{level}}",
+    "objWorldLevel": "Alcance o nível mundial {{level}}",
+    "objProgress": "Alcance o progresso {{progress}}",
+    "objAnd": "e",
+    "objOr": "ou",
+    "objNot": "não"
   },
   "update": {
     "added": "Adicionado",
