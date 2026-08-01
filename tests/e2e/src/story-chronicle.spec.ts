@@ -288,4 +288,22 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     // audioOverride 存在 → 播放按钮（aria-label="Play"）
     await expect(page.locator('button[aria-label="Play"]').first()).toBeVisible({ timeout: 5000 })
   })
+
+  test('quest 对话目标内联梗概可展开完整对话（dlg_e1m3_2）', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const recapScenes = page.getByTestId('quest-recap-scene')
+    await expect(recapScenes.first()).toBeVisible({ timeout: 15000 })
+    // 找到引用 dlg_e1m3_2 的目标场景块并展开
+    let target: any = null
+    for (let i = 0; i < await recapScenes.count(); i++) {
+      const txt = await recapScenes.nth(i).textContent()
+      if (txt && txt.includes('dlg_e1m3_2')) { target = recapScenes.nth(i); break }
+    }
+    expect(target).not.toBeNull()
+    await target.getByRole('button', { name: '展开对话' }).click()
+    // DialogTextTable dlg_e1m3_2_001 渲染出来，且有说话人与音频按钮
+    await expect(page.locator('body').getByText('dlg_e1m3_2_001', { exact: true }).first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('button[aria-label="Play"]').first()).toBeVisible({ timeout: 5000 })
+  })
 })
