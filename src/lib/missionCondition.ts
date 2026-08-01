@@ -9,7 +9,7 @@ export interface MissionConditionField {
 
 export interface MissionConditionRender {
   type: string
-  summary?: string
+  args?: Record<string, string | number>
   fields: MissionConditionField[]
   children?: MissionConditionRender[]
   combinedText?: string
@@ -67,6 +67,43 @@ export function extractConditionFields(condition: Record<string, unknown>): Miss
   }
   return fields
 }
+
+export function conditionField(
+  condition: Record<string, unknown>,
+  name: string,
+): string | number | boolean | null {
+  if (!(name in condition)) return null
+  return normalizeConditionValue(condition[name])
+}
+
+function argFormatter(type: string, argMap: Record<string, string>): ConditionFormatter {
+  return (condition) => {
+    const args: Record<string, string | number> = {}
+    for (const [rawName, argName] of Object.entries(argMap)) {
+      const value = conditionField(condition, rawName)
+      if (typeof value === 'string' && value !== '') args[argName] = value
+      else if (typeof value === 'number') args[argName] = value
+    }
+    return { type, args, fields: extractConditionFields(condition) }
+  }
+}
+
+function registerArgFormatter(type: string, argMap: Record<string, string>): void {
+  registerMissionConditionFormatter(type, argFormatter(type, argMap))
+}
+
+registerArgFormatter('ReachDestination', { _mapId: 'map', _areaId: 'area' })
+registerArgFormatter('CheckTalkOptionFinish', { _dialogId: 'dialog' })
+registerArgFormatter('CheckQuestState', { _questId: 'quest' })
+registerArgFormatter('CheckMissionState', { _missionId: 'mission' })
+registerArgFormatter('CheckActivityConditionalStageStatus', { _activityStageId: 'stage' })
+registerArgFormatter('PlayerHasItem', { _itemId: 'item', _progressToCompare: 'count' })
+registerArgFormatter('PlayerHasItemInItemBag', { _itemId: 'item', _progressToCompare: 'count' })
+registerArgFormatter('WeekRaidPlayerHasItem', { _itemId: 'item' })
+registerArgFormatter('CheckMoney', { _moneyId: 'item', _progressToCompare: 'count' })
+registerArgFormatter('CheckAdventureLevel', { _progressToCompare: 'level' })
+registerArgFormatter('CheckWorldLevel', { _progressToCompare: 'level' })
+registerArgFormatter('CheckUnlockWorldLevel', { _progressToCompare: 'level' })
 
 export function renderMissionCondition(
   condition: unknown,

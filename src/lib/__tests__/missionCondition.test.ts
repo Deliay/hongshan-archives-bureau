@@ -99,7 +99,7 @@ describe('renderMissionCondition', () => {
     const out = renderMissionCondition(checkStage)
     expect(out).not.toBeNull()
     expect(out!.type).toBe('CheckActivityConditionalStageStatus')
-    expect(out!.summary).toBeUndefined()
+    expect(out!.args).toEqual({ stage: 'dungeon_fighting_5' })
     expect(out!.fields).toEqual([
       { name: '_activityStageId', value: 'dungeon_fighting_5' },
       { name: '_comparer', value: 3 },
@@ -146,33 +146,33 @@ describe('renderMissionCondition', () => {
   })
 
   it('dispatches to registered formatter and passes context', () => {
-    registerMissionConditionFormatter('CheckTalkOptionFinish', (cond, ctx) => ({
-      type: 'CheckTalkOptionFinish',
-      summary: `talk ${(cond._dialogId as any).constValue} ${ctx.resolveText?.('x') ?? ''}`.trim(),
+    registerMissionConditionFormatter('PhonyFormatter', (cond) => ({
+      type: 'PhonyFormatter',
+      args: { dialog: (cond._dialogId as any).constValue },
       fields: [],
     }))
     const out = renderMissionCondition(
       {
-        $type: 'Beyond.Gameplay.CheckTalkOptionFinish, Gameplay.Beyond',
+        $type: 'Beyond.Gameplay.PhonyFormatter, Gameplay.Beyond',
         _dialogId: { constValue: 'dlg_a1m2_3' },
         _finishId: { constValue: -1 },
       },
       { resolveText: (k) => `T:${k}` },
     )
     expect(out).not.toBeNull()
-    expect(out!.type).toBe('CheckTalkOptionFinish')
-    expect(out!.summary).toBe('talk dlg_a1m2_3 T:x')
+    expect(out!.type).toBe('PhonyFormatter')
+    expect(out!.args).toEqual({ dialog: 'dlg_a1m2_3' })
     expect(out!.fields).toEqual([])
   })
 
   it('falls back to fields when formatter returns null', () => {
-    registerMissionConditionFormatter('CheckMoney', () => null)
+    registerMissionConditionFormatter('NullFormatter', () => null)
     const out = renderMissionCondition({
-      $type: 'Beyond.Gameplay.CheckMoney, Gameplay.Beyond',
+      $type: 'Beyond.Gameplay.NullFormatter, Gameplay.Beyond',
       _moneyId: { constValue: 'item_1001' },
       _progressToCompare: { constValue: 100 },
     })
-    expect(out!.type).toBe('CheckMoney')
+    expect(out!.type).toBe('NullFormatter')
     expect(out!.fields).toEqual([
       { name: '_moneyId', value: 'item_1001' },
       { name: '_progressToCompare', value: 100 },
@@ -183,5 +183,119 @@ describe('renderMissionCondition', () => {
     expect(renderMissionCondition(null)).toBeNull()
     expect(renderMissionCondition(undefined)).toBeNull()
     expect(renderMissionCondition('nope')).toBeNull()
+  })
+})
+
+describe('high-frequency condition formatters', () => {
+  const cond = (type: string, extra: Record<string, unknown>) => ({
+    $type: `Beyond.Gameplay.${type}, Gameplay.Beyond`,
+    uniqueId: 'u',
+    scopeMask: 1,
+    useGraphScope: true,
+    ...extra,
+  })
+
+  it('ReachDestination maps map and area', () => {
+    const out = renderMissionCondition(cond('ReachDestination', {
+      _areaId: { constValue: 'e11m3_006' },
+      _mapId: { constValue: 'map02_lv008' },
+    }))
+    expect(out!.type).toBe('ReachDestination')
+    expect(out!.args).toEqual({ map: 'map02_lv008', area: 'e11m3_006' })
+  })
+
+  it('CheckTalkOptionFinish maps dialog id', () => {
+    const out = renderMissionCondition(cond('CheckTalkOptionFinish', {
+      _dialogId: { constValue: 'dlg_a1m2_3' },
+      _finishId: { constValue: -1 },
+    }))
+    expect(out!.args).toEqual({ dialog: 'dlg_a1m2_3' })
+  })
+
+  it('CheckQuestState maps quest id', () => {
+    const out = renderMissionCondition(cond('CheckQuestState', {
+      _questId: { constValue: 'gm02m21_q#2' },
+      _comparer: { constValue: 0 },
+      _targetQuestState: { constValue: 3 },
+    }))
+    expect(out!.args).toEqual({ quest: 'gm02m21_q#2' })
+  })
+
+  it('CheckMissionState maps mission id', () => {
+    const out = renderMissionCondition(cond('CheckMissionState', {
+      _missionId: { constValue: 'e2m8' },
+      _targetMissionState: { constValue: 3 },
+    }))
+    expect(out!.args).toEqual({ mission: 'e2m8' })
+  })
+
+  it('CheckActivityConditionalStageStatus maps activity stage id', () => {
+    const out = renderMissionCondition(cond('CheckActivityConditionalStageStatus', {
+      _activityStageId: { constValue: 'dungeon_fighting_5' },
+      _comparer: { constValue: 3 },
+      _progressToCompare: { constValue: 1 },
+    }))
+    expect(out!.args).toEqual({ stage: 'dungeon_fighting_5' })
+  })
+
+  it('PlayerHasItem / PlayerHasItemInItemBag map item and count', () => {
+    const a = renderMissionCondition(cond('PlayerHasItem', {
+      _itemId: { constValue: 'item_plant_mushroom_1_3' },
+      _progressToCompare: { constValue: 1 },
+    }))
+    expect(a!.args).toEqual({ item: 'item_plant_mushroom_1_3', count: 1 })
+    const b = renderMissionCondition(cond('PlayerHasItemInItemBag', {
+      _itemId: { constValue: 'item_1002' },
+      _progressToCompare: { constValue: 5 },
+    }))
+    expect(b!.args).toEqual({ item: 'item_1002', count: 5 })
+  })
+
+  it('WeekRaidPlayerHasItem maps item without count', () => {
+    const out = renderMissionCondition(cond('WeekRaidPlayerHasItem', {
+      _itemId: { constValue: 'item_1003' },
+    }))
+    expect(out!.args).toEqual({ item: 'item_1003' })
+  })
+
+  it('CheckMoney maps item and count', () => {
+    const out = renderMissionCondition(cond('CheckMoney', {
+      _moneyId: { constValue: 'item_1001' },
+      _progressToCompare: { constValue: 100 },
+    }))
+    expect(out!.args).toEqual({ item: 'item_1001', count: 100 })
+  })
+
+  it('level checks map progressToCompare as level', () => {
+    expect(renderMissionCondition(cond('CheckAdventureLevel', { _progressToCompare: { constValue: 25 } }))!.args).toEqual({ level: 25 })
+    expect(renderMissionCondition(cond('CheckWorldLevel', { _progressToCompare: { constValue: 2 } }))!.args).toEqual({ level: 2 })
+    expect(renderMissionCondition(cond('CheckUnlockWorldLevel', { _progressToCompare: { constValue: 1 } }))!.args).toEqual({ level: 1 })
+  })
+
+  it('unregistered types still fall back to fields without args', () => {
+    const out = renderMissionCondition(cond('GameConditionServerPlaceHolder', {
+      _comparer: { constValue: 0 },
+      _progressToCompare: { constValue: 1 },
+    }))
+    expect(out!.type).toBe('GameConditionServerPlaceHolder')
+    expect(out!.args).toBeUndefined()
+    expect(out!.fields).toEqual([
+      { name: '_comparer', value: 0 },
+      { name: '_progressToCompare', value: 1 },
+    ])
+  })
+
+  it('CombineCondition propagates formatter args to children', () => {
+    const out = renderMissionCondition({
+      $type: 'Beyond.Gameplay.CombineCondition, Gameplay.Beyond',
+      conditionEvalString: '{0} and {1}',
+      subConditions: [
+        cond('CheckMissionState', { _missionId: { constValue: 'e2m8' } }),
+        cond('CheckAdventureLevel', { _progressToCompare: { constValue: 25 } }),
+      ],
+    })
+    expect(out!.children).toHaveLength(2)
+    expect(out!.children![0].args).toEqual({ mission: 'e2m8' })
+    expect(out!.children![1].args).toEqual({ level: 25 })
   })
 })
