@@ -7,10 +7,12 @@ type: Fleeting
 
 **功能名称**: 剧情纪事（Story Chronicle）—— archive/story 模块重构 + Baker 新模块
 **关联 PRD**: [[20260730-story-chronicle|剧情纪事]]
-**技术提案版本**: v1.3
+**技术提案版本**: v1.4
 **创建日期**: 2026-07-30
 **作者**: 前端工程
 **feat-branch**: `feat/story-chronicle`
+
+**v1.4 变更（验收修订，2026-08-02）**: 依据验收报告同步最终实现形态——剧情梗概导航改以 `MissionRuntimeAsset` 任务文件为权威源（master-detail），新增任务详情页与 MRA 数据源（`fetchMissionList` / `fetchMissionDetail`）；章节类型标签改为前缀字母；Baker topic 移入左侧列表、topic 加入 URL 参数、全视口固定壳、双方头像；RichText `<image>` 富文本按前缀区分 `sns/emoji/` / `sns/sticker/` 子目录。差异详见 §13。
 
 **v1.3 变更**: 清理 v1.2 更名后的旧称遗留（纪事长卷→剧情梗概、馆藏文库→PRTS 文库）；补充 dlg key 四种变体格式；数据复核修正（分支点 931→999、测试类型 ~31→7）；明确分支点节点本身无消息文本；说明 DialogSummaryTable 1143 条中 1078 条被映射。
 
@@ -543,3 +545,37 @@ docs/engineering/references/data-mapping-tables.md  # 新表映射
 - [数据表映射参考](../references/data-mapping-tables.md)
 - [数据层常见陷阱](../references/data-pitfalls.md)
 - [富文本规范参考](../references/rich-text-spec.md)
+- [[../test/20260731-story-chronicle-acceptance-report|剧情纪事验收报告]]
+
+## 13. 验收修订（2026-08-02，与验收报告对齐）
+
+> 本节记录 v1.3 提案与最终实现之间的差异，全部细节以验收报告为准。新增功能与 §2 数据探查无冲突，属于实现阶段增量。
+
+### 13.1 剧情梗概：任务文件驱动 + master-detail
+
+- **导航数据源升级**：recap 左侧导航不再由 `DialogSummaryMapTable` 的 dlg key 前缀推导，改为以 `MissionRuntimeAsset` 任务列表为权威源（490 任务）驱动分组，场景经 dlg 解析挂接到对应任务；幽灵任务（无任务文件，如 `c1m1`）被过滤，无场景任务（`hidden*`）保留并展示「暂无剧情文本」占位（新增纯函数 `buildRecapChaptersFromMissions`）。
+- **页面形态**：原「篇章导航 + 梗概流」升级为 master-detail——左侧 a-z 分组任务导航，右侧内嵌任务详情（复用 `MissionDetailContent`），路由 `?mission={missionId}` 同步选中项（§10 验收报告）。
+- **章节类型标签**：原「主线/支线/干员故事」臆测分类名移除，改为原始前缀字母（E/SM/A/DB/OTHER）；分区正式规则待 `missionType`/`charId` 数据驱动方案产品确认（§2.4 / §7.1.4 验收报告）。
+
+### 13.2 新增任务详情页与 MRA 数据源
+
+- 新数据源：`MissionRuntimeAsset`（vfs JsonData 端点，490 任务）。`src/lib/api.ts` 新增 `fetchMissionList` / `fetchMissionDetail`；`useData.ts` 新增 `useMissionCatalog` / `useMissionDetail`。
+- 新页面：`/archive/story/mission/:missionId`（`StoryMissionDetail.tsx`），展示任务名（`missionName.key` 权威解析）、任务描述、目标树（`mainPathQuests` 主路径 + 分支 quest）、剧情梗概与场景对话展开、活动阶段/奖励/dungeon 面板。
+- **文本解析铁律**：文本字段一律以字段自身承载的 `{key}` 为准（`missionName.key` / `missionDescription.key`），**禁止按 `{missionId}_xxx` 拼接推导**；`{missionId}_name` 仅在字段缺省时兜底；字段值可能是 `{key}` / 直接字符串 / 空三种形态（§7.1.3 验收报告）。
+
+### 13.3 Baker 差异
+
+- **topic 位置**：topic 列表移入左侧联系人列表（`BakerContactList`）选中项下方展开，默认选中第一个，无顶部 topic 条；`beats` 过滤为「仅当前 topic 对话」，主线不再混入，切换 topic 首条消息随之变化（§13/§14 验收报告）。
+- **URL 参数**：`/archive/baker?chat={chatId}&topic={topicId}` 双参数直达；点击 topic 同步 URL，切换聊天清除 topic；URL 直达时左侧 `data-topic-id` + `scrollIntoView` 定位（§14.6）。
+- **布局**：根容器改为全视口固定壳 `fixed inset-0 md:left-60 z-10 overflow-hidden`，左右分栏 `overflow-hidden` 各自内部滚动，页面无窗口级滚动条（§14.1）。
+- **头像**：删除 `showAvatar` 开关，双方恒定渲染头像（self 用 `selfIconUrl`），无图渲染圆形占位；「我」气泡 `flex-row-reverse` + `items-end` 贴右缘（§14.2）。
+- **topic 过滤语义**：`activeTopic` 存在时只渲染该 topic 所属对话（§14.3）。
+
+### 13.4 RichText `<image>` 富文本 emoji/sticker 子目录
+
+- 对话正文富文本 `<image="sns_emoji_005">` 原经 `getUISprite` 直接拼 `sprites/{path}.png` 漏掉子目录（404）。`getUISprite`（`src/lib/richText.tsx`）按前缀区分：`sns_emoji_*` → `sns/emoji/`、`sns_sticker_*` → `sns/sticker/`，其余不变（§14.5 / commit `c7bab95`）。
+- Baker 选项/reaction 路径统一走 `getSnsAssetUrl`（`src/lib/baker.ts`），与 `getUISprite` 规则一致。
+
+### 13.5 剧情梗概导航数据源（recap）同步修正
+
+- `DialogSummaryMapTable` dlg key 解析的 206 个任务与 MRA 对比：204 个命中，`c1m1` 不在列表；任务名统一经 `TextTable["{missionId}_name"]` 或 `AllBrief MissionRuntimeAsset` 解析（§7.1 / §11.0 验收报告）。

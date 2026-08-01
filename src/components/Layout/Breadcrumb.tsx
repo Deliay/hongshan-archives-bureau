@@ -19,6 +19,9 @@ function useListLabel(): Record<string, string> {
     chains: t('factory.chains'),
     search: t('nav.search'),
     story: t('nav.story'),
+    recap: t('breadcrumb.recap'),
+    library: t('breadcrumb.library'),
+    baker: t('breadcrumb.baker'),
     activities: t('nav.activities'),
     updates: t('nav.updates'),
     professions: t('profession.title'),
@@ -102,8 +105,8 @@ export default function Breadcrumb() {
       {segments.length >= 3 && (
         <>
           <span className="mx-1 text-archive-lead">›</span>
-          {isSubRoute ? (
-            <Badge variant="ghost">{listLabel[detailId] ?? detailId}</Badge>
+          {listLabel[detailId] ? (
+            <Badge variant="ghost">{listLabel[detailId]}</Badge>
           ) : (
             <DetailLabel listKey={listKey} id={detailId} />
           )}

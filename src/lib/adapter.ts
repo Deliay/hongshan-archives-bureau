@@ -1,7 +1,12 @@
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange } from './types'
+import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode } from './types'
+import { renderMissionCondition } from './missionCondition'
 import { ACTIVITY_TYPE_GROUPS } from '../data/constants'
 
 export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
+
+export function getSpriteUrl(path: string): string {
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/${path}.png`
+}
 
 export function resolveI18n(field: { id?: number | string; text?: string } | null | undefined, i18nMap?: Record<string, string>): string {
   if (!field) return ''
@@ -280,4 +285,449 @@ export function adaptActivity(
 
 // ---------- helpers ----------
 
+// ===== Story Chronicle =====
+
+const DLG_KEY_RE = /^dlg_([a-z]+)(\d+)(?:l(\d+))?m(\d+)(?:d(\d+))?_(\d+)(?:d(\d+))?$/
+
+export function adaptRecapScene(
+  dlgKey: string,
+  summaryId: string,
+  summaryText: { id?: number | string; text?: string },
+  i18nMap: Record<string, string> | undefined,
+  sceneLabel: string,
+): StoryRecapScene | null {
+  const m = DLG_KEY_RE.exec(dlgKey)
+  if (!m) return null
+  const [, chapterType, chapterNum, lvNum, missionNum, missionSub, sceneNo, sceneSub] = m
+  const chapterId = `${chapterType}${chapterNum}`
+  const missionId = `${chapterId}${lvNum ? `l${lvNum}` : ''}m${missionNum}${missionSub ? `d${missionSub}` : ''}`
+  const code = `${chapterId.toUpperCase()}·M${missionNum}·${sceneLabel}${String(sceneNo).padStart(2, '0')}${sceneSub ? `d${sceneSub}` : ''}`
+  return {
+    id: summaryId,
+    dlgId: dlgKey,
+    chapterId,
+    missionId,
+    sceneNo: Number(sceneNo),
+    sceneSub: sceneSub ? Number(sceneSub) : 0,
+    chapterType,
+    code,
+    text: resolveI18n(summaryText, i18nMap),
+  }
+}
+
+export function adaptRecapFallbackScene(
+  dlgKey: string,
+  summaryId: string,
+  summaryText: { id?: number | string; text?: string },
+  i18nMap: Record<string, string> | undefined,
+  sceneLabel: string,
+): StoryRecapScene {
+  return {
+    id: summaryId,
+    dlgId: dlgKey,
+    chapterId: 'other',
+    missionId: dlgKey,
+    sceneNo: 0,
+    sceneSub: 0,
+    chapterType: 'other',
+    code: `${dlgKey}·${sceneLabel}--`,
+    text: resolveI18n(summaryText, i18nMap),
+  }
+}
+
+export function adaptDialogLine(
+  key: string,
+  raw: any,
+  i18nMap: Record<string, string> | undefined,
+): DialogLine {
+  const actorNameId = raw?.actorNameId ?? ''
+  let audioOverride = raw?.audioOverride ?? ''
+  if (actorNameId === 'endminf' && audioOverride) {
+    audioOverride = `${audioOverride}_f`
+  }
+  return {
+    key,
+    actorNameId,
+    actorName: resolveI18n(raw?.actorName, i18nMap) || actorNameId || key,
+    audioOverride,
+    dialogText: resolveI18n(raw?.dialogText, i18nMap),
+    emotionType: raw?.emotionType ?? 0,
+  }
+}
+
+export function buildDialogLines(
+  dlgKey: string,
+  raw: Record<string, any>,
+  i18nMap: Record<string, string> | undefined,
+): DialogLine[] {
+  const prefix = `${dlgKey}_`
+  return Object.entries(raw)
+    .filter(([k]) => k.startsWith(prefix))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => adaptDialogLine(k, v, i18nMap))
+}
+
+type SortTuple = [string, number, number, number, number, number, number]
+
+function dlgSortKey(s: StoryRecapScene): SortTuple {
+  const m = DLG_KEY_RE.exec(s.dlgId)
+  if (!m) return [s.chapterType, 999, 0, 999, 0, 999, 0]
+  const [, ct, cn, lv, mn, md, sn, sd] = m
+  return [ct, Number(cn), Number(lv ?? 0), Number(mn), Number(md ?? 0), Number(sn), Number(sd ?? 0)]
+}
+
+function compareTuple(a: SortTuple, b: SortTuple): number {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] === b[i]) continue
+    return typeof a[i] === 'string'
+      ? (a[i] as string).localeCompare(b[i] as string)
+      : (a[i] as number) - (b[i] as number)
+  }
+  return 0
+}
+
+export function adaptRecapChapter(scenes: StoryRecapScene[], missionNameMap?: Record<string, string>): StoryRecapChapter[] {
+  const sorted = [...scenes].sort((a, b) => compareTuple(dlgSortKey(a), dlgSortKey(b)))
+  const chapters: StoryRecapChapter[] = []
+  let chapter: StoryRecapChapter | null = null
+  let mission: StoryRecapMission | null = null
+  for (const s of sorted) {
+    if (!chapter || chapter.chapterId !== s.chapterId) {
+      chapter = { chapterId: s.chapterId, chapterType: s.chapterType, missions: [] }
+      chapters.push(chapter)
+      mission = null
+    }
+    if (!mission || mission.missionId !== s.missionId) {
+      mission = { missionId: s.missionId, name: missionNameMap?.[s.missionId] || s.missionId, scenes: [] }
+      chapter.missions.push(mission)
+    }
+    mission.scenes.push(s)
+  }
+  return chapters
+}
+
+const MISSION_GROUP_RE = /^([a-z]+)\d/
+
+const CHAPTER_ORDER_PRIORITY: Record<string, number> = {
+  e: 0,
+  c: 1,
+  gm: 2,
+  sm: 3,
+  m: 4,
+}
+
+function chapterPriority(chapterType: string): number {
+  return CHAPTER_ORDER_PRIORITY[chapterType] ?? 10
+}
+
+function missionSortKey(id: string): SortTuple {
+  const m = DLG_KEY_RE.exec(`dlg_${id}_1`)
+  if (m) {
+    const [, ct, cn, lv, mn, md, sn, sd] = m
+    return [ct, Number(cn), Number(lv ?? 0), Number(mn), Number(md ?? 0), Number(sn), Number(sd ?? 0)]
+  }
+  return [id, 0, 0, 0, 0, 0, 0]
+}
+
+export function buildRecapChaptersFromMissions(
+  missionIds: string[],
+  scenes: StoryRecapScene[],
+  missionNameMap?: Record<string, string>,
+): StoryRecapChapter[] {
+  const sceneByMission = new Map<string, StoryRecapScene[]>()
+  for (const s of scenes) {
+    const arr = sceneByMission.get(s.missionId)
+    if (arr) arr.push(s)
+    else sceneByMission.set(s.missionId, [s])
+  }
+  const chapters = new Map<string, StoryRecapChapter>()
+  for (const id of missionIds) {
+    const group = MISSION_GROUP_RE.exec(id)?.[1] ?? 'other'
+    if (!chapters.has(group)) {
+      chapters.set(group, { chapterId: group, chapterType: group, missions: [] })
+    }
+    const chapter = chapters.get(group)!
+    const missionScenes = (sceneByMission.get(id) ?? []).sort((a, b) => compareTuple(dlgSortKey(a), dlgSortKey(b)))
+    chapter.missions.push({
+      missionId: id,
+      name: missionNameMap?.[id] || id,
+      scenes: missionScenes,
+    })
+  }
+  const result = [...chapters.values()].sort((a, b) => {
+    const pa = chapterPriority(a.chapterType)
+    const pb = chapterPriority(b.chapterType)
+    if (pa !== pb) return pa - pb
+    return a.chapterType.localeCompare(b.chapterType)
+  })
+  for (const ch of result) {
+    ch.missions.sort((a, b) => compareTuple(missionSortKey(a.missionId), missionSortKey(b.missionId)))
+  }
+  return result
+}
+
+// ===== Mission Runtime (MissionRuntimeAsset) =====
+
+export type RuntimeTextField = { key?: string } | string | null | undefined
+
+export function resolveRuntimeText(field: RuntimeTextField, resolveKey?: (key: string) => string): string {
+  if (typeof field === 'string') return field
+  if (field && typeof field.key === 'string' && field.key) {
+    return resolveKey?.(field.key) || field.key
+  }
+  return ''
+}
+
+export function extractMissionIds(paths: string[]): string[] {
+  const ids: string[] = []
+  for (const p of paths) {
+    const m = /^Data\/Json\/MissionRuntimeAsset\/(.+)\.json$/.exec(p)
+    if (!m || m[1].endsWith('_meta')) continue
+    ids.push(m[1])
+  }
+  return ids
+}
+
+export function buildMissionNameMapFromBrief(
+  brief: any[],
+  resolveKey?: (key: string) => string,
+): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const entry of brief ?? []) {
+    const id = entry?.missionId
+    if (!id) continue
+    const name = resolveRuntimeText(entry?.missionName, resolveKey)
+    if (name) map[id] = name
+  }
+  return map
+}
+
+export function resolveLevelMapId(levelId: string, mapRaw?: Record<string, any>): string | null {
+  if (!levelId) return null
+  if (mapRaw?.[levelId]) return levelId
+  const stripped = levelId.replace(/_lv\d+$/, '')
+  if (stripped !== levelId && mapRaw?.[stripped]) return stripped
+  return null
+}
+
+export function adaptMissionQuest(
+  questId: string,
+  quest: any,
+  mainPathSet: Set<string>,
+  resolveKey?: (key: string) => string,
+): MissionQuest {
+  const objectives: MissionQuestObjective[] = (quest?.objectiveList ?? []).map((o: any) => {
+    const objective: MissionQuestObjective = {
+      description: resolveRuntimeText(o?.description, resolveKey),
+    }
+    const condition = renderMissionCondition(o?.condition, { resolveText: resolveKey })
+    if (condition) objective.condition = condition
+    return objective
+  })
+  const description = quest?.overrideMissionDesc
+    ? resolveRuntimeText(quest?.descriptionOverride, resolveKey)
+    : ''
+  return {
+    questId,
+    questType: quest?.questType ?? 0,
+    inMainPath: mainPathSet.has(questId),
+    flowIndex: quest?.flowIndex ?? 0,
+    prevQuestIds: quest?.prevQuestIdList ?? [],
+    description,
+    objectives,
+  }
+}
+
+export function adaptMissionRuntime(
+  raw: any,
+  resolveKey?: (key: string) => string,
+): MissionRuntime {
+  const mainPathQuests: string[] = raw?.mainPathQuests ?? []
+  const mainPathSet = new Set(mainPathQuests)
+  const quests: MissionQuest[] = Object.entries(raw?.questDic ?? {})
+    .map(([questId, quest]) => adaptMissionQuest(questId, quest, mainPathSet, resolveKey))
+    .sort((a, b) => {
+      if (a.inMainPath !== b.inMainPath) return a.inMainPath ? -1 : 1
+      const ia = mainPathQuests.indexOf(a.questId)
+      const ib = mainPathQuests.indexOf(b.questId)
+      if (ia !== -1 && ib !== -1) return ia - ib
+      if (ia !== -1) return -1
+      if (ib !== -1) return 1
+      return a.questId.localeCompare(b.questId)
+    })
+  return {
+    missionId: raw?.missionId ?? '',
+    name: resolveRuntimeText(raw?.missionName, resolveKey),
+    description: resolveRuntimeText(raw?.missionDescription, resolveKey),
+    missionType: raw?.missionType ?? 0,
+    importance: raw?.overrideImportance || raw?.baseMissionImportance || 0,
+    charId: raw?.charId ?? '',
+    levelId: raw?.levelId ?? '',
+    chapterBitmask: raw?.missionChapterBitmask ?? 0,
+    isWrapperMission: !!raw?.isWrapperMission,
+    mainPathQuests,
+    quests,
+  }
+}
+
+export function buildMissionQuestTree(
+  mainPathQuests: string[],
+  quests: MissionQuest[],
+): MissionQuestTreeNode[] {
+  const questMap = new Map<string, MissionQuest>()
+  for (const q of quests) questMap.set(q.questId, q)
+
+  const mainIndex = new Map<string, number>()
+  mainPathQuests.forEach((id, i) => { mainIndex.set(id, i) })
+  const isSpine = (id: string) => mainIndex.has(id)
+
+  const parentOf = new Map<string, string | null>()
+  const childrenMap = new Map<string, string[]>()
+
+  for (const q of quests) {
+    if (isSpine(q.questId)) {
+      parentOf.set(q.questId, null)
+      continue
+    }
+    const validPrevs = q.prevQuestIds.filter(p => questMap.has(p) && p !== q.questId)
+    let parent: string | null = null
+    if (validPrevs.length > 0) {
+      const sorted = [...validPrevs].sort((a, b) => {
+        const ia = mainIndex.get(a) ?? Number.MAX_SAFE_INTEGER
+        const ib = mainIndex.get(b) ?? Number.MAX_SAFE_INTEGER
+        if (ia !== ib) return ia - ib
+        return a.localeCompare(b)
+      })
+      parent = sorted[0]
+    }
+    parentOf.set(q.questId, parent)
+    if (parent) {
+      if (!childrenMap.has(parent)) childrenMap.set(parent, [])
+      childrenMap.get(parent)!.push(q.questId)
+    }
+  }
+
+  const sortIds = (a: string, b: string) => {
+    const ia = mainIndex.get(a) ?? Number.MAX_SAFE_INTEGER
+    const ib = mainIndex.get(b) ?? Number.MAX_SAFE_INTEGER
+    if (ia !== ib) return ia - ib
+    return a.localeCompare(b)
+  }
+
+  const resolving = new Set<string>()
+  const build = (id: string): MissionQuestTreeNode | null => {
+    if (resolving.has(id)) return null
+    const q = questMap.get(id)
+    if (!q) return null
+    resolving.add(id)
+    const children = (childrenMap.get(id) ?? [])
+      .slice()
+      .sort(sortIds)
+      .map(build)
+      .filter((n): n is MissionQuestTreeNode => n !== null)
+    resolving.delete(id)
+    return { ...q, children }
+  }
+
+  const spineRoots = mainPathQuests.filter(id => questMap.has(id))
+  const orphanRoots = [...parentOf.entries()]
+    .filter(([id, parent]) => !parent && !isSpine(id))
+    .map(([id]) => id)
+    .sort(sortIds)
+  const roots = [...spineRoots, ...orphanRoots]
+  if (roots.length === 0 && quests.length > 0) roots.push(quests[0].questId)
+  return roots.map(build).filter((n): n is MissionQuestTreeNode => n !== null)
+}
+
+export function adaptPrtsCategory(raw: any, i18nMap?: Record<string, string>): PrtsCategory {
+  return {
+    id: raw.$key ?? '',
+    name: resolveI18n(raw.name, i18nMap),
+    order: raw.order ?? 0,
+    itemCount: 0,
+  }
+}
+
+export function adaptPrtsVolume(raw: any, i18nMap?: Record<string, string>): PrtsVolume {
+  return {
+    id: raw.$key ?? '',
+    categoryId: raw.categoryId ?? '',
+    name: resolveI18n(raw.name, i18nMap),
+    subName: resolveI18n(raw.subName, i18nMap),
+    iconUrl: raw.icon ? getSpriteUrl(`prts/icon/${raw.icon}`) : '',
+    order: raw.order ?? 0,
+    itemIds: raw.itemIds ?? [],
+  }
+}
+
+export function adaptPrtsItem(raw: any, i18nMap?: Record<string, string>): PrtsItem {
+  return {
+    id: raw.$key ?? '',
+    volumeId: raw.firstLvId ?? '',
+    type: raw.type ?? 'text',
+    name: resolveI18n(raw.name, i18nMap),
+    desc: resolveI18n(raw.desc, i18nMap),
+    order: raw.order ?? 0,
+    contentId: raw.contentId ?? '',
+  }
+}
+
+const CHAT_TYPE_MAP: Record<number, BakerChat['kind']> = {
+  1: 'contact',
+  2: 'group',
+  3: 'operator',
+}
+
+export function adaptBakerChat(raw: any, i18nMap?: Record<string, string>): BakerChat {
+  return {
+    id: raw.$key ?? '',
+    kind: CHAT_TYPE_MAP[raw.chatType] ?? 'contact',
+    name: resolveI18n(raw.name, i18nMap),
+    iconUrl: raw.icon ? getSpriteUrl(`charroundicon/${raw.icon}`) : '',
+    isSettlementChannel: raw.isSettlementChannel ?? false,
+  }
+}
+
+export interface BakerSpeakerContext {
+  chatMap: Record<string, BakerChat>
+  selfName: string
+  selfIconUrl: string
+}
+
+export function resolveContentType(type: number): BakerMessage['kind'] | null {
+  const map: Record<number, BakerMessage['kind']> = {
+    1: 'text',
+    2: 'image',
+    7: 'system',
+    10: 'share',
+    12: 'mission',
+  }
+  return map[type] ?? null
+}
+
+export function adaptBakerMessage(
+  dialogId: string,
+  contentId: string,
+  raw: any,
+  ctx: BakerSpeakerContext,
+  i18nMap?: Record<string, string>,
+): BakerMessage | null {
+  const kind = resolveContentType(raw.contentType)
+  if (!kind) return null
+  const isSelf = raw.speaker === 'endmin'
+  const speakerChat = isSelf ? undefined : ctx.chatMap[raw.speaker]
+  return {
+    id: `${dialogId}:${contentId}`,
+    speakerId: raw.speaker ?? '',
+    isSelf,
+    speakerName: isSelf ? ctx.selfName : speakerChat?.name ?? '',
+    speakerIconUrl: isSelf ? ctx.selfIconUrl : speakerChat?.iconUrl ?? '',
+    kind,
+    text: resolveI18n(raw.content, i18nMap),
+    imageUrl: kind === 'image' && raw.contentParam?.[0]
+      ? getSpriteUrl(`sns/picture/${raw.contentParam[0]}`)
+      : undefined,
+    reactions: undefined,
+  }
+}
 

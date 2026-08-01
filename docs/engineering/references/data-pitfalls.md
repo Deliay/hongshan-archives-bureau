@@ -157,6 +157,35 @@ const craftId = typeof entry === 'string' ? entry : entry?.craftId
 
 矿机 `mineable[]` 条目可能带 `consumeItem`（如 `miner_4` 水驱矿机采矿消耗清水），adapter 目前丢弃该字段，评估矿机真实成本时需注意。
 
+## 剧情纪事数据陷阱
+
+### 文本 key 一律以字段自身为准，禁止按 `{id}_xxx` 拼接
+
+`MissionRuntimeAsset` 的 `missionName` / `missionDescription` 等文本字段是 `{ key }` 对象、直接字符串或空三种形态之一。**必须用字段自身承载的 `key` 查 `I18nTextTable_{locale}`**，禁止按 `{missionId}_xxx` 拼接推导：
+
+- `{missionId}_desc_001` 是**错误约定**：349 个有 key 的 description 中 113 个不等于它（如 `m1m77 → m1m74_desc_001`、`c33m1d5 → c33m1_desc_007`）。
+- `{missionId}_name` 仅在 `missionName` 字段缺省时作兜底尝试（490 任务中 77 个 `missionName.key` 被游戏显式指回父任务/合并任务，如 `c33m1d5 → c33m1_name`、`m1m79 → m1m77_name`）。
+- 值为字符串时直接作为文案（如 `dm01m5` 的「黑盒接取条件隐藏任务」）。
+
+### 章节类型前缀 ≠ 内容类型
+
+dlg key 前缀（`e/sm/c/f/gm/a/db/m`）本质是「章节编号」，与内容类型并不一一对应：`m` 前缀的 `missionType` 为 2/4/5/7 混布、`a` 为 11/7、`gm` 为 7/10/4。据此臆测「主线/支线/干员故事」等分类名不可信，UI 标签改用原始前缀字母。真正贴近内容类型的是 `missionType`（多数前缀内高度稳定）与 `charId`（仅 `c` 前缀非空，干员故事强判别）。
+
+### dlg key 排序必须用数值元组
+
+`DialogSummaryMapTable` 的 dlg key 有四种变体（`dlg_e1m3_4` / `dlg_sm2l4m5_9` / `dlg_a1m8d1_1` / `dlg_e1m1_4d2`），chapter 数达 33、mission 数达 29、sceneNo 最大 13034。**字符串排序必错乱**（`e10` 排到 `e2` 前），须解析为数值元组 `(prefix, chapter, lv, mission, missionSub, scene, sceneSub)` 排序；解析失败归入「other」分组不丢弃。
+
+### Baker 消息图遍历约束
+
+- 分支点节点（`dialogOptionIds` 非空）本身**无消息文本**（999/999 `content.id` 为空），是纯选项容器，不得渲染气泡；选中选项成为「我」的消息。
+- `contentType=9`（表情回应）不独立渲染，按 `preContentId` 归并到目标消息的 `reactions`。
+- `nextContentId` 为 `-1`/`0` 即会话结束；悬空引用/环用 visited set 防御。
+- **i18n dict 独立**：`SNSDialogTable` / `SNSDialogOptionTable` / `SNSDialogTopicTable` 各配各自 dict，混用会得到空文本（预览文本尤其要用 dialog 自己的 dict）。
+
+### 富文本 image 资源的子目录
+
+`<image="sns_emoji_xxx">` 等资源带子目录，`getUISprite` 必须按前缀路由 `sns/emoji/` / `sns/sticker/`，直接拼 `sprites/{path}.png` 会 404。详见 [富文本规范参考](./rich-text-spec.md)。
+
 ## 相关文档
 
 - [工程架构规范](../engineering-spec.md)

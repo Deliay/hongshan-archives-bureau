@@ -427,4 +427,147 @@ export interface UseArchiveSearchResult {
   refetch: () => void
 }
 
+// ===== Story Chronicle =====
+
+export interface StoryRecapScene {
+  id: string
+  dlgId: string
+  chapterId: string
+  missionId: string
+  sceneNo: number
+  sceneSub: number
+  chapterType: string
+  code: string
+  text: string
+}
+
+export interface StoryRecapMission {
+  missionId: string
+  name: string
+  scenes: StoryRecapScene[]
+}
+
+export interface StoryRecapChapter {
+  chapterId: string
+  chapterType: string
+  missions: StoryRecapMission[]
+}
+
+export interface DialogLine {
+  key: string
+  actorNameId: string
+  actorName: string
+  audioOverride: string
+  dialogText: string
+  emotionType: number
+}
+
+// ===== Mission Runtime (MissionRuntimeAsset) =====
+
+export interface MissionQuestObjective {
+  description: string
+  condition?: import('./missionCondition').MissionConditionRender
+}
+
+export interface MissionQuest {
+  questId: string
+  questType: number
+  inMainPath: boolean
+  flowIndex: number
+  prevQuestIds: string[]
+  description: string
+  objectives: MissionQuestObjective[]
+}
+
+export interface MissionQuestTreeNode extends MissionQuest {
+  children: MissionQuestTreeNode[]
+}
+
+export interface MissionRuntime {
+  missionId: string
+  name: string
+  description: string
+  missionType: number
+  importance: number
+  charId: string
+  levelId: string
+  chapterBitmask: number
+  isWrapperMission: boolean
+  mainPathQuests: string[]
+  quests: MissionQuest[]
+}
+
+export interface PrtsCategory {
+  id: string
+  name: string
+  order: number
+  itemCount: number
+}
+
+export interface PrtsVolume {
+  id: string
+  categoryId: string
+  name: string
+  subName: string
+  iconUrl: string
+  order: number
+  itemIds: string[]
+}
+
+export interface PrtsItem {
+  id: string
+  volumeId: string
+  type: 'text' | 'document' | 'multi_media'
+  name: string
+  desc: string
+  order: number
+  contentId: string
+}
+
+export interface PrtsItemDetail extends PrtsItem {
+  volumeName: string
+  categoryId: string
+  contents: { title: string; segments: string[] }[]
+  script?: { speaker: string; line: string }[]
+}
+
+export interface BakerChat {
+  id: string
+  kind: 'operator' | 'contact' | 'group'
+  name: string
+  iconUrl: string
+  isSettlementChannel: boolean
+}
+
+export interface BakerMessage {
+  id: string
+  speakerId: string
+  isSelf: boolean
+  speakerName: string
+  speakerIconUrl: string
+  kind: 'text' | 'image' | 'sticker' | 'system' | 'share' | 'mission'
+  text: string
+  imageUrl?: string
+  reactions?: { emojiUrl: string; fromNames: string[]; count: number }[]
+}
+
+export interface BakerOption {
+  id: string
+  text: string
+  emojiUrl?: string
+}
+
+export interface BakerBeat {
+  messages: BakerMessage[]
+  options?: BakerOption[]
+  selectedOptionId?: string
+  branchId?: number
+}
+
+export interface BakerTopic {
+  topicId: string
+  topicName: string
+  sortId: number
+  dialogs: { dialogId: string; preview: string }[]
+}
 

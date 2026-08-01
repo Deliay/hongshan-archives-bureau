@@ -35,6 +35,20 @@ export const WEAPON_TYPE_KEYS: Record<number, string> = {
   6: 'LUA_WEAPON_TYPE_6',
 }
 
+export const MISSION_VIEW_TYPE_CFG: Record<number, string> = {
+  0: 'ui_mis_panel_tab_main_new',
+  1: 'ui_mis_panel_tab_discovery',
+  2: 'ui_mis_panel_tab_side',
+  3: 'ui_mis_panel_tab_activity',
+  4: 'ui_mis_panel_tab_other',
+}
+
+export const MISSION_IMPORTANCE_CFG: Record<number, string> = {
+  0: 'ui_mis_importance_1',
+  1: 'ui_mis_importance_2',
+  2: 'ui_mis_importance_3',
+}
+
 export const ITEM_TYPE = {
   Gold: 1,
   Diamond: 2,

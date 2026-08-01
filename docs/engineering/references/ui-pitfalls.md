@@ -89,6 +89,14 @@ ReactFlow 的 `getEdgePosition()` 内部调用 `isNodeInitialized()`，要求 `n
 
 遇到库内部渲染问题时，先加日志确认根因发生在哪一层（store 数据 vs 布局 vs DOM 渲染），再决定绕过还是修复配置；不要过早绕过（验收 2.11 曾误判为 React 19 + zustand v4 兼容性问题，实际是节点尺寸未就绪）。
 
+## 全视口「终端类」页面：消除页面级滚动条
+
+聊天终端这类需要占满视口的页面，用普通流式布局（`h-[calc(100vh-4rem)]`）难以精确抵消防火（main padding + 面包屑 + footer），页面仍会出现窗口级滚动条（Baker 实测 `scrollHeight` 833 > 视口 720）。可靠做法（Baker 验收 §14.1）：
+
+- 根容器改全视口固定壳：`fixed inset-0 md:left-60 z-10 bg-archive-ink overflow-hidden grid`（桌面用 `md:left-60` 避开固定侧边栏，覆盖 footer/面包屑区）。
+- 左右分栏 `overflow-hidden`，各自内部 `overflow-y-auto` 滚动。
+- E2E 断言 `documentElement.scrollHeight <= clientHeight`（加载完成后）。
+
 ## 相关文档
 
 - [前端开发规范](../frontend-spec.md)

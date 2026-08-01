@@ -123,4 +123,27 @@ describe('RichText', () => {
       expect(container.textContent).toBe('value=42')
     })
   })
+
+  describe('<image> emoji/sticker asset path', () => {
+    it('routes sns_emoji_* to sns/emoji/', () => {
+      const { container } = render(<RichText text='<image="sns_emoji_005">' />)
+      const img = container.querySelector('img')
+      expect(img).toBeTruthy()
+      expect(img!.getAttribute('src')).toContain('/sprites/sns/emoji/sns_emoji_005.png')
+    })
+
+    it('routes sns_sticker_* to sns/sticker/', () => {
+      const { container } = render(<RichText text='<image="sns_sticker_001">' />)
+      const img = container.querySelector('img')
+      expect(img).toBeTruthy()
+      expect(img!.getAttribute('src')).toContain('/sprites/sns/sticker/sns_sticker_001.png')
+    })
+
+    it('keeps other sprite paths unchanged', () => {
+      const { container } = render(<RichText text='<image="itemicon/test_icon">' />)
+      const img = container.querySelector('img')
+      expect(img).toBeTruthy()
+      expect(img!.getAttribute('src')).toContain('/sprites/itemicon/test_icon.png')
+    })
+  })
 })
