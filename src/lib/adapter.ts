@@ -1,4 +1,5 @@
 import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode } from './types'
+import { renderMissionCondition } from './missionCondition'
 import { ACTIVITY_TYPE_GROUPS } from '../data/constants'
 
 export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
@@ -401,9 +402,14 @@ export function adaptMissionQuest(
   mainPathSet: Set<string>,
   resolveKey?: (key: string) => string,
 ): MissionQuest {
-  const objectives: MissionQuestObjective[] = (quest?.objectiveList ?? []).map((o: any) => ({
-    description: resolveRuntimeText(o?.description, resolveKey),
-  }))
+  const objectives: MissionQuestObjective[] = (quest?.objectiveList ?? []).map((o: any) => {
+    const objective: MissionQuestObjective = {
+      description: resolveRuntimeText(o?.description, resolveKey),
+    }
+    const condition = renderMissionCondition(o?.condition, { resolveText: resolveKey })
+    if (condition) objective.condition = condition
+    return objective
+  })
   const description = quest?.overrideMissionDesc
     ? resolveRuntimeText(quest?.descriptionOverride, resolveKey)
     : ''

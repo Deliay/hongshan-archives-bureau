@@ -457,6 +457,7 @@ export interface StoryRecapChapter {
 
 export interface MissionQuestObjective {
   description: string
+  condition?: import('./missionCondition').MissionConditionRender
 }
 
 export interface MissionQuest {
