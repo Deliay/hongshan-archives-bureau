@@ -715,3 +715,17 @@ _activityStageId (dungeon_fighting_5)
 - **`enemyIds` 与 `enemyLevels` 对齐**：两者均为数组、长度一致（已验证 5/5）；索引错位时仅展示可对齐部分，避免越界。
 - **敌人名称/图标缺失**：`EnemyTemplateDisplayInfoTable` 未命中或 `templateId` 空时 `EnemyUnit` 回退显示原始 `enemyId`（mono），图标 `onError` 隐藏。
 - **敌人组件复用边界**：`EnemyUnit` 为独立展示组件（props 注入 `enemySummary` + `level`），不感知 dungeon/活动上下文，后续怪物图鉴等其他页面可直接复用。
+
+## 10. 剧情梗概导航数据源修正（任务文件驱动）
+
+**验收反馈（2026-08-01）**：①`/archive/story/recap` 左侧导航未按 `MissionRuntimeAsset` 文件内容生成，出现幽灵任务 `c1m1`（dlg key 解析出但任务文件不存在）；②修正后仅保留有对话场景的任务，导致 `hidden*` 任务缺失。
+
+**根因**：`useStoryRecap` 原以 `DialogSummaryMapTable` 的 dlg key 解析 missionId（185 个）为导航源，其中 9 个（`c1m1/a1m8/f1m4/f1m7/f1m9/f1m18/f1m19/f1m29/e5m0`）无对应任务文件；`hidden*`（60 个）任务在 DialogSummaryMapTable 无对话场景，被「场景驱动」方案排除。
+
+**修复**（commit `9f5d6f7`）：
+- 新增纯函数 `buildRecapChaptersFromMissions(missionIds, scenes, missionNameMap)`（`src/lib/adapter.ts`）：以 `MissionRuntimeAsset` 任务列表为权威驱动导航，按 `([a-z]+)\d` 的 `$1` 分组（`a/c/db/dm/e/f/gm/hidden/m/sm`），场景经 dlg 解析后挂接到对应任务下，无场景任务保留在导航。
+- `useStoryRecap`：并行加载 `MissionRuntimeList`（复用 `MissionRuntimeList` 缓存 key），`realMissionIds` 作为导航源；场景仅保留 missionId 在任务列表中的（过滤幽灵）；任务名经 TextTable `${id}_name` 解析。
+- `StoryRecap.tsx`：`CHAPTER_TYPES` 更新为 10 组；无场景任务右侧显示「暂无剧情文本」占位（新增 `story.noScene` i18n key）。
+- 保留 `adaptRecapChapter`（测试兼容）。
+
+**验证**：单测新增 `buildRecapChaptersFromMissions` 2 例（分组/排序/空场景挂接/名称解析）；E2E 更新导航过滤断言（不含 c1m1、含 a1m2 与 hidden）；lint/test/build 通过；E2E 21/21 通过。

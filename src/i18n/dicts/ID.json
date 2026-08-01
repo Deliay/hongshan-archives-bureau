@@ -352,7 +352,8 @@
     "dungeonFirstPass": "Hadiah penyelesaian pertama",
     "dungeonCustom": "Hadiah khusus",
     "dungeonExtra": "Hadiah ekstra",
-    "dungeonHunter": "Hadiah mode pemburu"
+    "dungeonHunter": "Hadiah mode pemburu",
+    "noScene": "Tidak ada teks cerita"
   },
   "update": {
     "added": "Ditambahkan",

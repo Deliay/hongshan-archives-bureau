@@ -3,6 +3,7 @@ import {
   adaptRecapScene,
   adaptRecapFallbackScene,
   adaptRecapChapter,
+  buildRecapChaptersFromMissions,
   adaptPrtsCategory,
   adaptPrtsVolume,
   adaptPrtsItem,
@@ -16,6 +17,7 @@ import {
   buildMissionQuestTree,
   type BakerSpeakerContext,
 } from '../adapter'
+import type { StoryRecapScene } from '../types'
 
 describe('adaptRecapScene', () => {
   const i18nMap = { '100': '你与佩丽卡准备前往基地。' }
@@ -105,6 +107,36 @@ describe('adaptRecapChapter', () => {
     const chapters = adaptRecapChapter(scenes, { e1m1: '迟到的特训' })
     expect(chapters[0].missions[0].name).toBe('迟到的特训')
     expect(chapters[0].missions[1].name).toBe('e1m2')
+  })
+})
+
+describe('buildRecapChaptersFromMissions', () => {
+  const scene = (id: string, dlgId: string, missionId: string, sceneNo: number): StoryRecapScene => ({
+    id, dlgId, chapterId: missionId.replace(/m\d+$/, ''), missionId, sceneNo, sceneSub: 0, chapterType: '', code: '', text: `text-${sceneNo}`,
+  })
+
+  it('drives navigation by mission list and groups by ([a-z]+) prefix', () => {
+    const missionIds = ['a1m2', 'hidden52', 'sm2l4m5', 'db01m10', 'a1m1']
+    const scenes = [
+      scene('1', 'dlg_a1m1_1', 'a1m1', 1),
+      scene('2', 'dlg_a1m1_2', 'a1m1', 2),
+      scene('3', 'dlg_a1m2_1', 'a1m2', 1),
+    ]
+    const chapters = buildRecapChaptersFromMissions(missionIds, scenes)
+    const types = chapters.map(c => c.chapterType)
+    expect(types).toEqual(['a', 'hidden', 'sm', 'db'])
+    const a = chapters.find(c => c.chapterType === 'a')!
+    expect(a.missions.map(m => m.missionId)).toEqual(['a1m1', 'a1m2'])
+    // a1m1 has 2 scenes, a1m2 has 1, hidden52 has 0
+    expect(a.missions[0].scenes.map(s => s.sceneNo)).toEqual([1, 2])
+    expect(a.missions[1].scenes).toHaveLength(1)
+    const hidden = chapters.find(c => c.chapterType === 'hidden')!
+    expect(hidden.missions[0].scenes).toHaveLength(0)
+  })
+
+  it('resolves mission names from map', () => {
+    const chapters = buildRecapChaptersFromMissions(['a1m2'], [], { a1m2: '生存特训' })
+    expect(chapters[0].missions[0].name).toBe('生存特训')
   })
 })
 

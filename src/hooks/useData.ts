@@ -6,7 +6,7 @@ import { useI18n } from '../i18n'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
 import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, adaptRecapChapter, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, buildRecapChaptersFromMissions, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
 import type { ActivityStageDetail, EnemySummary, DungeonDetail, StageDetailContext } from '../lib/missionConditionNames'
 import { buildEnemySummary, buildDungeonDetail, buildStageDetail } from '../lib/missionConditionNames'
 import { formatBlackboard } from '../lib/formatText'
@@ -1322,13 +1322,15 @@ export function useStoryRecap(): UseDataResult<{
   const { locale } = useLocale()
   const { t } = useI18n()
   return useData(async () => {
-    const [mapRaw, summaryRaw, summaryI18n, textRaw, textI18n] = await Promise.all([
+    const [mapRaw, summaryRaw, summaryI18n, textRaw, textI18n, missionPaths] = await Promise.all([
       getCachedData<Record<string, string>>('DialogSummaryMapTable', () => fetchTableAll('DialogSummaryMapTable')),
       getCachedData<Record<string, any>>('DialogSummaryTable', () => fetchTableAll('DialogSummaryTable')),
       getTableI18nDict('DialogSummaryTable', locale),
       getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable')),
       getTableI18nDict('TextTable', locale),
+      getCachedData<string[]>('MissionRuntimeList', () => fetchMissionList()).catch(() => [] as string[]),
     ])
+    const realMissionIds = extractMissionIds(missionPaths)
     const scenes = Object.entries(mapRaw)
       .map(([dlgKey, summaryId]) => {
         const summary = summaryRaw[summaryId]
@@ -1338,17 +1340,17 @@ export function useStoryRecap(): UseDataResult<{
         return scene ?? adaptRecapFallbackScene(dlgKey, summaryId, summary, summaryI18n, t('story.scene'))
       })
       .filter((s): s is StoryRecapScene => s !== null)
+      .filter((s) => realMissionIds.includes(s.missionId))
     const missionNameMap: Record<string, string> = {}
-    for (const s of scenes) {
-      if (s.missionId in missionNameMap) continue
-      const entry = textRaw[`${s.missionId}_name`]
+    for (const id of realMissionIds) {
+      const entry = textRaw[`${id}_name`]
       const name = resolveI18n(entry, textI18n)
-      if (name) missionNameMap[s.missionId] = name
+      if (name) missionNameMap[id] = name
     }
-    const chapters = adaptRecapChapter(scenes, missionNameMap)
+    const chapters = buildRecapChaptersFromMissions(realMissionIds, scenes, missionNameMap)
     const byType: Record<string, number> = {}
-    for (const s of scenes) byType[s.chapterType] = (byType[s.chapterType] ?? 0) + 1
-    return { scenes, chapters, stats: { total: scenes.length, byType } }
+    for (const ch of chapters) byType[ch.chapterType] = (byType[ch.chapterType] ?? 0) + ch.missions.length
+    return { scenes, chapters, stats: { total: chapters.reduce((n, c) => n + c.missions.length, 0), byType } }
   }, [locale])
 }
 

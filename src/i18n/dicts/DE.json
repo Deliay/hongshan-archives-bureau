@@ -352,7 +352,8 @@
     "dungeonFirstPass": "Erst-Durchlauf-Belohnungen",
     "dungeonCustom": "Individuelle Belohnungen",
     "dungeonExtra": "Zusätzliche Belohnungen",
-    "dungeonHunter": "Belohnungen des Jägermodus"
+    "dungeonHunter": "Belohnungen des Jägermodus",
+    "noScene": "Kein Geschichtstext"
   },
   "update": {
     "added": "Hinzugefügt",

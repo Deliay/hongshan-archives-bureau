@@ -352,7 +352,8 @@
     "dungeonFirstPass": "首通奖励",
     "dungeonCustom": "定制奖励",
     "dungeonExtra": "额外奖励",
-    "dungeonHunter": "猎手模式奖励"
+    "dungeonHunter": "猎手模式奖励",
+    "noScene": "暂无剧情文本"
   },
   "update": {
     "added": "新增",

@@ -352,7 +352,8 @@
     "dungeonFirstPass": "Recompensas de primera partida",
     "dungeonCustom": "Recompensas personalizadas",
     "dungeonExtra": "Recompensas extra",
-    "dungeonHunter": "Recompensas del modo cazador"
+    "dungeonHunter": "Recompensas del modo cazador",
+    "noScene": "Sin texto de historia"
   },
   "update": {
     "added": "Añadido",

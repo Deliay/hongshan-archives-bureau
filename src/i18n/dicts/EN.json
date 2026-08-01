@@ -352,7 +352,8 @@
     "dungeonFirstPass": "First clear rewards",
     "dungeonCustom": "Custom rewards",
     "dungeonExtra": "Extra rewards",
-    "dungeonHunter": "Hunter mode rewards"
+    "dungeonHunter": "Hunter mode rewards",
+    "noScene": "No story text"
   },
   "update": {
     "added": "Added",

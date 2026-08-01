@@ -352,7 +352,8 @@
     "dungeonFirstPass": "初回クリア報酬",
     "dungeonCustom": "カスタム報酬",
     "dungeonExtra": "追加報酬",
-    "dungeonHunter": "ハンターモード報酬"
+    "dungeonHunter": "ハンターモード報酬",
+    "noScene": "ストーリーテキストなし"
   },
   "update": {
     "added": "追加",

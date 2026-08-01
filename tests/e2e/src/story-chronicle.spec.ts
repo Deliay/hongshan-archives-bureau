@@ -60,6 +60,22 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await expect(nav).toBeVisible({ timeout: 5000 })
   })
 
+  test('剧情梗概左侧导航按 MissionRuntimeAsset 过滤（不含 c1m1）', async ({ page }) => {
+    await page.goto('/archive/story/recap')
+    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await page.locator('[class*="border-l-2"]').first().waitFor({ timeout: 30000 })
+    // 左侧导航的 mission 按钮
+    const navButtons = page.locator('nav button')
+    expect(await navButtons.count()).toBeGreaterThan(0)
+    const navText = (await navButtons.allTextContents()).join(' ')
+    // c1m1 不在 MissionRuntimeAsset 中，不应出现
+    expect(navText).not.toContain('c1m1')
+    // 真实任务仍存在（a1m2 / e1m3）
+    expect(navText).toContain('a1m2')
+    // hidden 开头的任务来自 MissionRuntimeAsset，应出现
+    expect(navText).toContain('hidden')
+  })
+
   test('PRTS 文库页展示分类页签与卷卡片', async ({ page }) => {
     await page.goto('/archive/story/library')
     // 等待页面内容加载：查找 "全部" 页签按钮（visible）

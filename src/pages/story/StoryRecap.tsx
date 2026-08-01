@@ -4,7 +4,7 @@ import { useStoryRecap } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
 
-const CHAPTER_TYPES = ['e', 'sm', 'c', 'f', 'gm', 'a', 'db', 'm', 'other']
+const CHAPTER_TYPES = ['a', 'c', 'db', 'dm', 'e', 'f', 'gm', 'hidden', 'm', 'sm', 'other']
 
 const chapterTypeLabel = (ct: string) => (ct === 'other' ? 'OTHER' : ct.toUpperCase())
 
@@ -93,6 +93,9 @@ export default function StoryRecap() {
                       <p className="text-sm text-archive-ivory leading-relaxed">{scene.text}</p>
                     </div>
                   ))}
+                  {m.scenes.length === 0 && (
+                    <p className="text-sm text-archive-lead italic">{t('story.noScene')}</p>
+                  )}
                 </div>
               ))}
             </div>

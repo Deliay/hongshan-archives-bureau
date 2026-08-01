@@ -352,7 +352,8 @@
     "dungeonFirstPass": "Phần thưởng lần đầu",
     "dungeonCustom": "Phần thưởng tùy chỉnh",
     "dungeonExtra": "Phần thưởng thêm",
-    "dungeonHunter": "Phần thưởng chế độ thợ săn"
+    "dungeonHunter": "Phần thưởng chế độ thợ săn",
+    "noScene": "Không có văn bản cốt truyện"
   },
   "update": {
     "added": "Đã thêm",

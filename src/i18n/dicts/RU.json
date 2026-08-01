@@ -352,7 +352,8 @@
     "dungeonFirstPass": "Награда за первое прохождение",
     "dungeonCustom": "Особые награды",
     "dungeonExtra": "Дополнительные награды",
-    "dungeonHunter": "Награды режима охотника"
+    "dungeonHunter": "Награды режима охотника",
+    "noScene": "Нет текста сюжета"
   },
   "update": {
     "added": "Добавлено",

@@ -352,7 +352,8 @@
     "dungeonFirstPass": "รางวัลเคลียร์ครั้งแรก",
     "dungeonCustom": "รางวัลกำหนดเอง",
     "dungeonExtra": "รางวัลพิเศษ",
-    "dungeonHunter": "รางวัลโหมดฮันเตอร์"
+    "dungeonHunter": "รางวัลโหมดฮันเตอร์",
+    "noScene": "ไม่มีเนื้อเรื่อง"
   },
   "update": {
     "added": "เพิ่มแล้ว",

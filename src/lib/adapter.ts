@@ -374,6 +374,49 @@ export function adaptRecapChapter(scenes: StoryRecapScene[], missionNameMap?: Re
   return chapters
 }
 
+const MISSION_GROUP_RE = /^([a-z]+)\d/
+
+function missionSortKey(id: string): SortTuple {
+  const m = DLG_KEY_RE.exec(`dlg_${id}_1`)
+  if (m) {
+    const [, ct, cn, lv, mn, md, sn, sd] = m
+    return [ct, Number(cn), Number(lv ?? 0), Number(mn), Number(md ?? 0), Number(sn), Number(sd ?? 0)]
+  }
+  return [id, 0, 0, 0, 0, 0, 0]
+}
+
+export function buildRecapChaptersFromMissions(
+  missionIds: string[],
+  scenes: StoryRecapScene[],
+  missionNameMap?: Record<string, string>,
+): StoryRecapChapter[] {
+  const sceneByMission = new Map<string, StoryRecapScene[]>()
+  for (const s of scenes) {
+    const arr = sceneByMission.get(s.missionId)
+    if (arr) arr.push(s)
+    else sceneByMission.set(s.missionId, [s])
+  }
+  const chapters = new Map<string, StoryRecapChapter>()
+  for (const id of missionIds) {
+    const group = MISSION_GROUP_RE.exec(id)?.[1] ?? 'other'
+    if (!chapters.has(group)) {
+      chapters.set(group, { chapterId: group, chapterType: group, missions: [] })
+    }
+    const chapter = chapters.get(group)!
+    const missionScenes = (sceneByMission.get(id) ?? []).sort((a, b) => compareTuple(dlgSortKey(a), dlgSortKey(b)))
+    chapter.missions.push({
+      missionId: id,
+      name: missionNameMap?.[id] || id,
+      scenes: missionScenes,
+    })
+  }
+  const result = [...chapters.values()]
+  for (const ch of result) {
+    ch.missions.sort((a, b) => compareTuple(missionSortKey(a.missionId), missionSortKey(b.missionId)))
+  }
+  return result
+}
+
 // ===== Mission Runtime (MissionRuntimeAsset) =====
 
 export type RuntimeTextField = { key?: string } | string | null | undefined

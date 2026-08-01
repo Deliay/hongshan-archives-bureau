@@ -6575,6 +6575,22 @@
     "ID": "Hadiah mode pemburu",
     "IT": "Ricompense modalità cacciatore"
   },
+  "story.noScene": {
+    "CN": "暂无剧情文本",
+    "TC": "暫無劇情文本",
+    "EN": "No story text",
+    "JP": "ストーリーテキストなし",
+    "KR": "스토리 텍스트 없음",
+    "RU": "Нет текста сюжета",
+    "MX": "Sin texto de historia",
+    "BR": "Sem texto da história",
+    "DE": "Kein Geschichtstext",
+    "FR": "Pas de texte d'histoire",
+    "VN": "Không có văn bản cốt truyện",
+    "TH": "ไม่มีเนื้อเรื่อง",
+    "ID": "Tidak ada teks cerita",
+    "IT": "Nessun testo della storia"
+  },
   "breadcrumb.recap": {
     "CN": "剧情梗概",
     "TC": "劇情梗概",

@@ -352,7 +352,8 @@
     "dungeonFirstPass": "첫 클리어 보상",
     "dungeonCustom": "커스텀 보상",
     "dungeonExtra": "추가 보상",
-    "dungeonHunter": "헌터 모드 보상"
+    "dungeonHunter": "헌터 모드 보상",
+    "noScene": "스토리 텍스트 없음"
   },
   "update": {
     "added": "추가",
