@@ -45,35 +45,33 @@ export function ObjectiveCondition({
   if (detail) {
     return <ActivityStagePanel detail={detail} rewardTable={rewardTable ?? {}} />
   }
-  if (!text && !scene) return null
+  if (!text && !dialogId) return null
   return (
     <span className="flex flex-col gap-1">
       {text && <span className="text-archive-dust text-xs">{text}</span>}
-      {scene && <DialogSceneBlock scene={scene} dialogId={dialogId} />}
+      {dialogId && <DialogSceneBlock scene={scene} dialogId={dialogId} />}
     </span>
   )
 }
 
-function DialogSceneBlock({ scene, dialogId }: { scene: StoryRecapScene; dialogId: string }) {
+function DialogSceneBlock({ scene, dialogId }: { scene: StoryRecapScene | null; dialogId: string }) {
   const { t } = useI18n()
   const [expanded, setExpanded] = useState(false)
   return (
     <span data-testid="quest-recap-scene" className="flex flex-col gap-0.5 pl-2 border-l-2 border-archive-gold/30">
       <span className="flex items-center gap-2">
-        <span className="font-mono text-[10px] text-archive-gold">{scene.code}</span>
-        {dialogId && <span className="font-mono text-[10px] text-archive-lead/70">{dialogId}</span>}
-        {dialogId && (
-          <button
-            type="button"
-            onClick={() => setExpanded(v => !v)}
-            className="text-[10px] text-archive-dust hover:text-archive-gold transition-colors"
-          >
-            {expanded ? t('story.collapseDialog') : t('story.expandDialog')}
-          </button>
-        )}
+        {scene && <span className="font-mono text-[10px] text-archive-gold">{scene.code}</span>}
+        <span className="font-mono text-[10px] text-archive-lead/70">{dialogId}</span>
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="text-[10px] text-archive-dust hover:text-archive-gold transition-colors"
+        >
+          {expanded ? t('story.collapseDialog') : t('story.expandDialog')}
+        </button>
       </span>
-      <span className="text-xs text-archive-ivory leading-relaxed">{scene.text}</span>
-      {expanded && dialogId && (
+      {scene && <span className="text-xs text-archive-ivory leading-relaxed">{scene.text}</span>}
+      {expanded && (
         <span className="pt-1">
           <DialogScript dlgKey={dialogId} />
         </span>

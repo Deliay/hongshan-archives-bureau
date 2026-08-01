@@ -327,4 +327,22 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
       .poll(async () => audioRequests.some(u => u.includes('au_dlg_e11m1_1_012_f')), { timeout: 10000 })
       .toBe(true)
   })
+
+  test('无 DialogSummaryMapTable 摘要的对话目标仍可展开（dlg_gm01m23_2）', async ({ page }) => {
+    // dlg_gm01m23_2 在 DialogTextTable 有台词但不在 DialogSummaryMapTable，无摘要场景
+    await page.goto('/archive/story/mission/gm01m23')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const recapScenes = page.getByTestId('quest-recap-scene')
+    await expect(recapScenes.first()).toBeVisible({ timeout: 15000 })
+    // 找到引用 dlg_gm01m23_2 的目标块
+    let target: any = null
+    for (let i = 0; i < await recapScenes.count(); i++) {
+      const txt = await recapScenes.nth(i).textContent()
+      if (txt && txt.includes('dlg_gm01m23_2')) { target = recapScenes.nth(i); break }
+    }
+    expect(target).not.toBeNull()
+    await target.getByRole('button', { name: '展开对话' }).click()
+    // DialogTextTable dlg_gm01m23_2_001 渲染出来
+    await expect(page.locator('body').getByText('dlg_gm01m23_2_001', { exact: true }).first()).toBeVisible({ timeout: 10000 })
+  })
 })
