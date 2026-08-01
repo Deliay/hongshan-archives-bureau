@@ -28,13 +28,14 @@ export default function StoryRecap() {
   )
 
   const selectedMission = useMemo(() => {
-    if (!missionParam) return allMissions[0] ?? null
+    if (!missionParam) return allMissions.find(m => m.scenes.length > 0) ?? allMissions[0] ?? null
     return allMissions.find(m => m.missionId === missionParam) ?? null
   }, [missionParam, allMissions])
 
   useEffect(() => {
     if (!missionParam && allMissions.length > 0) {
-      setSearchParams({ mission: allMissions[0].missionId }, { replace: true })
+      const first = allMissions.find(m => m.scenes.length > 0) ?? allMissions[0]
+      setSearchParams({ mission: first.missionId }, { replace: true })
     }
   }, [missionParam, allMissions, setSearchParams])
 
