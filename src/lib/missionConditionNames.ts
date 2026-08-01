@@ -34,6 +34,7 @@ export interface EnemySummary {
   nickname: string
   templateId: string
   iconUrl: string
+  displayType: number
 }
 
 export interface DungeonEnemy {
@@ -125,6 +126,7 @@ export function buildEnemySummary(
     nickname: resolveField(entry.nickname, table?.i18n),
     templateId,
     iconUrl: iconUrl(templateId),
+    displayType: entry.displayType ?? 0,
   }
 }
 

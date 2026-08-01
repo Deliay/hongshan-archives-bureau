@@ -1,27 +1,47 @@
 import { useI18n } from '../../i18n'
+import RarityFrame from '../../components/RarityFrame'
 import type { EnemySummary } from '../../lib/missionConditionNames'
+
+export type EnemyTileSize = 'sm' | 'md' | 'lg' | 'xl'
+
+const SIZE_CLASSES: Record<EnemyTileSize, string> = {
+  sm: 'w-12',
+  md: 'w-16',
+  lg: 'w-20',
+  xl: 'w-24',
+}
+
+const ENEMY_STARS: Record<number, number> = { 0: 1, 1: 3, 2: 6, 3: 4, 4: 5 }
 
 export function EnemyUnit({
   enemy,
   level,
+  size = 'md',
+  className,
 }: {
   enemy?: EnemySummary
   level?: number
+  size?: EnemyTileSize
+  className?: string
 }) {
   const { t } = useI18n()
   if (!enemy) return null
+  const stars = ENEMY_STARS[enemy.displayType] ?? 1
+  const baseClass = `aspect-square ${SIZE_CLASSES[size]} overflow-hidden ${className ?? ''}`
   return (
-    <div className="flex flex-col items-center gap-1 w-20">
-      <div className="w-12 h-12 overflow-hidden rounded border border-archive-border bg-archive-file">
-        <img src={enemy.iconUrl} alt="" className="w-full h-full object-cover"
+    <div
+      className={`${baseClass} rounded border border-archive-border bg-archive-file`}
+      title={enemy.nickname && enemy.nickname !== enemy.name ? `${enemy.name} · ${enemy.nickname}` : enemy.name}
+    >
+      <RarityFrame rarity={stars} name={enemy.name} size={size} className="w-full h-full">
+        <img src={enemy.iconUrl} alt="" className="w-full h-full object-cover bg-archive-border"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-      </div>
-      <span className="text-[11px] leading-tight text-archive-ivory text-center line-clamp-2" title={enemy.name}>
-        {enemy.name}
-      </span>
-      {level != null && (
-        <span className="text-[10px] text-archive-dust font-mono">{t('story.enemyLv', { level })}</span>
-      )}
+        {level != null && (
+          <span className="absolute top-0.5 right-0.5 rounded bg-archive-ink/80 px-0.5 text-[9px] font-mono text-archive-ivory">
+            {t('story.enemyLv', { level })}
+          </span>
+        )}
+      </RarityFrame>
     </div>
   )
 }

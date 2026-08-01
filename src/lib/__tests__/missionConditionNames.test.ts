@@ -73,7 +73,7 @@ describe('extractParamStrings', () => {
 })
 
 describe('buildEnemySummary', () => {
-  const enemyTable = { eny_hound: { templateId: 'eny_0050_hound', name: { id: 1, text: '' }, nickname: { id: 2, text: '' } } }
+  const enemyTable = { eny_hound: { templateId: 'eny_0050_hound', displayType: 0, name: { id: 1, text: '' }, nickname: { id: 2, text: '' } } }
   const i18n = { '1': '碾骨撕裂牙兽', '2': '碾骨撕裂牙兽' }
   const iconUrl = (tpl: string) => `icon:${tpl}`
 
@@ -85,6 +85,7 @@ describe('buildEnemySummary', () => {
       nickname: '碾骨撕裂牙兽',
       templateId: 'eny_0050_hound',
       iconUrl: 'icon:eny_0050_hound',
+      displayType: 0,
     })
   })
 
