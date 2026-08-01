@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/Badge'
 import { RichText } from '../../lib/richText'
 import { buildMissionQuestTree } from '../../lib/adapter'
 import { ObjectiveCondition } from './ObjectiveCondition'
+import LevelDisplay from './LevelDisplay'
 import type { MissionQuestTreeNode } from '../../lib/types'
 
 export default function StoryMissionDetail() {
@@ -30,6 +31,8 @@ export function MissionDetailContent({
   const resolveArg = data?.conditionResolver?.resolveArg
   const stageDetail = data?.conditionResolver?.stageDetail
   const rewardTable = data?.conditionResolver?.rewardTable
+  const missionTypeName = data?.conditionResolver?.missionTypeName
+  const missionImportanceName = data?.conditionResolver?.missionImportanceName
 
   const tree = useMemo(
     () => (mission ? buildMissionQuestTree(mission.mainPathQuests, mission.quests) : []),
@@ -54,7 +57,8 @@ export function MissionDetailContent({
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           <Badge variant="ghost" className="text-xs font-mono">{mission.missionId}</Badge>
-          <Badge variant="gold" className="text-xs">Type {mission.missionType}</Badge>
+          {missionTypeName && <Badge variant="gold" className="text-xs">{missionTypeName(mission.missionType)}</Badge>}
+          {missionImportanceName && <Badge variant="ghost" className="text-xs">{missionImportanceName(mission.importance)}</Badge>}
           {mission.isWrapperMission && <Badge variant="seal" className="text-xs">wrapper</Badge>}
         </div>
         <h2 className="font-display text-2xl font-bold text-archive-ivory mt-2">{mission.name || mission.missionId}</h2>
@@ -70,7 +74,7 @@ export function MissionDetailContent({
         {mission.levelId && (
           <div className="flex gap-2">
             <dt className="text-archive-dust shrink-0">{t('story.relatedLevel')}</dt>
-            <dd className="text-archive-ivory font-mono">{mission.levelId}</dd>
+            <dd className="text-archive-ivory"><LevelDisplay levelId={mission.levelId} /></dd>
           </div>
         )}
       </dl>

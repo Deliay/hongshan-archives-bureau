@@ -6111,6 +6111,22 @@
     "ID": "Level terkait",
     "IT": "Livello correlato"
   },
+  "story.levelNameFormat": {
+    "CN": "{{mapName}} · {{levelName}}",
+    "TC": "{{mapName}} · {{levelName}}",
+    "EN": "{{mapName}} · {{levelName}}",
+    "JP": "{{mapName}} · {{levelName}}",
+    "KR": "{{mapName}} · {{levelName}}",
+    "RU": "{{levelName}} · {{mapName}}",
+    "MX": "{{levelName}} · {{mapName}}",
+    "BR": "{{levelName}} — {{mapName}}",
+    "DE": "{{levelName}} · {{mapName}}",
+    "FR": "{{mapName}} — {{levelName}}",
+    "VN": "{{levelName}}, {{mapName}}",
+    "TH": "{{levelName}} · {{mapName}}",
+    "ID": "{{mapName}} – {{levelName}}",
+    "IT": "{{levelName}} · {{mapName}}"
+  },
   "story.backToRecap": {
     "CN": "返回剧情梗概",
     "TC": "返回劇情梗概",

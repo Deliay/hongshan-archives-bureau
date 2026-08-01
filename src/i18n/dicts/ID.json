@@ -323,6 +323,7 @@
     "missionType": "Tipe misi",
     "relatedOperator": "Operator terkait",
     "relatedLevel": "Level terkait",
+    "levelNameFormat": "{{mapName}} – {{levelName}}",
     "backToRecap": "Kembali ke ringkasan",
     "mainPath": "Jalur utama",
     "branch": "Cabang",

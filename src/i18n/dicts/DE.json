@@ -323,6 +323,7 @@
     "missionType": "Missionstyp",
     "relatedOperator": "Verknüpfter Operator",
     "relatedLevel": "Verknüpfter Level",
+    "levelNameFormat": "{{levelName}} · {{mapName}}",
     "backToRecap": "Zurück zur Zusammenfassung",
     "mainPath": "Hauptweg",
     "branch": "Zweig",

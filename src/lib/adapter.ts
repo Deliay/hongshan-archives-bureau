@@ -376,6 +376,18 @@ export function adaptRecapChapter(scenes: StoryRecapScene[], missionNameMap?: Re
 
 const MISSION_GROUP_RE = /^([a-z]+)\d/
 
+const CHAPTER_ORDER_PRIORITY: Record<string, number> = {
+  e: 0,
+  c: 1,
+  gm: 2,
+  sm: 3,
+  m: 4,
+}
+
+function chapterPriority(chapterType: string): number {
+  return CHAPTER_ORDER_PRIORITY[chapterType] ?? 10
+}
+
 function missionSortKey(id: string): SortTuple {
   const m = DLG_KEY_RE.exec(`dlg_${id}_1`)
   if (m) {
@@ -410,7 +422,12 @@ export function buildRecapChaptersFromMissions(
       scenes: missionScenes,
     })
   }
-  const result = [...chapters.values()].sort((a, b) => a.chapterType.localeCompare(b.chapterType))
+  const result = [...chapters.values()].sort((a, b) => {
+    const pa = chapterPriority(a.chapterType)
+    const pb = chapterPriority(b.chapterType)
+    if (pa !== pb) return pa - pb
+    return a.chapterType.localeCompare(b.chapterType)
+  })
   for (const ch of result) {
     ch.missions.sort((a, b) => compareTuple(missionSortKey(a.missionId), missionSortKey(b.missionId)))
   }
@@ -451,6 +468,14 @@ export function buildMissionNameMapFromBrief(
     if (name) map[id] = name
   }
   return map
+}
+
+export function resolveLevelMapId(levelId: string, mapRaw?: Record<string, any>): string | null {
+  if (!levelId) return null
+  if (mapRaw?.[levelId]) return levelId
+  const stripped = levelId.replace(/_lv\d+$/, '')
+  if (stripped !== levelId && mapRaw?.[stripped]) return stripped
+  return null
 }
 
 export function adaptMissionQuest(
@@ -503,6 +528,7 @@ export function adaptMissionRuntime(
     name: resolveRuntimeText(raw?.missionName, resolveKey),
     description: resolveRuntimeText(raw?.missionDescription, resolveKey),
     missionType: raw?.missionType ?? 0,
+    importance: raw?.overrideImportance || raw?.baseMissionImportance || 0,
     charId: raw?.charId ?? '',
     levelId: raw?.levelId ?? '',
     chapterBitmask: raw?.missionChapterBitmask ?? 0,

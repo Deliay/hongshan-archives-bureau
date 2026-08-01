@@ -6,11 +6,11 @@ import { useI18n } from '../i18n'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
 import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, buildRecapChaptersFromMissions, buildMissionNameMapFromBrief, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, buildRecapChaptersFromMissions, buildMissionNameMapFromBrief, resolveLevelMapId, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
 import type { ActivityStageDetail, EnemySummary, DungeonDetail, StageDetailContext } from '../lib/missionConditionNames'
 import { buildEnemySummary, buildDungeonDetail, buildStageDetail } from '../lib/missionConditionNames'
 import { formatBlackboard } from '../lib/formatText'
-import { WEAPON_TYPE_KEYS } from '../data/constants'
+import { WEAPON_TYPE_KEYS, MISSION_VIEW_TYPE_CFG, MISSION_IMPORTANCE_CFG } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
 import type { FactoryRecipe, FactoryMachine, FactoryItemIndex, ChainGraph, ChainTarget } from '../lib/factory/types'
 import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '../lib/factory/recipes'
@@ -1375,6 +1375,8 @@ export interface MissionConditionResolver {
   enemySummary: (enemyId: string) => EnemySummary | undefined
   dungeonDetail: (dungeonId: string) => DungeonDetail | null
   rewardTable: Record<string, any>
+  missionTypeName: (missionType: number) => string
+  missionImportanceName: (importance: number) => string
 }
 
 async function getMissionConditionResolver(
@@ -1404,6 +1406,7 @@ async function getMissionConditionResolver(
     enemyI18n,
     rewardRaw,
     brief,
+    missionTypeRaw,
   ] = await Promise.all([
     getCachedData<Record<string, any>>('ActivityConditionalMultiStageStageToActivityTable', () => fetchTableAll('ActivityConditionalMultiStageStageToActivityTable').catch(() => ({}))),
     getTableI18nDict('ActivityConditionalMultiStageStageToActivityTable', locale).catch(() => ({}) as Record<string, string>),
@@ -1427,9 +1430,19 @@ async function getMissionConditionResolver(
     getTableI18nDict('EnemyTemplateDisplayInfoTable', locale).catch(() => ({}) as Record<string, string>),
     getCachedData<Record<string, any>>('RewardTable', () => fetchTableAll('RewardTable').catch(() => ({}))),
     getCachedData<any[]>('MissionRuntimeBrief', () => fetchMissionBrief()).catch(() => [] as any[]),
+    getCachedData<Record<string, any>>('MissionTypeInfoTable', () => fetchTableAll('MissionTypeInfoTable').catch(() => ({}))),
   ])
   const resolveTextKey = (key: string) => resolveI18n(textRaw?.[key], textI18n) || key
   const briefNameMap = buildMissionNameMapFromBrief(brief, resolveTextKey)
+  const missionTypeName = (missionType: number) => {
+    const viewType = missionTypeRaw?.[missionType]?.missionViewType
+    const key = viewType !== undefined ? MISSION_VIEW_TYPE_CFG[viewType] : undefined
+    return key ? resolveTextKey(key) : `Type ${missionType}`
+  }
+  const missionImportanceName = (importance: number) => {
+    const key = MISSION_IMPORTANCE_CFG[importance]
+    return key ? resolveTextKey(key) : `imp ${importance}`
+  }
   const stageName = (id: string) => {
     const entry = stageRaw?.[id]
     if (!entry) return id
@@ -1480,7 +1493,7 @@ async function getMissionConditionResolver(
     buildEnemySummary(enemyId, stageCtx.enemy, stageCtx.iconUrl!)
   const dungeonDetail = (dungeonId: string): DungeonDetail | null =>
     buildDungeonDetail(dungeonId, { dungeon: stageCtx.dungeon, enemy: stageCtx.enemy }, stageCtx.iconUrl!, stageCtx.picUrl!)
-  return { resolveArg, stageDetail, enemySummary, dungeonDetail, rewardTable: rewardRaw }
+  return { resolveArg, stageDetail, enemySummary, dungeonDetail, rewardTable: rewardRaw, missionTypeName, missionImportanceName }
 }
 
 export interface MissionDetailData {
@@ -1528,6 +1541,31 @@ export function useMissionScenes(missionId: string): UseDataResult<StoryRecapSce
       .sort((a, b) => a.sceneNo - b.sceneNo || a.sceneSub - b.sceneSub)
     return scenes
   }, [locale, missionId])
+}
+
+export interface LevelInfo {
+  mapId: string | null
+  mapName: string
+  levelName: string
+  rawLevelId: string
+}
+
+export function useLevelInfo(levelId: string): UseDataResult<LevelInfo | null> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    if (!levelId) return null
+    const [levelRaw, levelI18n, mapRaw, mapI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('LevelDescTable', () => fetchTableAll('LevelDescTable').catch(() => ({}))),
+      getTableI18nDict('LevelDescTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('MapIdTable', () => fetchTableAll('MapIdTable').catch(() => ({}))),
+      getTableI18nDict('MapIdTable', locale).catch(() => ({}) as Record<string, string>),
+    ])
+    const levelEntry = levelRaw?.[levelId]
+    const levelName = levelEntry ? resolveI18n(levelEntry.showName, levelI18n) || levelId : levelId
+    const mapId = resolveLevelMapId(levelId, mapRaw)
+    const mapName = mapId ? resolveI18n(mapRaw[mapId].showName, mapI18n) || mapId : ''
+    return { mapId, mapName, levelName, rawLevelId: levelId }
+  }, [locale, levelId])
 }
 
 export function usePrtsLibrary(): UseDataResult<{

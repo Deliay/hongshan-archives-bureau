@@ -14,6 +14,7 @@ import {
   resolveRuntimeText,
   extractMissionIds,
   buildMissionNameMapFromBrief,
+  resolveLevelMapId,
   adaptMissionRuntime,
   buildMissionQuestTree,
   type BakerSpeakerContext,
@@ -125,7 +126,7 @@ describe('buildRecapChaptersFromMissions', () => {
     ]
     const chapters = buildRecapChaptersFromMissions(missionIds, scenes)
     const types = chapters.map(c => c.chapterType)
-    expect(types).toEqual(['a', 'db', 'hidden', 'sm'])
+    expect(types).toEqual(['sm', 'a', 'db', 'hidden'])
     const a = chapters.find(c => c.chapterType === 'a')!
     expect(a.missions.map(m => m.missionId)).toEqual(['a1m1', 'a1m2'])
     // a1m1 has 2 scenes, a1m2 has 1, hidden52 has 0
@@ -133,6 +134,12 @@ describe('buildRecapChaptersFromMissions', () => {
     expect(a.missions[1].scenes).toHaveLength(1)
     const hidden = chapters.find(c => c.chapterType === 'hidden')!
     expect(hidden.missions[0].scenes).toHaveLength(0)
+  })
+
+  it('orders chapters by priority E > C > GM > SM > M > rest', () => {
+    const missionIds = ['m1m24', 'hidden52', 'e11m1', 'c33m1', 'sm1l1m2', 'gm02m25']
+    const chapters = buildRecapChaptersFromMissions(missionIds, [])
+    expect(chapters.map(c => c.chapterType)).toEqual(['e', 'c', 'gm', 'sm', 'm', 'hidden'])
   })
 
   it('resolves mission names from map', () => {
@@ -292,6 +299,24 @@ describe('buildMissionNameMapFromBrief', () => {
   })
 })
 
+describe('resolveLevelMapId', () => {
+  const mapRaw = { map01: {}, map02: {}, base01_lv001: {} }
+
+  it('uses levelId itself when it is a mapId', () => {
+    expect(resolveLevelMapId('base01_lv001', mapRaw)).toBe('base01_lv001')
+  })
+
+  it('strips _lv<digits> suffix to find mapId', () => {
+    expect(resolveLevelMapId('map02_lv007', mapRaw)).toBe('map02')
+    expect(resolveLevelMapId('map01_lv001', mapRaw)).toBe('map01')
+  })
+
+  it('returns null when no map matches', () => {
+    expect(resolveLevelMapId('dung01_cdg001', mapRaw)).toBeNull()
+    expect(resolveLevelMapId('', mapRaw)).toBeNull()
+  })
+})
+
 describe('adaptMissionRuntime', () => {
   const resolve = (key: string) => `T:${key}`
 
@@ -301,6 +326,8 @@ describe('adaptMissionRuntime', () => {
       missionName: { key: 'a1m2_name' },
       missionDescription: { key: 'a1m2_desc_001' },
       missionType: 11,
+      baseMissionImportance: 1,
+      overrideImportance: 0,
       charId: '',
       levelId: 'map01_lv001',
       missionChapterBitmask: 0,
@@ -316,6 +343,7 @@ describe('adaptMissionRuntime', () => {
     expect(mission.name).toBe('T:a1m2_name')
     expect(mission.description).toBe('T:a1m2_desc_001')
     expect(mission.missionType).toBe(11)
+    expect(mission.importance).toBe(1)
     expect(mission.quests).toHaveLength(2)
     expect(mission.quests[0].questId).toBe('a1m2_q#3')
     expect(mission.quests[0].inMainPath).toBe(true)

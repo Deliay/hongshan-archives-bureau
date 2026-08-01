@@ -236,4 +236,23 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     const bodyText = await page.locator('body').textContent() || ''
     expect(bodyText).toContain('前置任务')
   })
+
+  test('任务详情页渲染任务类型与重要性徽标', async ({ page }) => {
+    await page.goto('/archive/story/mission/a1m2')
+    await expect(page.getByRole('heading', { name: /迟到的特训|a1m2/ })).toBeVisible({ timeout: 30000 })
+    const bodyText = await page.locator('body').textContent() || ''
+    // MissionTypeInfoTable: a1m2 type 11 → MissionViewActivity → 活动任务
+    expect(bodyText).toContain('活动任务')
+    // MissionImportanceCfg: a1m2 baseImportance 1 → 重要
+    expect(bodyText).toContain('重要')
+  })
+
+  test('任务详情页关卡展示为大地图名·关卡名', async ({ page }) => {
+    await page.goto('/archive/story/mission/e11m1')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const bodyText = await page.locator('body').textContent() || ''
+    // LevelDescTable map02_lv007 → 应龙关, MapIdTable map02 → 武陵
+    expect(bodyText).toContain('武陵')
+    expect(bodyText).toContain('应龙关')
+  })
 })

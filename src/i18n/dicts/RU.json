@@ -323,6 +323,7 @@
     "missionType": "Тип задания",
     "relatedOperator": "Связанный оператор",
     "relatedLevel": "Связанный уровень",
+    "levelNameFormat": "{{levelName}} · {{mapName}}",
     "backToRecap": "Назад к сводке",
     "mainPath": "Основной путь",
     "branch": "Ветка",

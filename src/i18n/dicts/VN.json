@@ -323,6 +323,7 @@
     "missionType": "Loại nhiệm vụ",
     "relatedOperator": "Nhân viên liên quan",
     "relatedLevel": "Màn chơi liên quan",
+    "levelNameFormat": "{{levelName}}, {{mapName}}",
     "backToRecap": "Quay lại tóm tắt",
     "mainPath": "Tuyến chính",
     "branch": "Nhánh",

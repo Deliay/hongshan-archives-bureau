@@ -323,6 +323,7 @@
     "missionType": "任務タイプ",
     "relatedOperator": "関連オペレーター",
     "relatedLevel": "関連ステージ",
+    "levelNameFormat": "{{mapName}} · {{levelName}}",
     "backToRecap": "要約に戻る",
     "mainPath": "メインルート",
     "branch": "分岐",

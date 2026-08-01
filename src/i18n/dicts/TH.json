@@ -323,6 +323,7 @@
     "missionType": "ประเภทภารกิจ",
     "relatedOperator": "บุคลากรที่เกี่ยวข้อง",
     "relatedLevel": "ด่านที่เกี่ยวข้อง",
+    "levelNameFormat": "{{levelName}} · {{mapName}}",
     "backToRecap": "กลับไปที่สรุป",
     "mainPath": "เส้นทางหลัก",
     "branch": "ทางแยก",

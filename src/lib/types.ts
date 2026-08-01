@@ -479,6 +479,7 @@ export interface MissionRuntime {
   name: string
   description: string
   missionType: number
+  importance: number
   charId: string
   levelId: string
   chapterBitmask: number

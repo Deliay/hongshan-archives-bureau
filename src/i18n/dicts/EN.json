@@ -323,6 +323,7 @@
     "missionType": "Mission Type",
     "relatedOperator": "Operator",
     "relatedLevel": "Level",
+    "levelNameFormat": "{{mapName}} · {{levelName}}",
     "backToRecap": "Back to recap",
     "mainPath": "Main Path",
     "branch": "Branch",

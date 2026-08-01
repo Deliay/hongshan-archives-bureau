@@ -323,6 +323,7 @@
     "missionType": "任务类型",
     "relatedOperator": "关联干员",
     "relatedLevel": "关联关卡",
+    "levelNameFormat": "{{mapName}} · {{levelName}}",
     "backToRecap": "返回剧情梗概",
     "mainPath": "主路径",
     "branch": "分支",

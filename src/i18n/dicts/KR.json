@@ -323,6 +323,7 @@
     "missionType": "임무 유형",
     "relatedOperator": "관련 오퍼레이터",
     "relatedLevel": "관련 스테이지",
+    "levelNameFormat": "{{mapName}} · {{levelName}}",
     "backToRecap": "요약으로 돌아가기",
     "mainPath": "메인 경로",
     "branch": "분기",
