@@ -38,7 +38,14 @@ function isOrphanTag(match: RegExpExecArray): boolean {
 }
 
 function getUISprite(path: string): string {
-  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/${path.toLowerCase()}.png`
+  const lower = path.toLowerCase()
+  if (lower.startsWith('sns_sticker_')) {
+    return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/sns/sticker/${lower}.png`
+  }
+  if (lower.startsWith('sns_emoji_')) {
+    return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/sns/emoji/${lower}.png`
+  }
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/${lower}.png`
 }
 
 interface HyperlinkEntry {

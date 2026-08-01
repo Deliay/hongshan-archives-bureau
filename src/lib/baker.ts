@@ -1,4 +1,4 @@
-import { adaptBakerMessage, getSpriteUrl, resolveI18n, type BakerSpeakerContext } from './adapter'
+import { adaptBakerMessage, ASSET_BASE, resolveI18n, type BakerSpeakerContext } from './adapter'
 import type { BakerBeat, BakerMessage } from './types'
 
 interface RawNode {
@@ -29,12 +29,10 @@ export interface ResolveContext {
 
 export function getSnsAssetUrl(resPath: string): string {
   if (!resPath) return ''
-  const sub = resPath.startsWith('sns_sticker_')
-    ? 'sticker'
-    : resPath.startsWith('sns_emoji_')
-      ? 'emoji'
-      : 'emoji'
-  return getSpriteUrl(`sns/${sub}/${resPath}`)
+  if (resPath.startsWith('sns_sticker_')) {
+    return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/sns/sticker/${resPath}.png`
+  }
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/sns/emoji/${resPath}.png`
 }
 
 export function resolveDialog(
