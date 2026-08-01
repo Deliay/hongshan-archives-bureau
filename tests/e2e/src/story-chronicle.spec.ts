@@ -186,6 +186,17 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     expect(bodyText).toContain('碾骨撕裂牙兽')
   })
 
+  test('敌人卡片点击穿透到威胁图鉴详情', async ({ page }) => {
+    await page.goto('/archive/story/mission/a1m2')
+    await expect(page.getByRole('heading', { name: /迟到的特训|a1m2/ })).toBeVisible({ timeout: 30000 })
+    // 找到指向威胁图鉴的敌人卡片链接并点击
+    const enemyLink = page.locator('a[href="/archive/enemies/eny_0050_hound"]').first()
+    await expect(enemyLink).toBeVisible({ timeout: 30000 })
+    await enemyLink.click()
+    await page.waitForURL(/\/archive\/enemies\/eny_0050_hound/)
+    await expect(page).toHaveURL(/\/archive\/enemies\/eny_0050_hound/)
+  })
+
   test('任务详情页 quest 节点带边框与前置任务 badge', async ({ page }) => {
     await page.goto('/archive/story/mission/a1m2')
     await expect(page.getByRole('heading', { name: /迟到的特训|a1m2/ })).toBeVisible({ timeout: 30000 })
