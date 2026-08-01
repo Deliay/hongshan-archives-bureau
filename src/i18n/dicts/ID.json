@@ -339,7 +339,20 @@
     "objProgress": "Capai progres {{progress}}",
     "objAnd": "dan",
     "objOr": "atau",
-    "objNot": "bukan"
+    "objNot": "bukan",
+    "prevQuest": "Prasyarat",
+    "stageMission": "Misi {{mission}}",
+    "stageUnlock": "Syarat buka kunci",
+    "stageRelatedQuest": "Tugas terkait: ",
+    "stageRewards": "Hadiah aktivitas",
+    "enemyLv": "Level {{level}}",
+    "dungeonSort": "Urutan",
+    "dungeonStamina": "Tenaga {{stamina}}",
+    "dungeonEnemies": "Musuh",
+    "dungeonFirstPass": "Hadiah penyelesaian pertama",
+    "dungeonCustom": "Hadiah khusus",
+    "dungeonExtra": "Hadiah ekstra",
+    "dungeonHunter": "Hadiah mode pemburu"
   },
   "update": {
     "added": "Ditambahkan",

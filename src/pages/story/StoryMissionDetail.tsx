@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMissionDetail } from '../../hooks/useData'
 import type { MissionConditionArgResolver } from '../../hooks/useData'
+import type { ActivityStageDetail } from '../../lib/missionConditionNames'
 import { useI18n } from '../../i18n'
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton'
 import { Badge } from '../../components/ui/Badge'
@@ -16,6 +17,8 @@ export default function StoryMissionDetail() {
   const { data, loading, error } = useMissionDetail(missionId || '')
   const mission = data?.mission ?? null
   const resolveArg = data?.conditionResolver?.resolveArg
+  const stageDetail = data?.conditionResolver?.stageDetail
+  const rewardTable = data?.conditionResolver?.rewardTable
 
   const tree = useMemo(
     () => (mission ? buildMissionQuestTree(mission.mainPathQuests, mission.quests) : []),
@@ -75,7 +78,7 @@ export default function StoryMissionDetail() {
         {tree.length === 0 && <p className="text-archive-dust text-sm">{t('common.empty')}</p>}
         <div className="space-y-3">
           {tree.map(root => (
-            <QuestNode key={root.questId} node={root} resolveArg={resolveArg} />
+            <QuestNode key={root.questId} node={root} resolveArg={resolveArg} stageDetail={stageDetail} rewardTable={rewardTable} />
           ))}
         </div>
       </section>
@@ -83,38 +86,51 @@ export default function StoryMissionDetail() {
   )
 }
 
-function QuestNode({ node, resolveArg }: { node: MissionQuestTreeNode; resolveArg?: MissionConditionArgResolver }) {
+function QuestNode({
+  node,
+  resolveArg,
+  stageDetail,
+  rewardTable,
+}: {
+  node: MissionQuestTreeNode
+  resolveArg?: MissionConditionArgResolver
+  stageDetail?: (stageId: string) => ActivityStageDetail | null
+  rewardTable?: Record<string, any>
+}) {
   const { t } = useI18n()
   return (
     <div>
-      <div className="flex items-baseline gap-2">
-        <span className="font-mono text-xs text-archive-gold">{node.questId}</span>
-        {node.inMainPath && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-archive-gold/20 text-archive-gold">{t('story.mainPath')}</span>
+      <div className="border border-archive-border rounded-md p-3 bg-archive-file/40">
+        <div className="flex items-baseline gap-2">
+          <span className="font-mono text-xs text-archive-gold">{node.questId}</span>
+          {node.inMainPath && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-archive-gold/20 text-archive-gold">{t('story.mainPath')}</span>
+          )}
+        </div>
+        {node.description && (
+          <p className="text-sm text-archive-ivory leading-relaxed mt-1"><RichText text={node.description} /></p>
+        )}
+        {node.objectives.length > 0 && (
+          <ul className="list-none text-sm text-archive-dust space-y-1 mt-1">
+            {node.objectives.map(o => (
+              <li key={o.description || o.condition?.type || node.questId} className="flex flex-col">
+                <span>{o.description ? <RichText text={o.description} /> : '·'}</span>
+                {o.condition && <ObjectiveCondition condition={o.condition} resolveArg={resolveArg} stageDetail={stageDetail} rewardTable={rewardTable} />}
+              </li>
+            ))}
+          </ul>
+        )}
+        {node.prevQuestIds.length > 0 && (
+          <div className="mt-2 flex items-center gap-1.5 border-l-2 border-archive-gold/40 pl-2">
+            <Badge variant="ghost" className="text-[10px]">{t('story.prevQuest')}</Badge>
+            <span className="text-[11px] font-mono text-archive-lead">{node.prevQuestIds.join(', ')}</span>
+          </div>
         )}
       </div>
-      {node.description && (
-        <p className="text-sm text-archive-ivory leading-relaxed mt-1"><RichText text={node.description} /></p>
-      )}
-      {node.objectives.length > 0 && (
-        <ul className="list-none text-sm text-archive-dust space-y-1 mt-1">
-          {node.objectives.map(o => (
-            <li key={o.description || o.condition?.type || node.questId} className="flex flex-col">
-              <span>{o.description ? <RichText text={o.description} /> : '·'}</span>
-              {o.condition && <ObjectiveCondition condition={o.condition} resolveArg={resolveArg} />}
-            </li>
-          ))}
-        </ul>
-      )}
-      {node.prevQuestIds.length > 0 && (
-        <div className="mt-1 text-[11px] font-mono text-archive-lead">
-          {'← '}{node.prevQuestIds.join(', ')}
-        </div>
-      )}
       {node.children.length > 0 && (
         <div className="ml-3 mt-1 pl-3 border-l border-archive-gold/20 space-y-3">
           {node.children.map(child => (
-            <QuestNode key={child.questId} node={child} resolveArg={resolveArg} />
+            <QuestNode key={child.questId} node={child} resolveArg={resolveArg} stageDetail={stageDetail} rewardTable={rewardTable} />
           ))}
         </div>
       )}

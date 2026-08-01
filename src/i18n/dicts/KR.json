@@ -339,7 +339,20 @@
     "objProgress": "진행도 {{progress}} 달성",
     "objAnd": "및",
     "objOr": "또는",
-    "objNot": "아님"
+    "objNot": "아님",
+    "prevQuest": "선행 퀘스트",
+    "stageMission": "소속 미션 {{mission}}",
+    "stageUnlock": "해금 조건",
+    "stageRelatedQuest": "관련 퀘스트: ",
+    "stageRewards": "활동 보상",
+    "enemyLv": "Lv.{{level}}",
+    "dungeonSort": "정렬",
+    "dungeonStamina": "스태미나 {{stamina}}",
+    "dungeonEnemies": "적 유닛",
+    "dungeonFirstPass": "첫 클리어 보상",
+    "dungeonCustom": "커스텀 보상",
+    "dungeonExtra": "추가 보상",
+    "dungeonHunter": "헌터 모드 보상"
   },
   "update": {
     "added": "추가",

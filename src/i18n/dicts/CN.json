@@ -339,7 +339,20 @@
     "objProgress": "进度达到 {{progress}}",
     "objAnd": "且",
     "objOr": "或",
-    "objNot": "非"
+    "objNot": "非",
+    "prevQuest": "前置任务",
+    "stageMission": "所属任务 {{mission}}",
+    "stageUnlock": "解锁条件",
+    "stageRelatedQuest": "关联任务：",
+    "stageRewards": "活动奖励",
+    "enemyLv": "Lv.{{level}}",
+    "dungeonSort": "排序",
+    "dungeonStamina": "体力 {{stamina}}",
+    "dungeonEnemies": "敌方单位",
+    "dungeonFirstPass": "首通奖励",
+    "dungeonCustom": "定制奖励",
+    "dungeonExtra": "额外奖励",
+    "dungeonHunter": "猎手模式奖励"
   },
   "update": {
     "added": "新增",

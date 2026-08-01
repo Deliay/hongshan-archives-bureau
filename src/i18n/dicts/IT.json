@@ -339,7 +339,20 @@
     "objProgress": "Raggiungi il progresso {{progress}}",
     "objAnd": "e",
     "objOr": "o",
-    "objNot": "non"
+    "objNot": "non",
+    "prevQuest": "Prerequisito",
+    "stageMission": "Missione {{mission}}",
+    "stageUnlock": "Condizione di sblocco",
+    "stageRelatedQuest": "Missione correlata: ",
+    "stageRewards": "Ricompense attività",
+    "enemyLv": "Liv.{{level}}",
+    "dungeonSort": "Ordine",
+    "dungeonStamina": "Resistenza {{stamina}}",
+    "dungeonEnemies": "Nemici",
+    "dungeonFirstPass": "Ricompense prima vittoria",
+    "dungeonCustom": "Ricompense personalizzate",
+    "dungeonExtra": "Ricompense extra",
+    "dungeonHunter": "Ricompense modalità cacciatore"
   },
   "update": {
     "added": "Aggiunto",

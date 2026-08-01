@@ -339,7 +339,20 @@
     "objProgress": "ถึงความคืบหน้า {{progress}}",
     "objAnd": "และ",
     "objOr": "หรือ",
-    "objNot": "ไม่"
+    "objNot": "ไม่",
+    "prevQuest": "เควสก่อนหน้า",
+    "stageMission": "ภารกิจ {{mission}}",
+    "stageUnlock": "เงื่อนไขปลดล็อก",
+    "stageRelatedQuest": "เควสที่เกี่ยวข้อง: ",
+    "stageRewards": "รางวัลกิจกรรม",
+    "enemyLv": "lv.{{level}}",
+    "dungeonSort": "ลำดับ",
+    "dungeonStamina": "พลัง {{stamina}}",
+    "dungeonEnemies": "ศัตรู",
+    "dungeonFirstPass": "รางวัลเคลียร์ครั้งแรก",
+    "dungeonCustom": "รางวัลกำหนดเอง",
+    "dungeonExtra": "รางวัลพิเศษ",
+    "dungeonHunter": "รางวัลโหมดฮันเตอร์"
   },
   "update": {
     "added": "เพิ่มแล้ว",

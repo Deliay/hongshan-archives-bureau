@@ -7,7 +7,8 @@ import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
 import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime } from '../lib/types'
 import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, adaptRecapChapter, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds } from '../lib/adapter'
-import type { ActivityStageDetail } from '../lib/missionConditionNames'
+import type { ActivityStageDetail, EnemySummary, DungeonDetail, StageDetailContext } from '../lib/missionConditionNames'
+import { buildEnemySummary, buildDungeonDetail, buildStageDetail } from '../lib/missionConditionNames'
 import { formatBlackboard } from '../lib/formatText'
 import { WEAPON_TYPE_KEYS } from '../data/constants'
 import { getAttributeShowMap, resolveAttrShow } from '../lib/attributeShow'
@@ -1367,6 +1368,9 @@ export type MissionConditionArgResolver = (argName: string, raw: string | number
 export interface MissionConditionResolver {
   resolveArg: MissionConditionArgResolver
   stageDetail: (stageId: string) => ActivityStageDetail | null
+  enemySummary: (enemyId: string) => EnemySummary | undefined
+  dungeonDetail: (dungeonId: string) => DungeonDetail | null
+  rewardTable: Record<string, any>
 }
 
 async function getMissionConditionResolver(
@@ -1384,6 +1388,17 @@ async function getMissionConditionResolver(
     itemI18n,
     textRaw,
     textI18n,
+    multiStageRaw,
+    multiStageI18n,
+    conditionRaw,
+    conditionI18n,
+    activityRaw,
+    activityI18n,
+    dungeonRaw,
+    dungeonI18n,
+    enemyRaw,
+    enemyI18n,
+    rewardRaw,
   ] = await Promise.all([
     getCachedData<Record<string, any>>('ActivityConditionalMultiStageStageToActivityTable', () => fetchTableAll('ActivityConditionalMultiStageStageToActivityTable').catch(() => ({}))),
     getTableI18nDict('ActivityConditionalMultiStageStageToActivityTable', locale).catch(() => ({}) as Record<string, string>),
@@ -1395,6 +1410,17 @@ async function getMissionConditionResolver(
     getTableI18nDict('ItemTable', locale).catch(() => ({}) as Record<string, string>),
     getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable')),
     getTableI18nDict('TextTable', locale),
+    getCachedData<Record<string, any>>('ActivityConditionalMultiStageTable', () => fetchTableAll('ActivityConditionalMultiStageTable').catch(() => ({}))),
+    getTableI18nDict('ActivityConditionalMultiStageTable', locale).catch(() => ({}) as Record<string, string>),
+    getCachedData<Record<string, any>>('ActivityConditionalMultiStageConditionTable', () => fetchTableAll('ActivityConditionalMultiStageConditionTable').catch(() => ({}))),
+    getTableI18nDict('ActivityConditionalMultiStageConditionTable', locale).catch(() => ({}) as Record<string, string>),
+    getCachedData<Record<string, any>>('ActivityTable', () => fetchTableAll('ActivityTable').catch(() => ({}))),
+    getTableI18nDict('ActivityTable', locale).catch(() => ({}) as Record<string, string>),
+    getCachedData<Record<string, any>>('DungeonTable', () => fetchTableAll('DungeonTable').catch(() => ({}))),
+    getTableI18nDict('DungeonTable', locale).catch(() => ({}) as Record<string, string>),
+    getCachedData<Record<string, any>>('EnemyTemplateDisplayInfoTable', () => fetchTableAll('EnemyTemplateDisplayInfoTable').catch(() => ({}))),
+    getTableI18nDict('EnemyTemplateDisplayInfoTable', locale).catch(() => ({}) as Record<string, string>),
+    getCachedData<Record<string, any>>('RewardTable', () => fetchTableAll('RewardTable').catch(() => ({}))),
   ])
   const resolveTextKey = (key: string) => resolveI18n(textRaw?.[key], textI18n) || key
   const stageName = (id: string) => {
@@ -1426,28 +1452,25 @@ async function getMissionConditionResolver(
       default: return undefined
     }
   }
-  const stageDetail = (stageId: string): ActivityStageDetail | null => {
-    const entry = stageRaw?.[stageId]
-    if (!entry) return null
-    const dung = dungStageRaw?.[stageId]
-    const conditions: ActivityStageDetail['conditions'] = (completeRaw?.[stageId]?.conditionList ?? []).map((c: any) => ({
-      conditionType: c.conditionType ?? 0,
-      compareOperator: c.compareOperator ?? 0,
-      progressToCompare: c.progressToCompare ?? 0,
-      conditionId: c.conditionId ?? '',
-      parameters: c.parameters ?? [],
-    }))
-    return {
-      stageId,
-      name: resolveI18n(entry.desc, stageI18n) || stageId,
-      activityId: entry.activityId ?? '',
-      rewardId: entry.rewardId ?? '',
-      questId: dung?.questId,
-      levelId: dung?.levelId,
-      conditions,
-    }
+  const stageCtx: StageDetailContext = {
+    stage: { raw: stageRaw, i18n: stageI18n },
+    complete: { raw: completeRaw },
+    dungStage: { raw: dungStageRaw },
+    multiStage: { raw: multiStageRaw, i18n: multiStageI18n },
+    condition: { raw: conditionRaw, i18n: conditionI18n },
+    activity: { raw: activityRaw, i18n: activityI18n },
+    dungeon: { raw: dungeonRaw, i18n: dungeonI18n },
+    enemy: { raw: enemyRaw, i18n: enemyI18n },
+    questDesc,
+    iconUrl: (templateId) => `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/monstericonbig/${templateId}.png`,
+    picUrl: (path) => `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/dungeon/${path}.png`,
   }
-  return { resolveArg, stageDetail }
+  const stageDetail = (stageId: string): ActivityStageDetail | null => buildStageDetail(stageId, stageCtx)
+  const enemySummary = (enemyId: string): EnemySummary | undefined =>
+    buildEnemySummary(enemyId, stageCtx.enemy, stageCtx.iconUrl!)
+  const dungeonDetail = (dungeonId: string): DungeonDetail | null =>
+    buildDungeonDetail(dungeonId, { dungeon: stageCtx.dungeon, enemy: stageCtx.enemy }, stageCtx.iconUrl!, stageCtx.picUrl!)
+  return { resolveArg, stageDetail, enemySummary, dungeonDetail, rewardTable: rewardRaw }
 }
 
 export interface MissionDetailData {

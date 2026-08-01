@@ -339,7 +339,20 @@
     "objProgress": "進行度{{progress}}に達する",
     "objAnd": "かつ",
     "objOr": "または",
-    "objNot": "なし"
+    "objNot": "なし",
+    "prevQuest": "前提クエスト",
+    "stageMission": "所属ミッション {{mission}}",
+    "stageUnlock": "解放条件",
+    "stageRelatedQuest": "関連クエスト：",
+    "stageRewards": "アクティビティ報酬",
+    "enemyLv": "Lv.{{level}}",
+    "dungeonSort": "並び順",
+    "dungeonStamina": "スタミナ {{stamina}}",
+    "dungeonEnemies": "敵ユニット",
+    "dungeonFirstPass": "初回クリア報酬",
+    "dungeonCustom": "カスタム報酬",
+    "dungeonExtra": "追加報酬",
+    "dungeonHunter": "ハンターモード報酬"
   },
   "update": {
     "added": "追加",

@@ -158,7 +158,7 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await expect(page.getByRole('heading', { name: /迟到的特训|a1m2/ })).toBeVisible({ timeout: 30000 })
     const bodyText = await page.locator('body').textContent() || ''
     expect(bodyText).toContain('任务目标')
-    expect(bodyText).toContain('完成活动阶段')
+    expect(bodyText).toContain('生存特训')
     expect(bodyText).toContain('完成对话')
   })
 
@@ -168,5 +168,32 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     const bodyText = await page.locator('body').textContent() || ''
     expect(bodyText).toContain('前往地图')
     expect(bodyText).toContain('进度达到')
+  })
+
+  test('任务详情页活动阶段渲染为独立面板（含活动名/dungeon/奖励/敌人）', async ({ page }) => {
+    await page.goto('/archive/story/mission/a1m2')
+    await expect(page.getByRole('heading', { name: /迟到的特训|a1m2/ })).toBeVisible({ timeout: 30000 })
+    // 阶段名（MultiStageTable.name）与活动名（ActivityTable.name）
+    await expect(page.locator('body').getByText('生存特训').first()).toBeVisible({ timeout: 30000 })
+    const bodyText = await page.locator('body').textContent() || ''
+    // 活动奖励分组
+    expect(bodyText).toContain('活动奖励')
+    // dungeon 面板：dungeon 名 / 敌方单位 / 等级 / 富文本描述
+    expect(bodyText).toContain('敌方单位')
+    expect(bodyText).toContain('Lv.')
+    expect(bodyText).toContain('威胁等级')
+    // 敌人名称（EnemyTemplateDisplayInfoTable）
+    expect(bodyText).toContain('碾骨撕裂牙兽')
+  })
+
+  test('任务详情页 quest 节点带边框与前置任务 badge', async ({ page }) => {
+    await page.goto('/archive/story/mission/a1m2')
+    await expect(page.getByRole('heading', { name: /迟到的特训|a1m2/ })).toBeVisible({ timeout: 30000 })
+    // quest 卡片边框存在
+    const questCards = page.locator('[class*="rounded-md"][class*="p-3"]')
+    expect(await questCards.count()).toBeGreaterThan(0)
+    // 前置任务 badge 文案
+    const bodyText = await page.locator('body').textContent() || ''
+    expect(bodyText).toContain('前置任务')
   })
 })

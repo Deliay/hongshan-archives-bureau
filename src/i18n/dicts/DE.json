@@ -339,7 +339,20 @@
     "objProgress": "Erreiche Fortschritt {{progress}}",
     "objAnd": "und",
     "objOr": "oder",
-    "objNot": "nicht"
+    "objNot": "nicht",
+    "prevQuest": "Voraussetzung",
+    "stageMission": "Auftrag {{mission}}",
+    "stageUnlock": "Freischaltbedingung",
+    "stageRelatedQuest": "Zugehörige Aufgabe: ",
+    "stageRewards": "Aktivitätsbelohnungen",
+    "enemyLv": "St.{{level}}",
+    "dungeonSort": "Reihenfolge",
+    "dungeonStamina": "Ausdauer {{stamina}}",
+    "dungeonEnemies": "Gegner",
+    "dungeonFirstPass": "Erst-Durchlauf-Belohnungen",
+    "dungeonCustom": "Individuelle Belohnungen",
+    "dungeonExtra": "Zusätzliche Belohnungen",
+    "dungeonHunter": "Belohnungen des Jägermodus"
   },
   "update": {
     "added": "Hinzugefügt",

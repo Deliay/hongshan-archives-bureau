@@ -339,7 +339,20 @@
     "objProgress": "Reach progress {{progress}}",
     "objAnd": "and",
     "objOr": "or",
-    "objNot": "not"
+    "objNot": "not",
+    "prevQuest": "Prerequisite",
+    "stageMission": "Mission {{mission}}",
+    "stageUnlock": "Unlock condition",
+    "stageRelatedQuest": "Related quest: ",
+    "stageRewards": "Activity rewards",
+    "enemyLv": "Lv.{{level}}",
+    "dungeonSort": "Order",
+    "dungeonStamina": "Stamina {{stamina}}",
+    "dungeonEnemies": "Enemies",
+    "dungeonFirstPass": "First clear rewards",
+    "dungeonCustom": "Custom rewards",
+    "dungeonExtra": "Extra rewards",
+    "dungeonHunter": "Hunter mode rewards"
   },
   "update": {
     "added": "Added",

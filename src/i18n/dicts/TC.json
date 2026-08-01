@@ -339,7 +339,20 @@
     "objProgress": "進度達到 {{progress}}",
     "objAnd": "且",
     "objOr": "或",
-    "objNot": "非"
+    "objNot": "非",
+    "prevQuest": "前置任務",
+    "stageMission": "所屬任務 {{mission}}",
+    "stageUnlock": "解鎖條件",
+    "stageRelatedQuest": "關聯任務：",
+    "stageRewards": "活動獎勵",
+    "enemyLv": "Lv.{{level}}",
+    "dungeonSort": "排序",
+    "dungeonStamina": "體力 {{stamina}}",
+    "dungeonEnemies": "敵方單位",
+    "dungeonFirstPass": "首通獎勵",
+    "dungeonCustom": "定製獎勵",
+    "dungeonExtra": "額外獎勵",
+    "dungeonHunter": "獵手模式獎勵"
   },
   "update": {
     "added": "新增",

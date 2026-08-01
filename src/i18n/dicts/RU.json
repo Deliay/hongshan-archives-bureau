@@ -339,7 +339,20 @@
     "objProgress": "Достичь прогресса {{progress}}",
     "objAnd": "и",
     "objOr": "или",
-    "objNot": "не"
+    "objNot": "не",
+    "prevQuest": "Предварительное задание",
+    "stageMission": "Задание {{mission}}",
+    "stageUnlock": "Условие разблокировки",
+    "stageRelatedQuest": "Связанное задание: ",
+    "stageRewards": "Награды активности",
+    "enemyLv": "Ур.{{level}}",
+    "dungeonSort": "Порядок",
+    "dungeonStamina": "Выносливость {{stamina}}",
+    "dungeonEnemies": "Противники",
+    "dungeonFirstPass": "Награда за первое прохождение",
+    "dungeonCustom": "Особые награды",
+    "dungeonExtra": "Дополнительные награды",
+    "dungeonHunter": "Награды режима охотника"
   },
   "update": {
     "added": "Добавлено",

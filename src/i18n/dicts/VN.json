@@ -339,7 +339,20 @@
     "objProgress": "Đạt tiến độ {{progress}}",
     "objAnd": "và",
     "objOr": "hoặc",
-    "objNot": "không"
+    "objNot": "không",
+    "prevQuest": "Nhiệm vụ tiên quyết",
+    "stageMission": "Nhiệm vụ {{mission}}",
+    "stageUnlock": "Điều kiện mở khóa",
+    "stageRelatedQuest": "Nhiệm vụ liên quan: ",
+    "stageRewards": "Phần thưởng hoạt động",
+    "enemyLv": "Cấp {{level}}",
+    "dungeonSort": "Thứ tự",
+    "dungeonStamina": "Thể lực {{stamina}}",
+    "dungeonEnemies": "Kẻ địch",
+    "dungeonFirstPass": "Phần thưởng lần đầu",
+    "dungeonCustom": "Phần thưởng tùy chỉnh",
+    "dungeonExtra": "Phần thưởng thêm",
+    "dungeonHunter": "Phần thưởng chế độ thợ săn"
   },
   "update": {
     "added": "Đã thêm",

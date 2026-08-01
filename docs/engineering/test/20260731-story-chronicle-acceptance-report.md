@@ -678,11 +678,31 @@ _activityStageId (dungeon_fighting_5)
 - 「前置任务」badge：复用 `Badge` 组件（variant="ghost" 或新增 seal/gold 小号），文案 `t('story.prevQuest')`，后接 mono 的 `prevQuestIds`（保留引用能力）。
 - 新增 i18n key `story.prevQuest` 与 dungeon 分组标题 keys（`story.dungeonFirstPass / dungeonCustom / dungeonExtra / dungeonHunter` 等，14 语言，经 `generate-i18n-dicts.ts` 生成）。
 
-### 9.8 测试与验证计划
+### 9.8 测试与验证计划（已实施，2026-08-01）
 
-- 单测：`missionConditionNames.test.ts` 增加 `stageDetail` / `dungeonDetail` 聚合纯函数测试（Mock 各表数据，断言拼接/容错/缺失字段兜底/enemyIds-enemyLevels 索引对齐）；`ActivityStagePanel` / `DungeonPanel` / `EnemyUnit` 组件单测（若组件无 data fetch 则用 RTL 渲染断言各分组展示）。
-- E2E：`story-chronicle.spec.ts` 增加「a1m2 任务详情页活动面板展示」（断言出现「生存特训/爆破练习/解锁条件/奖励」等关键字）与「dungeon 面板展示敌人与图片」（断言敌人名如「碾骨撕裂牙兽」出现、`<img>` 存在）。
-- 全量：lint / test / build；仅存量 Sidebar 2 例基线失败。
+**实现落点**（commit 见下）：
+- 纯函数聚合（`src/lib/missionConditionNames.ts`）：`buildEnemySummary` / `buildDungeonDetail` / `buildStageDetail` / `extractParamStrings`，类型 `EnemySummary` / `DungeonDetail` / `DungeonEnemy` / 扩展 `ActivityStageDetail`。
+- resolver（`src/hooks/useData.ts` `getMissionConditionResolver`）：新增并行加载 `ActivityConditionalMultiStageTable` / `ActivityConditionalMultiStageConditionTable` / `ActivityTable` / `DungeonTable` / `EnemyTemplateDisplayInfoTable` / `RewardTable`（+ i18n）；`MissionConditionResolver` 新增 `enemySummary` / `dungeonDetail` / `rewardTable`。
+- 组件：`EnemyUnit.tsx`（按 `{enemyId, level}` 渲染，props 注入 `EnemySummary`）、`DungeonPanel.tsx`（dungeon 名/desc/levelDesc/featureDesc/图片/敌人/奖励分组，委托 `RewardPanel`）、`ActivityStagePanel.tsx`（阶段名/活动名/所属任务/解锁/关联 quest/活动奖励/dungeon 区块）。
+- 接入：`ObjectiveCondition` 对 `CheckActivityConditionalStageStatus` 且 resolver 提供 `stageDetail` 时渲染 `<ActivityStagePanel>`（缺失回退原文本行）；`StoryMissionDetail` `QuestNode` 加边框 + 「前置任务」badge + 左侧依赖线（`border-l-2`）。
+- i18n 新增 11 个 key（`story.prevQuest` / `stageMission` / `stageUnlock` / `stageRelatedQuest` / `stageRewards` / `enemyLv` / `dungeonSort` / `dungeonStamina` / `dungeonEnemies` / `dungeonFirstPass` / `dungeonCustom` / `dungeonExtra` / `dungeonHunter`，14 语言），`verify-i18n` PASSED。
+
+**单测**（`missionConditionNames.test.ts` 16 例）：
+- `extractParamStrings`：包装参数解包（string/int 列表）与原始值兜底。
+- `buildEnemySummary`：名称/昵称/图标解析、缺失兜底、templateId 空回退。
+- `buildDungeonDetail`：索引对齐敌人等级、奖励分组、dungeon 缺失返回 null、超长 enemyIds 截断。
+- `buildStageDetail`：5+3 表拼接、`blockShow` 跳过、无 levelId 时 dungeonDetail 为 null、stage 缺失 null。
+
+**E2E**（`story-chronicle.spec.ts` 19 例）：
+- 原「完成活动阶段」断言改为「生存特训」（阶段文本行已升级为面板）。
+- 新增「活动阶段渲染为独立面板」：断言「生存特训/活动奖励/敌方单位/Lv./威胁等级/碾骨撕裂牙兽」。
+- 新增「quest 节点带边框与前置任务 badge」：断言 `rounded-md p-3` 卡片存在 + 「前置任务」文案。
+
+**全量验证**：
+- `npx vitest run`：31 通过 / 1 失败（仅存量 Sidebar 2 例基线失败）。
+- `npm run build`：通过（含 tsc）。
+- `npm run lint`：通过（含 verify-i18n PASSED）。
+- E2E `playwright test src/story-chronicle.spec.ts`：19/19 通过。
 
 ### 9.9 风险与待确认
 
