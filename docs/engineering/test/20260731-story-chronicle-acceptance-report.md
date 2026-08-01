@@ -566,7 +566,7 @@ _activityStageId (dungeon_fighting_5)
 
 > 三阶段验收反馈 3 项：①`_activityStageId` 关联的 Activity 数据表很多未渲染，需抽出独立组件；②单个 quest 需加边框与其他 quest 区分；③quest 依赖关系左侧需画依赖线，「←」字符替换为「前置任务」badge。
 >
-> **review 追加意见（2026-08-01）**：①奖励单独抽组件、按 `rewardId` 渲染；②dungeon 单独抽组件、按 `dungeonId` 渲染 dungeon 内容及其奖励；③**注意 `Activity.rewardId` 与 `Dungeon.rewardId` 不同**，两者都依赖奖励组件渲染；④dungeon 的 `enemyIds` 需渲染（不限，其余字段尽可能渲染），`dungeonPicPath` 图片需在合适位置渲染。本节为修订后方案（待 review 后实施）。
+> **review 追加意见（2026-08-01）**：①奖励单独抽组件、按 `rewardId` 渲染；②dungeon 单独抽组件、按 `dungeonId` 渲染 dungeon 内容及其奖励；③**注意 `Activity.rewardId` 与 `Dungeon.rewardId` 不同**，两者都依赖奖励组件渲染；④dungeon 的 `enemyIds` 需渲染（不限，其余字段尽可能渲染），`dungeonPicPath` 图片需在合适位置渲染；⑤**敌人组件需单独抽出（不放在 Dungeon 组件内实现），按 `{enemyId, level}` 渲染**。本节为修订后方案（待 review 后实施）。
 
 ### 9.1 数据调查结论（`dungeon_fighting_2` 完整关联链）
 
@@ -603,37 +603,50 @@ _activityStageId (dungeon_fighting_5)
 - 活动面板与 dungeon 面板均通过 props 传入 `rewardTable`（resolver 内已加载的 `RewardTable` + `ItemTable`），不新增数据获取。
 - 若 review 认为需独立「奖励卡片」展示形态（如面板标题「奖励」+ 分固定/随机），可在 `RewardPanel` 外层包一层分组容器，不改变其核心逻辑。
 
-### 9.3 方案：独立 Dungeon 组件（review ②④）
+### 9.3 方案：独立 Enemy 组件（review ⑤）
 
-**目标**：按 `dungeonId`（即 `DungeonFightingStageTable.levelId`，如 `dung01_actmonster02`）渲染 dungeon 关卡内容、敌人、图片与奖励。
+**目标**：敌人渲染为独立、可复用组件，按 `{enemyId, level}` 渲染，不内聚在 Dungeon 组件中（Dungeon 只负责组合敌人实例）。
+
+**接口**（`src/pages/story/EnemyUnit.tsx`）：
+- `EnemyUnit({ enemyId, level }: { enemyId: string; level?: number })`：单个敌人卡片——图标（`monstericonbig/{templateId}.png`，`onError` 隐藏回退）+ 名称（`EnemyTemplateDisplayInfoTable.name` i18n）+ 等级（`Lv.{level}`，`level` 缺失时省略）。
+- 纯展示组件，props 注入已解析的 `enemy: EnemySummary | undefined`（`{id, name, nickname, iconUrl, level}`），无内部数据获取；数据由调用方（resolver / Dungeon 组件）预先解析，便于单测。
+
+**数据接入**（`src/hooks/useData.ts` `getMissionConditionResolver`）：
+- 新增并行加载：`EnemyTemplateDisplayInfoTable` + i18n（`useData.ts:648` 已有同表加载范式）。
+- 新增 `enemySummary(enemyId): EnemySummary | undefined`：拼表返回 `{id, name, nickname, templateId, iconUrl}`；`iconUrl = {ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/monstericonbig/{templateId}.png`。
+- 本组件独立于 Dungeon 数据流，其他页面（如章节怪物列表）也可复用。
+
+### 9.4 方案：独立 Dungeon 组件（review ②④）
+
+**目标**：按 `dungeonId`（即 `DungeonFightingStageTable.levelId`，如 `dung01_actmonster02`）渲染 dungeon 关卡内容、图片与奖励；敌人委托 §9.3 `EnemyUnit`。
 
 **类型扩展**（`src/lib/missionConditionNames.ts`）：
 - 新增 `DungeonDetail` 接口：
   - `dungeonId`、`name`（DungeonTable.dungeonName i18n）、`desc`（dungeonDesc）、`levelDesc`（dungeonLevelDesc）、`featureDesc`（featureDesc，富文本，含 `<@gd.key>` 等标记）
   - `picUrl`（`{ASSET_BASE}/sprites/dungeon/{dungeonPicPath}.png`，`dungeonPicPath` 为空时无图）
   - `costStamina`、`dungeonCategory`、`sortId`、`sceneId`
-  - `enemies[]`：`{id, name, nickname, iconUrl, level}`（经 `EnemyTemplateDisplayInfoTable` 名称 + `enemyLevels[]` 对应等级）
+  - `enemies[]`：`{ enemyId, level }[]`（`enemyIds[i]` 与 `enemyLevels[i]` 按索引对齐；渲染时逐条委托 `EnemyUnit`）
   - `rewards`: `{ fixed: string[]; firstPass: string[]; custom: string[]; extra: string[]; hunter: string[] }`（各 rewardId 分类，均复用 RewardPanel 渲染）
   - 全部字段可空，组件兜底。
 
 **数据接入**（`src/hooks/useData.ts` `getMissionConditionResolver`）：
-- 新增并行加载：`EnemyTemplateDisplayInfoTable` + i18n、`RewardTable`（已有）+ i18n（ItemTable 已有）。
-- 新增 `dungeonDetail(dungeonId): DungeonDetail | null` 方法：拼 `DungeonTable` + `EnemyTemplateDisplayInfoTable` + `RewardTable` + `ItemTable`；`enemyIds[i]` 与 `enemyLevels[i]` 按索引对齐。
+- 新增并行加载：`DungeonTable` + i18n、`RewardTable`（已有）+ i18n（ItemTable 已有）；敌人名称/图标经 §9.3 `enemySummary()`。
+- 新增 `dungeonDetail(dungeonId): DungeonDetail | null` 方法：拼 `DungeonTable` + `RewardTable` + `ItemTable` + §9.3 敌人解析；`enemyIds[i]` 与 `enemyLevels[i]` 按索引对齐生成 `enemies[]`。
 
 **组件**（`src/pages/story/DungeonPanel.tsx`）：
 - 纯展示组件，props 注入 `detail: DungeonDetail` + `rewardTable` + `t`。
 - 展示结构：
   - 头部：dungeon 名称 + `sortId`/`costStamina`/`dungeonCategory` 元信息 + `dungeonPicPath` 图片（`<img>` 首图位，`onError` 隐藏回退）。
   - 描述：`desc`（富文本）→ `levelDesc`（威胁等级）→ `featureDesc`（机制说明，富文本）。
-  - 敌人列表：`enemies[]` 图标（monstericonbig）+ 名称 + 等级，横向排列。
+  - 敌人列表：`detail.enemies[]` 逐条渲染 `<EnemyUnit enemyId={...} level={...} />`（横向排列；`enemySummary` 未命中时组件自身兜底显示 enemyId）。
   - 奖励分组：`firstPassRewardId`（首通）→ `customRewardId` → `extraRewardId` → `hunterModeRewardId` → `rewardId`（若有），各渲染一个 `RewardPanel` 分组，组标题用 i18n key（`story.dungeonFirstPass` 等）。
 
-### 9.4 方案：独立 Activity 阶段组件（问题①，整合 review）
+### 9.5 方案：独立 Activity 阶段组件（问题①，整合 review）
 
-**目标**：把「活动阶段」的关联数据从文本行升级为独立渲染块，`dungeon` 与 `reward` 分别委托 §9.3 / §9.2 组件。
+**目标**：把「活动阶段」的关联数据从文本行升级为独立渲染块，`dungeon`、`reward`、`enemy` 分别委托 §9.4 / §9.2 / §9.3 组件。
 
 **类型扩展**（`src/lib/missionConditionNames.ts`）：
-- `ActivityStageDetail` 扩展字段：`activityName`（ActivityTable.name）、`stageName`（MultiStageTable.stageList.name，优先）、`missionId`、`sortId`、`timeId`、`activityRewardId`（StageToActivityTable.rewardId）、`unlockTexts[]`（ConditionTable.desc i18n，`blockShow=true` 跳过）、`relatedQuestText`（DungeonFightingStageTable.questId → questDesc map）、`dungeonDetail`（经 §9.3 `dungeonDetail()`，`DungeonFightingStageTable.levelId` 非空时）。
+- `ActivityStageDetail` 扩展字段：`activityName`（ActivityTable.name）、`stageName`（MultiStageTable.stageList.name，优先）、`missionId`、`sortId`、`timeId`、`activityRewardId`（StageToActivityTable.rewardId）、`unlockTexts[]`（ConditionTable.desc i18n，`blockShow=true` 跳过）、`relatedQuestText`（DungeonFightingStageTable.questId → questDesc map）、`dungeonDetail`（经 §9.4 `dungeonDetail()`，`DungeonFightingStageTable.levelId` 非空时）。
 - 保留现有 `stageDetail(stageId)` 签名，内部扩展返回；缺失表/未命中字段全部可空，组件兜底。
 
 **数据接入**（`src/hooks/useData.ts` `getMissionConditionResolver`）：
@@ -648,30 +661,30 @@ _activityStageId (dungeon_fighting_5)
   - 完成条件：按 `conditionType` 分派渲染（5052→levelName / 18→quest / 19→mission / 其余→参数直出），复用 §8.3 语义。
   - 关联 quest：`relatedQuestText`（同任务 quest 描述）。
   - **活动奖励**：`activityRewardId` 经 `RewardPanel` 渲染（review ③：Activity 侧 rewardId）。
-  - **dungeon 区块**：`dungeonDetail` 存在时嵌入 `<DungeonPanel detail={...} rewardTable={...} />`（review ②④：dungeon 内容、敌人、图片、dungeon 侧奖励）。
+  - **dungeon 区块**：`dungeonDetail` 存在时嵌入 `<DungeonPanel detail={...} rewardTable={...} />`（review ②④：dungeon 内容、图片、dungeon 侧奖励；敌人由 DungeonPanel 委托 `EnemyUnit`）。
 - 纯展示组件，无内部数据获取；数据经 props 注入，便于单测。
 
-### 9.5 方案：quest 节点边框（问题②）
+### 9.6 方案：quest 节点边框（问题②）
 
 `StoryMissionDetail.tsx` `QuestNode` 根容器加边框样式：
 - 主路径 quest：`border border-archive-border rounded-md p-3`（背景 `bg-archive-file/40` 区分主路径）。
 - 分支 quest：与主路径同款边框（或 `border-archive-gold/20`），保持缩进 + 左侧连接线不变。
 - 子节点缩进容器 `ml-3 pl-3 border-l` 保留，形成「外层 quest 卡片 + 内层依赖线」的层级。
 
-### 9.6 方案：依赖线 + 「前置任务」badge（问题③）
+### 9.7 方案：依赖线 + 「前置任务」badge（问题③）
 
 `QuestNode` 中 `node.prevQuestIds.length > 0` 的渲染从纯文本 `{'← '}{ids.join(', ')}` 改为：
 - 左侧连接线：quest 卡片内左上角垂直连线（`border-l-2 border-archive-gold/40` + 小竖线），与子节点缩进线衔接，形成依赖流向视觉。
 - 「前置任务」badge：复用 `Badge` 组件（variant="ghost" 或新增 seal/gold 小号），文案 `t('story.prevQuest')`，后接 mono 的 `prevQuestIds`（保留引用能力）。
 - 新增 i18n key `story.prevQuest` 与 dungeon 分组标题 keys（`story.dungeonFirstPass / dungeonCustom / dungeonExtra / dungeonHunter` 等，14 语言，经 `generate-i18n-dicts.ts` 生成）。
 
-### 9.7 测试与验证计划
+### 9.8 测试与验证计划
 
-- 单测：`missionConditionNames.test.ts` 增加 `stageDetail` / `dungeonDetail` 聚合纯函数测试（Mock 各表数据，断言拼接/容错/缺失字段兜底/enemyIds-enemyLevels 索引对齐）；`ActivityStagePanel` / `DungeonPanel` 组件单测（若组件无 data fetch 则用 RTL 渲染断言各分组展示）。
+- 单测：`missionConditionNames.test.ts` 增加 `stageDetail` / `dungeonDetail` 聚合纯函数测试（Mock 各表数据，断言拼接/容错/缺失字段兜底/enemyIds-enemyLevels 索引对齐）；`ActivityStagePanel` / `DungeonPanel` / `EnemyUnit` 组件单测（若组件无 data fetch 则用 RTL 渲染断言各分组展示）。
 - E2E：`story-chronicle.spec.ts` 增加「a1m2 任务详情页活动面板展示」（断言出现「生存特训/爆破练习/解锁条件/奖励」等关键字）与「dungeon 面板展示敌人与图片」（断言敌人名如「碾骨撕裂牙兽」出现、`<img>` 存在）。
 - 全量：lint / test / build；仅存量 Sidebar 2 例基线失败。
 
-### 9.8 风险与待确认
+### 9.9 风险与待确认
 
 - **`MultiStageTable` activity 名**：`ActivityTable.name`（如「生存特训」）比 `MultiStageTable` 自身更权威，取 `ActivityTable` 优先。
 - **`conditionType` 语义沿用数据归纳**：5052/5902 已验证，18/19/5031 等复用 §8.6 风险，面板内不臆测语义、展示原始参数兜底。
@@ -680,3 +693,5 @@ _activityStageId (dungeon_fighting_5)
 - **dungeon 奖励字段语义**：`rewardId`（30 个 dungeon 有）与 `firstPassRewardId`（200）/`customRewardId`/`extraRewardId`/`hunterModeRewardId` 的具体发放时机需游戏内校准；面板内按字段名分组展示（首通/定制/额外/猎手模式），不臆测数字。
 - **dungeon 图片缺失**：`dungeonPicPath` 空或图片 404 时 `<img>` 需 `onError` 隐藏回退，不影响文字内容。
 - **`enemyIds` 与 `enemyLevels` 对齐**：两者均为数组、长度一致（已验证 5/5）；索引错位时仅展示可对齐部分，避免越界。
+- **敌人名称/图标缺失**：`EnemyTemplateDisplayInfoTable` 未命中或 `templateId` 空时 `EnemyUnit` 回退显示原始 `enemyId`（mono），图标 `onError` 隐藏。
+- **敌人组件复用边界**：`EnemyUnit` 为独立展示组件（props 注入 `enemySummary` + `level`），不感知 dungeon/活动上下文，后续怪物图鉴等其他页面可直接复用。
