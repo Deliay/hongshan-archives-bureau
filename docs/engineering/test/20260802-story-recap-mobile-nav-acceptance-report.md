@@ -6,7 +6,7 @@ type: Permanent
 # 剧情梗概移动端导航验收报告
 
 > **状态**: 修复完成，待提交与二次验收。
-> 本轮受理 1 项验收反馈：移动端剧情切换（任务导航下拉）需与筛选合并放于 sticky 顶部，滚动时保持可切换（已修复）。
+> 本轮受理 3 项验收反馈：①移动端剧情切换（任务导航下拉）需与筛选合并放于 sticky 顶部，滚动时保持可切换（已修复）；②Baker 聊天表情尺寸被压缩至 4×4 且短文本异常换行（已修复，同根因）；③切换 topic 时聊天滚动位置未重置到顶部（已修复）。
 >
 > 历史验收报告已归档至 `docs/engineering/test/archived/`（工厂系统 `20260726-*`、剧情纪事 `20260731-*`）。
 
@@ -65,12 +65,59 @@ type: Permanent
 - ✅ `responsive.spec.ts`：移动端任务导航下拉可切换任务并更新路由（1/1 passed，此前存量失败）。
 - ✅ `story-chronicle.spec.ts`：recap 相关 8 例全数通过（含此前存量的 5 例失败）。
 
+### 2.3 Baker 聊天表情被压缩至 4×4 且短文本异常换行
+
+**问题描述**：`/archive/baker?chat=sns_chr_0024_deepfin&topic=topic_chr_0024_deepfin_1` 中：
+
+1. 干员回复的纯表情消息（如 `<image="sns_emoji_011">`）渲染为 4×4 像素，肉眼几乎不可见。
+2. 短文本「你的钓鳞技术真不错。」（9 字符 ≈ 144px）在页面宽度充足时仍被换行为两行（气泡仅 130px）。
+
+**根因分析**（两现象同根因）：
+- 气泡宽度约束位置错误。`BakerMessageBubble` 把 `max-w-[70%]` 加在**气泡自身**上，而气泡的父容器是 shrink-to-fit 的 flex 列（`flex flex-col min-w-0`）。`max-width: 70%` 是百分比，需解析父容器宽度，但父容器宽度又由内容（气泡）决定，形成循环依赖 → 浏览器按最小可行值收缩父列（实测 40px）与气泡（28px）。
+- 表情消息：气泡 28px 减去 `px-3`（24px）内边距后内容盒仅 4px，RichText 的 `<img>` 受 `max-width: 100%` 钳制被压成 4×4。
+- 短文本：气泡被收缩至 130px < 文本自然宽度 144px，触发换行。
+
+**修复方案**：
+1. **气泡宽度约束上移**（`src/components/Baker/BakerMessageBubble.tsx`）：`max-w-[70%]` 从气泡移到父 flex 列（`flex flex-col min-w-0 max-w-[70%]`，非本人消息加 `items-start`、本人消息保留 `items-end`）；气泡自身改 `w-fit`（`width: fit-content`），按内容自适应且不超父列上限。
+2. **表情尺寸对齐选项**（`src/lib/richText.tsx` + `BakerMessageBubble.tsx`）：`RichText` 新增可选 `imageSize` prop（默认 `1rem`），Baker 文本消息传 `2rem`（32px），与 `BakerOptionGroup` 选项表情（`w-8 h-8`）尺寸一致。
+
+**涉及文件**：
+- `src/components/Baker/BakerMessageBubble.tsx`
+- `src/lib/richText.tsx`
+
+**验证结果**：
+- ✅ 表情消息 `sns_emoji_011` 由 4×4 → 32×32（`width: 2rem`），与选项表情一致。
+- ✅ 短文本「你的钓鳞技术真不错。」单行展示（气泡 186px，span 高度 24px 单行）。
+- ✅ 图片消息（contentType 2，`max-w-xs` 320×180）不受影响。
+- ✅ E2E `story-chronicle.spec.ts` Baker 相关 16 例全数通过；lint / build 通过。
+
+### 2.4 切换 topic 时聊天滚动位置未重置到顶部
+
+**问题描述**：Baker 聊天面板在滚动到中后部后切换 topic，滚动位置保持原值，用户看到的是新 topic 的中部而非开头。
+
+**根因分析**：`BakerChatPanel` 的滚动容器（`overflow-y-auto`）由组件内部持有，无外部 ref；topic 切换仅更新 `beats`，滚动位置不随内容变化而重置。
+
+**修复方案**（`src/components/Baker/BakerChatPanel.tsx` + `src/pages/baker/BakerTerminal.tsx`）：
+1. `BakerChatPanel` 新增可选 `topicId` prop 与 `scrollRef`。
+2. `useEffect(() => scrollRef.current?.scrollTo({ top: 0 }), [topicId])`：topic 变化时重置滚动到顶部。
+3. `BakerTerminal` 传入 `topicId={activeTopic?.topicId}`。
+
+**涉及文件**：
+- `src/components/Baker/BakerChatPanel.tsx`
+- `src/pages/baker/BakerTerminal.tsx`
+
+**验证结果**：
+- ✅ E2E 新增「切换 topic 后滚动位置重置到顶部」：面板 `scrollTop` 200 → 切换 topic → `scrollTop === 0`。
+- ✅ E2E Baker 全量 12/12 passed；lint / build 通过。
+
 ## 3. 修复总览
 
 | # | 问题 | 根因 | 状态 | 修复 commit |
 |---|------|------|------|-------------|
 | 2.1 | 移动端剧情切换与筛选分离，滚动后无法在顶部切换 | 任务导航下拉在独立非 sticky 块中，与筛选头部分离 | ✅ 已修复（并入 sticky 头部） | `1651fb8` |
 | 2.2 | 相关 E2E 用例定位失败（存量） | 双 `select` 下选项误取与严格模式冲突 | ✅ 已修复（限定作用域 / `.first()`） | `1651fb8` |
+| 2.3 | Baker 表情 4×4 + 短文本异常换行 | 气泡 `max-w-[70%]` 百分比依赖 shrink-to-fit 父列，循环收缩 | ✅ 已修复（约束上移 + `w-fit` + 表情 2rem） | `6bdd5f1` |
+| 2.4 | 切换 topic 时滚动位置未重置 | 滚动容器无外部控制，内容变化不重置滚动 | ✅ 已修复（`topicId` 变化 `scrollTo(top:0)`） | `b329f3e` |
 
 ## 4. 最终验证
 
@@ -78,10 +125,11 @@ type: Permanent
 |--------|------|
 | `npm run lint` | ✅ 0 errors |
 | `npm run build` | ✅ 构建成功（含 tsc） |
-| E2E `responsive.spec.ts` + `story-chronicle.spec.ts` | ✅ 44/44 passed（含此前存量失败的 recap 5 例与移动端任务导航 1 例） |
+| E2E `responsive.spec.ts` + `story-chronicle.spec.ts` | ✅ 44+1 passed（含新增 topic 滚动重置用例） |
 
 ## 5. 经验总结
 
 - **移动端导航控件必须随主操作区一同置顶**：任何承担「切换」职责的控件（下拉/页签）应并入 sticky 头部的同一容器，滚动时保持可达；独立散落在内容区会随内容滚出视口，破坏连续阅读体验。
 - **响应式下同一控件移动/桌面形态可并存**：桌面端由左侧章节导航承担切换，移动端由头部任务导航下拉承担，通过 `md:hidden` / `hidden md:block` 按断点切换形态，避免两套交互并存。
 - **E2E 断言需限定控件作用域**：页面存在多个同类型控件（如两个 `select`）时，定位必须限定到目标控件内部（`selectOption` 枚举、`locator('select')` 均需 `.first()` 或嵌套作用域），否则严格模式或选项误取导致存量失败。
+- **百分比宽度约束不可放在 shrink-to-fit 容器内部**：`max-width: 70%` 这类百分比解析依赖父容器宽度，若父容器宽度又由子内容决定则形成循环依赖，浏览器会收缩到最小可行值。约束应放在有确定宽度的 flex 项（列）上，子元素用 `w-fit` 自适应。
