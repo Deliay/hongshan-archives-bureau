@@ -94,8 +94,8 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     // 等待页面内容加载：查找 "全部" 页签按钮（visible）
     const allTab = page.getByRole('button', { name: '全部' })
     await expect(allTab).toBeVisible({ timeout: 30000 })
-    // 卷卡片出现（带 border 的 rounded-lg 按钮）
-    await expect(page.locator('main button[class*="border"][class*="rounded-lg"]').first()).toBeVisible({ timeout: 30000 })
+    // 左侧列表出现文档条目（含 type 标签的按钮）
+    await expect(page.locator('main aside button').first()).toBeVisible({ timeout: 30000 })
   })
 
   test('PRTS 文库页签切换', async ({ page }) => {
@@ -103,7 +103,7 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     const allTab = page.getByRole('button', { name: '全部' })
     await expect(allTab).toBeVisible({ timeout: 30000 })
     // 点击一个分类页签（非"全部"的按钮）
-    const catButtons = page.locator('main > div > div:first-child button:not(:first-child)')
+    const catButtons = page.locator('main aside > div:first-child button:not(:first-child)')
     const count = await catButtons.count()
     if (count > 0) {
       await catButtons.first().click()
@@ -111,17 +111,58 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     }
   })
 
-  test('PRTS 文库卷卡片展开条目', async ({ page }) => {
+  test('PRTS 文库左侧列表点击后右侧展示详情', async ({ page }) => {
     await page.goto('/archive/story/library')
     const allTab = page.getByRole('button', { name: '全部' })
     await expect(allTab).toBeVisible({ timeout: 30000 })
-    // 找到卷卡片并点击
-    const volumeCard = page.locator('main button[class*="border"][class*="rounded-lg"]').first()
-    await expect(volumeCard).toBeVisible({ timeout: 15000 })
-    await volumeCard.click()
-    await page.waitForTimeout(500)
-    const bodyText = await page.locator('body').textContent() || ''
-    expect(bodyText.length).toBeGreaterThan(0)
+    // 点击左侧一个文档条目
+    const docItem = page.locator('main aside button').first()
+    await expect(docItem).toBeVisible({ timeout: 15000 })
+    await docItem.click()
+    await page.waitForTimeout(1000)
+    // URL 携带 doc 参数
+    await expect(page).toHaveURL(/doc=/)
+    // 右侧详情区域渲染（右侧 section 非空）
+    const detailText = await page.locator('main section').textContent() || ''
+    expect(detailText.length).toBeGreaterThan(0)
+  })
+
+  test('PRTS 文库文档详情深链可渲染', async ({ page }) => {
+    await page.goto('/archive/story/library/nar_sm1l1m4_hatman_2')
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('返回') || body.includes('Back')
+    }, { timeout: 30000 })
+    const detailText = await page.locator('main').textContent() || ''
+    expect(detailText.length).toBeGreaterThan(0)
+  })
+
+  test('PRTS 文库文本文档中的 <image> 标签渲染为图片', async ({ page }) => {
+    await page.goto('/archive/story/library?doc=nar_sm1l1m4_1')
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main section img').length > 0
+    }, { timeout: 30000 })
+    const img = page.locator('main section img').first()
+    const src = await img.getAttribute('src')
+    expect(src).toContain('/sprites/reading/collection_sm1l1m4_arrowrelic.png')
+    const box = await img.boundingBox()
+    expect(box!.width).toBeGreaterThan(100)
+  })
+
+  test('PRTS 文库 multimedia 文档支持音频播放', async ({ page }) => {
+    await page.goto('/archive/story/library?doc=nar_col_radio_5')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('radio_gm01m23_4_001') ?? false
+    }, { timeout: 30000 })
+    await expect(page.getByTestId('line-play-radio_gm01m23_4_001')).toBeVisible({ timeout: 15000 })
+    // 点击播放 → 控制面板出现并显示当前行
+    await page.getByTestId('line-play-radio_gm01m23_4_001').click()
+    const bar = page.getByTestId('dialog-player-bar')
+    await expect(bar).toBeVisible({ timeout: 5000 })
+    await expect(bar.getByText('radio_gm01m23_4_001', { exact: true })).toBeVisible({ timeout: 5000 })
+    // 点击 Next → 切到下一条
+    await bar.getByRole('button', { name: 'Next' }).click()
+    await expect(bar.getByText('radio_gm01m23_4_002', { exact: true })).toBeVisible({ timeout: 5000 })
   })
 
   test('Baker 页展示联系人列表与引导占位', async ({ page }) => {

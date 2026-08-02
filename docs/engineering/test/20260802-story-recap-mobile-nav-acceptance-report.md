@@ -6,7 +6,7 @@ type: Permanent
 # 剧情梗概移动端导航验收报告
 
 > **状态**: 修复完成，待提交与二次验收。
-> 本轮受理 3 项验收反馈：①移动端剧情切换（任务导航下拉）需与筛选合并放于 sticky 顶部，滚动时保持可切换（已修复）；②Baker 聊天表情尺寸被压缩至 4×4 且短文本异常换行（已修复，同根因）；③切换 topic 时聊天滚动位置未重置到顶部（已修复）。
+> 本轮受理 7 项验收反馈：①移动端剧情切换（任务导航下拉）需与筛选合并放于 sticky 顶部，滚动时保持可切换（已修复）；②Baker 聊天表情尺寸被压缩至 4×4 且短文本异常换行（已修复，同根因）；③切换 topic 时聊天滚动位置未重置到顶部（已修复）；④PRTS 文库改为左列表右详情、所有文档默认展开（已修复）；⑤文库顶部 tab 筛选需换行且字号/列表缩小（已修复）；⑥文库正文 `<image>` 标签需经 RichText 正确渲染（已修复）；⑦文库 multimedia 文档需支持音频播放（已修复）。
 >
 > 历史验收报告已归档至 `docs/engineering/test/archived/`（工厂系统 `20260726-*`、剧情纪事 `20260731-*`）。
 
@@ -110,6 +110,90 @@ type: Permanent
 - ✅ E2E 新增「切换 topic 后滚动位置重置到顶部」：面板 `scrollTop` 200 → 切换 topic → `scrollTop === 0`。
 - ✅ E2E Baker 全量 12/12 passed；lint / build 通过。
 
+### 2.5 PRTS 文库未采用左列表右详情布局，文档需手动展开
+
+**问题描述**：PRTS 文库 `/archive/story/library` 为「分类页签 + 卷卡片网格」布局，文档条目默认折叠，需逐个点击卷卡片展开；验收要求改为左侧列表 + 右侧详情两栏设计，且所有文档默认展开。
+
+**根因分析**：旧实现 `StoryLibrary.tsx` 以卷为卡片渲染，`expandedVol` 状态控制展开/收起；详情页为独立路由 `/archive/story/library/:itemId`，无两栏联动。
+
+**修复方案**（`src/pages/story/StoryLibrary.tsx` + `src/pages/story/PrtsDocumentDetail.tsx` + `src/pages/story/StoryDocumentDetail.tsx`）：
+1. 布局改为 `flex` 两栏：左侧 `aside`（分类页签 + 卷列表，所有文档条目默认平铺展开）与右侧 `section`（详情），桌面端 `md:h-[calc(100vh-4rem)]` 各自独立滚动，移动端纵向堆叠。
+2. 抽取 `PrtsDocumentDetail` 组件，接受 `itemId` prop 渲染详情（标题/正文/脚本）。
+3. 列表选中项以 URL 查询参数 `doc=` 记录；默认选中第一个文档；分类筛选 `cat=` 与 `doc=` 并存。
+4. `StoryDocumentDetail` 路由页改为薄包装（返回链接 + `PrtsDocumentDetail`），深链 `/archive/story/library/:itemId` 仍可用。
+
+**涉及文件**：
+- `src/pages/story/StoryLibrary.tsx`
+- `src/pages/story/PrtsDocumentDetail.tsx`（新增）
+- `src/pages/story/StoryDocumentDetail.tsx`
+
+**验证结果**：
+- ✅ E2E 新增「左侧列表点击后右侧展示详情」：点击文档 → URL 携带 `doc=`，右侧详情渲染。
+- ✅ E2E「文档详情深链可渲染」：`/archive/story/library/nar_sm1l1m5_hatman_2` 正常渲染。
+- ✅ PRTS 相关 E2E 全量通过；lint / build 通过。
+
+### 2.6 文库顶部 tab 筛选横向滚动不换行，列表字号/宽度过大
+
+**问题描述**：顶部筛选 tab 在窄栏内横向滚动（`overflow-x-auto`），六类分类标签无法换行展示；左侧列表文字与栏宽偏大，占用详情区域。
+
+**根因分析**：筛选容器使用 `flex gap-2 overflow-x-auto` 与按钮 `whitespace-nowrap`，禁止换行；列表侧栏 `md:w-80 lg:w-96` 偏宽，卷名/条目均用 `text-sm`。
+
+**修复方案**（`src/pages/story/StoryLibrary.tsx`）：
+1. 筛选容器改 `flex flex-wrap gap-2`，移除 `whitespace-nowrap`，tab 字号 `text-sm`→`text-xs`、`py-1.5`→`py-1`。
+2. 侧栏收窄 `md:w-72 lg:w-80`；卷名 `text-sm`→`text-xs`、副标题 `text-xs`→`text-[11px]`、条目 `text-sm`→`text-xs`、type 标签与图标同步缩小。
+
+**涉及文件**：
+- `src/pages/story/StoryLibrary.tsx`
+
+**验证结果**：
+- ✅ tab 在窄栏内可换行展示（`flex-wrap`），字号缩小。
+- ✅ 列表栏更窄，文字更紧凑；E2E PRTS 相关全量通过；lint / build 通过。
+
+### 2.7 文库正文 `<image>` 标签未正确渲染为图片
+
+**问题描述**：文本文档正文（如 `nar_sm1l1m4_1`）含 `<image>Reading/collection_sm1l1m4_arrowrelic</image>` 形式的成对标签，渲染为空图或按行内小图标处理，未按文档插图尺寸展示。
+
+**根因分析**（`src/lib/richText.tsx`）：
+1. `isOrphanTag` 中 `<image>`（无属性空形式）被 `ORPHAN_TAGS.has('image')` 提前命中判定为 orphan，`<image>path</image>` 成对标签永远无法进入图片节点转换逻辑（`isSpecialImageTag` 特判在 orphan 判断之后，不可达）。
+2. `buildTree` 的成对标签图片转换只在 `tag-close` 时对**未出栈**的栈节点执行；成对 `<image>` 被正常闭合出栈后保留为 `tag` 节点，渲染为 `<span>` 文本而非 `<img>`。
+
+**修复方案**（`src/lib/richText.tsx` + `src/pages/story/PrtsDocumentDetail.tsx`）：
+1. `isOrphanTag` 将 `isImageTag && isSpecialImageTag` 特判提前到 orphan 判断之前，使 `<image>` 走 tag-open 分支。
+2. `buildTree` 的 `tag-close` 分支在出栈时校验被弹节点是否为「无属性 image 标签 + 纯文本子节点」，若是则就地转换为 `image` 节点。
+3. `PrtsDocumentDetail` 正文 `RichText` 传 `imageSize="min(100%, 28rem)"`，文档插图按正文宽度自适应（原默认 `1rem` 仅适用于行内 emoji）。
+
+**涉及文件**：
+- `src/lib/richText.tsx`
+- `src/pages/story/PrtsDocumentDetail.tsx`
+- `src/lib/__tests__/richText.test.tsx`（新增「paired-tag 形式」用例）
+
+**验证结果**：
+- ✅ 新增单测：`<image>Reading/collection_sm1l1m4_arrowrelic</image>` 渲染为 `<img src=…/sprites/reading/collection_sm1l1m4_arrowrelic.png>`。
+- ✅ E2E 新增「文本文档中的 `<image>` 标签渲染为图片」：`nar_sm1l1m4_1` 渲染出 100px+ 宽插图。
+- ✅ richText 20/20 单测通过；lint / build 通过。
+
+### 2.8 文库 multimedia 文档不支持音频播放
+
+**问题描述**：multimedia 类型文档（如 `nar_col_radio_5`）仅展示文字脚本，无法像剧情概览那样播放对应音频；数据中 `radioSingleDataList[].audioOverride` 即 voiceId。
+
+**根因分析**：`usePrtsItemDetail` 对 multi_media 仅取 `actorName`/`radioText` 映射为 `script`，丢弃 `audioOverride`；`PrtsDocumentDetail` 只做纯文本渲染，无播放交互。
+
+**修复方案**：
+1. `src/lib/types.ts`：`PrtsItemDetail.script` 增补 `id` 与 `voId` 字段。
+2. `src/hooks/useData.ts`：`usePrtsItemDetail` 映射 `audioOverride` → `voId`。
+3. `src/pages/story/RadioPlayer.tsx`（新增）：复用 `useDialogAudio` / `playFrom` / `togglePlay` 与 `getAudioUrl` / `checkAudioUrl`，逐条渲染播放按钮并高亮当前行，行为与 `DialogScript` 一致。
+4. `src/pages/story/PrtsDocumentDetail.tsx`：multi_media 分支改为 `DialogPlayerBar`（顶部播放控制条）+ `RadioPlayer`。
+
+**涉及文件**：
+- `src/lib/types.ts`
+- `src/hooks/useData.ts`
+- `src/pages/story/RadioPlayer.tsx`（新增）
+- `src/pages/story/PrtsDocumentDetail.tsx`
+
+**验证结果**：
+- ✅ E2E 新增「multimedia 文档支持音频播放」：`nar_col_radio_5` 第一条 `radio_gm01m23_4_001` 播放按钮可见，点击后控制面板出现并显示当前行，Next 切到下一条。
+- ✅ PRTS 相关 E2E 全量通过；lint / build 通过。
+
 ## 3. 修复总览
 
 | # | 问题 | 根因 | 状态 | 修复 commit |
@@ -118,6 +202,10 @@ type: Permanent
 | 2.2 | 相关 E2E 用例定位失败（存量） | 双 `select` 下选项误取与严格模式冲突 | ✅ 已修复（限定作用域 / `.first()`） | `1651fb8` |
 | 2.3 | Baker 表情 4×4 + 短文本异常换行 | 气泡 `max-w-[70%]` 百分比依赖 shrink-to-fit 父列，循环收缩 | ✅ 已修复（约束上移 + `w-fit` + 表情 2rem） | `6bdd5f1` |
 | 2.4 | 切换 topic 时滚动位置未重置 | 滚动容器无外部控制，内容变化不重置滚动 | ✅ 已修复（`topicId` 变化 `scrollTo(top:0)`） | `b329f3e` |
+| 2.5 | 文库未用左列表右详情布局，文档需手动展开 | 卷卡片网格 + 折叠状态，详情独立路由 | ✅ 已修复（两栏布局 + 默认全展开 + `PrtsDocumentDetail` 组件化） | `cf3b732` |
+| 2.6 | 文库 tab 横向滚动不换行，列表字号/宽度过大 | `overflow-x-auto` + `whitespace-nowrap`，侧栏/字号偏大 | ✅ 已修复（`flex-wrap` + 缩小字号与栏宽） | `cf3b732` |
+| 2.7 | 文库正文 `<image>` 成对标签未渲染为图片 | orphan 特判顺序 + tag-close 出栈节点未转换 | ✅ 已修复（特判前置 + 出栈时转换 + 插图尺寸） | `a3a618d` |
+| 2.8 | 文库 multimedia 文档不支持音频播放 | 丢弃 `audioOverride`，无播放交互 | ✅ 已修复（`voId` 映射 + `RadioPlayer`） | `a3a618d` + `cf3b732` |
 
 ## 4. 最终验证
 
@@ -125,7 +213,8 @@ type: Permanent
 |--------|------|
 | `npm run lint` | ✅ 0 errors |
 | `npm run build` | ✅ 构建成功（含 tsc） |
-| E2E `responsive.spec.ts` + `story-chronicle.spec.ts` | ✅ 44+1 passed（含新增 topic 滚动重置用例） |
+| `npm run test`（vitest） | ✅ 475 passed（2 例 Sidebar 存量失败，与本次改动无关） |
+| E2E `responsive.spec.ts` + `story-chronicle.spec.ts` | ✅ 44+1 passed（含 topic 滚动重置与 PRTS 文库 7 例） |
 
 ## 5. 经验总结
 
@@ -133,3 +222,7 @@ type: Permanent
 - **响应式下同一控件移动/桌面形态可并存**：桌面端由左侧章节导航承担切换，移动端由头部任务导航下拉承担，通过 `md:hidden` / `hidden md:block` 按断点切换形态，避免两套交互并存。
 - **E2E 断言需限定控件作用域**：页面存在多个同类型控件（如两个 `select`）时，定位必须限定到目标控件内部（`selectOption` 枚举、`locator('select')` 均需 `.first()` 或嵌套作用域），否则严格模式或选项误取导致存量失败。
 - **百分比宽度约束不可放在 shrink-to-fit 容器内部**：`max-width: 70%` 这类百分比解析依赖父容器宽度，若父容器宽度又由子内容决定则形成循环依赖，浏览器会收缩到最小可行值。约束应放在有确定宽度的 flex 项（列）上，子元素用 `w-fit` 自适应。
+- **成对富文本标签的转换点须覆盖「出栈」路径**：`<image>path</image>` 这类成对标签正常闭合后会从解析栈弹出，若只在栈内节点上做转换会漏掉；应在 `tag-close` 出栈时对弹节点做校验转换。
+- **特判分支必须早于通用兜底判断**：`isOrphanTag` 中 image 特殊形式（`<image>` 空属性）的特判放在 `ORPHAN_TAGS.has` 之后永远不可达，导致成对标签落入孤儿分支；特判应前置。
+- **复用既有播放基建而非新建**：multimedia 音频播放直接复用 `useDialogAudio` / `getAudioUrl` / `checkAudioUrl`，与 `DialogScript` 行为一致，避免双套播放器状态冲突。
+- **两栏详情页用 URL 参数驱动选中项**：`doc=` 查询参数承载当前文档，刷新/深链/筛选切换后选中态不丢失，详情组件以 `itemId` prop 纯渲染，便于独立路由复用。
