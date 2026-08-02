@@ -5,6 +5,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-archive-border py-6 text-center text-xs text-archive-lead">
       <p className="text-archive-dust">{t('site.footer')}</p>
+      <p className="mt-1 text-archive-dust">{t('site.disclaimer')}</p>
       <p className="mt-1">
         {t('site.dataSourcePrefix')}
         <a
