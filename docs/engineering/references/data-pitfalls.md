@@ -181,6 +181,9 @@ dlg key 前缀（`e/sm/c/f/gm/a/db/m`）本质是「章节编号」，与内容�
 - `contentType=9`（表情回应）不独立渲染，按 `preContentId` 归并到目标消息的 `reactions`。
 - `nextContentId` 为 `-1`/`0` 即会话结束；悬空引用/环用 visited set 防御。
 - **i18n dict 独立**：`SNSDialogTable` / `SNSDialogOptionTable` / `SNSDialogTopicTable` 各配各自 dict，混用会得到空文本（预览文本尤其要用 dialog 自己的 dict）。
+- **任务/PRTS 引用节点无消息文本**：`contentType=12`（任务）与 `contentType=10`（PRTS）的 `content.text` 为空，实际引用分别藏在 `linkMissionId`（或 `contentParam[0]`）与 `contentParams` 的 JSON（`{"id": "nar_..."}`）。必须按常量定义解析为**引用卡片**（跳转剧情梗概 / PRTS 文库），不能当作普通气泡渲染（2026-08-02 验收 §2.10）。
+- **`SNSDialogContentType` 数值常量**：`SNSDialogTable` 新版本数据中 `contentType` 为数字（旧版为常量名），定义于 `src/data/constants.ts` 的 `SNS_DIALOG_CONTENT_TYPE`（Text=1/Image=2/Video=4/Voice=5/Item=6/System=7/Card=8/EmojiResult=9/PRTS=10/Vote=11/Task=12）与 `SNS_DIALOG_OPTION_TYPE`（None=0/Text=1/Sticker=2/Vote=3/EmojiComment=4）。编号对照通过新旧两版数据相同 key 提取。
+- **任务名/PRTS 文档名需跨表解析**：任务名来自 `MissionRuntimeBrief.missionName.key` → `TextTable`+i18n；PRTS 文档名来自 `PrtsAllItem.name` + 其 i18n dict。Baker 渲染引用卡片时需在 `useBakerDialog` 中一并拉取这些表。
 
 ### 富文本 image 资源的子目录
 

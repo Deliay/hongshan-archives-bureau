@@ -5,7 +5,7 @@ type: Permanent
 
 # 工厂系统（工厂配方与制作链路）
 
-> **状态**: 已实现并验收通过（见 [[20260726-factory-acceptance-report|工厂系统验收报告]]，29 项问题全部修复），随 PR #43 待合入 main 后转入 released/。
+> **状态**: 已实现并验收通过（见 [工厂系统验收报告](../../engineering/test/archived/20260726-factory-acceptance-report.md)，29 项问题全部修复），随 PR #43 待合入 main 后转入 released/。
 
 **功能名称**: 工厂系统 — 工厂配方 & 制作链路
 **PRD 版本**: v1.1（按验收报告 §2.8 修订：配方区分组方式由「作为产物/作为材料」改为按机器分组）
@@ -184,7 +184,7 @@ flowchart TD
 ## 六、验收结果
 
 **验收日期**: 2026-07-26
-**验收报告**: [[20260726-factory-acceptance-report|工厂系统验收报告]]
+**验收报告**: [工厂系统验收报告](../../engineering/test/archived/20260726-factory-acceptance-report.md)（已归档）
 
 ### 6.1 验收通过情况
 

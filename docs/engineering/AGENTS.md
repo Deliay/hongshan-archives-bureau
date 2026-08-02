@@ -25,7 +25,9 @@ docs/engineering/
     i18n-spec.md             国际化规范
   plans/                 开发计划与任务拆解
   proposal/              技术方案文档
-  test/                  验收问题报告
+  test/                  验收问题报告（详见 test/AGENTS.md）
+    AGENTS.md            验收问题文档规范
+    archived/            已完结并归档的验收报告
 ```
 
 ## 文档命名
@@ -44,16 +46,20 @@ docs/engineering/
 
 ## 验收问题处理
 
-收到验收问题反馈后，必须创建或更新 `test/` 目录下的验收报告：
+收到验收问题反馈后，必须创建或更新 `test/` 目录下的验收报告。详细规范见 `test/AGENTS.md`，核心流程如下：
 
-1. 命名格式：`YYYYMMDD-<feature-slug>-acceptance-report.md`
-2. 内容包含：关联 PRD/技术方案链接、每个问题的描述/根因/修复/commit、修复总览表、验证结果、经验总结
-3. 修复过程中实时更新文档，完成后随代码提交
+1. **创建/更新报告**：在 `test/` 根目录按 `YYYYMMDD-<feature-slug>-acceptance-report.md` 命名创建报告；同一模块同一轮验收追加到现有报告（按 2.x 序号递增）。
+2. **内容要求**：报告必须包含关联 PRD/技术方案链接、每个问题的描述/根因/修复/commit、修复总览表、验证结果、经验总结。
+3. **实时更新**：修复每个问题后，同步更新文档中的对应条目（commit hash、验证结果等）。
+4. **知识沉淀**：每个问题修复后，将可复用的经验同步整理到对应的正式参考文档（`references/ui-pitfalls.md`、`references/rich-text-spec.md`、`references/data-pitfalls.md`、`engineering-spec.md`、`references/factory-chain-solver.md` 等）。
+5. **归档**：验收全部闭环且长期经验已沉淀至正式文档后，将报告移入 `test/archived/`（保持原内容不变），`test/` 根目录只保留在途报告；归档后同步更新正式文档中对验收报告的引用路径。
+6. **提交文档**：验收完成后随代码一起提交。
 
 ## 编码前必读
 
 - 修改代码前，加载对应目录的 `AGENTS.md`。
 - 每次编写代码前，加载 [[common-rules|通用开发规范]]。
+- 处理验收问题反馈时，加载 [验收问题文档规范](./test/AGENTS.md)。
 - 前端相关修改，加载 [[frontend-spec|前端开发规范]]。
 - 数据层、缓存、Diff 相关修改，加载 [[engineering-spec|工程架构规范]]。
 - 调试数据问题或实现新模块时，查阅 [数据表映射参考](./references/data-mapping-tables.md) 与 [数据层常见陷阱](./references/data-pitfalls.md)。

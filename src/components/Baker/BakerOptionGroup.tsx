@@ -1,3 +1,4 @@
+import { RichText } from '../../lib/richText'
 import type { BakerOption } from '../../lib/types'
 
 interface BakerOptionGroupProps {
@@ -23,7 +24,9 @@ export function BakerOptionGroup({ options, selectedId, onSelect }: BakerOptionG
           {opt.emojiUrl ? (
             <img src={opt.emojiUrl} alt="" className="w-8 h-8 inline-block mr-2" />
           ) : null}
-          <span className="text-sm text-archive-ivory">{opt.text}</span>
+          <span className="text-sm text-archive-ivory">
+            <RichText text={opt.text} imageSize="2rem" />
+          </span>
         </button>
       ))}
     </div>

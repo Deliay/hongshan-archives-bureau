@@ -217,7 +217,7 @@ Baker 页视觉：整体还原聊天软件质感但保持档案馆气质——�
 
 ### 3.7 验收修订（v1.3，2026-08-02）
 
-> 以下为验收反馈后定稿的产品行为，与 [[../../engineering/test/20260731-story-chronicle-acceptance-report|剧情纪事验收报告]] 保持一致。
+> 以下为验收反馈后定稿的产品行为，与 [[../../engineering/test/archived/20260731-story-chronicle-acceptance-report|剧情纪事验收报告]] 保持一致。
 
 #### 剧情梗概页：master-detail 布局（验收修订 ①）
 
@@ -274,4 +274,5 @@ Baker 页视觉：整体还原聊天软件质感但保持档案馆气质——�
 - [[20260719-site-concept|站点概念设计]]
 - [[20260719-story|剧情记录（旧版，本文档取代）]]
 - [[20260719-sidebar-navigation-grouping|侧边导航分组]]
-- [[../../engineering/test/20260731-story-chronicle-acceptance-report|剧情纪事验收报告]]
+- [[../../engineering/test/archived/20260731-story-chronicle-acceptance-report|剧情纪事验收报告（已归档）]]
+- [[../../engineering/test/archived/20260802-story-recap-mobile-nav-acceptance-report|剧情梗概移动端导航验收报告]]

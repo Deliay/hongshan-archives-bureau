@@ -124,6 +124,8 @@ export default function BakerTerminal() {
         ) : (
           <BakerChatPanel
             beats={beats}
+            chatId={chatId}
+            topicId={activeTopic?.topicId}
             onSwitchOption={handleSwitchOption}
           />
         )}

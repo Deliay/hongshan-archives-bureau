@@ -1,6 +1,6 @@
 import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode } from './types'
 import { renderMissionCondition } from './missionCondition'
-import { ACTIVITY_TYPE_GROUPS } from '../data/constants'
+import { ACTIVITY_TYPE_GROUPS, SNS_DIALOG_CONTENT_TYPE } from '../data/constants'
 
 export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
 
@@ -696,11 +696,11 @@ export interface BakerSpeakerContext {
 
 export function resolveContentType(type: number): BakerMessage['kind'] | null {
   const map: Record<number, BakerMessage['kind']> = {
-    1: 'text',
-    2: 'image',
-    7: 'system',
-    10: 'share',
-    12: 'mission',
+    [SNS_DIALOG_CONTENT_TYPE.Text]: 'text',
+    [SNS_DIALOG_CONTENT_TYPE.Image]: 'image',
+    [SNS_DIALOG_CONTENT_TYPE.System]: 'system',
+    [SNS_DIALOG_CONTENT_TYPE.PRTS]: 'share',
+    [SNS_DIALOG_CONTENT_TYPE.Task]: 'mission',
   }
   return map[type] ?? null
 }

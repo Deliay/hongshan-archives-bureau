@@ -76,7 +76,7 @@ cd tests/e2e && npm run test   # run E2E tests
 
 收到验收问题反馈后，必须创建或更新对应的验收问题文档：
 
-1. **创建文档**：在 `docs/engineering/test/` 下按日期创建文档，命名格式 `YYYYMMDD-<feature-slug>-acceptance-report.md`。
+1. **创建文档**：在 `docs/engineering/test/` 下按日期创建文档，命名格式 `YYYYMMDD-<feature-slug>-acceptance-report.md`。已完结并并入正式文档的旧报告移入 `docs/engineering/test/archived/`（保持原内容不变），新报告在 `docs/engineering/test/` 根目录新建。
 2. **文档内容**：
    - 关联 PRD / 技术方案 / 实现方案的引用链接
    - 每个验收问题的：问题描述、根因分析、修复方案、涉及文件、对应 commit

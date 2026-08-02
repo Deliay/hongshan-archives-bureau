@@ -52,8 +52,8 @@ test.describe('响应式与移动端 (Responsive & Mobile)', () => {
     await expect(missionNav).toBeVisible({ timeout: 30000 })
     // 默认选中当前任务
     await expect(missionNav).toHaveValue('e0m2')
-    // 通过下拉切换任务并更新路由
-    const options = page.locator(`select option`)
+    // 通过下拉切换任务并更新路由（仅限任务导航下拉的选项，排除类型筛选下拉）
+    const options = missionNav.locator('option')
     const values = await options.evaluateAll(nodes => nodes.map(n => (n as HTMLOptionElement).value))
     const target = values.find(v => v !== 'e0m2' && v !== '')
     if (target) {

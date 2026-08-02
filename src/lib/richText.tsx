@@ -30,10 +30,10 @@ function isImageTag(match: RegExpExecArray): boolean {
 function isOrphanTag(match: RegExpExecArray): boolean {
   if (match[5] !== undefined) return true
   const raw = match[3] ?? ''
+  if (isImageTag(match) && isSpecialImageTag(match)) return false
   if (ORPHAN_TAGS.has(raw)) return true
   const attrs = parseAttrs(raw)
   const firstKey = Object.keys(attrs)[0] ?? ''
-  if (isImageTag(match) && isSpecialImageTag(match)) return false
   return ORPHAN_TAGS.has(firstKey)
 }
 
@@ -247,7 +247,21 @@ function buildTree(segments: RawSegment[]): TreeNode {
         }
         break
       case 'tag-close':
-        if (stack.length > 1) stack.pop()
+        if (stack.length > 1) {
+          const popped = stack.pop()!
+          if (
+            popped.type === 'tag' &&
+            popped.tagName === 'image' &&
+            Object.keys(popped.attrs ?? {}).length === 0 &&
+            popped.children.length > 0 &&
+            popped.children.every(c => c.type === 'text')
+          ) {
+            const path = popped.children.map(c => (c as any).text ?? '').join('')
+            const imgNode: TreeNode = { type: 'image', path, children: [] }
+            const p = stack[stack.length - 1]
+            p.children = p.children.map(c => c === popped ? imgNode : c)
+          }
+        }
         break
     }
   }
@@ -275,10 +289,10 @@ function wrapTag(tagName: string, attrs: Record<string, string>, children: React
   }
 }
 
-function renderNode(node: TreeNode, showTips?: boolean): ReactNode {
+function renderNode(node: TreeNode, showTips?: boolean, imageSize?: string): ReactNode {
   switch (node.type) {
     case 'root':
-      return node.children.map((child, i) => <span key={i}>{renderNode(child, showTips)}</span>)
+      return node.children.map((child, i) => <span key={i}>{renderNode(child, showTips, imageSize)}</span>)
     case 'text':
       return node.text
     case 'br':
@@ -287,18 +301,18 @@ function renderNode(node: TreeNode, showTips?: boolean): ReactNode {
       const scale = node.scale ?? 1
       return (
         <img alt="" src={getUISprite(node.path!)}
-          style={{ width: '1rem', transform: scale !== 1 ? `scale(${scale})` : undefined }}
+          style={{ width: imageSize ?? '1rem', transform: scale !== 1 ? `scale(${scale})` : undefined }}
           className="inline-block align-middle"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
       )
     }
     case 'tag': {
-      const children = node.children.map((child, i) => <span key={i}>{renderNode(child, showTips)}</span>)
+      const children = node.children.map((child, i) => <span key={i}>{renderNode(child, showTips, imageSize)}</span>)
       if (node.tagName === 'image') return <span>{children}</span>
       return wrapTag(node.tagName!, node.attrs ?? {}, children)
     }
     case 'hyperlink': {
-      const children = node.children.map((child, i) => <span key={i}>{renderNode(child, showTips)}</span>)
+      const children = node.children.map((child, i) => <span key={i}>{renderNode(child, showTips, imageSize)}</span>)
       if (node.prefix === '#') {
         return <HyperlinkTag tag={node.tagName!} showTips={showTips}><u>{children}</u></HyperlinkTag>
       }
@@ -394,9 +408,10 @@ interface RichTextProps {
   text: string
   showTips?: boolean
   formatter?: (text: string) => string
+  imageSize?: string
 }
 
-export function RichText({ text, formatter }: RichTextProps) {
+export function RichText({ text, formatter, imageSize }: RichTextProps) {
   const processed = formatter ? formatter(text) : text
   const [, setStyleLoaded] = useState(false)
   useEffect(() => {
@@ -406,7 +421,7 @@ export function RichText({ text, formatter }: RichTextProps) {
     const segments = tokenize(processed)
     return buildTree(segments)
   }, [processed])
-  return renderNode(tree, true)
+  return renderNode(tree, true, imageSize)
 }
 
 interface I18NTextProps {

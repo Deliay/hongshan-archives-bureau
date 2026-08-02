@@ -38,7 +38,7 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
 
   test('剧情梗概页加载并展示任务详情', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     // 左侧导航出现后，右侧展示默认任务详情（含任务目标）
     await expect(page.locator('nav button').first()).toBeVisible({ timeout: 30000 })
     await expect(page.getByText('任务目标').first()).toBeVisible({ timeout: 30000 })
@@ -46,15 +46,15 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
 
   test('剧情梗概类型筛选', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     await page.locator('nav button').first().waitFor({ timeout: 30000 })
-    await page.locator('select').selectOption('e')
+    await page.locator('select').first().selectOption('e')
     await expect(page).toHaveURL(/type=e/)
   })
 
   test('剧情梗概篇章导航存在', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     await page.locator('nav button').first().waitFor({ timeout: 30000 })
     const nav = page.locator('nav').first()
     await expect(nav).toBeVisible({ timeout: 5000 })
@@ -62,7 +62,7 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
 
   test('剧情梗概左侧导航按 MissionRuntimeAsset 过滤（不含 c1m1）', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     await page.locator('nav button').first().waitFor({ timeout: 30000 })
     // 左侧导航的 mission 按钮
     const navButtons = page.locator('nav button')
@@ -78,7 +78,7 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
 
   test('剧情梗概点击导航切换任务并更新路由 mission 参数', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     // 等待导航加载并出现 a1m2 任务
     const a1m2Btn = page.locator('nav button', { hasText: 'a1m2' }).first()
     await expect(a1m2Btn).toBeVisible({ timeout: 30000 })
@@ -94,8 +94,8 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     // 等待页面内容加载：查找 "全部" 页签按钮（visible）
     const allTab = page.getByRole('button', { name: '全部' })
     await expect(allTab).toBeVisible({ timeout: 30000 })
-    // 卷卡片出现（带 border 的 rounded-lg 按钮）
-    await expect(page.locator('main button[class*="border"][class*="rounded-lg"]').first()).toBeVisible({ timeout: 30000 })
+    // 左侧列表出现文档条目（含 type 标签的按钮）
+    await expect(page.locator('main aside button').first()).toBeVisible({ timeout: 30000 })
   })
 
   test('PRTS 文库页签切换', async ({ page }) => {
@@ -103,7 +103,7 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     const allTab = page.getByRole('button', { name: '全部' })
     await expect(allTab).toBeVisible({ timeout: 30000 })
     // 点击一个分类页签（非"全部"的按钮）
-    const catButtons = page.locator('main > div > div:first-child button:not(:first-child)')
+    const catButtons = page.locator('main aside > div:first-child button:not(:first-child)')
     const count = await catButtons.count()
     if (count > 0) {
       await catButtons.first().click()
@@ -111,17 +111,173 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     }
   })
 
-  test('PRTS 文库卷卡片展开条目', async ({ page }) => {
+  test('PRTS 文库左侧列表点击后右侧展示详情', async ({ page }) => {
     await page.goto('/archive/story/library')
     const allTab = page.getByRole('button', { name: '全部' })
     await expect(allTab).toBeVisible({ timeout: 30000 })
-    // 找到卷卡片并点击
-    const volumeCard = page.locator('main button[class*="border"][class*="rounded-lg"]').first()
-    await expect(volumeCard).toBeVisible({ timeout: 15000 })
-    await volumeCard.click()
-    await page.waitForTimeout(500)
+    // 点击左侧一个文档条目
+    const docItem = page.locator('main aside button').first()
+    await expect(docItem).toBeVisible({ timeout: 15000 })
+    await docItem.click()
+    await page.waitForTimeout(1000)
+    // URL 携带 doc 参数
+    await expect(page).toHaveURL(/doc=/)
+    // 右侧详情区域渲染（右侧 section 非空）
+    const detailText = await page.locator('main section').textContent() || ''
+    expect(detailText.length).toBeGreaterThan(0)
+  })
+
+  test('PRTS 文库文档详情深链可渲染', async ({ page }) => {
+    await page.goto('/archive/story/library/nar_sm1l1m4_hatman_2')
+    await page.waitForFunction(() => {
+      const body = document.body.textContent || ''
+      return body.includes('返回') || body.includes('Back')
+    }, { timeout: 30000 })
+    const detailText = await page.locator('main').textContent() || ''
+    expect(detailText.length).toBeGreaterThan(0)
+  })
+
+  test('PRTS 文库文本文档中的 <image> 标签渲染为图片', async ({ page }) => {
+    await page.goto('/archive/story/library?doc=nar_sm1l1m4_1')
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main section img').length > 0
+    }, { timeout: 30000 })
+    const img = page.locator('main section img').first()
+    const src = await img.getAttribute('src')
+    expect(src).toContain('/sprites/reading/collection_sm1l1m4_arrowrelic.png')
+    const box = await img.boundingBox()
+    expect(box!.width).toBeGreaterThan(100)
+  })
+
+  test('PRTS 文库 multimedia 文档支持音频播放', async ({ page }) => {
+    await page.goto('/archive/story/library?doc=nar_col_radio_5')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('radio_gm01m23_4_001') ?? false
+    }, { timeout: 30000 })
+    await expect(page.getByTestId('line-play-radio_gm01m23_4_001')).toBeVisible({ timeout: 15000 })
+    // 点击播放 → 控制面板出现并显示当前行
+    await page.getByTestId('line-play-radio_gm01m23_4_001').click()
+    const bar = page.getByTestId('dialog-player-bar')
+    await expect(bar).toBeVisible({ timeout: 5000 })
+    await expect(bar.getByText('radio_gm01m23_4_001', { exact: true })).toBeVisible({ timeout: 5000 })
+    // 点击 Next → 切到下一条
+    await bar.getByRole('button', { name: 'Next' }).click()
+    await expect(bar.getByText('radio_gm01m23_4_002', { exact: true })).toBeVisible({ timeout: 5000 })
+  })
+
+  test('PRTS 文库切换文档后播放高亮不串到新文档', async ({ page }) => {
+    // 播放 A 档案第一条，切到 B 档案：B 不应显示任何行正在播放（按 voId 匹配而非 index）
+    await page.goto('/archive/story/library?doc=nar_col_radio_5')
+    await expect(page.getByTestId('line-play-radio_gm01m23_4_001')).toBeVisible({ timeout: 15000 })
+    await page.getByTestId('line-play-radio_gm01m23_4_001').click()
+    await expect(page.getByTestId('dialog-player-bar')).toBeVisible({ timeout: 5000 })
+    // 切到另一个 multimedia 文档 B
+    await page.goto('/archive/story/library?doc=nar_media_map01_45_1')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('radio_map01_lv006_322_001') ?? false
+    }, { timeout: 30000 })
+    // 等待渲染稳定：B 的 audioOverride 与正在播放的 A 不同，不应有行被高亮为正在播放
+    await page.waitForTimeout(1000)
+    const activeCount = await page.locator('[data-active="true"]').count()
+    expect(activeCount).toBe(0)
+  })
+
+    test('Baker 聊天中的 PRTS 引用渲染为卡片并可跳转文库', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_npc_joost')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('PRTS') ?? false
+    }, { timeout: 30000 })
+    const prtsCard = page.locator('a[href="/archive/story/library?doc=nar_sm1l1m2_1"]')
+    await expect(prtsCard).toBeVisible({ timeout: 15000 })
+    await expect(prtsCard).toContainText('PRTS')
+    await expect(prtsCard).toContainText('碾骨氏族')
+    // 卡片不应被消息气泡（bg-archive-file）包裹
+    const wrapped = await prtsCard.evaluate((el) => {
+      let p = el.parentElement
+      while (p) {
+        if (typeof p.className === 'string' && p.className.includes('bg-archive-file') && p.className.includes('rounded-lg')) return true
+        p = p.parentElement
+      }
+      return false
+    })
+    expect(wrapped).toBe(false)
+    // 卡片占满一行大部分空间（无头像，宽度 ≥ 行宽 80%）
+    const prtsWidth = await prtsCard.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const row = el.closest('div.flex.gap-2')
+      const rr = row ? row.getBoundingClientRect() : null
+      return rr ? r.width / rr.width : 0
+    })
+    expect(prtsWidth).toBeGreaterThan(0.8)
+    await prtsCard.click()
+    await expect(page).toHaveURL(/\/archive\/story\/library\?doc=nar_sm1l1m2_1/)
+    await expect(page.getByText('《试论碾骨氏族印记的源流及特色》', { exact: true }).first()).toBeVisible({ timeout: 15000 })
+  })
+
+  test('Baker 聊天中的任务引用渲染为卡片并可跳转剧情梗概', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chat_roman')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('任务') ?? false
+    }, { timeout: 30000 })
+    const missionCard = page.locator('a[href="/archive/story/recap?mission=a1m5"]')
+    await expect(missionCard).toBeVisible({ timeout: 15000 })
+    await expect(missionCard).toContainText('任务')
+    await expect(missionCard).toContainText('开拓节与特色美食')
+    // 卡片无头像且占满一行大部分空间
+    const missionWidth = await missionCard.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const row = el.closest('div.flex.gap-2')
+      const rr = row ? row.getBoundingClientRect() : null
+      return rr ? r.width / rr.width : 0
+    })
+    expect(missionWidth).toBeGreaterThan(0.8)
+    await missionCard.click()
+    await expect(page).toHaveURL(/\/archive\/story\/recap\?mission=a1m5/)
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('开拓节与特色美食') ?? false
+    }, { timeout: 15000 })
+  })
+
+  test('Baker 聊天末尾任务引用渲染为占满行宽的卡片', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_npc_four')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('紧急救助') ?? false
+    }, { timeout: 30000 })
+    const missionCard = page.locator('a[href="/archive/story/recap?mission=sm1l6m1"]')
+    await expect(missionCard).toBeVisible({ timeout: 15000 })
+    await expect(missionCard).toContainText('任务')
+    // 卡片行内无头像（消息行只有卡片一列）
+    const rowChildren = await missionCard.evaluate((el) => {
+      const row = el.closest('div.flex.gap-2')
+      return row ? Array.from(row.children).map(c => (c.className || '').toString()) : []
+    })
+    const hasAvatar = rowChildren.some(cls => cls.includes('rounded-full'))
+    expect(hasAvatar).toBe(false)
+    // 占满一行大部分空间
+    const ratio = await missionCard.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const row = el.closest('div.flex.gap-2')
+      const rr = row ? row.getBoundingClientRect() : null
+      return rr ? r.width / rr.width : 0
+    })
+    expect(ratio).toBeGreaterThan(0.8)
+  })
+
+  test('Baker 聊天选项走富文本渲染（emoji 图标不显示为字面标签）', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chr_0021_whiten&topic=topic_chr_0021_whiten_1')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('好有特色的风格') ?? false
+    }, { timeout: 30000 })
+    // 选择到最后的选项分支，等待 emoji 选项出现
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('button img[src*="sns/emoji/"]').length >= 1
+    }, { timeout: 30000 })
+    // 不应渲染字面标签文本
     const bodyText = await page.locator('body').textContent() || ''
-    expect(bodyText.length).toBeGreaterThan(0)
+    expect(bodyText).not.toContain('<image="sns_emoji_002">')
+    // 选项中渲染了 emoji 图片
+    const optEmoji = page.locator('button img[src*="sns/emoji/sns_emoji_002"]')
+    await expect(optEmoji.first()).toBeVisible({ timeout: 15000 })
   })
 
   test('Baker 页展示联系人列表与引导占位', async ({ page }) => {
@@ -260,6 +416,69 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await page.waitForTimeout(800)
     const after = await firstBubble.textContent()
     expect(after).not.toBe(before)
+  })
+
+  test('Baker 切换 topic 后聊天滚动位置重置到顶部', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chr_0004_pelica')
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main [class*="rounded-lg"]').length > 0
+    }, { timeout: 30000 })
+    // 滚动聊天面板到中部
+    await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      if (scroller) scroller.scrollTop = 200
+    })
+    await page.waitForTimeout(300)
+    const before = await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      return scroller ? scroller.scrollTop : -1
+    })
+    expect(before).toBeGreaterThan(0)
+    // 点击左侧第二个 topic
+    const topicButtons = page.locator('div[class*="pl-8"] button')
+    await expect(topicButtons.nth(1)).toBeVisible({ timeout: 10000 })
+    await topicButtons.nth(1).click()
+    await page.waitForTimeout(500)
+    // 滚动位置重置到顶部
+    const after = await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      return scroller ? scroller.scrollTop : -1
+    })
+    expect(after).toBe(0)
+  })
+
+  test('Baker 切换联系人后聊天滚动位置重置到顶部', async ({ page }) => {
+    // 两个聊天 topicId 均为空字符串，旧实现仅依赖 topicId 变化导致不重置
+    await page.goto('/archive/baker?chat=sns_team_qingbozhai')
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main [class*="rounded-lg"]').length > 0
+    }, { timeout: 30000 })
+    // 滚动聊天面板到底部
+    await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      if (scroller) scroller.scrollTop = scroller.scrollHeight
+    })
+    await page.waitForTimeout(300)
+    const before = await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      return scroller ? scroller.scrollTop : -1
+    })
+    expect(before).toBeGreaterThan(0)
+    // 切换到 zhihuibu（重建指挥部相关讨论），其 topicId 同为 ''
+    const zhihuibu = page.locator('button[class*="items-center"]').filter({ hasText: '重建指挥部' }).first()
+    await expect(zhihuibu).toBeVisible({ timeout: 15000 })
+    await zhihuibu.click()
+    await expect(page).toHaveURL(/chat=sns_npc_zhihuibu/)
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main [class*="rounded-lg"]').length > 0
+    }, { timeout: 30000 })
+    await page.waitForTimeout(500)
+    // 滚动位置重置到顶部
+    const after = await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      return scroller ? scroller.scrollTop : -1
+    })
+    expect(after).toBe(0)
   })
 
   test('Baker 点击 topic 后 URL 携带 topic 参数', async ({ page }) => {

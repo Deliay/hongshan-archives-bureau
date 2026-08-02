@@ -51,7 +51,7 @@ export default function StoryRecap() {
 
   return (
     <div className="min-h-screen">
-      <div className="sticky top-0 z-10 bg-archive-ink border-b border-archive-border px-6 py-3 flex items-center gap-4">
+      <div className="sticky top-0 z-10 bg-archive-ink border-b border-archive-border px-6 py-3 flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
         <select
           value={typeFilter}
           onChange={(e) => {
@@ -60,18 +60,14 @@ export default function StoryRecap() {
             if (selectedMission) next.mission = selectedMission.missionId
             setSearchParams(next)
           }}
-          className="bg-archive-file border border-archive-border text-archive-ivory text-sm rounded px-3 py-1.5"
+          className="bg-archive-file border border-archive-border text-archive-ivory text-sm rounded px-3 py-1.5 w-full md:w-auto"
         >
           <option value="">{t('story.typeAll')}</option>
           {CHAPTER_TYPES.map(ct => (
             <option key={ct} value={ct}>{chapterTypeLabel(ct)}</option>
           ))}
         </select>
-        <span className="hidden md:inline text-xs text-archive-dust">{t('story.spoilerHint')}</span>
-      </div>
-
-      <div className="md:hidden px-6 pt-4">
-        <label className="flex items-center gap-2 text-xs text-archive-dust mb-1">
+        <label className="md:hidden flex items-center gap-2 text-xs text-archive-dust">
           <span className="shrink-0">{t('story.missionNav')}</span>
           <select
             value={selectedMission?.missionId ?? ''}

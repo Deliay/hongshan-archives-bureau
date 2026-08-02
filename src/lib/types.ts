@@ -528,7 +528,7 @@ export interface PrtsItemDetail extends PrtsItem {
   volumeName: string
   categoryId: string
   contents: { title: string; segments: string[] }[]
-  script?: { speaker: string; line: string }[]
+  script?: { id: string; speaker: string; line: string; voId: string }[]
 }
 
 export interface BakerChat {
@@ -548,7 +548,14 @@ export interface BakerMessage {
   kind: 'text' | 'image' | 'sticker' | 'system' | 'share' | 'mission'
   text: string
   imageUrl?: string
+  card?: BakerCard
   reactions?: { emojiUrl: string; fromNames: string[]; count: number }[]
+}
+
+export interface BakerCard {
+  kind: 'prts' | 'mission'
+  title: string
+  to: string
 }
 
 export interface BakerOption {
