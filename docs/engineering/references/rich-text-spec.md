@@ -54,6 +54,25 @@ type: Permanent
 
 `RichTextStyleTable` 中 `preDef[0]` 为开标签，`postDef[0]` 为闭标签，Blazor 源仅使用索引 0。
 
+## imageSize prop：行内 emoji 与插图尺寸不同
+
+`RichText` 接受可选 `imageSize` prop（默认 `1rem`），用于控制 `<img>` 尺寸：
+
+- **行内 emoji / sticker**（消息气泡、聊天选项）：传 `imageSize="2rem"`，与选项表情 `w-8 h-8` 对齐。
+- **文档插图**（文库正文等）：传 `imageSize="min(100%, 28rem)"`，按正文宽度自适应；若沿用默认 `1rem`，成对 `<image>path</image>` 会渲染成行内小图标而非插图。
+
+## 成对标签的转换点须覆盖「出栈」路径
+
+`<image>path</image>` 这类成对标签正常闭合后会从解析栈弹出（`tag-close` 分支），若只在**栈内节点**上做转换会漏掉，节点保留为 `tag` 渲染成 `<span>` 文本而非 `<img>`。必须在 `tag-close` 出栈时校验被弹节点：无属性 image 标签 + 纯文本子节点 → 就地转换为 `image` 节点（验收 2.7）。
+
+## 特判分支必须早于通用兜底判断
+
+`isOrphanTag` 中 image 特殊形式（`<image>` 空属性）的特判如果放在 `ORPHAN_TAGS.has('image')` 之后，永远不可达（通用判断先命中），成对标签会落入孤儿分支。特判必须前置（验收 2.7）。
+
+## 富文本组件复用同一套解析
+
+选项、气泡、工具提示等所有富文本都应接入同一 `RichText` 组件，避免「同一标签一处渲染一处字面」的分裂（验收 2.11：`BakerOptionGroup` 曾直接渲染纯文本，`<image="sns_emoji_002">` 显示为字面标签）。
+
 ## HyperlinkTooltip 定位
 
 `HyperlinkTooltip` 通过 `anchorRef` prop 直接使用 `HyperlinkTag` 的 ref 定位与检测点击外部，不要使用 `document.getElementById(anchorId)`，避免同一 tag 多次出现时定位错误。
