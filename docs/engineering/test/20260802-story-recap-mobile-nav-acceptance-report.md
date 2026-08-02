@@ -224,7 +224,7 @@ type: Permanent
 3. `src/lib/types.ts`：`BakerMessage` 增补 `card?: { kind: 'prts'|'mission'; title: string; to: string }`。
 4. `src/hooks/useData.ts`：`useBakerDialog` 拉取 `PrtsAllItem`+i18n 与 `MissionRuntimeBrief`+`TextTable`+i18n，构造 PRTS 文档名与任务名解析器。
 5. `src/components/Baker/BakerRefCard.tsx`（新增）：可复用引用卡片组件，PRTS 卡片跳转 `/archive/story/library?doc=<id>`，任务卡片跳转 `/archive/story/recap?mission=<id>`。
-6. `src/components/Baker/BakerMessageBubble.tsx`：`share`/`mission` 分支优先渲染卡片。
+6. `src/components/Baker/BakerMessageBubble.tsx`：`share`/`mission` 分支优先渲染卡片；卡片消息不渲染头像、列 `flex-1` + `items-stretch` + `max-w-[96%]`，卡片 `w-full` 占满行宽。
 
 **涉及文件**：
 - `src/data/constants.ts`
@@ -236,7 +236,7 @@ type: Permanent
 - `src/components/Baker/BakerMessageBubble.tsx`
 
 **验证结果**：
-- ✅ E2E 新增「Baker 聊天中的 PRTS 引用渲染为卡片并可跳转文库」「Baker 聊天中的任务引用渲染为卡片并可跳转剧情梗概」：`sns_npc_joost` 中 PRTS 卡片显示文档名 `《试论碾骨氏族印记的源流及特色》` 并跳转文库；`sns_chat_roman` 中任务卡片显示任务名 `开拓节与特色美食` 并跳转剧情梗概。
+- ✅ E2E 新增「Baker 聊天中的 PRTS 引用渲染为卡片并可跳转文库」「Baker 聊天中的任务引用渲染为卡片并可跳转剧情梗概」「Baker 聊天末尾任务引用渲染为占满行宽的卡片」：`sns_npc_joost` 中 PRTS 卡片显示文档名 `《试论碾骨氏族印记的源流及特色》` 并跳转文库；`sns_chat_roman` 中任务卡片显示任务名 `开拓节与特色美食` 并跳转剧情梗概；`sns_npc_four` 中任务卡片占行宽 ≥ 80% 且无头像。
 - ✅ baker 单测 15/15（含 PRTS/Task 卡片 4 例）；lint / build 通过。
 
 ### 2.11 Baker 聊天选项未走富文本渲染（`<image>` 标签显示为字面文本）
@@ -283,7 +283,7 @@ type: Permanent
 | 2.7 | 文库正文 `<image>` 成对标签未渲染为图片 | orphan 特判顺序 + tag-close 出栈节点未转换 | ✅ 已修复（特判前置 + 出栈时转换 + 插图尺寸） | `a3a618d` |
 | 2.8 | 文库 multimedia 文档不支持音频播放 | 丢弃 `audioOverride`，无播放交互 | ✅ 已修复（`voId` 映射 + `RadioPlayer`） | `a3a618d` + `cf3b732` |
 | 2.9 | 切换档案后播放高亮串行 | 局部 `tracks` 用全局 `currentIndex` 索引 | ✅ 已修复（按 `voId` 匹配活跃行） | `ef74560` |
-| 2.10 | Baker 中 PRTS/任务引用未渲染为卡片 | 缺 `SNSDialogContentType` 常量定义与针对性解析 | ✅ 已修复（卡片组件 + 解析 + 名称解析器） | `f1a9ce2` |
+| 2.10 | Baker 中 PRTS/任务引用未渲染为卡片 | 缺 `SNSDialogContentType` 常量定义与针对性解析 | ✅ 已修复（卡片组件 + 解析 + 名称解析器 + 占满行宽） | `f1a9ce2` + `cd3d0de` |
 | 2.11 | Baker 选项未走富文本，`<image>` 显示为字面文本 | `BakerOptionGroup` 直接渲染纯文本 | ✅ 已修复（选项接入 `RichText`） | `e1051a6` |
 | 2.12 | 切换联系人后聊天滚动位置未重置 | 滚动重置仅依赖 `topicId`，`topicId=''` 时不变 | ✅ 已修复（`chatId:topicId` 组合键） | `cdf3490` |
 
