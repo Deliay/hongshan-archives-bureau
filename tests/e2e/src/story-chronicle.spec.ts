@@ -38,7 +38,7 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
 
   test('剧情梗概页加载并展示任务详情', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     // 左侧导航出现后，右侧展示默认任务详情（含任务目标）
     await expect(page.locator('nav button').first()).toBeVisible({ timeout: 30000 })
     await expect(page.getByText('任务目标').first()).toBeVisible({ timeout: 30000 })
@@ -46,15 +46,15 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
 
   test('剧情梗概类型筛选', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     await page.locator('nav button').first().waitFor({ timeout: 30000 })
-    await page.locator('select').selectOption('e')
+    await page.locator('select').first().selectOption('e')
     await expect(page).toHaveURL(/type=e/)
   })
 
   test('剧情梗概篇章导航存在', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     await page.locator('nav button').first().waitFor({ timeout: 30000 })
     const nav = page.locator('nav').first()
     await expect(nav).toBeVisible({ timeout: 5000 })
@@ -62,7 +62,7 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
 
   test('剧情梗概左侧导航按 MissionRuntimeAsset 过滤（不含 c1m1）', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     await page.locator('nav button').first().waitFor({ timeout: 30000 })
     // 左侧导航的 mission 按钮
     const navButtons = page.locator('nav button')
@@ -78,7 +78,7 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
 
   test('剧情梗概点击导航切换任务并更新路由 mission 参数', async ({ page }) => {
     await page.goto('/archive/story/recap')
-    await expect(page.locator('select')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 30000 })
     // 等待导航加载并出现 a1m2 任务
     const a1m2Btn = page.locator('nav button', { hasText: 'a1m2' }).first()
     await expect(a1m2Btn).toBeVisible({ timeout: 30000 })
