@@ -6,7 +6,7 @@ type: Permanent
 # 剧情梗概移动端导航验收报告
 
 > **状态**: 修复完成，待提交与二次验收。
-> 本轮受理 7 项验收反馈：①移动端剧情切换（任务导航下拉）需与筛选合并放于 sticky 顶部，滚动时保持可切换（已修复）；②Baker 聊天表情尺寸被压缩至 4×4 且短文本异常换行（已修复，同根因）；③切换 topic 时聊天滚动位置未重置到顶部（已修复）；④PRTS 文库改为左列表右详情、所有文档默认展开（已修复）；⑤文库顶部 tab 筛选需换行且字号/列表缩小（已修复）；⑥文库正文 `<image>` 标签需经 RichText 正确渲染（已修复）；⑦文库 multimedia 文档需支持音频播放（已修复）。
+> 本轮受理 8 项验收反馈：①移动端剧情切换（任务导航下拉）需与筛选合并放于 sticky 顶部，滚动时保持可切换（已修复）；②Baker 聊天表情尺寸被压缩至 4×4 且短文本异常换行（已修复，同根因）；③切换 topic 时聊天滚动位置未重置到顶部（已修复）；④PRTS 文库改为左列表右详情、所有文档默认展开（已修复）；⑤文库顶部 tab 筛选需换行且字号/列表缩小（已修复）；⑥文库正文 `<image>` 标签需经 RichText 正确渲染（已修复）；⑦文库 multimedia 文档需支持音频播放（已修复）；⑧切换档案后播放高亮串行，需按 voiceId 匹配（已修复）。
 >
 > 历史验收报告已归档至 `docs/engineering/test/archived/`（工厂系统 `20260726-*`、剧情纪事 `20260731-*`）。
 
@@ -194,6 +194,24 @@ type: Permanent
 - ✅ E2E 新增「multimedia 文档支持音频播放」：`nar_col_radio_5` 第一条 `radio_gm01m23_4_001` 播放按钮可见，点击后控制面板出现并显示当前行，Next 切到下一条。
 - ✅ PRTS 相关 E2E 全量通过；lint / build 通过。
 
+### 2.9 文库切换档案后播放高亮串行（按 index 而非 voiceId 匹配）
+
+**问题描述**：在 A 档案（如 `nar_col_radio_5`）点击播放后切到 B 档案（如 `nar_media_map01_45_1`），B 档案中会出现一行被高亮为「正在播放」，但实际播放的是 A 的音频。
+
+**根因分析**：`RadioPlayer` 与 `DialogScript` 用全局播放器状态 `useDialogAudio().currentIndex` 直接索引**本组件局部构建**的 `tracks` 数组（`tracks[currentIndex]`）。`currentIndex` 是全局播放列表的下标，代表 A 的播放位置；切换到 B 后 B 的局部 `tracks` 长度/顺序与 A 不同，用 A 的下标取 B 的 `tracks` 得到一条不相干的行并被标记为播放中。
+
+**修复方案**（`src/pages/story/RadioPlayer.tsx` + `src/pages/story/DialogScript.tsx`）：
+1. 活跃行判定改为按 `voId` 匹配：取全局 `tracks[currentIndex]?.voId`（真正在播放的 voiceId），在当前文档的 `script`/`lines` 中查找该 `voId` 对应行，找不到则为 `undefined`（不高亮任何行）。
+2. `LinePlayButton` 的 `isCurrent` 同样改为 `currentVoId === voId`，点击切换播放目标仍用局部 `tracks` 的 `findIndex` 定位。
+
+**涉及文件**：
+- `src/pages/story/RadioPlayer.tsx`
+- `src/pages/story/DialogScript.tsx`
+
+**验证结果**：
+- ✅ E2E 新增「切换文档后播放高亮不串到新文档」：A 播放 → 切 B（`nar_media_map01_45_1`）→ B 中 `[data-active="true"]` 计数为 0。
+- ✅ E2E 全量 45/45 passed；lint / build 通过。
+
 ## 3. 修复总览
 
 | # | 问题 | 根因 | 状态 | 修复 commit |
@@ -206,6 +224,7 @@ type: Permanent
 | 2.6 | 文库 tab 横向滚动不换行，列表字号/宽度过大 | `overflow-x-auto` + `whitespace-nowrap`，侧栏/字号偏大 | ✅ 已修复（`flex-wrap` + 缩小字号与栏宽） | `cf3b732` |
 | 2.7 | 文库正文 `<image>` 成对标签未渲染为图片 | orphan 特判顺序 + tag-close 出栈节点未转换 | ✅ 已修复（特判前置 + 出栈时转换 + 插图尺寸） | `a3a618d` |
 | 2.8 | 文库 multimedia 文档不支持音频播放 | 丢弃 `audioOverride`，无播放交互 | ✅ 已修复（`voId` 映射 + `RadioPlayer`） | `a3a618d` + `cf3b732` |
+| 2.9 | 切换档案后播放高亮串行 | 局部 `tracks` 用全局 `currentIndex` 索引 | ✅ 已修复（按 `voId` 匹配活跃行） | `ef74560` |
 
 ## 4. 最终验证
 
@@ -214,7 +233,7 @@ type: Permanent
 | `npm run lint` | ✅ 0 errors |
 | `npm run build` | ✅ 构建成功（含 tsc） |
 | `npm run test`（vitest） | ✅ 475 passed（2 例 Sidebar 存量失败，与本次改动无关） |
-| E2E `responsive.spec.ts` + `story-chronicle.spec.ts` | ✅ 44+1 passed（含 topic 滚动重置与 PRTS 文库 7 例） |
+| E2E `responsive.spec.ts` + `story-chronicle.spec.ts` | ✅ 45/45 passed（含 topic 滚动重置与 PRTS 文库 8 例） |
 
 ## 5. 经验总结
 
@@ -226,3 +245,4 @@ type: Permanent
 - **特判分支必须早于通用兜底判断**：`isOrphanTag` 中 image 特殊形式（`<image>` 空属性）的特判放在 `ORPHAN_TAGS.has` 之后永远不可达，导致成对标签落入孤儿分支；特判应前置。
 - **复用既有播放基建而非新建**：multimedia 音频播放直接复用 `useDialogAudio` / `getAudioUrl` / `checkAudioUrl`，与 `DialogScript` 行为一致，避免双套播放器状态冲突。
 - **两栏详情页用 URL 参数驱动选中项**：`doc=` 查询参数承载当前文档，刷新/深链/筛选切换后选中态不丢失，详情组件以 `itemId` prop 纯渲染，便于独立路由复用。
+- **全局播放器状态不可按 index 匹配局部列表**：`useDialogAudio` 的 `currentIndex` 属于全局播放列表，组件各自构建的局部 `tracks` 与它长度/顺序可能不同，用 `tracks[currentIndex]` 判定「正在播放」会在切换档案后串行。应以唯一标识（`voId`）从全局状态取当前播放项，再在局部列表查找对应行。
