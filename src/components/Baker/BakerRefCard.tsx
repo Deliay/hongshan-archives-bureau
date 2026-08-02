@@ -8,7 +8,7 @@ export function BakerRefCard({ card, className }: { card: BakerCard; className?:
     <Link
       to={card.to}
       className={cn(
-        'block rounded-lg border border-archive-gold/30 bg-archive-ink/60 p-3 transition-colors hover:border-archive-gold/60 hover:bg-archive-ink',
+        'block w-full rounded-lg border border-archive-gold/30 bg-archive-ink/60 p-3 transition-colors hover:border-archive-gold/60 hover:bg-archive-ink',
         className,
       )}
     >

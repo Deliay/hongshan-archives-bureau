@@ -201,6 +201,14 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
       return false
     })
     expect(wrapped).toBe(false)
+    // 卡片占满一行大部分空间（无头像，宽度 ≥ 行宽 80%）
+    const prtsWidth = await prtsCard.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const row = el.closest('div.flex.gap-2')
+      const rr = row ? row.getBoundingClientRect() : null
+      return rr ? r.width / rr.width : 0
+    })
+    expect(prtsWidth).toBeGreaterThan(0.8)
     await prtsCard.click()
     await expect(page).toHaveURL(/\/archive\/story\/library\?doc=nar_sm1l1m2_1/)
     await expect(page.getByText('《试论碾骨氏族印记的源流及特色》', { exact: true }).first()).toBeVisible({ timeout: 15000 })
@@ -215,9 +223,44 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await expect(missionCard).toBeVisible({ timeout: 15000 })
     await expect(missionCard).toContainText('任务')
     await expect(missionCard).toContainText('开拓节与特色美食')
+    // 卡片无头像且占满一行大部分空间
+    const missionWidth = await missionCard.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const row = el.closest('div.flex.gap-2')
+      const rr = row ? row.getBoundingClientRect() : null
+      return rr ? r.width / rr.width : 0
+    })
+    expect(missionWidth).toBeGreaterThan(0.8)
     await missionCard.click()
     await expect(page).toHaveURL(/\/archive\/story\/recap\?mission=a1m5/)
-    await expect(page.getByText('开拓节与特色美食').first()).toBeVisible({ timeout: 15000 })
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('开拓节与特色美食') ?? false
+    }, { timeout: 15000 })
+  })
+
+  test('Baker 聊天末尾任务引用渲染为占满行宽的卡片', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_npc_four')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('紧急救助') ?? false
+    }, { timeout: 30000 })
+    const missionCard = page.locator('a[href="/archive/story/recap?mission=sm1l6m1"]')
+    await expect(missionCard).toBeVisible({ timeout: 15000 })
+    await expect(missionCard).toContainText('任务')
+    // 卡片行内无头像（消息行只有卡片一列）
+    const rowChildren = await missionCard.evaluate((el) => {
+      const row = el.closest('div.flex.gap-2')
+      return row ? Array.from(row.children).map(c => (c.className || '').toString()) : []
+    })
+    const hasAvatar = rowChildren.some(cls => cls.includes('rounded-full'))
+    expect(hasAvatar).toBe(false)
+    // 占满一行大部分空间
+    const ratio = await missionCard.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const row = el.closest('div.flex.gap-2')
+      const rr = row ? row.getBoundingClientRect() : null
+      return rr ? r.width / rr.width : 0
+    })
+    expect(ratio).toBeGreaterThan(0.8)
   })
 
   test('Baker 聊天选项走富文本渲染（emoji 图标不显示为字面标签）', async ({ page }) => {

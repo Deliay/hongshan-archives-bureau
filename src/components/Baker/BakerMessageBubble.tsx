@@ -47,9 +47,9 @@ export function BakerMessageBubble({ message }: BakerMessageBubbleProps) {
 
   return (
     <div className={`flex gap-2 ${message.isSelf ? 'flex-row-reverse' : ''}`}>
-      <Avatar url={message.speakerIconUrl} />
-      <div className={`flex flex-col min-w-0 ${message.isSelf ? 'items-end' : 'items-start'} ${isCard ? 'max-w-[85%]' : 'max-w-[70%]'}`}>
-        {!message.isSelf && (
+      {!isCard && <Avatar url={message.speakerIconUrl} />}
+      <div className={`flex flex-col ${isCard ? 'flex-1' : 'min-w-0'} ${message.isSelf ? 'items-end' : isCard ? 'items-stretch' : 'items-start'} ${isCard ? 'max-w-[96%]' : 'max-w-[70%]'}`}>
+        {!message.isSelf && !isCard && (
           <div className="text-xs text-archive-dust mb-1">{message.speakerName}</div>
         )}
         {isCard ? (
