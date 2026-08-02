@@ -358,7 +358,8 @@
     "noScene": "Tidak ada teks cerita",
     "expandDialog": "Tampilkan dialog",
     "collapseDialog": "Sembunyikan dialog",
-    "audioNowPlaying": "Sedang diputar"
+    "audioNowPlaying": "Sedang diputar",
+    "missionNav": "Navigasi misi"
   },
   "update": {
     "added": "Ditambahkan",

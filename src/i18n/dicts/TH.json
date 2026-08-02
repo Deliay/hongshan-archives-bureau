@@ -358,7 +358,8 @@
     "noScene": "ไม่มีเนื้อเรื่อง",
     "expandDialog": "แสดงบทสนทนา",
     "collapseDialog": "ซ่อนบทสนทนา",
-    "audioNowPlaying": "กำลังเล่น"
+    "audioNowPlaying": "กำลังเล่น",
+    "missionNav": "นำทางภารกิจ"
   },
   "update": {
     "added": "เพิ่มแล้ว",

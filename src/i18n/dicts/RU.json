@@ -358,7 +358,8 @@
     "noScene": "Нет текста сюжета",
     "expandDialog": "Показать диалог",
     "collapseDialog": "Скрыть диалог",
-    "audioNowPlaying": "Сейчас играет"
+    "audioNowPlaying": "Сейчас играет",
+    "missionNav": "Навигация по заданиям"
   },
   "update": {
     "added": "Добавлено",

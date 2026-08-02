@@ -358,7 +358,8 @@
     "noScene": "No story text",
     "expandDialog": "Show dialog",
     "collapseDialog": "Hide dialog",
-    "audioNowPlaying": "Now playing"
+    "audioNowPlaying": "Now playing",
+    "missionNav": "Mission Nav"
   },
   "update": {
     "added": "Added",

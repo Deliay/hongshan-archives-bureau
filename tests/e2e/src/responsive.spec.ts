@@ -43,4 +43,22 @@ test.describe('响应式与移动端 (Responsive & Mobile)', () => {
     })
     expect(cols).toBe(3)
   })
+
+  test('移动端剧情梗概提供任务导航下拉，可切换任务', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto('/archive/story/recap?mission=e0m2&type=e')
+    // 移动端左侧导航隐藏，但提供任务导航下拉
+    const missionNav = page.locator('select').nth(1)
+    await expect(missionNav).toBeVisible({ timeout: 30000 })
+    // 默认选中当前任务
+    await expect(missionNav).toHaveValue('e0m2')
+    // 通过下拉切换任务并更新路由
+    const options = page.locator(`select option`)
+    const values = await options.evaluateAll(nodes => nodes.map(n => (n as HTMLOptionElement).value))
+    const target = values.find(v => v !== 'e0m2' && v !== '')
+    if (target) {
+      await missionNav.selectOption(target)
+      await expect(page).toHaveURL(new RegExp(`mission=${target}`))
+    }
+  })
 })

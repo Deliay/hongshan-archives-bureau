@@ -358,7 +358,8 @@
     "noScene": "Nessun testo della storia",
     "expandDialog": "Mostra dialogo",
     "collapseDialog": "Nascondi dialogo",
-    "audioNowPlaying": "In riproduzione"
+    "audioNowPlaying": "In riproduzione",
+    "missionNav": "Navigazione missioni"
   },
   "update": {
     "added": "Aggiunto",
