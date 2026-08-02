@@ -262,6 +262,35 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     expect(after).not.toBe(before)
   })
 
+  test('Baker 切换 topic 后聊天滚动位置重置到顶部', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chr_0004_pelica')
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main [class*="rounded-lg"]').length > 0
+    }, { timeout: 30000 })
+    // 滚动聊天面板到中部
+    await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      if (scroller) scroller.scrollTop = 200
+    })
+    await page.waitForTimeout(300)
+    const before = await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      return scroller ? scroller.scrollTop : -1
+    })
+    expect(before).toBeGreaterThan(0)
+    // 点击左侧第二个 topic
+    const topicButtons = page.locator('div[class*="pl-8"] button')
+    await expect(topicButtons.nth(1)).toBeVisible({ timeout: 10000 })
+    await topicButtons.nth(1).click()
+    await page.waitForTimeout(500)
+    // 滚动位置重置到顶部
+    const after = await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      return scroller ? scroller.scrollTop : -1
+    })
+    expect(after).toBe(0)
+  })
+
   test('Baker 点击 topic 后 URL 携带 topic 参数', async ({ page }) => {
     await page.goto('/archive/baker?chat=sns_chr_0004_pelica')
     await page.waitForFunction(() => {
