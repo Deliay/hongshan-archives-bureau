@@ -165,6 +165,23 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await expect(bar.getByText('radio_gm01m23_4_002', { exact: true })).toBeVisible({ timeout: 5000 })
   })
 
+  test('PRTS 文库切换文档后播放高亮不串到新文档', async ({ page }) => {
+    // 播放 A 档案第一条，切到 B 档案：B 不应显示任何行正在播放（按 voId 匹配而非 index）
+    await page.goto('/archive/story/library?doc=nar_col_radio_5')
+    await expect(page.getByTestId('line-play-radio_gm01m23_4_001')).toBeVisible({ timeout: 15000 })
+    await page.getByTestId('line-play-radio_gm01m23_4_001').click()
+    await expect(page.getByTestId('dialog-player-bar')).toBeVisible({ timeout: 5000 })
+    // 切到另一个 multimedia 文档 B
+    await page.goto('/archive/story/library?doc=nar_media_map01_45_1')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('radio_map01_lv006_322_001') ?? false
+    }, { timeout: 30000 })
+    // 等待渲染稳定：B 的 audioOverride 与正在播放的 A 不同，不应有行被高亮为正在播放
+    await page.waitForTimeout(1000)
+    const activeCount = await page.locator('[data-active="true"]').count()
+    expect(activeCount).toBe(0)
+  })
+
   test('Baker 页展示联系人列表与引导占位', async ({ page }) => {
     await page.goto('/archive/baker')
     // Tab 栏中的"全部"按钮可见（非 mobile hamburger）

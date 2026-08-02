@@ -31,8 +31,9 @@ export function RadioPlayer({ script }: { script: RadioScriptEntry[] }) {
     [script, available, locale],
   )
 
-  const { currentIndex } = useDialogAudio()
-  const currentLineKey = tracks[currentIndex]?.lineKey
+  const { tracks: globalTracks, currentIndex } = useDialogAudio()
+  const currentVoId = globalTracks[currentIndex]?.voId
+  const currentLineKey = currentVoId ? script.find(s => s.voId === currentVoId)?.id : undefined
 
   return (
     <div>
@@ -57,7 +58,7 @@ export function RadioPlayer({ script }: { script: RadioScriptEntry[] }) {
             <div className="min-w-0 flex-1 border-l border-archive-gold/30 pl-3">
               <div className="flex items-center gap-1.5">
                 {entry.voId && available[entry.voId] && (
-                  <LinePlayButton lineKey={entry.id} tracks={tracks} />
+                  <LinePlayButton voId={entry.voId} lineKey={entry.id} tracks={tracks} />
                 )}
                 <span className="font-mono text-[10px] text-archive-lead/70">{entry.id}</span>
               </div>
@@ -72,17 +73,17 @@ export function RadioPlayer({ script }: { script: RadioScriptEntry[] }) {
   )
 }
 
-function LinePlayButton({ lineKey, tracks }: { lineKey: string; tracks: DialogAudioTrack[] }) {
-  const { currentIndex, playing } = useDialogAudio()
-  const current = tracks[currentIndex]
-  const isCurrent = current?.lineKey === lineKey
+function LinePlayButton({ voId, lineKey, tracks }: { voId: string; lineKey: string; tracks: DialogAudioTrack[] }) {
+  const { tracks: globalTracks, currentIndex, playing } = useDialogAudio()
+  const currentVoId = globalTracks[currentIndex]?.voId
+  const isCurrent = currentVoId === voId
   const isPlaying = isCurrent && playing
 
   const handleClick = () => {
     if (isCurrent) {
       togglePlay()
     } else {
-      const index = tracks.findIndex(tr => tr.lineKey === lineKey)
+      const index = tracks.findIndex(tr => tr.voId === voId)
       if (index >= 0) playFrom(tracks, index)
     }
   }

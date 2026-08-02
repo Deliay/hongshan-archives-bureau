@@ -31,8 +31,9 @@ export function DialogScript({ dlgKey }: { dlgKey: string }) {
     [lines, available, locale],
   )
 
-  const { currentIndex } = useDialogAudio()
-  const currentLineKey = tracks[currentIndex]?.lineKey
+  const { tracks: globalTracks, currentIndex } = useDialogAudio()
+  const currentVoId = globalTracks[currentIndex]?.voId
+  const currentLineKey = currentVoId ? lines.find(l => l.audioOverride === currentVoId)?.key : undefined
 
   if (loading) return <p className="text-sm text-archive-lead">{t('common.loadingArchive')}</p>
   if (error) return <p className="text-sm text-red-400">{t('common.loadFailed')}</p>
@@ -52,7 +53,7 @@ export function DialogScript({ dlgKey }: { dlgKey: string }) {
           <div className="min-w-0 flex-1 border-l border-archive-gold/30 pl-3">
             <div className="flex items-center gap-1.5">
               {line.audioOverride && available[line.audioOverride] && (
-                <LinePlayButton lineKey={line.key} tracks={tracks} />
+                <LinePlayButton lineKey={line.key} voId={line.audioOverride} tracks={tracks} />
               )}
               <span className="font-mono text-[10px] text-archive-lead/70">{line.key}</span>
             </div>
@@ -66,17 +67,17 @@ export function DialogScript({ dlgKey }: { dlgKey: string }) {
   )
 }
 
-function LinePlayButton({ lineKey, tracks }: { lineKey: string; tracks: DialogAudioTrack[] }) {
-  const { currentIndex, playing } = useDialogAudio()
-  const current = tracks[currentIndex]
-  const isCurrent = current?.lineKey === lineKey
+function LinePlayButton({ lineKey, voId, tracks }: { lineKey: string; voId: string; tracks: DialogAudioTrack[] }) {
+  const { tracks: globalTracks, currentIndex, playing } = useDialogAudio()
+  const currentVoId = globalTracks[currentIndex]?.voId
+  const isCurrent = currentVoId === voId
   const isPlaying = isCurrent && playing
 
   const handleClick = () => {
     if (isCurrent) {
       togglePlay()
     } else {
-      const index = tracks.findIndex(tr => tr.lineKey === lineKey)
+      const index = tracks.findIndex(tr => tr.voId === voId)
       if (index >= 0) playFrom(tracks, index)
     }
   }
