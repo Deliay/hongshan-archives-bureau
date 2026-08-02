@@ -1096,7 +1096,7 @@ baker: 'HSA-BKR',
 - [UI 常见陷阱参考](../references/ui-pitfalls.md)
 - [国际化规范](../references/i18n-spec.md)
 - [[../test/archived/20260731-story-chronicle-acceptance-report|剧情纪事验收报告（已归档）]]
-- [[../test/20260802-story-recap-mobile-nav-acceptance-report|剧情梗概移动端导航验收报告]]
+- [[../test/archived/20260802-story-recap-mobile-nav-acceptance-report|剧情梗概移动端导航验收报告]]
 
 ## 9. 验收修订（2026-08-02，与验收报告对齐）
 

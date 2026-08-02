@@ -546,7 +546,7 @@ docs/engineering/references/data-mapping-tables.md  # 新表映射
 - [数据层常见陷阱](../references/data-pitfalls.md)
 - [富文本规范参考](../references/rich-text-spec.md)
 - [[../test/archived/20260731-story-chronicle-acceptance-report|剧情纪事验收报告（已归档）]]
-- [[../test/20260802-story-recap-mobile-nav-acceptance-report|剧情梗概移动端导航验收报告]]
+- [[../test/archived/20260802-story-recap-mobile-nav-acceptance-report|剧情梗概移动端导航验收报告]]
 
 ## 13. 验收修订（2026-08-02，与验收报告对齐）
 
