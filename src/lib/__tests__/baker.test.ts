@@ -160,4 +160,72 @@ describe('resolveDialog', () => {
     expect(allMsgs).toHaveLength(1)
     expect(allMsgs[0].text).toBe('ok')
   })
+
+  it('contentType 10 (PRTS) builds a prts card linking to the library', () => {
+    const nodes: Record<string, any> = {
+      '1': makeNode({
+        contentType: 10,
+        speaker: '',
+        nextContentId: -1,
+        content: { id: null },
+        contentParams: JSON.stringify({ id: 'nar_e1m7_1', isFirstLvId: false }),
+      }),
+    }
+    const beats = resolveDialog('d1', nodes, {}, {}, makeCtx({ prtsName: (id) => `${id}名` }))
+    const msg = beats.flatMap(b => b.messages)[0]
+    expect(msg.kind).toBe('share')
+    expect(msg.card).toBeDefined()
+    expect(msg.card!.kind).toBe('prts')
+    expect(msg.card!.title).toBe('nar_e1m7_1名')
+    expect(msg.card!.to).toBe('/archive/story/library?doc=nar_e1m7_1')
+  })
+
+  it('contentType 12 (Task) builds a mission card linking to the recap', () => {
+    const nodes: Record<string, any> = {
+      '1': makeNode({
+        contentType: 12,
+        speaker: '',
+        nextContentId: -1,
+        content: { id: null },
+        linkMissionId: 'a1m5',
+        contentParam: ['a1m5'],
+      }),
+    }
+    const beats = resolveDialog('d1', nodes, {}, {}, makeCtx({ missionName: (id) => `${id}名` }))
+    const msg = beats.flatMap(b => b.messages)[0]
+    expect(msg.kind).toBe('mission')
+    expect(msg.card).toBeDefined()
+    expect(msg.card!.kind).toBe('mission')
+    expect(msg.card!.title).toBe('a1m5名')
+    expect(msg.card!.to).toBe('/archive/story/recap?mission=a1m5')
+  })
+
+  it('PRTS node with unparseable contentParams is skipped', () => {
+    const nodes: Record<string, any> = {
+      '1': makeNode({
+        contentType: 10,
+        speaker: '',
+        nextContentId: -1,
+        content: { id: null },
+        contentParams: 'not json',
+      }),
+    }
+    const beats = resolveDialog('d1', nodes, {}, {}, makeCtx())
+    expect(beats.flatMap(b => b.messages)).toHaveLength(0)
+  })
+
+  it('Task node without linkMissionId falls back to contentParam[0]', () => {
+    const nodes: Record<string, any> = {
+      '1': makeNode({
+        contentType: 12,
+        speaker: '',
+        nextContentId: -1,
+        content: { id: null },
+        contentParam: ['sm2l2m1'],
+      }),
+    }
+    const beats = resolveDialog('d1', nodes, {}, {}, makeCtx({ missionName: (id) => `${id}名` }))
+    const msg = beats.flatMap(b => b.messages)[0]
+    expect(msg.card!.title).toBe('sm2l2m1名')
+  })
 })

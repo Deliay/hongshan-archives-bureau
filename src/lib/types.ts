@@ -548,7 +548,14 @@ export interface BakerMessage {
   kind: 'text' | 'image' | 'sticker' | 'system' | 'share' | 'mission'
   text: string
   imageUrl?: string
+  card?: BakerCard
   reactions?: { emojiUrl: string; fromNames: string[]; count: number }[]
+}
+
+export interface BakerCard {
+  kind: 'prts' | 'mission'
+  title: string
+  to: string
 }
 
 export interface BakerOption {

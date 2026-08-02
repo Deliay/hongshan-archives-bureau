@@ -1,4 +1,5 @@
 import { adaptBakerMessage, ASSET_BASE, resolveI18n, type BakerSpeakerContext } from './adapter'
+import { SNS_DIALOG_CONTENT_TYPE } from '../data/constants'
 import type { BakerBeat, BakerMessage } from './types'
 
 interface RawNode {
@@ -11,6 +12,7 @@ interface RawNode {
   contentParam?: string[]
   contentParams?: string
   isEnd: boolean
+  linkMissionId?: string
 }
 
 interface RawOption {
@@ -25,6 +27,8 @@ export interface ResolveContext {
   dialogI18n?: Record<string, string>
   optionI18n?: Record<string, string>
   startId?: string
+  prtsName?: (id: string) => string
+  missionName?: (id: string) => string
 }
 
 export function getSnsAssetUrl(resPath: string): string {
@@ -72,10 +76,24 @@ export function resolveDialog(
       continue
     }
 
-    if (node.contentType === 9) {
+    if (node.contentType === SNS_DIALOG_CONTENT_TYPE.EmojiResult) {
       const target = findMessage(String(node.preContentId))
       const reaction = parseReaction(node.contentParams, ctx)
       if (target && reaction) (target.reactions ??= []).push(reaction)
+      currentId = String(node.nextContentId)
+      continue
+    }
+
+    if (node.contentType === SNS_DIALOG_CONTENT_TYPE.PRTS) {
+      const card = buildPrtsCard(dialogId, currentId, node, ctx)
+      if (card) beats.push({ messages: [card] })
+      currentId = String(node.nextContentId)
+      continue
+    }
+
+    if (node.contentType === SNS_DIALOG_CONTENT_TYPE.Task) {
+      const card = buildMissionCard(dialogId, currentId, node, ctx)
+      if (card) beats.push({ messages: [card] })
       currentId = String(node.nextContentId)
       continue
     }
@@ -85,6 +103,72 @@ export function resolveDialog(
     currentId = String(node.nextContentId)
   }
   return beats
+}
+
+function cardSpeaker(node: RawNode, ctx: ResolveContext) {
+  const isSelf = node.speaker === 'endmin'
+  return {
+    isSelf,
+    speakerName: isSelf ? ctx.speaker.selfName : (node.speaker ? ctx.speaker.chatMap[node.speaker]?.name ?? '' : ''),
+    speakerIconUrl: isSelf ? ctx.speaker.selfIconUrl : (node.speaker ? ctx.speaker.chatMap[node.speaker]?.iconUrl ?? '' : ''),
+  }
+}
+
+function buildPrtsCard(
+  dialogId: string,
+  contentId: string,
+  node: RawNode,
+  ctx: ResolveContext,
+): BakerMessage | null {
+  const ref = parsePrtsRef(node.contentParams)
+  if (!ref) return null
+  const speaker = cardSpeaker(node, ctx)
+  return {
+    id: `${dialogId}:${contentId}`,
+    speakerId: node.speaker ?? '',
+    ...speaker,
+    kind: 'share',
+    text: ref.id,
+    card: {
+      kind: 'prts',
+      title: ctx.prtsName?.(ref.id) ?? ref.id,
+      to: `/archive/story/library?doc=${ref.id}`,
+    },
+  }
+}
+
+function parsePrtsRef(contentParams: string | undefined): { id: string } | null {
+  if (!contentParams) return null
+  try {
+    const r = JSON.parse(contentParams)
+    if (typeof r?.id !== 'string' || !r.id) return null
+    return { id: r.id }
+  } catch {
+    return null
+  }
+}
+
+function buildMissionCard(
+  dialogId: string,
+  contentId: string,
+  node: RawNode,
+  ctx: ResolveContext,
+): BakerMessage | null {
+  const missionId = node.linkMissionId || node.contentParam?.[0]
+  if (!missionId) return null
+  const speaker = cardSpeaker(node, ctx)
+  return {
+    id: `${dialogId}:${contentId}`,
+    speakerId: node.speaker ?? '',
+    ...speaker,
+    kind: 'mission',
+    text: missionId,
+    card: {
+      kind: 'mission',
+      title: ctx.missionName?.(missionId) ?? missionId,
+      to: `/archive/story/recap?mission=${missionId}`,
+    },
+  }
 }
 
 function parseReaction(contentParams: string | undefined, ctx: ResolveContext) {

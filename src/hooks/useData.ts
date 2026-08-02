@@ -1690,6 +1690,7 @@ export function useBakerChats(): UseDataResult<{ chats: BakerChat[]; topics: Bak
         const node = nodes[id]
         if (!node) break
         if (node.contentType === 1 && node.content?.id) last = resolveI18n(node.content, dialogI18n)
+        if (node.contentType === 12 && node.linkMissionId) last = `[任务] ${node.linkMissionId}`
         id = String(node.nextContentId)
       }
       return last
@@ -1715,13 +1716,18 @@ export function useBakerDialog(chatId: string | null): UseDataResult<{
   const { locale } = useLocale()
   return useData(async () => {
     if (!chatId) return null
-    const [dialogRaw, optionRaw, topicRaw, constRaw, dialogI18n, optionI18n] = await Promise.all([
+    const [dialogRaw, optionRaw, topicRaw, constRaw, dialogI18n, optionI18n, prtsRaw, prtsI18n, brief, textRaw, textI18n] = await Promise.all([
       getCachedData<Record<string, any>>('SNSDialogTable', () => fetchTableAll('SNSDialogTable')),
       getCachedData<Record<string, any>>('SNSDialogOptionTable', () => fetchTableAll('SNSDialogOptionTable')),
       getCachedData<Record<string, any>>('SNSDialogTopicTable', () => fetchTableAll('SNSDialogTopicTable')),
       getCachedData<Record<string, any>>('SNSConst', () => fetchTableAll('SNSConst')),
       getTableI18nDict('SNSDialogTable', locale),
       getTableI18nDict('SNSDialogOptionTable', locale),
+      getCachedData<Record<string, any>>('PrtsAllItem', () => fetchTableAll('PrtsAllItem')),
+      getTableI18nDict('PrtsAllItem', locale),
+      getCachedData<any[]>('MissionRuntimeBrief', () => fetchMissionBrief()).catch(() => [] as any[]),
+      getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable')),
+      getTableI18nDict('TextTable', locale),
     ])
     const topicSort = new Map(Object.entries(topicRaw).map(([k, v]: [string, any]) => [k, v.sortId ?? 0]))
     const dialogs = Object.entries(dialogRaw)
@@ -1730,10 +1736,23 @@ export function useBakerDialog(chatId: string | null): UseDataResult<{
       .sort((a, b) =>
         (topicSort.get(a.topicId) ?? 0) - (topicSort.get(b.topicId) ?? 0) ||
         a.dialogId.localeCompare(b.dialogId))
+    const resolveKey = (key: string) => resolveI18n(textRaw?.[key], textI18n) || key
+    const missionNameMap = buildMissionNameMapFromBrief(brief, resolveKey)
+    const prtsNameMap: Record<string, string> = {}
+    for (const [id, item] of Object.entries(prtsRaw ?? {})) {
+      const name = resolveI18n(item?.name, prtsI18n)
+      if (name) prtsNameMap[id] = name
+    }
     return {
       dialogs,
       options: optionRaw,
-      ctx: { dialogI18n, optionI18n, startId: String(constRaw?.snsDialogStartId ?? '1') },
+      ctx: {
+        dialogI18n,
+        optionI18n,
+        startId: String(constRaw?.snsDialogStartId ?? '1'),
+        prtsName: (id) => prtsNameMap[id] ?? id,
+        missionName: (id) => missionNameMap[id] ?? id,
+      },
     }
   }, [locale, chatId])
 }

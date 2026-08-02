@@ -139,6 +139,30 @@ export const ITEM_TYPE = {
 
 export type ItemType = (typeof ITEM_TYPE)[keyof typeof ITEM_TYPE]
 
+export const SNS_DIALOG_CONTENT_TYPE = {
+  Text: 1,
+  Image: 2,
+  Video: 4,
+  Voice: 5,
+  Item: 6,
+  System: 7,
+  Card: 8,
+  EmojiResult: 9,
+  PRTS: 10,
+  Vote: 11,
+  Task: 12,
+} as const
+
+export type SNSDialogContentType = (typeof SNS_DIALOG_CONTENT_TYPE)[keyof typeof SNS_DIALOG_CONTENT_TYPE]
+
+export const SNS_DIALOG_OPTION_TYPE = {
+  None: 0,
+  Text: 1,
+  Sticker: 2,
+  Vote: 3,
+  EmojiComment: 4,
+} as const
+
 export const ACTIVITY_TYPE_GROUPS: Record<string, number[]> = {
   checkin: [2],
   challenge: [7, 8, 17],
