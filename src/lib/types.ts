@@ -528,7 +528,7 @@ export interface PrtsItemDetail extends PrtsItem {
   volumeName: string
   categoryId: string
   contents: { title: string; segments: string[] }[]
-  script?: { speaker: string; line: string }[]
+  script?: { id: string; speaker: string; line: string; voId: string }[]
 }
 
 export interface BakerChat {

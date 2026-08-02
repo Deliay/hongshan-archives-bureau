@@ -30,10 +30,10 @@ function isImageTag(match: RegExpExecArray): boolean {
 function isOrphanTag(match: RegExpExecArray): boolean {
   if (match[5] !== undefined) return true
   const raw = match[3] ?? ''
+  if (isImageTag(match) && isSpecialImageTag(match)) return false
   if (ORPHAN_TAGS.has(raw)) return true
   const attrs = parseAttrs(raw)
   const firstKey = Object.keys(attrs)[0] ?? ''
-  if (isImageTag(match) && isSpecialImageTag(match)) return false
   return ORPHAN_TAGS.has(firstKey)
 }
 
@@ -247,7 +247,21 @@ function buildTree(segments: RawSegment[]): TreeNode {
         }
         break
       case 'tag-close':
-        if (stack.length > 1) stack.pop()
+        if (stack.length > 1) {
+          const popped = stack.pop()!
+          if (
+            popped.type === 'tag' &&
+            popped.tagName === 'image' &&
+            Object.keys(popped.attrs ?? {}).length === 0 &&
+            popped.children.length > 0 &&
+            popped.children.every(c => c.type === 'text')
+          ) {
+            const path = popped.children.map(c => (c as any).text ?? '').join('')
+            const imgNode: TreeNode = { type: 'image', path, children: [] }
+            const p = stack[stack.length - 1]
+            p.children = p.children.map(c => c === popped ? imgNode : c)
+          }
+        }
         break
     }
   }

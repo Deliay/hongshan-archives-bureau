@@ -1647,8 +1647,10 @@ export function usePrtsItemDetail(itemId: string): UseDataResult<PrtsItemDetail 
           () => fetchTableDictEntry('RadioTable', base.contentId, locale), base.contentId),
       ])
       detail.script = (radio?.radioSingleDataList ?? []).map((r: any) => ({
+        id: r.id ?? '',
         speaker: resolveI18n(r.actorName, radioI18n),
         line: resolveI18n(r.radioText, radioI18n),
+        voId: r.audioOverride ?? '',
       }))
     } else {
       const [richRaw, richI18n] = await Promise.all([

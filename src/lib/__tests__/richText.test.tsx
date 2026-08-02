@@ -145,5 +145,12 @@ describe('RichText', () => {
       expect(img).toBeTruthy()
       expect(img!.getAttribute('src')).toContain('/sprites/itemicon/test_icon.png')
     })
+
+    it('handles <image>path</image> paired-tag form', () => {
+      const { container } = render(<RichText text='<image>Reading/collection_sm1l1m4_arrowrelic</image>' />)
+      const img = container.querySelector('img')
+      expect(img).toBeTruthy()
+      expect(img!.getAttribute('src')).toContain('/sprites/reading/collection_sm1l1m4_arrowrelic.png')
+    })
   })
 })
