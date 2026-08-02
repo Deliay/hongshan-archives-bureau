@@ -6,7 +6,7 @@ type: Permanent
 # 剧情梗概移动端导航验收报告
 
 > **状态**: 修复完成，待提交与二次验收。
-> 本轮受理 8 项验收反馈：①移动端剧情切换（任务导航下拉）需与筛选合并放于 sticky 顶部，滚动时保持可切换（已修复）；②Baker 聊天表情尺寸被压缩至 4×4 且短文本异常换行（已修复，同根因）；③切换 topic 时聊天滚动位置未重置到顶部（已修复）；④PRTS 文库改为左列表右详情、所有文档默认展开（已修复）；⑤文库顶部 tab 筛选需换行且字号/列表缩小（已修复）；⑥文库正文 `<image>` 标签需经 RichText 正确渲染（已修复）；⑦文库 multimedia 文档需支持音频播放（已修复）；⑧切换档案后播放高亮串行，需按 voiceId 匹配（已修复）。
+> 本轮受理 12 项验收反馈：①移动端剧情切换（任务导航下拉）需与筛选合并放于 sticky 顶部，滚动时保持可切换（已修复）；②Baker 聊天表情尺寸被压缩至 4×4 且短文本异常换行（已修复，同根因）；③切换 topic 时聊天滚动位置未重置到顶部（已修复）；④PRTS 文库改为左列表右详情、所有文档默认展开（已修复）；⑤文库顶部 tab 筛选需换行且字号/列表缩小（已修复）；⑥文库正文 `<image>` 标签需经 RichText 正确渲染（已修复）；⑦文库 multimedia 文档需支持音频播放（已修复）；⑧切换档案后播放高亮串行，需按 voiceId 匹配（已修复）；⑨Baker 中 PRTS/任务引用需渲染为卡片而非气泡（已修复）；⑩Baker 聊天选项需走富文本渲染（已修复）；⑪Baker 切换联系人后聊天滚动位置需重置到顶部（已修复）；⑫Baker 任务/PRTS 卡片需跳转剧情梗概/文库并展示简介（已修复）。
 >
 > 历史验收报告已归档至 `docs/engineering/test/archived/`（工厂系统 `20260726-*`、剧情纪事 `20260731-*`）。
 
@@ -212,6 +212,64 @@ type: Permanent
 - ✅ E2E 新增「切换文档后播放高亮不串到新文档」：A 播放 → 切 B（`nar_media_map01_45_1`）→ B 中 `[data-active="true"]` 计数为 0。
 - ✅ E2E 全量 45/45 passed；lint / build 通过。
 
+### 2.10 Baker 中 PRTS / 任务引用未渲染为可跳转卡片
+
+**问题描述**：SNS 聊天中 `contentType=12`（任务）与 `contentType=10`（PRTS）的消息节点只有引用信息（`linkMissionId` / `contentParams` 中的 PRTS 文档 id），`content.text` 为空。旧实现按 `resolveContentType` 映射为 `mission`/`share` 气泡并渲染 `message.text`，结果 PRTS 气泡只剩一个空标签、任务气泡完全空白。
+
+**根因分析**：`resolveDialog` 把任务/PRTS 节点当作普通消息交给 `adaptBakerMessage`，后者只解析 `content.text`；任务的实际引用在 `linkMissionId`（或 `contentParam[0]`），PRTS 的实际引用在 `contentParams` 的 JSON（`{"id": "nar_..."}`）。缺少对 `SNSDialogContentType` 常量的完整定义与针对性解析。
+
+**修复方案**：
+1. `src/data/constants.ts`：新增 `SNS_DIALOG_CONTENT_TYPE` 与 `SNS_DIALOG_OPTION_TYPE` 常量（经旧版常量名数据与新版数值数据对照提取：Text=1/Image=2/Video=4/Voice=5/Item=6/System=7/Card=8/EmojiResult=9/PRTS=10/Vote=11/Task=12）。
+2. `src/lib/baker.ts`：`resolveDialog` 对 `PRTS(10)` 解析 `contentParams` 的 id、对 `Task(12)` 取 `linkMissionId ?? contentParam[0]`，构建带 `card` 字段的消息；`ResolveContext` 新增 `prtsName`/`missionName` 解析器。
+3. `src/lib/types.ts`：`BakerMessage` 增补 `card?: { kind: 'prts'|'mission'; title: string; to: string }`。
+4. `src/hooks/useData.ts`：`useBakerDialog` 拉取 `PrtsAllItem`+i18n 与 `MissionRuntimeBrief`+`TextTable`+i18n，构造 PRTS 文档名与任务名解析器。
+5. `src/components/Baker/BakerRefCard.tsx`（新增）：可复用引用卡片组件，PRTS 卡片跳转 `/archive/story/library?doc=<id>`，任务卡片跳转 `/archive/story/recap?mission=<id>`。
+6. `src/components/Baker/BakerMessageBubble.tsx`：`share`/`mission` 分支优先渲染卡片。
+
+**涉及文件**：
+- `src/data/constants.ts`
+- `src/lib/baker.ts`
+- `src/lib/adapter.ts`
+- `src/lib/types.ts`
+- `src/hooks/useData.ts`
+- `src/components/Baker/BakerRefCard.tsx`（新增）
+- `src/components/Baker/BakerMessageBubble.tsx`
+
+**验证结果**：
+- ✅ E2E 新增「Baker 聊天中的 PRTS 引用渲染为卡片并可跳转文库」「Baker 聊天中的任务引用渲染为卡片并可跳转剧情梗概」：`sns_npc_joost` 中 PRTS 卡片显示文档名 `《试论碾骨氏族印记的源流及特色》` 并跳转文库；`sns_chat_roman` 中任务卡片显示任务名 `开拓节与特色美食` 并跳转剧情梗概。
+- ✅ baker 单测 15/15（含 PRTS/Task 卡片 4 例）；lint / build 通过。
+
+### 2.11 Baker 聊天选项未走富文本渲染（`<image>` 标签显示为字面文本）
+
+**问题描述**：`/archive/baker?chat=sns_chr_0021_whiten` 最后一个选项的文案为 `<image="sns_emoji_002">`，页面上原样显示字面标签文本，未渲染为表情图。
+
+**根因分析**：`BakerOptionGroup` 直接渲染 `opt.text` 纯文本；`RichText` 已支持 `<image="sns_emoji_002">`（orphan image 标签 → `sns/emoji/*.png`），但选项没有接入该解析。
+
+**修复方案**：`src/components/Baker/BakerOptionGroup.tsx` 中选项文本改为 `<RichText text={opt.text} imageSize="2rem" />`，与消息气泡的 emoji 渲染一致。
+
+**涉及文件**：
+- `src/components/Baker/BakerOptionGroup.tsx`
+
+**验证结果**：
+- ✅ E2E 新增「Baker 聊天选项走富文本渲染」：whiten 聊天中 `button img[src*="sns/emoji/sns_emoji_002"]` 可见且页面不含字面 `<image="sns_emoji_002">`。
+- ✅ lint / build 通过。
+
+### 2.12 Baker 切换联系人后聊天滚动位置未重置
+
+**问题描述**：`/archive/baker?chat=sns_team_qingbozhai` 滚动聊天到底部后，切换到 `sns_npc_zhihuibu`（重建指挥部相关讨论），聊天面板滚动条仍停留在底部。
+
+**根因分析**：`BakerChatPanel` 的滚动重置 `useEffect` 仅依赖 `topicId`。这两个聊天的 `topicId` 均为空字符串 `''`，切换时 `topicId` 不变，effect 不触发；且因数据命中缓存加载极快，聊天面板没有经历卸载重挂载（skeleton 未出现），旧 DOM 滚动位置被保留。
+
+**修复方案**：`src/components/Baker/BakerChatPanel.tsx` 滚动重置改为依赖 `chatId:topicId` 组合键（`lastKey` ref 去重），任意切换 chat 或 topic 都重置到顶部；`BakerTerminal` 透传 `chatId` prop。
+
+**涉及文件**：
+- `src/components/Baker/BakerChatPanel.tsx`
+- `src/pages/baker/BakerTerminal.tsx`
+
+**验证结果**：
+- ✅ E2E 新增「Baker 切换联系人后聊天滚动位置重置到顶部」：qingbozhai 滚到底部 → 切 zhihuibu → `scrollTop === 0`。
+- ✅ E2E 全量 49/49 passed；lint / build 通过。
+
 ## 3. 修复总览
 
 | # | 问题 | 根因 | 状态 | 修复 commit |
@@ -225,6 +283,9 @@ type: Permanent
 | 2.7 | 文库正文 `<image>` 成对标签未渲染为图片 | orphan 特判顺序 + tag-close 出栈节点未转换 | ✅ 已修复（特判前置 + 出栈时转换 + 插图尺寸） | `a3a618d` |
 | 2.8 | 文库 multimedia 文档不支持音频播放 | 丢弃 `audioOverride`，无播放交互 | ✅ 已修复（`voId` 映射 + `RadioPlayer`） | `a3a618d` + `cf3b732` |
 | 2.9 | 切换档案后播放高亮串行 | 局部 `tracks` 用全局 `currentIndex` 索引 | ✅ 已修复（按 `voId` 匹配活跃行） | `ef74560` |
+| 2.10 | Baker 中 PRTS/任务引用未渲染为卡片 | 缺 `SNSDialogContentType` 常量定义与针对性解析 | ✅ 已修复（卡片组件 + 解析 + 名称解析器） | `f1a9ce2` |
+| 2.11 | Baker 选项未走富文本，`<image>` 显示为字面文本 | `BakerOptionGroup` 直接渲染纯文本 | ✅ 已修复（选项接入 `RichText`） | `e1051a6` |
+| 2.12 | 切换联系人后聊天滚动位置未重置 | 滚动重置仅依赖 `topicId`，`topicId=''` 时不变 | ✅ 已修复（`chatId:topicId` 组合键） | `cdf3490` |
 
 ## 4. 最终验证
 
@@ -232,8 +293,8 @@ type: Permanent
 |--------|------|
 | `npm run lint` | ✅ 0 errors |
 | `npm run build` | ✅ 构建成功（含 tsc） |
-| `npm run test`（vitest） | ✅ 475 passed（2 例 Sidebar 存量失败，与本次改动无关） |
-| E2E `responsive.spec.ts` + `story-chronicle.spec.ts` | ✅ 45/45 passed（含 topic 滚动重置与 PRTS 文库 8 例） |
+| `npm run test`（vitest） | ✅ 477 passed（2 例 Sidebar 存量失败，与本次改动无关） |
+| E2E `responsive.spec.ts` + `story-chronicle.spec.ts` | ✅ 49/49 passed（含 topic/联系人滚动重置、PRTS 卡片、选项富文本、PRTS 文库 8 例） |
 
 ## 5. 经验总结
 
@@ -246,3 +307,5 @@ type: Permanent
 - **复用既有播放基建而非新建**：multimedia 音频播放直接复用 `useDialogAudio` / `getAudioUrl` / `checkAudioUrl`，与 `DialogScript` 行为一致，避免双套播放器状态冲突。
 - **两栏详情页用 URL 参数驱动选中项**：`doc=` 查询参数承载当前文档，刷新/深链/筛选切换后选中态不丢失，详情组件以 `itemId` prop 纯渲染，便于独立路由复用。
 - **全局播放器状态不可按 index 匹配局部列表**：`useDialogAudio` 的 `currentIndex` 属于全局播放列表，组件各自构建的局部 `tracks` 与它长度/顺序可能不同，用 `tracks[currentIndex]` 判定「正在播放」会在切换档案后串行。应以唯一标识（`voId`）从全局状态取当前播放项，再在局部列表查找对应行。
+- **滚动重置的依赖键须覆盖所有「内容切换」维度**：滚动容器不随内容切换卸载重挂载时，仅依赖单一维度（如 `topicId`）会漏掉该维度不变的切换（两个聊天的 `topicId` 均为 `''`）。应以 `chatId:topicId` 组合键驱动，保证切换 chat 或 topic 都重置。
+- **富文本组件复用同一套解析**：选项、气泡、工具提示中的富文本都应接入同一 `RichText` 组件，避免出现「同一标签一处渲染一处字面」的分裂。
