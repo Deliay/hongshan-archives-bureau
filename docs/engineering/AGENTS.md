@@ -49,6 +49,7 @@ docs/engineering/
 1. 命名格式：`YYYYMMDD-<feature-slug>-acceptance-report.md`
 2. 内容包含：关联 PRD/技术方案链接、每个问题的描述/根因/修复/commit、修复总览表、验证结果、经验总结
 3. 修复过程中实时更新文档，完成后随代码提交
+4. 已完结并并入正式文档的旧报告移入 `test/archived/`（保持原内容不变），新报告在 `test/` 根目录新建
 
 ## 编码前必读
 

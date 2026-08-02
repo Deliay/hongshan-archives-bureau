@@ -28,7 +28,7 @@ type: Permanent
 
 ## image 标签资源子目录
 
-`<image="xxx">` 的 src 由 `getUISprite(path)`（`src/lib/richText.tsx`）生成 `sprites/{path}.png`。**部分资源带子目录，必须按前缀路由，禁止直接拼接**（2026-08-02 Baker 验收修复，详见 [[../test/20260731-story-chronicle-acceptance-report|验收报告]] §14.5）：
+`<image="xxx">` 的 src 由 `getUISprite(path)`（`src/lib/richText.tsx`）生成 `sprites/{path}.png`。**部分资源带子目录，必须按前缀路由，禁止直接拼接**（2026-08-02 Baker 验收修复，详见 [[../test/archived/20260731-story-chronicle-acceptance-report|验收报告]] §14.5）：
 
 | 前缀 | 最终路径 |
 |------|---------|

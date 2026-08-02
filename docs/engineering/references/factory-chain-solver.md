@@ -108,5 +108,5 @@ flowchart TD
 - [[data-pitfalls|数据层常见陷阱]] — totalProgress 单位、零净值环数据模式、WikiDefaultCraftTable 等
 - [[data-mapping-tables|数据表映射参考]] — 工厂数据表结构
 - [[ui-pitfalls|UI 常见陷阱参考]] — ReactFlow 节点尺寸与边渲染
-- [工厂系统验收报告](../test/20260726-factory-acceptance-report.md) — 2.22–2.29 问题与修复全记录
+- [工厂系统验收报告](../test/archived/20260726-factory-acceptance-report.md) — 2.22–2.29 问题与修复全记录
 - [工程架构规范](../engineering-spec.md)
