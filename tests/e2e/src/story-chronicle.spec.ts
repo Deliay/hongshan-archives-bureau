@@ -182,6 +182,61 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     expect(activeCount).toBe(0)
   })
 
+    test('Baker 聊天中的 PRTS 引用渲染为卡片并可跳转文库', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_npc_joost')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('PRTS') ?? false
+    }, { timeout: 30000 })
+    const prtsCard = page.locator('a[href="/archive/story/library?doc=nar_sm1l1m2_1"]')
+    await expect(prtsCard).toBeVisible({ timeout: 15000 })
+    await expect(prtsCard).toContainText('PRTS')
+    await expect(prtsCard).toContainText('碾骨氏族')
+    // 卡片不应被消息气泡（bg-archive-file）包裹
+    const wrapped = await prtsCard.evaluate((el) => {
+      let p = el.parentElement
+      while (p) {
+        if (typeof p.className === 'string' && p.className.includes('bg-archive-file') && p.className.includes('rounded-lg')) return true
+        p = p.parentElement
+      }
+      return false
+    })
+    expect(wrapped).toBe(false)
+    await prtsCard.click()
+    await expect(page).toHaveURL(/\/archive\/story\/library\?doc=nar_sm1l1m2_1/)
+    await expect(page.getByText('《试论碾骨氏族印记的源流及特色》', { exact: true }).first()).toBeVisible({ timeout: 15000 })
+  })
+
+  test('Baker 聊天中的任务引用渲染为卡片并可跳转剧情梗概', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chat_roman')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('任务') ?? false
+    }, { timeout: 30000 })
+    const missionCard = page.locator('a[href="/archive/story/recap?mission=a1m5"]')
+    await expect(missionCard).toBeVisible({ timeout: 15000 })
+    await expect(missionCard).toContainText('任务')
+    await expect(missionCard).toContainText('开拓节与特色美食')
+    await missionCard.click()
+    await expect(page).toHaveURL(/\/archive\/story\/recap\?mission=a1m5/)
+    await expect(page.getByText('开拓节与特色美食').first()).toBeVisible({ timeout: 15000 })
+  })
+
+  test('Baker 聊天选项走富文本渲染（emoji 图标不显示为字面标签）', async ({ page }) => {
+    await page.goto('/archive/baker?chat=sns_chr_0021_whiten&topic=topic_chr_0021_whiten_1')
+    await page.waitForFunction(() => {
+      return document.body.textContent?.includes('好有特色的风格') ?? false
+    }, { timeout: 30000 })
+    // 选择到最后的选项分支，等待 emoji 选项出现
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('button img[src*="sns/emoji/"]').length >= 1
+    }, { timeout: 30000 })
+    // 不应渲染字面标签文本
+    const bodyText = await page.locator('body').textContent() || ''
+    expect(bodyText).not.toContain('<image="sns_emoji_002">')
+    // 选项中渲染了 emoji 图片
+    const optEmoji = page.locator('button img[src*="sns/emoji/sns_emoji_002"]')
+    await expect(optEmoji.first()).toBeVisible({ timeout: 15000 })
+  })
+
   test('Baker 页展示联系人列表与引导占位', async ({ page }) => {
     await page.goto('/archive/baker')
     // Tab 栏中的"全部"按钮可见（非 mobile hamburger）
@@ -340,6 +395,40 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     const topicButtons = page.locator('div[class*="pl-8"] button')
     await expect(topicButtons.nth(1)).toBeVisible({ timeout: 10000 })
     await topicButtons.nth(1).click()
+    await page.waitForTimeout(500)
+    // 滚动位置重置到顶部
+    const after = await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      return scroller ? scroller.scrollTop : -1
+    })
+    expect(after).toBe(0)
+  })
+
+  test('Baker 切换联系人后聊天滚动位置重置到顶部', async ({ page }) => {
+    // 两个聊天 topicId 均为空字符串，旧实现仅依赖 topicId 变化导致不重置
+    await page.goto('/archive/baker?chat=sns_team_qingbozhai')
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main [class*="rounded-lg"]').length > 0
+    }, { timeout: 30000 })
+    // 滚动聊天面板到底部
+    await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      if (scroller) scroller.scrollTop = scroller.scrollHeight
+    })
+    await page.waitForTimeout(300)
+    const before = await page.evaluate(() => {
+      const scroller = document.querySelector('main .h-full.flex.flex-col.overflow-y-auto')
+      return scroller ? scroller.scrollTop : -1
+    })
+    expect(before).toBeGreaterThan(0)
+    // 切换到 zhihuibu（重建指挥部相关讨论），其 topicId 同为 ''
+    const zhihuibu = page.locator('button[class*="items-center"]').filter({ hasText: '重建指挥部' }).first()
+    await expect(zhihuibu).toBeVisible({ timeout: 15000 })
+    await zhihuibu.click()
+    await expect(page).toHaveURL(/chat=sns_npc_zhihuibu/)
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('main [class*="rounded-lg"]').length > 0
+    }, { timeout: 30000 })
     await page.waitForTimeout(500)
     // 滚动位置重置到顶部
     const after = await page.evaluate(() => {
