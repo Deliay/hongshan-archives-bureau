@@ -1,16 +1,16 @@
-import { useState, useMemo } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { usePrtsLibrary } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
+import { PrtsDocumentDetail } from './PrtsDocumentDetail'
 
 export default function StoryLibrary() {
   const { t } = useI18n()
   const { data, loading, error } = usePrtsLibrary()
   const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
   const catFilter = searchParams.get('cat') || ''
-  const [expandedVol, setExpandedVol] = useState<string | null>(null)
+  const docParam = searchParams.get('doc') || ''
 
   const filteredVolumes = useMemo(() => {
     if (!data) return []
@@ -18,68 +18,82 @@ export default function StoryLibrary() {
     return data.volumes.filter(v => v.categoryId === catFilter)
   }, [data, catFilter])
 
+  const allItems = useMemo(() => {
+    if (!data) return []
+    return data.items
+      .filter(i => filteredVolumes.some(v => v.id === i.volumeId))
+      .sort((a, b) => a.order - b.order)
+  }, [data, filteredVolumes])
+
+  const selectedId = docParam || allItems[0]?.id || ''
+
+  useEffect(() => {
+    if (!docParam && allItems[0]?.id) {
+      setSearchParams({ ...(catFilter ? { cat: catFilter } : {}), doc: allItems[0].id }, { replace: true })
+    }
+  }, [docParam, catFilter, allItems, setSearchParams])
+
   if (loading) return <ListSkeleton cards={20} />
   if (error) return <div className="text-red-400 text-sm p-6">{t('common.loadFailed')}</div>
   if (!data) return null
 
+  const volumesByCat = filteredVolumes.sort((a, b) => a.order - b.order)
+
   return (
-    <div className="min-h-screen p-6">
-      <div className="flex gap-2 mb-6 overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => setSearchParams({})}
-          className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
-            !catFilter ? 'bg-archive-gold/20 text-archive-gold' : 'bg-archive-file text-archive-dust hover:text-archive-ivory'
-          }`}
-        >
-          {t('story.typeAll')}
-        </button>
-        {data.categories.map(cat => (
+    <div className="flex flex-col md:flex-row md:h-[calc(100vh-4rem)] md:min-h-0 md:max-h-[calc(100vh-4rem)]">
+      <aside className="w-full md:w-72 lg:w-80 shrink-0 flex flex-col min-h-0 md:border-r border-archive-border">
+        <div className="p-4 pb-2 flex flex-wrap gap-2 shrink-0">
           <button
-            key={cat.id}
             type="button"
-            onClick={() => setSearchParams({ cat: cat.id })}
-            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
-              catFilter === cat.id ? 'bg-archive-gold/20 text-archive-gold' : 'bg-archive-file text-archive-dust hover:text-archive-ivory'
+            onClick={() => setSearchParams(catFilter ? { cat: '' } : {})}
+            className={`px-3 py-1 rounded-full text-xs transition-colors ${
+              !catFilter ? 'bg-archive-gold/20 text-archive-gold' : 'bg-archive-file text-archive-dust hover:text-archive-ivory'
             }`}
           >
-            {cat.name} <span className="ml-1 text-xs">({cat.itemCount})</span>
+            {t('story.typeAll')}
           </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {filteredVolumes.sort((a, b) => a.order - b.order).map(vol => (
-          <div key={vol.id}>
+          {data.categories.map(cat => (
             <button
+              key={cat.id}
               type="button"
-              onClick={() => setExpandedVol(expandedVol === vol.id ? null : vol.id)}
-              className="w-full p-4 rounded-lg border border-archive-border hover:border-archive-gold/40 cursor-pointer transition-colors text-center"
+              onClick={() => setSearchParams({ cat: cat.id, doc: selectedId })}
+              className={`px-3 py-1 rounded-full text-xs transition-colors ${
+                catFilter === cat.id ? 'bg-archive-gold/20 text-archive-gold' : 'bg-archive-file text-archive-dust hover:text-archive-ivory'
+              }`}
             >
-              {vol.iconUrl ? (
-                <img
-                  src={vol.iconUrl}
-                  alt=""
-                  className="w-12 h-12 mx-auto mb-2 object-contain"
-                  onError={(e) => {
-                    const img = e.target as HTMLImageElement
-                    const currentSrc = img.src
-                    if (currentSrc.includes('/prts/icon/')) {
-                      img.src = currentSrc.replace('/prts/icon/', '/prts/')
-                    } else {
-                      img.style.display = 'none'
-                    }
-                  }}
-                />
-              ) : (
-                <div className="w-12 h-12 mx-auto mb-2 rounded bg-archive-file" />
-              )}
-              <div className="text-sm font-medium text-archive-ivory truncate">{vol.name || vol.id}</div>
-              {vol.subName && <div className="text-xs text-archive-dust truncate">{vol.subName}</div>}
-              <div className="text-xs text-archive-gold mt-1">{vol.itemIds.length}</div>
+              {cat.name} <span className="ml-1 text-xs">({cat.itemCount})</span>
             </button>
-            {expandedVol === vol.id && (
-              <div className="border-t border-archive-border mt-2 pt-2 space-y-1">
+          ))}
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4 space-y-4">
+          {volumesByCat.map(vol => (
+            <div key={vol.id}>
+              <div className="flex items-center gap-2 px-2 py-1">
+                {vol.iconUrl ? (
+                  <img
+                    src={vol.iconUrl}
+                    alt=""
+                    className="w-5 h-5 object-contain shrink-0"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement
+                      const currentSrc = img.src
+                      if (currentSrc.includes('/prts/icon/')) {
+                        img.src = currentSrc.replace('/prts/icon/', '/prts/')
+                      } else {
+                        img.style.display = 'none'
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded bg-archive-file shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-archive-ivory truncate">{vol.name || vol.id}</div>
+                  {vol.subName && <div className="text-[11px] text-archive-dust truncate">{vol.subName}</div>}
+                </div>
+              </div>
+              <div className="mt-1 space-y-0.5">
                 {data.items
                   .filter(i => i.volumeId === vol.id)
                   .sort((a, b) => a.order - b.order)
@@ -87,24 +101,35 @@ export default function StoryLibrary() {
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => navigate(`/archive/story/library/${item.id}`)}
-                      className="w-full flex items-center gap-2 p-2 hover:bg-archive-file rounded cursor-pointer text-left"
+                      onClick={() => setSearchParams({ ...(catFilter ? { cat: catFilter } : {}), doc: item.id })}
+                      className={`w-full flex items-center gap-2 p-1.5 rounded cursor-pointer text-left transition-colors ${
+                        selectedId === item.id
+                          ? 'bg-archive-gold/10 text-archive-gold'
+                          : 'hover:bg-archive-file text-archive-ivory'
+                      }`}
                     >
-                      <span className="text-xs px-2 py-0.5 rounded bg-archive-file text-archive-dust">
+                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-archive-file text-archive-dust shrink-0">
                         {item.type}
                       </span>
-                      <span className="text-sm text-archive-ivory flex-1 truncate">{item.name || item.id}</span>
+                      <span className="text-xs flex-1 truncate">{item.name || item.id}</span>
                     </button>
                   ))}
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+            </div>
+          ))}
+          {volumesByCat.length === 0 && (
+            <div className="text-center text-archive-dust py-12">{t('common.empty')}</div>
+          )}
+        </div>
+      </aside>
 
-      {filteredVolumes.length === 0 && (
-        <div className="text-center text-archive-dust py-12">{t('common.empty')}</div>
-      )}
+      <section className="flex-1 min-h-0 md:overflow-y-auto p-4 md:p-6">
+        {selectedId ? (
+          <PrtsDocumentDetail itemId={selectedId} />
+        ) : (
+          <div className="text-center text-archive-dust py-12">{t('common.empty')}</div>
+        )}
+      </section>
     </div>
   )
 }
