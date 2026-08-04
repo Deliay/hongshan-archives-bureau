@@ -481,5 +481,15 @@
     "reactedBy": "{{name}} のリアクション",
     "sharedArchive": "PRTS 共有アーカイブ",
     "missionLink": "ミッションリンク"
+  },
+  "musicPlayer": {
+    "title": "音楽プレイヤー",
+    "play": "再生",
+    "pause": "一時停止",
+    "previous": "前の曲",
+    "next": "次の曲",
+    "playAlbum": "アルバムを再生",
+    "unavailable": "音声は現在利用できません",
+    "empty": "再生中の曲はありません"
   }
 }

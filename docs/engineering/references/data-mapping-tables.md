@@ -154,6 +154,17 @@ type: Permanent
 
 **i18n 注意**：上述所有 `{id}` 文本字段均为 17-19 位大整数，依赖 `api.ts safeParse` 转字符串保精度后才能命中表字典。
 
+## 音乐播放相关
+
+| 表 | key | 关键字段 | 用途 |
+|----|-----|---------|------|
+| `SpaceshipAlbumTable` | albumId | `albumName`（19 位 id，本表字典）, `icon`, `order` | 音乐专辑（名称/封面/排序，2 条） |
+| `SpaceshipAlbumMusicTable` | albumId | `musicList[]` | 专辑 → 有序曲目 ID 列表（曲目顺序以此为准） |
+| `SpaceshipMusicTable` | musicId | `albumId`, `duration`, `order` | 曲目元数据（13 条）；**名称/图标在 ItemTable**（按同 key 取条目，名称用 ItemTable 字典），本表无名称字段 |
+
+- 音频：`GET /audios/music/spaceship/{itemId}`（`getMusicUrl`），支持 Range；`item_music_fac_dijiang` 音频缺失（404），需置灰兜底。
+- 封面：`getSpriteUrl('musicplayer/{icon}')`；曲目图标：`getSpriteUrl('itemicon/{iconId}')`（默认 `item_spaceship_music`）。
+
 ## I18n 配对规则
 
 每个表有独立的 i18n 字典。Hook 在获取表数据时并行获取对应字典，再传入 `adapt*`。禁止混用不同表的字典，否则会出现空文本或回退文本。

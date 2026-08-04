@@ -4,6 +4,7 @@ import { useLocale } from '../../lib/locale'
 import { useI18n } from '../../i18n'
 import { useI18nLocales } from '../../hooks/useData'
 import { ArchiveSeal } from '../ui/ArchiveSeal'
+import MusicControlPanel from '../Music/MusicControlPanel'
 import { ASSET_BASE } from '../../lib/adapter'
 
 const LANGUAGE_ICON_URL = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/settings/icon_settings_language.png`
@@ -146,7 +147,10 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        <div className="p-3 border-t border-archive-border relative">
+        <div className="p-3 border-t border-archive-border">
+          <MusicControlPanel onNavigate={() => setOpen(false)} />
+        </div>
+        <div className="p-3 pt-0 relative">
           <button
             type="button"
             onClick={() => setLocaleOpen(v => !v)}

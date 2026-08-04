@@ -5,8 +5,8 @@ import { useLocale } from '../lib/locale'
 import { useI18n } from '../i18n'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, buildRecapChaptersFromMissions, buildMissionNameMapFromBrief, resolveLevelMapId, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds, buildDialogLines } from '../lib/adapter'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime, MusicAlbum } from '../lib/types'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, buildRecapChaptersFromMissions, buildMissionNameMapFromBrief, resolveLevelMapId, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds, buildDialogLines, adaptMusicAlbums } from '../lib/adapter'
 import type { ActivityStageDetail, EnemySummary, DungeonDetail, StageDetailContext } from '../lib/missionConditionNames'
 import { buildEnemySummary, buildDungeonDetail, buildStageDetail } from '../lib/missionConditionNames'
 import { formatBlackboard } from '../lib/formatText'
@@ -1755,4 +1755,30 @@ export function useBakerDialog(chatId: string | null): UseDataResult<{
       },
     }
   }, [locale, chatId])
+}
+
+// ---------- Music ----------
+
+export function useMusicAlbums(): UseDataResult<MusicAlbum[]> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [albumRaw, albumI18n, albumMusicRaw, musicRaw, itemI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('SpaceshipAlbumTable', () => fetchTableAll('SpaceshipAlbumTable')),
+      getTableI18nDict('SpaceshipAlbumTable', locale),
+      getCachedData<Record<string, any>>('SpaceshipAlbumMusicTable', () => fetchTableAll('SpaceshipAlbumMusicTable')),
+      getCachedData<Record<string, any>>('SpaceshipMusicTable', () => fetchTableAll('SpaceshipMusicTable')),
+      getTableI18nDict('ItemTable', locale),
+    ])
+    const musicIds = [...new Set(Object.values(albumMusicRaw).flatMap((v: any) => (v.musicList ?? []) as string[]))]
+    const items = await Promise.all(
+      musicIds.map((id) =>
+        getCachedData<any>('ItemTable', () => fetchTableEntry('ItemTable', id), id).catch(() => null),
+      ),
+    )
+    const itemMap: Record<string, any> = {}
+    musicIds.forEach((id, i) => {
+      if (items[i]) itemMap[id] = items[i]
+    })
+    return adaptMusicAlbums(albumRaw, albumMusicRaw, musicRaw, albumI18n, itemMap, itemI18n)
+  }, [locale])
 }

@@ -481,5 +481,15 @@
     "reactedBy": "Reacted by {{name}}",
     "sharedArchive": "Shared archive",
     "missionLink": "Mission link"
+  },
+  "musicPlayer": {
+    "title": "Music Player",
+    "play": "Play",
+    "pause": "Pause",
+    "previous": "Previous",
+    "next": "Next",
+    "playAlbum": "Play Album",
+    "unavailable": "Audio unavailable",
+    "empty": "Nothing playing"
   }
 }

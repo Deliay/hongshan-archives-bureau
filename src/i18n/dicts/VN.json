@@ -481,5 +481,15 @@
     "reactedBy": "{{name}} đã phản ứng",
     "sharedArchive": "Lưu trữ chia sẻ",
     "missionLink": "Liên kết nhiệm vụ"
+  },
+  "musicPlayer": {
+    "title": "Trình phát nhạc",
+    "play": "Phát",
+    "pause": "Tạm dừng",
+    "previous": "Bài trước",
+    "next": "Bài tiếp theo",
+    "playAlbum": "Phát toàn bộ album",
+    "unavailable": "Âm thanh tạm thời không khả dụng",
+    "empty": "Chưa có nội dung phát"
   }
 }

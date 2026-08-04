@@ -481,5 +481,15 @@
     "reactedBy": "Reaccionado por {{name}}",
     "sharedArchive": "Archivo compartido",
     "missionLink": "Enlace de misión"
+  },
+  "musicPlayer": {
+    "title": "Reproductor de música",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "playAlbum": "Reproducir álbum",
+    "unavailable": "Audio no disponible",
+    "empty": "Nada en reproducción"
   }
 }

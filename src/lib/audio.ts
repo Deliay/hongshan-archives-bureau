@@ -13,6 +13,12 @@ export function getAudioUrl(voId: string, locale: string): string {
   return `${AUDIO_BASE_URL}/${lang}/${voId}`
 }
 
+const MUSIC_BASE_URL = 'https://endfield-assets.fffdan.com/audios/music/spaceship'
+
+export function getMusicUrl(itemId: string): string {
+  return `${MUSIC_BASE_URL}/${itemId}`
+}
+
 const audioHeadCache = new Map<string, Promise<boolean>>()
 
 export function checkAudioUrl(url: string): Promise<boolean> {

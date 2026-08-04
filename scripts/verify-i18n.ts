@@ -14,6 +14,8 @@ const SAME_AS_EN_WHITELIST = new Set([
   'equipment.partBody',
   'equipment.partEdc',
   'equipment.suitSection',
+  // DE/FR 的 "Pause" 与 EN 同形，是正确本土词汇
+  'musicPlayer.pause',
 ])
 
 function extractKeysFromCode(): Set<string> {
