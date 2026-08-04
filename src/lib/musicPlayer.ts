@@ -1,41 +1,37 @@
 import { useSyncExternalStore } from 'react'
-import { getAudioUrl } from './audio'
+import { getMusicUrl } from './audio'
+import { stop as stopDialogAudio, setOnBeforePlay } from './dialogAudio'
 
-export interface DialogAudioTrack {
-  lineKey: string
-  voId: string
-  locale: string
-  actorName: string
-  dialogText: string
+export interface MusicQueueItem {
+  id: string
+  name: string
+  albumName: string
+  duration: number
+  iconUrl: string
 }
 
-export interface DialogAudioState {
-  tracks: DialogAudioTrack[]
+export interface MusicPlayerState {
+  queue: MusicQueueItem[]
   currentIndex: number
   playing: boolean
   currentTime: number
   duration: number
 }
 
-let state: DialogAudioState = { tracks: [], currentIndex: -1, playing: false, currentTime: 0, duration: 0 }
+let state: MusicPlayerState = { queue: [], currentIndex: -1, playing: false, currentTime: 0, duration: 0 }
 const listeners = new Set<() => void>()
 let audio: HTMLAudioElement | null = null
-let onBeforePlay: (() => void) | null = null
-
-export function setOnBeforePlay(fn: () => void) {
-  onBeforePlay = fn
-}
 
 function emit() {
   for (const l of listeners) l()
 }
 
-function setState(patch: Partial<DialogAudioState>) {
+function setState(patch: Partial<MusicPlayerState>) {
   state = { ...state, ...patch }
   emit()
 }
 
-export function getSnapshot(): DialogAudioState {
+export function getMusicPlayerSnapshot(): MusicPlayerState {
   return state
 }
 
@@ -52,42 +48,38 @@ function teardown() {
 }
 
 function playTrack(index: number) {
-  const track = state.tracks[index]
+  const track = state.queue[index]
   if (!track) return
   teardown()
-  audio = new Audio(getAudioUrl(track.voId, track.locale))
+  audio = new Audio(getMusicUrl(track.id))
   audio.addEventListener('loadedmetadata', () => {
     if (audio) setState({ duration: audio.duration })
   })
   audio.addEventListener('timeupdate', () => {
     if (audio) setState({ currentTime: audio.currentTime })
   })
-  audio.addEventListener('ended', () => {
+  const advance = () => {
     const next = state.currentIndex + 1
-    if (next < state.tracks.length) {
+    if (next < state.queue.length) {
       playTrack(next)
       setState({ currentIndex: next, currentTime: 0, duration: 0 })
     } else {
-      stop()
+      teardown()
+      setState({ currentIndex: -1, playing: false, currentTime: 0, duration: 0 })
     }
-  })
-  audio.addEventListener('error', () => {
-    const next = state.currentIndex + 1
-    if (next < state.tracks.length) {
-      playTrack(next)
-      setState({ currentIndex: next, currentTime: 0, duration: 0 })
-    } else {
-      stop()
-    }
-  })
+  }
+  audio.addEventListener('ended', advance)
+  audio.addEventListener('error', advance)
   audio.play().catch(() => {
     setState({ playing: false })
   })
 }
 
-export function playFrom(trackList: DialogAudioTrack[], startIndex: number) {
-  onBeforePlay?.()
-  state = { tracks: trackList, currentIndex: startIndex, playing: false, currentTime: 0, duration: 0 }
+export function appendAndPlay(items: MusicQueueItem[]) {
+  if (items.length === 0) return
+  stopDialogAudio()
+  const startIndex = state.queue.length
+  state = { ...state, queue: [...state.queue, ...items], currentIndex: startIndex, playing: false, currentTime: 0, duration: 0 }
   playTrack(startIndex)
   setState({ playing: true })
 }
@@ -107,7 +99,7 @@ export function togglePlay() {
 
 export function playNext() {
   const next = state.currentIndex + 1
-  if (next < state.tracks.length) {
+  if (next < state.queue.length) {
     playTrack(next)
     setState({ currentIndex: next, playing: true, currentTime: 0, duration: 0 })
   }
@@ -121,11 +113,20 @@ export function playPrev() {
   }
 }
 
-export function stop() {
-  teardown()
-  setState({ tracks: [], currentIndex: -1, playing: false, currentTime: 0, duration: 0 })
+export function pauseMusic() {
+  if (audio && state.playing) {
+    audio.pause()
+    setState({ playing: false })
+  }
 }
 
-export function useDialogAudio(): DialogAudioState {
-  return useSyncExternalStore(subscribe, getSnapshot)
+export function stopMusic() {
+  teardown()
+  setState({ queue: [], currentIndex: -1, playing: false, currentTime: 0, duration: 0 })
 }
+
+export function useMusicPlayer(): MusicPlayerState {
+  return useSyncExternalStore(subscribe, getMusicPlayerSnapshot)
+}
+
+setOnBeforePlay(() => pauseMusic())
