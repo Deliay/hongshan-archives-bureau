@@ -22,6 +22,7 @@ import EnemyDetail from './pages/enemies/EnemyDetail'
 import EquipmentList from './pages/equipment/EquipmentList'
 import EquipmentDetail from './pages/equipment/EquipmentDetail'
 import ItemList from './pages/items/ItemList'
+import MusicPlaylistPage from './pages/music/MusicPlaylistPage'
 import FactoryLayout from './pages/factory/FactoryLayout'
 import { ListSkeleton } from './components/ui/ListSkeleton'
 // 工厂子页面懒加载：将 @xyflow/react + @dagrejs/dagre 隔离出主 bundle
@@ -65,6 +66,7 @@ function AppRoutes() {
             <Route path="equipment" element={<EquipmentList />} />
             <Route path="equipment/:id" element={<EquipmentDetail />} />
             <Route path="items" element={<ItemList />} />
+            <Route path="music" element={<MusicPlaylistPage />} />
             <Route path="factory" element={<FactoryLayout />}>
               <Route index element={<Navigate to="recipes" replace />} />
               <Route path="recipes" element={<Suspense fallback={<ListSkeleton />}><FactoryRecipes /></Suspense>} />

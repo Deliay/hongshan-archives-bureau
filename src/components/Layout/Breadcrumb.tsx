@@ -14,6 +14,7 @@ function useListLabel(): Record<string, string> {
     enemies: t('nav.enemies'),
     equipment: t('nav.equipment'),
     items: t('nav.items'),
+    music: t('musicPlayer.title'),
     factory: t('nav.factory'),
     recipes: t('factory.recipes'),
     chains: t('factory.chains'),
