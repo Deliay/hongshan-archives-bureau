@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { adaptEquip, adaptSuit, adaptEquipFormula, adaptOperator } from '../adapter'
+import { adaptEquip, adaptSuit, adaptEquipFormula, adaptOperator, adaptMusicAlbums } from '../adapter'
 
 describe('adaptEquip', () => {
   const mockItemRaw: Record<string, any> = {
@@ -281,5 +281,40 @@ describe('adaptOperator voiceLines', () => {
       unlockValue: 0,
       voId: '',
     })
+  })
+})
+
+
+describe('adaptMusicAlbums', () => {
+  it('按 order 排序专辑，按 musicList 排序曲目，名称来自 ItemTable 字典', () => {
+    const rawAlbums = {
+      b: { albumId: 'b', albumName: { id: '9007199254740993001', text: '' }, icon: 'icon_b', order: 2 },
+      a: { albumId: 'a', albumName: { id: '9007199254740993002', text: '' }, icon: 'icon_a', order: 1 },
+    }
+    const rawAlbumMusic = { a: { musicList: ['m2', 'm1', 'm_missing'] } }
+    const rawMusic = {
+      m1: { id: 'm1', duration: 100, order: 2, albumId: 'a' },
+      m2: { id: 'm2', duration: 200, order: 1, albumId: 'a' },
+    }
+    const albumI18n = { '9007199254740993001': '专辑B', '9007199254740993002': '专辑A' }
+    const itemMap = { m1: { name: { id: 11, text: '' }, iconId: 'item_spaceship_music' }, m2: { name: { id: 22, text: '' } } }
+    const itemI18n = { '11': '曲目一', '22': '曲目二' }
+    const result = adaptMusicAlbums(rawAlbums, rawAlbumMusic, rawMusic, albumI18n, itemMap, itemI18n)
+    expect(result.map(a => a.id)).toEqual(['a', 'b'])
+    expect(result[0].name).toBe('专辑A')
+    expect(result[0].tracks.map(t => t.id)).toEqual(['m2', 'm1'])
+    expect(result[0].tracks[0].name).toBe('曲目二')
+    expect(result[0].tracks[1].iconUrl).toContain('itemicon/item_spaceship_music.png')
+  })
+
+  it('ItemTable 条目缺失时曲目名回退为 id', () => {
+    const result = adaptMusicAlbums(
+      { a: { albumId: 'a', albumName: { text: '' }, icon: 'i', order: 1 } },
+      { a: { musicList: ['m1'] } },
+      { m1: { id: 'm1', duration: 60, order: 1, albumId: 'a' } },
+      {}, {}, {},
+    )
+    expect(result[0].tracks[0].name).toBe('m1')
+    expect(result[0].name).toBe('a')
   })
 })

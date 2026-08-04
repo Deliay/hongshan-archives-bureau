@@ -1,4 +1,4 @@
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode } from './types'
+import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode, MusicAlbum, MusicTrack } from './types'
 import { renderMissionCondition } from './missionCondition'
 import { ACTIVITY_TYPE_GROUPS, SNS_DIALOG_CONTENT_TYPE } from '../data/constants'
 
@@ -729,5 +729,43 @@ export function adaptBakerMessage(
       : undefined,
     reactions: undefined,
   }
+}
+
+export function adaptMusicAlbums(
+  rawAlbums: Record<string, any>,
+  rawAlbumMusic: Record<string, any>,
+  rawMusic: Record<string, any>,
+  albumI18nMap: Record<string, string>,
+  itemMap: Record<string, any>,
+  itemI18nMap: Record<string, string>,
+): MusicAlbum[] {
+  return Object.values(rawAlbums)
+    .map((album: any) => {
+      const id: string = album.albumId
+      const musicIds: string[] = rawAlbumMusic[id]?.musicList ?? []
+      const tracks = musicIds
+        .map((musicId, idx): MusicTrack | null => {
+          const m = rawMusic[musicId]
+          if (!m) return null
+          const item = itemMap[musicId]
+          return {
+            id: musicId,
+            name: (item && resolveI18n(item.name, itemI18nMap)) || musicId,
+            duration: m.duration ?? 0,
+            order: m.order ?? idx + 1,
+            albumId: id,
+            iconUrl: getSpriteUrl(`itemicon/${item?.iconId ?? 'item_spaceship_music'}`),
+          }
+        })
+        .filter((t): t is MusicTrack => t !== null)
+      return {
+        id,
+        name: resolveI18n(album.albumName, albumI18nMap) || id,
+        coverUrl: getSpriteUrl(`musicplayer/${album.icon}`),
+        order: album.order ?? 0,
+        tracks,
+      }
+    })
+    .sort((a, b) => a.order - b.order)
 }
 

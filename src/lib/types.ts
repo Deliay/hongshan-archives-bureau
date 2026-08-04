@@ -578,3 +578,20 @@ export interface BakerTopic {
   dialogs: { dialogId: string; preview: string }[]
 }
 
+export interface MusicTrack {
+  id: string
+  name: string
+  duration: number
+  order: number
+  albumId: string
+  iconUrl: string
+}
+
+export interface MusicAlbum {
+  id: string
+  name: string
+  coverUrl: string
+  order: number
+  tracks: MusicTrack[]
+}
+
