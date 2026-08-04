@@ -481,5 +481,15 @@
     "reactedBy": "Reaktion von {{name}}",
     "sharedArchive": "Geteiltes Archiv",
     "missionLink": "Auftragslink"
+  },
+  "musicPlayer": {
+    "title": "Musikplayer",
+    "play": "Abspielen",
+    "pause": "Pause",
+    "previous": "Vorheriger Titel",
+    "next": "Nächster Titel",
+    "playAlbum": "Album abspielen",
+    "unavailable": "Audio nicht verfügbar",
+    "empty": "Keine Wiedergabe"
   }
 }

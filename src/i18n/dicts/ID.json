@@ -481,5 +481,15 @@
     "reactedBy": "Ditanggapi oleh {{name}}",
     "sharedArchive": "Arsip bersama",
     "missionLink": "Tautan misi"
+  },
+  "musicPlayer": {
+    "title": "Pemutar musik",
+    "play": "Putar",
+    "pause": "Jeda",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya",
+    "playAlbum": "Putar album",
+    "unavailable": "Audio tidak tersedia",
+    "empty": "Tidak ada yang diputar"
   }
 }

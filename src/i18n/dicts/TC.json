@@ -481,5 +481,15 @@
     "reactedBy": "{{name}} 回應",
     "sharedArchive": "PRTS 文獻分享",
     "missionLink": "任務連結"
+  },
+  "musicPlayer": {
+    "title": "音樂播放",
+    "play": "播放",
+    "pause": "暫停",
+    "previous": "上一首",
+    "next": "下一首",
+    "playAlbum": "播放整張專輯",
+    "unavailable": "音訊暫不可用",
+    "empty": "暫無播放內容"
   }
 }
