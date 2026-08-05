@@ -1,17 +1,50 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../i18n'
-import { useMusicPlayer, togglePlay, playNext, playPrev } from '../../lib/musicPlayer'
+import { useMusicPlayer, togglePlay, playNext, playPrev, cyclePlayMode, type PlayMode } from '../../lib/musicPlayer'
 import QueueList from './QueueList'
 
 interface MusicControlPanelProps {
   onNavigate?: () => void
 }
 
+const MODE_LABEL_KEY: Record<PlayMode, string> = {
+  loop: 'musicPlayer.modeLoop',
+  shuffle: 'musicPlayer.modeShuffle',
+  repeat: 'musicPlayer.modeRepeat',
+}
+
+function PlayModeIcon({ mode }: { mode: PlayMode }) {
+  if (mode === 'shuffle') {
+    return (
+      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="16 3 21 3 21 8" />
+        <line x1="4" y1="20" x2="21" y2="3" />
+        <polyline points="21 16 21 21 16 21" />
+        <line x1="15" y1="15" x2="21" y2="21" />
+        <line x1="4" y1="4" x2="9" y2="9" />
+      </svg>
+    )
+  }
+  return (
+    <span className="relative inline-flex items-center justify-center">
+      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="17 1 21 5 17 9" />
+        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+        <polyline points="7 23 3 19 7 15" />
+        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+      </svg>
+      {mode === 'repeat' && (
+        <span className="absolute -top-1 -right-1.5 text-[7px] font-bold leading-none">1</span>
+      )}
+    </span>
+  )
+}
+
 export default function MusicControlPanel({ onNavigate }: MusicControlPanelProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { queue, currentIndex, playing, currentTime, duration } = useMusicPlayer()
+  const { queue, currentIndex, playing, currentTime, duration, playMode } = useMusicPlayer()
   const [queueOpen, setQueueOpen] = useState(false)
   const current = currentIndex >= 0 ? queue[currentIndex] : null
 
@@ -123,6 +156,15 @@ export default function MusicControlPanel({ onNavigate }: MusicControlPanelProps
                   <polygon points="5,4 15,12 5,20" />
                   <rect x="17" y="4" width="2" height="16" />
                 </svg>
+              </button>
+              <button
+                type="button"
+                aria-label={t(MODE_LABEL_KEY[playMode])}
+                title={t(MODE_LABEL_KEY[playMode])}
+                onClick={(e) => { e.stopPropagation(); cyclePlayMode() }}
+                className={`w-6 h-6 flex items-center justify-center rounded hover:bg-archive-border transition-colors ${playMode === 'loop' ? 'text-archive-dust' : 'text-archive-gold'}`}
+              >
+                <PlayModeIcon mode={playMode} />
               </button>
             </div>
           </div>

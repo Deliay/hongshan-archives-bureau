@@ -5,7 +5,7 @@ type: Permanent
 
 # 音乐播放验收报告（2026-08-04）
 
-> **状态**: 本轮受理验收反馈 2 件，已修复 2 件，待验收确认。
+> **状态**: 本轮受理验收反馈 2 件 + 追加需求 1 件（播放循环模式），已全部完成，待验收确认。
 
 ## 关联文档
 
@@ -48,12 +48,25 @@ PR #52 交付了音乐播放（导航栏控制面板 + `/archive/music` 专辑�
 - **验证结果**：✅ E2E 新增「剧情语音播放时左下面板与播放队列同步」通过；story-chronicle 语音用例回归通过；dialogAudio/musicPlayer 单测 14/14 通过。
 - **涉及文件**：`src/lib/musicPlayer.ts`、`src/lib/dialogAudio.ts`、`src/components/Music/MusicControlPanel.tsx`、`src/lib/__tests__/musicPlayer.test.ts`、`src/lib/__tests__/dialogAudio.test.ts`、`tests/e2e/src/music-player.spec.ts`
 
+### 2.3 全局播放循环模式（追加需求）
+
+- **需求描述**：全局播放循环模式，可选：列表循环、列表随机、单曲循环。
+- **修复方案**：
+  1. `src/lib/musicPlayer.ts`：`MusicPlayerState` 新增 `playMode: 'loop' | 'shuffle' | 'repeat'`（默认 `loop` 列表循环），新增 `cyclePlayMode()` 按 列表循环 → 列表随机 → 单曲循环 轮换。
+  2. 自动续播（`ended`）按模式分派：`repeat` 重播当前条目；`shuffle` 随机跳不同条目；`loop` 顺序并在队尾绕回首部。`error` 始终顺序跳过且不绕回，避免全队列 404 时死循环。
+  3. 手动 `playNext/playPrev` 支持绕回（shuffle 时 playNext 随机）。
+  4. `MusicControlPanel` 控制条新增模式按钮（图标随模式切换，非默认模式金色高亮），点击轮换。
+  5. i18n 新增 `musicPlayer.modeLoop / modeShuffle / modeRepeat` × 14 语言。
+- **验证结果**：✅ 单测新增 5 用例（模式轮换/单曲重播/单曲 error 防死循环/随机跳条/绕回）；E2E 新增「面板可切换播放循环模式」通过。
+- **涉及文件**：`src/lib/musicPlayer.ts`、`src/components/Music/MusicControlPanel.tsx`、`src/lib/__tests__/musicPlayer.test.ts`、`src/lib/__tests__/dialogAudio.test.ts`、`scripts/i18n-custom.json`、`src/i18n/dicts/*`、`tests/e2e/src/music-player.spec.ts`
+
 ## 修复总览
 
 | # | 问题 | 根因 | 状态 | 修复 commit |
 |---|---|---|---|---|
 | 2.1 | 缺少播放列表概念与播放队列列表 | 队列无 UI，页面信息架构未体现播放列表 | ✅ 已修复 | 257c3df, 6b363d9 |
 | 2.2 | 剧情语音播放时面板/队列不同步 | 音乐与语音双 store 独立，仅回调互斥 | ✅ 已修复 | 257c3df, 6b363d9 |
+| 2.3 | 全局播放循环模式（列表循环/列表随机/单曲循环） | 追加需求 | ✅ 已实现 | 见本轮提交 |
 
 ## 最终验证
 
@@ -61,9 +74,9 @@ PR #52 交付了音乐播放（导航栏控制面板 + `/archive/music` 专辑�
 |---|---|
 | `npx tsc --noEmit` | ✅ 通过 |
 | `npm run lint`（oxlint + i18n 校验） | ✅ 0 error（38 warning 为基线既有） |
-| `npm run test`（vitest） | ✅ 482 通过 / 8 失败（均为基线既有：Sidebar.test 2、chain.integration 6，与本需求无关） |
+| `npm run test`（vitest） | ✅ 486 通过 / 8 失败（均为基线既有：Sidebar.test 2、chain.integration 6，与本需求无关） |
 | `npm run build` | ✅ 通过 |
-| E2E music-player.spec.ts | ✅ 8/8 通过（含 3 个新用例） |
+| E2E music-player.spec.ts | ✅ 9/9 通过（含 4 个新用例） |
 | E2E story-chronicle.spec.ts 回归 | ✅ 通过（语音相关用例） |
 
 ## 经验总结

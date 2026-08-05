@@ -60,6 +60,21 @@ test.describe('音乐播放与全局控制中心 (Music Player)', () => {
     await expect(overlay.getByText('生之泥壤')).toBeVisible()
   })
 
+  test('面板可切换播放循环模式（列表循环→列表随机→单曲循环）', async ({ page }) => {
+    await page.goto('/archive/music')
+    await page.waitForFunction(() => document.body.textContent?.includes('开拓专辑'), { timeout: 20000 })
+    await page.locator('button[aria-label="播放"]').first().click()
+    await expect(page.locator('aside').getByText('生之泥壤')).toBeVisible({ timeout: 10000 })
+    // 默认列表循环 → 点击依次为列表随机、单曲循环、回到列表循环
+    await expect(page.locator('aside button[aria-label="列表循环"]')).toBeVisible()
+    await page.locator('aside button[aria-label="列表循环"]').click()
+    await expect(page.locator('aside button[aria-label="列表随机"]')).toBeVisible()
+    await page.locator('aside button[aria-label="列表随机"]').click()
+    await expect(page.locator('aside button[aria-label="单曲循环"]')).toBeVisible()
+    await page.locator('aside button[aria-label="单曲循环"]').click()
+    await expect(page.locator('aside button[aria-label="列表循环"]')).toBeVisible()
+  })
+
   test('剧情语音播放时左下面板与播放队列同步', async ({ page }) => {
     await page.goto('/archive/story/library?doc=nar_col_radio_5')
     await page.waitForFunction(() => document.body.textContent?.includes('radio_gm01m23_4_001') ?? false, { timeout: 30000 })
