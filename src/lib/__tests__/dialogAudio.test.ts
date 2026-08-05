@@ -77,12 +77,12 @@ describe('dialogAudio queue controller', () => {
     expect(MockAudio.instances[1].src).toContain('au_b')
   })
 
-  it('stops after last track ends', () => {
+  it('stops after last track ends (queue retained)', () => {
     playFrom([mk('a')], 0)
     MockAudio.fireEnded()
     const s = getSnapshot()
     expect(s.currentIndex).toBe(-1)
-    expect(s.tracks).toEqual([])
+    expect(s.tracks.map(t => t.lineKey)).toEqual(['a'])
     expect(s.playing).toBe(false)
   })
 

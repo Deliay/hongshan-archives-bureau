@@ -1,6 +1,12 @@
 import { useSyncExternalStore } from 'react'
-import { getMusicUrl } from './audio'
-import { stop as stopDialogAudio, setOnBeforePlay } from './dialogAudio'
+import { getAudioUrl, getMusicUrl } from './audio'
+
+export interface VoicePayload {
+  voId: string
+  locale: string
+  lineKey: string
+  dialogText: string
+}
 
 export interface MusicQueueItem {
   id: string
@@ -8,6 +14,8 @@ export interface MusicQueueItem {
   albumName: string
   duration: number
   iconUrl: string
+  kind?: 'music' | 'voice'
+  voice?: VoicePayload
 }
 
 export interface MusicPlayerState {
@@ -47,11 +55,16 @@ function teardown() {
   }
 }
 
+function trackUrl(track: MusicQueueItem): string {
+  if (track.kind === 'voice' && track.voice) return getAudioUrl(track.voice.voId, track.voice.locale)
+  return getMusicUrl(track.id)
+}
+
 function playTrack(index: number) {
   const track = state.queue[index]
   if (!track) return
   teardown()
-  audio = new Audio(getMusicUrl(track.id))
+  audio = new Audio(trackUrl(track))
   audio.addEventListener('loadedmetadata', () => {
     if (audio) setState({ duration: audio.duration })
   })
@@ -77,11 +90,23 @@ function playTrack(index: number) {
 
 export function appendAndPlay(items: MusicQueueItem[]) {
   if (items.length === 0) return
-  stopDialogAudio()
   const startIndex = state.queue.length
   state = { ...state, queue: [...state.queue, ...items], currentIndex: startIndex, playing: false, currentTime: 0, duration: 0 }
   playTrack(startIndex)
   setState({ playing: true })
+}
+
+export function playQueue(items: MusicQueueItem[], startIndex: number) {
+  if (items.length === 0) return
+  state = { ...state, queue: items, currentIndex: startIndex, playing: false, currentTime: 0, duration: 0 }
+  playTrack(startIndex)
+  setState({ playing: true })
+}
+
+export function playAt(index: number) {
+  if (index < 0 || index >= state.queue.length) return
+  playTrack(index)
+  setState({ currentIndex: index, playing: true, currentTime: 0, duration: 0 })
 }
 
 export function togglePlay() {
@@ -125,8 +150,8 @@ export function stopMusic() {
   setState({ queue: [], currentIndex: -1, playing: false, currentTime: 0, duration: 0 })
 }
 
+export const clearQueue = stopMusic
+
 export function useMusicPlayer(): MusicPlayerState {
   return useSyncExternalStore(subscribe, getMusicPlayerSnapshot)
 }
-
-setOnBeforePlay(() => pauseMusic())

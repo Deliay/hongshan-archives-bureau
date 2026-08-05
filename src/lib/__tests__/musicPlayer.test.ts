@@ -20,7 +20,7 @@ class MockAudio {
 }
 vi.stubGlobal('Audio', MockAudio)
 
-const { appendAndPlay, playNext, playPrev, togglePlay, stopMusic, getMusicPlayerSnapshot } = await import('../musicPlayer')
+const { appendAndPlay, playQueue, playAt, clearQueue, playNext, playPrev, togglePlay, stopMusic, getMusicPlayerSnapshot } = await import('../musicPlayer')
 
 function track(id: string) {
   return { id, name: id, albumName: 'a', duration: 100, iconUrl: '' }
@@ -69,6 +69,43 @@ describe('musicPlayer store', () => {
     togglePlay()
     expect(getMusicPlayerSnapshot().playing).toBe(false)
     togglePlay()
+    expect(getMusicPlayerSnapshot().playing).toBe(true)
+  })
+
+  it('playQueue 替换整个队列并从指定位置播放', () => {
+    appendAndPlay([track('m1'), track('m2')])
+    playQueue([track('v1'), track('v2'), track('v3')], 1)
+    const s = getMusicPlayerSnapshot()
+    expect(s.queue.map(t => t.id)).toEqual(['v1', 'v2', 'v3'])
+    expect(s.currentIndex).toBe(1)
+    expect(s.playing).toBe(true)
+  })
+
+  it('playAt 跳转队列内指定条目', () => {
+    appendAndPlay([track('m1'), track('m2'), track('m3')])
+    playAt(2)
+    expect(getMusicPlayerSnapshot().currentIndex).toBe(2)
+    playAt(5)
+    expect(getMusicPlayerSnapshot().currentIndex).toBe(2)
+    playAt(-1)
+    expect(getMusicPlayerSnapshot().currentIndex).toBe(2)
+  })
+
+  it('clearQueue 清空队列并停止播放', () => {
+    appendAndPlay([track('m1')])
+    clearQueue()
+    const s = getMusicPlayerSnapshot()
+    expect(s.queue).toEqual([])
+    expect(s.currentIndex).toBe(-1)
+    expect(s.playing).toBe(false)
+  })
+
+  it('voice 条目使用语音 URL 播放', () => {
+    playQueue([
+      { id: 'au_x', name: '角色', albumName: 'line_1', duration: 0, iconUrl: '', kind: 'voice' as const,
+        voice: { voId: 'au_x', locale: 'CN', lineKey: 'line_1', dialogText: 'text' } },
+    ], 0)
+    expect(MockAudio.instances[0].src).toContain('au_x')
     expect(getMusicPlayerSnapshot().playing).toBe(true)
   })
 })
