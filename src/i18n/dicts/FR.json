@@ -483,13 +483,21 @@
     "missionLink": "Lien de mission"
   },
   "musicPlayer": {
+    "queue": "File d'attente",
+    "queueEmpty": "La file d'attente est vide",
     "title": "Lecteur de musique",
     "play": "Lire",
     "pause": "Pause",
+    "playlists": "Listes de lecture",
     "previous": "Précédent",
+    "modeLoop": "Répéter la liste",
+    "modeShuffle": "Lecture aléatoire",
+    "modeRepeat": "Répéter un titre",
     "next": "Suivant",
     "playAlbum": "Lire l'album",
     "unavailable": "Audio indisponible",
+    "voice": "Voix de l'histoire",
+    "clear": "Vider",
     "empty": "Aucune lecture en cours"
   }
 }

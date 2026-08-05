@@ -483,13 +483,21 @@
     "missionLink": "Auftragslink"
   },
   "musicPlayer": {
+    "queue": "Wiedergabeschlange",
+    "queueEmpty": "Warteschlange ist leer",
     "title": "Musikplayer",
     "play": "Abspielen",
     "pause": "Pause",
+    "playlists": "Wiedergabelisten",
     "previous": "Vorheriger Titel",
+    "modeLoop": "Alle wiederholen",
+    "modeShuffle": "Zufallswiedergabe",
+    "modeRepeat": "Ein Titel wiederholen",
     "next": "Nächster Titel",
     "playAlbum": "Album abspielen",
     "unavailable": "Audio nicht verfügbar",
+    "voice": "Story-Sprachausgabe",
+    "clear": "Leeren",
     "empty": "Keine Wiedergabe"
   }
 }

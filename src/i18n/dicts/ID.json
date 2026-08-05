@@ -483,13 +483,21 @@
     "missionLink": "Tautan misi"
   },
   "musicPlayer": {
+    "queue": "Antrean putar",
+    "queueEmpty": "Antrean kosong",
     "title": "Pemutar musik",
     "play": "Putar",
     "pause": "Jeda",
+    "playlists": "Daftar putar",
     "previous": "Sebelumnya",
+    "modeLoop": "Ulangi semua",
+    "modeShuffle": "Putar acak",
+    "modeRepeat": "Ulangi satu",
     "next": "Berikutnya",
     "playAlbum": "Putar album",
     "unavailable": "Audio tidak tersedia",
+    "voice": "Suara cerita",
+    "clear": "Kosongkan",
     "empty": "Tidak ada yang diputar"
   }
 }

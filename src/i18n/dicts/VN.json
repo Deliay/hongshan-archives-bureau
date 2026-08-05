@@ -483,13 +483,21 @@
     "missionLink": "Liên kết nhiệm vụ"
   },
   "musicPlayer": {
+    "queue": "Hàng đợi phát",
+    "queueEmpty": "Hàng đợi trống",
     "title": "Trình phát nhạc",
     "play": "Phát",
     "pause": "Tạm dừng",
+    "playlists": "Danh sách phát",
     "previous": "Bài trước",
+    "modeLoop": "Lặp lại danh sách",
+    "modeShuffle": "Phát ngẫu nhiên",
+    "modeRepeat": "Lặp lại một bài",
     "next": "Bài tiếp theo",
     "playAlbum": "Phát toàn bộ album",
     "unavailable": "Âm thanh tạm thời không khả dụng",
+    "voice": "Giọng cốt truyện",
+    "clear": "Xóa hết",
     "empty": "Chưa có nội dung phát"
   }
 }

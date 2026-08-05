@@ -134,6 +134,17 @@ i18nMap[String(field.id)] ?? field.text ?? ''
 
 每个表有独立的 i18n 字典。Hook 在获取表数据时并行获取对应字典，再传入 `adapt*`。禁止混用不同表的字典。
 
+## 音频播放
+
+全站音频（音乐 + 剧情语音）统一由 `src/lib/musicPlayer.ts` 的**单一全局播放队列**驱动：
+
+- **统一队列**：`MusicQueueItem` 以 `kind` 区分 `music` / `voice`（voice 条目携带 `voId/locale/lineKey/dialogText` payload），`playTrack` 按 kind 解析 URL（`getMusicUrl` / `getAudioUrl`）。多音频源不要各建 store——统一后互斥由单 audio 元素天然保证，「正在播放」的全局同步（面板/队列/页面高亮）零特例。
+- **API**：`appendAndPlay`（追加并播）、`playQueue`（替换队列并播）、`playAt`（跳播）、`togglePlay/playNext/playPrev`、`clearQueue`；React 侧经 `useMusicPlayer()`（useSyncExternalStore）订阅。
+- **语音适配层**：`src/lib/dialogAudio.ts` 仅做类型映射与派生（`playFrom` → `playQueue`），保持剧情侧 API 不变，消费方零改动。
+- **播放循环模式**：`playMode: loop（列表循环，默认）/ shuffle（列表随机）/ repeat（单曲循环）`，`cyclePlayMode()` 轮换。`ended` 按模式分派（repeat 重播当前 / shuffle 随机跳条 / loop 队尾绕回）；**`error` 始终顺序跳过且不绕回**，避免全队列 404 时死循环。
+- **播完语义**：队列保留、仅 `currentIndex = -1` 表示空闲（音乐/语音一致）；UI 取不到当前轨即回入口态。
+- **队列 UI**：`src/components/Music/QueueList.tsx` 复用于 `/archive/music` 顶部队列区与侧栏 `MusicControlPanel` 的展开浮层。
+
 ## Diff 系统
 
 Diff 系统用于展示游戏数据在两个版本间的变化。详见 [Diff 系统参考](./references/diff-system.md)。

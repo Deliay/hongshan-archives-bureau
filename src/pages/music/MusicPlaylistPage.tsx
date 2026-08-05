@@ -4,6 +4,7 @@ import { useMusicAlbums } from '../../hooks/useData'
 import { getMusicUrl, checkAudioUrl } from '../../lib/audio'
 import { appendAndPlay, useMusicPlayer, type MusicQueueItem } from '../../lib/musicPlayer'
 import { ListSkeleton } from '../../components/ui/ListSkeleton'
+import QueueList from '../../components/Music/QueueList'
 import type { MusicTrack } from '../../lib/types'
 
 function formatDuration(sec: number): string {
@@ -61,6 +62,10 @@ export default function MusicPlaylistPage() {
       <div className="flex items-center gap-3 mb-4">
         <h2 className="font-display text-xl font-bold text-archive-ivory">{t('musicPlayer.title')}</h2>
       </div>
+      <section className="rounded border border-archive-border bg-archive-file overflow-hidden mb-6">
+        <QueueList />
+      </section>
+      <h3 className="text-sm font-bold text-archive-dust mb-3">{t('musicPlayer.playlists')}</h3>
       <div className="space-y-6">
         {albums.map((album) => (
           <section key={album.id} className="rounded border border-archive-border bg-archive-file overflow-hidden">

@@ -1,5 +1,13 @@
-import { useSyncExternalStore } from 'react'
-import { getAudioUrl } from './audio'
+import {
+  getMusicPlayerSnapshot,
+  playQueue,
+  togglePlay as queueTogglePlay,
+  playNext as queuePlayNext,
+  playPrev as queuePlayPrev,
+  stopMusic,
+  useMusicPlayer,
+  type MusicQueueItem,
+} from './musicPlayer'
 
 export interface DialogAudioTrack {
   lineKey: string
@@ -17,115 +25,75 @@ export interface DialogAudioState {
   duration: number
 }
 
-let state: DialogAudioState = { tracks: [], currentIndex: -1, playing: false, currentTime: 0, duration: 0 }
-const listeners = new Set<() => void>()
-let audio: HTMLAudioElement | null = null
-let onBeforePlay: (() => void) | null = null
-
-export function setOnBeforePlay(fn: () => void) {
-  onBeforePlay = fn
-}
-
-function emit() {
-  for (const l of listeners) l()
-}
-
-function setState(patch: Partial<DialogAudioState>) {
-  state = { ...state, ...patch }
-  emit()
-}
-
-export function getSnapshot(): DialogAudioState {
-  return state
-}
-
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
-}
-
-function teardown() {
-  if (audio) {
-    audio.pause()
-    audio = null
+function toQueueItem(track: DialogAudioTrack): MusicQueueItem {
+  return {
+    id: track.voId,
+    name: track.actorName,
+    albumName: track.lineKey,
+    duration: 0,
+    iconUrl: '',
+    kind: 'voice',
+    voice: {
+      voId: track.voId,
+      locale: track.locale,
+      lineKey: track.lineKey,
+      dialogText: track.dialogText,
+    },
   }
 }
 
-function playTrack(index: number) {
-  const track = state.tracks[index]
-  if (!track) return
-  teardown()
-  audio = new Audio(getAudioUrl(track.voId, track.locale))
-  audio.addEventListener('loadedmetadata', () => {
-    if (audio) setState({ duration: audio.duration })
-  })
-  audio.addEventListener('timeupdate', () => {
-    if (audio) setState({ currentTime: audio.currentTime })
-  })
-  audio.addEventListener('ended', () => {
-    const next = state.currentIndex + 1
-    if (next < state.tracks.length) {
-      playTrack(next)
-      setState({ currentIndex: next, currentTime: 0, duration: 0 })
-    } else {
-      stop()
-    }
-  })
-  audio.addEventListener('error', () => {
-    const next = state.currentIndex + 1
-    if (next < state.tracks.length) {
-      playTrack(next)
-      setState({ currentIndex: next, currentTime: 0, duration: 0 })
-    } else {
-      stop()
-    }
-  })
-  audio.play().catch(() => {
-    setState({ playing: false })
-  })
+function toDialogTrack(item: MusicQueueItem): DialogAudioTrack {
+  return {
+    lineKey: item.voice?.lineKey ?? '',
+    voId: item.voice?.voId ?? '',
+    locale: item.voice?.locale ?? '',
+    actorName: item.name,
+    dialogText: item.voice?.dialogText ?? '',
+  }
+}
+
+function derive(): DialogAudioState {
+  const s = getMusicPlayerSnapshot()
+  return {
+    tracks: s.queue.map(toDialogTrack),
+    currentIndex: s.currentIndex,
+    playing: s.playing,
+    currentTime: s.currentTime,
+    duration: s.duration,
+  }
 }
 
 export function playFrom(trackList: DialogAudioTrack[], startIndex: number) {
-  onBeforePlay?.()
-  state = { tracks: trackList, currentIndex: startIndex, playing: false, currentTime: 0, duration: 0 }
-  playTrack(startIndex)
-  setState({ playing: true })
+  playQueue(trackList.map(toQueueItem), startIndex)
 }
 
 export function togglePlay() {
-  if (!audio) return
-  if (state.playing) {
-    audio.pause()
-    setState({ playing: false })
-  } else {
-    audio.play().catch(() => {
-      setState({ playing: false })
-    })
-    setState({ playing: true })
-  }
+  queueTogglePlay()
 }
 
 export function playNext() {
-  const next = state.currentIndex + 1
-  if (next < state.tracks.length) {
-    playTrack(next)
-    setState({ currentIndex: next, playing: true, currentTime: 0, duration: 0 })
-  }
+  queuePlayNext()
 }
 
 export function playPrev() {
-  const prev = state.currentIndex - 1
-  if (prev >= 0) {
-    playTrack(prev)
-    setState({ currentIndex: prev, playing: true, currentTime: 0, duration: 0 })
-  }
+  queuePlayPrev()
 }
 
 export function stop() {
-  teardown()
-  setState({ tracks: [], currentIndex: -1, playing: false, currentTime: 0, duration: 0 })
+  stopMusic()
+}
+
+export function getSnapshot(): DialogAudioState {
+  return derive()
 }
 
 export function useDialogAudio(): DialogAudioState {
-  return useSyncExternalStore(subscribe, getSnapshot)
+  const s = useMusicPlayer()
+  return {
+    tracks: s.queue.map(toDialogTrack),
+    currentIndex: s.currentIndex,
+    playing: s.playing,
+    currentTime: s.currentTime,
+    duration: s.duration,
+  }
 }

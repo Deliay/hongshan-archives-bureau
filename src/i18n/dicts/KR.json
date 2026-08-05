@@ -483,13 +483,21 @@
     "missionLink": "미션 링크"
   },
   "musicPlayer": {
+    "queue": "재생 대기열",
+    "queueEmpty": "대기열이 비어 있습니다",
     "title": "음악 플레이어",
     "play": "재생",
     "pause": "일시 정지",
+    "playlists": "재생 목록",
     "previous": "이전 곡",
+    "modeLoop": "전체 반복",
+    "modeShuffle": "무작위 재생",
+    "modeRepeat": "한 곡 반복",
     "next": "다음 곡",
     "playAlbum": "앨범 전체 재생",
     "unavailable": "오디오를 사용할 수 없습니다",
+    "voice": "스토리 보이스",
+    "clear": "비우기",
     "empty": "재생 중인 항목 없음"
   }
 }
