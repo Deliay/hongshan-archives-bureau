@@ -483,13 +483,18 @@
     "missionLink": "Link da missão"
   },
   "musicPlayer": {
+    "queue": "Fila de reprodução",
+    "queueEmpty": "A fila está vazia",
     "title": "Reprodutor de música",
     "play": "Reproduzir",
     "pause": "Pausar",
+    "playlists": "Listas de reprodução",
     "previous": "Anterior",
     "next": "Próxima",
     "playAlbum": "Reproduzir álbum",
     "unavailable": "Áudio indisponível",
+    "voice": "Voz da história",
+    "clear": "Limpar",
     "empty": "Nada em reprodução"
   }
 }

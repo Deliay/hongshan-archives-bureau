@@ -483,13 +483,18 @@
     "missionLink": "ミッションリンク"
   },
   "musicPlayer": {
+    "queue": "再生キュー",
+    "queueEmpty": "キューは空です",
     "title": "音楽プレイヤー",
     "play": "再生",
     "pause": "一時停止",
+    "playlists": "プレイリスト",
     "previous": "前の曲",
     "next": "次の曲",
     "playAlbum": "アルバムを再生",
     "unavailable": "音声は現在利用できません",
+    "voice": "ストーリーボイス",
+    "clear": "クリア",
     "empty": "再生中の曲はありません"
   }
 }

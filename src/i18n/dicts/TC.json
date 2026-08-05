@@ -483,13 +483,18 @@
     "missionLink": "任務連結"
   },
   "musicPlayer": {
+    "queue": "播放佇列",
+    "queueEmpty": "佇列暫無內容",
     "title": "音樂播放",
     "play": "播放",
     "pause": "暫停",
+    "playlists": "播放清單",
     "previous": "上一首",
     "next": "下一首",
     "playAlbum": "播放整張專輯",
     "unavailable": "音訊暫不可用",
+    "voice": "劇情語音",
+    "clear": "清空",
     "empty": "暫無播放內容"
   }
 }

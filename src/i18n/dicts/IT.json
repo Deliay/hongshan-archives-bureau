@@ -483,13 +483,18 @@
     "missionLink": "Collegamento missione"
   },
   "musicPlayer": {
+    "queue": "Coda di riproduzione",
+    "queueEmpty": "La coda è vuota",
     "title": "Lettore musicale",
     "play": "Riproduci",
     "pause": "Pausa",
+    "playlists": "Playlist",
     "previous": "Precedente",
     "next": "Successivo",
     "playAlbum": "Riproduci album",
     "unavailable": "Audio non disponibile",
+    "voice": "Voce della storia",
+    "clear": "Svuota",
     "empty": "Nessuna riproduzione"
   }
 }

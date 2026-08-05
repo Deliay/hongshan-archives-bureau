@@ -483,13 +483,18 @@
     "missionLink": "Mission link"
   },
   "musicPlayer": {
+    "queue": "Play Queue",
+    "queueEmpty": "Queue is empty",
     "title": "Music Player",
     "play": "Play",
     "pause": "Pause",
+    "playlists": "Playlists",
     "previous": "Previous",
     "next": "Next",
     "playAlbum": "Play Album",
     "unavailable": "Audio unavailable",
+    "voice": "Story Voice",
+    "clear": "Clear",
     "empty": "Nothing playing"
   }
 }
