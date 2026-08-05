@@ -123,6 +123,14 @@ ReactFlow 的 `getEdgePosition()` 内部调用 `isNodeInitialized()`，要求 `n
 
 页面存在多个同类型控件（如两个 `select`、同文案按钮）时，定位必须限定到目标控件内部（`selectOption` 枚举、`locator('select')` 均需 `.first()` 或嵌套作用域），否则严格模式或选项误取导致存量失败（验收 2.2）。
 
+## 侧栏面板向上展开浮层需补定位上下文
+
+在侧栏底部面板内做「向上展开」的浮层（`absolute bottom-full`）时，注意 Sidebar 外层容器通常无定位，浮层会相对更上级的定位祖先错位。组件根节点需显式补 `relative` 作为定位上下文（验收 20260804 2.1，MusicControlPanel 队列浮层）。
+
+## E2E 环境清理避免 pkill 匹配自身
+
+本机跑 E2E 前清理残留 dev server 时，`pkill -f vite` 会匹配当前 shell 自身命令行（含 vite 字样）导致自杀（exit -15）。改用按端口清理：`kill $(lsof -t -i:5173)`；日志路径也不要带工具名（验收 20260804 经验）。
+
 ## 相关文档
 
 - [前端开发规范](../frontend-spec.md)

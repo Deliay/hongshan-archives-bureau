@@ -116,6 +116,7 @@ UI 文案（按钮、标题、空态、筛选器标签等）才走 `useI18n()`�
 - 字典中包含 `{{var}}` 占位符，变量名必须与代码中传入的对象键一致。
 - 组件测试未包裹 `I18nProvider` 时，`t` 会返回 key 本身，导致断言失败。
 - 所有 key 必须覆盖全部 14 个 locale，不允许留空或使用占位。
+- `verify-i18n.ts` 会对 MX/BR/DE/FR/VN/TH/ID/IT 校验与 EN/CN 同形（视为占位）。遇到误报时优先换用本土译法规避（如 playlists → Wiedergabelisten / Listes de lecture / Listas de reprodução）；确属合法同形（如德/法 "Pause"）才将 key 加入 `SAME_AS_EN_WHITELIST`。
 
 ## 相关文档
 

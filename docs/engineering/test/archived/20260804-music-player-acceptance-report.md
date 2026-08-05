@@ -9,7 +9,10 @@ type: Permanent
 
 ## 关联文档
 
-- 关联分支：`feat/music-play-queue`（基线：PR #52 `04efea9`，音乐播放功能首次交付）
+- 关联 PRD：[音乐播放与全局控制中心 PRD](../../product/draft/20260804-music-player.md)
+- 技术方案：[音乐播放与全局控制中心技术方案](../proposal/20260804-music-player.md)
+- 实现方案：[音乐播放与全局控制中心实现方案](../plans/20260804-music-player-plan.md)
+- 关联分支：`feat/music-play-queue`（基线：PR #52 `04efea9`，音乐播放功能首次交付；本轮修复 PR #53）
 - 验收日期：2026-08-04
 - 历史参考：[archived/20260731-story-chronicle-acceptance-report.md](archived/20260731-story-chronicle-acceptance-report.md)（剧情语音播放）
 
@@ -66,7 +69,7 @@ PR #52 交付了音乐播放（导航栏控制面板 + `/archive/music` 专辑�
 |---|---|---|---|---|
 | 2.1 | 缺少播放列表概念与播放队列列表 | 队列无 UI，页面信息架构未体现播放列表 | ✅ 已修复 | 257c3df, 6b363d9 |
 | 2.2 | 剧情语音播放时面板/队列不同步 | 音乐与语音双 store 独立，仅回调互斥 | ✅ 已修复 | 257c3df, 6b363d9 |
-| 2.3 | 全局播放循环模式（列表循环/列表随机/单曲循环） | 追加需求 | ✅ 已实现 | 见本轮提交 |
+| 2.3 | 全局播放循环模式（列表循环/列表随机/单曲循环） | 追加需求 | ✅ 已实现 | 85aeef0 |
 
 ## 最终验证
 
