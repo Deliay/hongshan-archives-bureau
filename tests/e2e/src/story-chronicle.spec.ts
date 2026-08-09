@@ -803,9 +803,12 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     // 台本板块默认折叠，不显示台词内容
     const transcriptHeader = page.locator('button').filter({ hasText: '台本' }).first()
     await expect(transcriptHeader).toBeVisible({ timeout: 15000 })
-    // 折叠状态下不应显示 dlg_ 开头的台词行
-    const dlgLines = page.locator('body').getByText(/^dlg_e1m3_/, { exact: false })
-    expect(await dlgLines.count()).toBe(0)
+    // 折叠状态下台本面板内容区域不可见（说话人名称不在视口中）
+    // 注意：页面其他区域（如 DialogScript）可能也有 dlg_ 行，所以检查台本面板内的内容
+    const transcriptPanel = transcriptHeader.locator('..')
+    const panelText = await transcriptPanel.textContent() || ''
+    // 面板只包含折叠头文本（台本 + 计数），不应包含说话人名称
+    expect(panelText).not.toContain('佩丽卡')
   })
 
   test('台本与对讲机板块计数正确', async ({ page }) => {
