@@ -6,7 +6,7 @@ import { Command } from 'commander'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 
-const API_BASE = 'https://endfield-assets.fffdan.com'
+const API_BASE = process.env.API_BASE ?? 'https://endfield-assets.fffdan.com'
 
 const program = new Command()
 program
