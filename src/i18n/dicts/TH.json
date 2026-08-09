@@ -360,7 +360,11 @@
     "expandDialog": "แสดงบทสนทนา",
     "collapseDialog": "ซ่อนบทสนทนา",
     "audioNowPlaying": "กำลังเล่น",
-    "missionNav": "นำทางภารกิจ"
+    "missionNav": "นำทางภารกิจ",
+    "transcript": "สคริปต์",
+    "radio": "วิทยุสื่อสาร",
+    "noTranscript": "ไม่มีสคริปต์",
+    "noRadio": "ไม่มีวิทยุสื่อสาร"
   },
   "update": {
     "added": "เพิ่มแล้ว",

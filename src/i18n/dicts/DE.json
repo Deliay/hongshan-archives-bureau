@@ -360,7 +360,11 @@
     "expandDialog": "Dialog anzeigen",
     "collapseDialog": "Dialog ausblenden",
     "audioNowPlaying": "Wird abgespielt",
-    "missionNav": "Missionsnavigation"
+    "missionNav": "Missionsnavigation",
+    "transcript": "Transkript",
+    "radio": "Funksprech",
+    "noTranscript": "Kein Transkript",
+    "noRadio": "Kein Funk"
   },
   "update": {
     "added": "Hinzugefügt",

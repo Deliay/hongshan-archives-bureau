@@ -360,7 +360,11 @@
     "expandDialog": "Tampilkan dialog",
     "collapseDialog": "Sembunyikan dialog",
     "audioNowPlaying": "Sedang diputar",
-    "missionNav": "Navigasi misi"
+    "missionNav": "Navigasi misi",
+    "transcript": "Transkrip",
+    "radio": "Transmisi radio",
+    "noTranscript": "Tidak ada transkrip",
+    "noRadio": "Tidak ada radio"
   },
   "update": {
     "added": "Ditambahkan",

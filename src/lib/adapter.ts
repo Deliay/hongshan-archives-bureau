@@ -1,4 +1,4 @@
-import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode, MusicAlbum, MusicTrack } from './types'
+import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, DialogLine, RadioLine, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode, MusicAlbum, MusicTrack } from './types'
 import { renderMissionCondition } from './missionCondition'
 import { ACTIVITY_TYPE_GROUPS, SNS_DIALOG_CONTENT_TYPE } from '../data/constants'
 
@@ -362,6 +362,56 @@ export function buildDialogLines(
 ): DialogLine[] {
   const prefix = `${dlgKey}_`
   return Object.entries(raw)
+    .filter(([k]) => k.startsWith(prefix))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => adaptDialogLine(k, v, i18nMap))
+}
+
+export function extractMissionKey(missionId: string): string {
+  return missionId
+}
+
+export function adaptRadioLine(
+  entryKey: string,
+  index: number,
+  raw: any,
+  i18nMap?: Record<string, string>,
+): RadioLine {
+  const actorId = raw?.actorNameId ?? ''
+  return {
+    key: entryKey,
+    order: index,
+    actorNameId: actorId,
+    speaker: resolveI18n(raw?.actorName, i18nMap) || actorId || entryKey,
+    text: resolveI18n(raw?.radioText, i18nMap),
+    audioOverride: raw?.audioOverride ?? '',
+  }
+}
+
+export function buildRadioLinesForMission(
+  missionKey: string,
+  radioRaw: Record<string, any>,
+  i18nMap?: Record<string, string>,
+): RadioLine[] {
+  const prefix = `radio_${missionKey}_`
+  const lines: RadioLine[] = []
+  for (const [k, entry] of Object.entries(radioRaw)) {
+    if (!k.startsWith(prefix)) continue
+    ;(entry.radioSingleDataList ?? []).forEach((r: any, i: number) => {
+      const line = adaptRadioLine(k, i, r, i18nMap)
+      if (line.text) lines.push(line)
+    })
+  }
+  return lines.sort((a, b) => a.key.localeCompare(b.key) || a.order - b.order)
+}
+
+export function buildDialogLinesForMission(
+  missionKey: string,
+  dlgRaw: Record<string, any>,
+  i18nMap?: Record<string, string>,
+): DialogLine[] {
+  const prefix = `dlg_${missionKey}_`
+  return Object.entries(dlgRaw)
     .filter(([k]) => k.startsWith(prefix))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => adaptDialogLine(k, v, i18nMap))

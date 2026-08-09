@@ -360,7 +360,11 @@
     "expandDialog": "Hiển thị hội thoại",
     "collapseDialog": "Ẩn hội thoại",
     "audioNowPlaying": "Đang phát",
-    "missionNav": "Điều hướng nhiệm vụ"
+    "missionNav": "Điều hướng nhiệm vụ",
+    "transcript": "Kịch bản",
+    "radio": "Đàm liên lạc",
+    "noTranscript": "Không có kịch bản",
+    "noRadio": "Không có đàm"
   },
   "update": {
     "added": "Đã thêm",

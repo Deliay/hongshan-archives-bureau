@@ -462,6 +462,15 @@ export interface DialogLine {
   emotionType: number
 }
 
+export interface RadioLine {
+  key: string
+  order: number
+  actorNameId: string
+  speaker: string
+  text: string
+  audioOverride: string
+}
+
 // ===== Mission Runtime (MissionRuntimeAsset) =====
 
 export interface MissionQuestObjective {

@@ -360,7 +360,11 @@
     "expandDialog": "Afficher le dialogue",
     "collapseDialog": "Masquer le dialogue",
     "audioNowPlaying": "En lecture",
-    "missionNav": "Navigation des missions"
+    "missionNav": "Navigation des missions",
+    "transcript": "Transcription",
+    "radio": "Transmission radio",
+    "noTranscript": "Pas de transcription",
+    "noRadio": "Pas de radio"
   },
   "update": {
     "added": "Ajouté",

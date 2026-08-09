@@ -360,7 +360,11 @@
     "expandDialog": "Показать диалог",
     "collapseDialog": "Скрыть диалог",
     "audioNowPlaying": "Сейчас играет",
-    "missionNav": "Навигация по заданиям"
+    "missionNav": "Навигация по заданиям",
+    "transcript": "Транскрипт",
+    "radio": "Рация",
+    "noTranscript": "Нет транскрипта",
+    "noRadio": "Нет рации"
   },
   "update": {
     "added": "Добавлено",

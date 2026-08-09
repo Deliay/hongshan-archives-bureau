@@ -360,7 +360,11 @@
     "expandDialog": "展开对话",
     "collapseDialog": "收起对话",
     "audioNowPlaying": "正在播放",
-    "missionNav": "剧情导航"
+    "missionNav": "剧情导航",
+    "transcript": "台本",
+    "radio": "对讲机",
+    "noTranscript": "暂无台本",
+    "noRadio": "暂无对讲机"
   },
   "update": {
     "added": "新增",

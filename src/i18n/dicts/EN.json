@@ -360,7 +360,11 @@
     "expandDialog": "Show dialog",
     "collapseDialog": "Hide dialog",
     "audioNowPlaying": "Now playing",
-    "missionNav": "Mission Nav"
+    "missionNav": "Mission Nav",
+    "transcript": "Transcript",
+    "radio": "Radio",
+    "noTranscript": "No transcript",
+    "noRadio": "No radio"
   },
   "update": {
     "added": "Added",

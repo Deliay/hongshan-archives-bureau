@@ -11,6 +11,8 @@ import { buildMissionQuestTree } from '../../lib/adapter'
 import { ObjectiveCondition } from './ObjectiveCondition'
 import { DialogScript } from './DialogScript'
 import { DialogPlayerBar } from './DialogPlayerBar'
+import { StoryTranscript } from './StoryTranscript'
+import { StoryRadio } from './StoryRadio'
 import LevelDisplay from './LevelDisplay'
 import type { MissionQuestTreeNode, StoryRecapScene } from '../../lib/types'
 
@@ -93,6 +95,11 @@ export function MissionDetailContent({
           <p className="text-sm text-archive-dust">{t('story.noDescription')}</p>
         )}
       </section>
+
+      <div className="space-y-4 mb-8">
+        <StoryTranscript missionId={mission.missionId} />
+        <StoryRadio missionId={mission.missionId} />
+      </div>
 
       <section className="mb-8">
         <h3 className="text-xs font-mono text-archive-gold uppercase mb-3">{t('story.missionScenes')}</h3>
