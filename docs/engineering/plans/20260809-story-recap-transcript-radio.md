@@ -29,11 +29,11 @@ type: Fleeting
 
 | 文件路径 | 说明 |
 |----------|------|
-| `src/pages/story/StoryTranscript.tsx` | 台本级组件（可分场次） |
-| `src/pages/story/StoryRadio.tsx` | 对讲机板块组件 |
+| `src/pages/story/StoryTranscript.tsx` | 台本板块组件（折叠头 + 场次分组台词流） |
+| `src/pages/story/StoryRadio.tsx` | 对讲机板块组件（折叠头 + 逐条台词） |
 | `tests/e2e/src/story-transcript-radio.spec.ts` | 扩展 E2E |
 
-> 若两板块逻辑简单，可内联进 `StoryMissionDetail.tsx`，不单独建文件（实现时视体量决定）。
+组件拆分决策：独立建文件，保持单一职责。`StoryMissionDetail.tsx` 已有 202 行，不宜再内联新逻辑。
 
 ### 2.2 修改文件
 
@@ -117,14 +117,33 @@ export function buildDialogLinesForMission(
 }
 ```
 
-### 3.3 任务 key 规约
+### 3.3 任务 key 规约（`extractMissionKey`）
 
-`missionId` → 任务 key 提取，与 `DialogTextTable`/`RadioTable` 前缀匹配。需结合现有 `DLG_KEY_RE` 逻辑（`src/lib/adapter.ts` 已有 `dlg_{章前缀}{任务}_{场次}_{行号}` 解析）。供两板块共用：
+`missionId` → 任务 key 提取，与 `DialogTextTable`/`RadioTable` 前缀匹配。供两板块共用：
 
 ```ts
 // 纯函数，可单测
-export function extractMissionKey(missionId: string): string
+// missionId 与表 key 中任务段直接对应，无需归一化
+export function extractMissionKey(missionId: string): string {
+  return missionId  // 直接透传
+}
 ```
+
+**规约说明**：
+
+现有 `DLG_KEY_RE`（`src/lib/adapter.ts:290`）解析 `dlg_` 前缀 key 的结构为：
+```
+dlg_{chapterType}{chapterNum}[l{levelNum}]m{missionNum}[d{missionSub}]_{sceneNo}[d{sceneSub}]
+```
+
+`MissionRuntime.missionId` 与 key 中任务段的对应关系：
+
+| missionId 示例 | key 中任务段 | 提取逻辑 |
+|---------------|-------------|---------|
+| `gm02m13` | `gm02m13` | 直接透传 |
+| `gm02l4` | `gm02l4` | 直接透传 |
+| `a1m6d3` | `a1m6d3` | 直接透传 |
+| `a1m6d3l2` | `a1m6d3l2` | 直接透传 |
 
 实现阶段用真实任务（`gm02m13`、含 `l`/`d` 段任务）抽样校准，确保命中完整集。
 
@@ -155,20 +174,34 @@ export function useStoryScriptBundle(missionId: string): UseDataResult<{
 
 ### 3.5 页面 `MissionDetailContent`
 
-任务描述之后、任务目标之前（或之后）渲染两板块：
+任务描述之后、任务目标之前渲染两板块：
 
 ```tsx
 <div className="space-y-8 mb-8">
-  <TranscriptPanel missionId={mission.missionId} />
-  <RadioPanel missionId={mission.missionId} />
+  <StoryTranscript missionId={mission.missionId} />
+  <StoryRadio missionId={mission.missionId} />
 </div>
 ```
 
-**TranscriptPanel**：折叠头 `t('story.transcript')` + 计数，展开后按场次前缀（`dlg_{missionKey}_{场}_行`）分组台词，每条：说话人（金/绯红 + 人名）+ 台词（`<RichText>`）。复用现有 `DialogLine` 渲染样式。
+**与现有 `DialogScript` 的关系**：
 
-**RadioPanel**：折叠头 `t('story.radio')` + 计数，展开后逐条说话人 + 台词。
+现有 `SceneBlock` 已按场次展开 `DialogScript`（逐场点击展开查看台词）。新增的 `StoryTranscript` 是**任务级聚合**，将全部场次台词连续展示，两者**并存但定位不同**：
 
-**三态**：loading 骨架；error `t('common.loadFailed')`；空 `t('story.noTranscript')` / `t('story.noRadio')`。
+| 板块 | 粒度 | 交互 | 用途 |
+|------|------|------|------|
+| `SceneBlock` + `DialogScript` | 场次级 | 逐场点击展开 | 快速浏览单场对话 |
+| `StoryTranscript` | 任务级 | 折叠/展开全文 | 完整通读、引用、搜索 |
+| `StoryRadio` | 任务级 | 折叠/展开全文 | 对讲机剧情完整展示 |
+
+**StoryTranscript**：折叠头 `t('story.transcript')` + 台词计数，展开后按场次前缀（`dlg_{missionKey}_{sceneNo}`）分组台词，每条：说话人（金/绯红 + 人名）+ 台词（`<RichText>`）。复用现有 `DialogLine` 渲染样式。
+
+**StoryRadio**：折叠头 `t('story.radio')` + 对讲计数，展开后逐条说话人 + 台词。
+
+**排序规则**：
+- 台本：按 key 字典序（`dlg_{missionKey}_{sceneNo}_{lineNo}`），场景内按行号排序。
+- 对讲机：按 key 字典序（`radio_{missionKey}_{sceneNo}`），同一 entry 内按 `radioSingleDataList` 索引排序。
+
+**三态**：loading 骨架；error `t('common.loadFailed')`；空态 `t('story.noTranscript')` / `t('story.noRadio')` 显示在板块内容区域。
 
 ### 3.6 i18n
 
