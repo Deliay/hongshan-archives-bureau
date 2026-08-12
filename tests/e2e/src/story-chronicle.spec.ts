@@ -826,4 +826,69 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     const radioText = await radioHeader.textContent() || ''
     expect(radioText).toMatch(/\(\d+\)/)
   })
+
+  test('台本板块支持语音播放', async ({ page }) => {
+    // 台本面板的每行提供播放按钮，点击后控制面板出现并显示当前行 key
+    const wav = tinyWav()
+    await page.route('**/audios/dialogs/vo/**', async route => {
+      if (route.request().method() === 'HEAD') {
+        await route.fulfill({ status: 200 })
+      } else {
+        await route.fulfill({ status: 200, contentType: 'audio/wav', body: wav })
+      }
+    })
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const transcriptHeader = page.locator('button').filter({ hasText: '台本' }).first()
+    await expect(transcriptHeader).toBeVisible({ timeout: 15000 })
+    await transcriptHeader.click()
+    const panel = transcriptHeader.locator('..')
+    const play = panel.getByTestId('line-play-dlg_e1m3_6_001')
+    await expect(play).toBeVisible({ timeout: 15000 })
+    await play.click()
+    const bar = page.getByTestId('dialog-player-bar')
+    await expect(bar).toBeVisible({ timeout: 5000 })
+    await expect(bar.getByText('dlg_e1m3_6_001', { exact: true })).toBeVisible({ timeout: 5000 })
+  })
+
+  test('对讲机板块支持语音播放', async ({ page }) => {
+    // 对讲机面板的每行提供播放按钮，点击后控制面板出现并显示当前行 key
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const radioHeader = page.locator('button').filter({ hasText: '对讲机' }).first()
+    await expect(radioHeader).toBeVisible({ timeout: 15000 })
+    await radioHeader.click()
+    const panel = radioHeader.locator('..')
+    const play = panel.getByTestId('line-play-radio_e1m3_2-0')
+    await expect(play).toBeVisible({ timeout: 15000 })
+    await play.click()
+    const bar = page.getByTestId('dialog-player-bar')
+    await expect(bar).toBeVisible({ timeout: 5000 })
+    await expect(bar.getByText('radio_e1m3_2-0', { exact: true })).toBeVisible({ timeout: 5000 })
+  })
 })
+
+function tinyWav(): Uint8Array {
+  const sampleRate = 8000
+  const dataSize = sampleRate * 2
+  const buf = new Uint8Array(44 + dataSize)
+  const view = new DataView(buf.buffer)
+  const writeStr = (offset: number, s: string) => {
+    for (let i = 0; i < s.length; i++) buf[offset + i] = s.charCodeAt(i)
+  }
+  writeStr(0, 'RIFF')
+  view.setUint32(4, 36 + dataSize, true)
+  writeStr(8, 'WAVE')
+  writeStr(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true)
+  view.setUint16(22, 1, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * 2, true)
+  view.setUint16(32, 2, true)
+  view.setUint16(34, 16, true)
+  writeStr(36, 'data')
+  view.setUint32(40, dataSize, true)
+  return buf
+}
+

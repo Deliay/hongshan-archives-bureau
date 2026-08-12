@@ -1,14 +1,44 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useStoryScriptBundle } from '../../hooks/useData'
 import { useI18n } from '../../i18n'
+import { useLocale } from '../../lib/locale'
 import { RichText } from '../../lib/richText'
+import { useDialogAudio, type DialogAudioTrack } from '../../lib/dialogAudio'
+import type { RadioLine } from '../../lib/types'
+import { LinePlayButton, useAudioAvailability } from './LinePlayButton'
+
+function radioLineKey(line: RadioLine): string {
+  return `${line.key}-${line.order}`
+}
 
 export function StoryRadio({ missionId }: { missionId: string }) {
   const { t } = useI18n()
+  const { locale } = useLocale()
   const [expanded, setExpanded] = useState(false)
   const { data, loading, error } = useStoryScriptBundle(missionId)
 
   const lines = data?.radio ?? []
+  const voIds = useMemo(
+    () => lines.filter(l => l.audioOverride).map(l => l.audioOverride),
+    [lines],
+  )
+  const available = useAudioAvailability(voIds, locale)
+
+  const tracks = useMemo(
+    () => lines
+      .filter(l => l.audioOverride && available[l.audioOverride])
+      .map(l => ({
+        lineKey: radioLineKey(l),
+        voId: l.audioOverride!,
+        locale,
+        actorName: l.speaker,
+        dialogText: l.text,
+      }) as DialogAudioTrack),
+    [lines, available, locale],
+  )
+
+  const { tracks: globalTracks, currentIndex } = useDialogAudio()
+  const currentVoId = globalTracks[currentIndex]?.voId
 
   if (loading) {
     return (
@@ -62,18 +92,32 @@ export function StoryRadio({ missionId }: { missionId: string }) {
       </button>
       {expanded && (
         <div className="mt-3 space-y-3">
-          {lines.map(line => (
-            <div key={`${line.key}-${line.order}`} className="flex gap-3">
-              <div className="w-20 shrink-0 pt-0.5 text-right">
-                <span className="text-xs font-medium text-archive-gold">{line.speaker}</span>
+          {lines.map(line => {
+            const active = currentVoId ? line.audioOverride === currentVoId : false
+            const uid = radioLineKey(line)
+            return (
+              <div
+                key={uid}
+                data-active={active}
+                className={active ? 'flex gap-3 rounded bg-archive-gold/10 px-1.5 py-1 -mx-1.5' : 'flex gap-3'}
+              >
+                <div className="w-20 shrink-0 pt-0.5 text-right">
+                  <span className="text-xs font-medium text-archive-gold">{line.speaker}</span>
+                </div>
+                <div className="min-w-0 flex-1 border-l border-archive-gold/30 pl-3">
+                  <div className="flex items-center gap-1.5">
+                    {line.audioOverride && available[line.audioOverride] && (
+                      <LinePlayButton lineKey={uid} voId={line.audioOverride} tracks={tracks} />
+                    )}
+                    <span className="font-mono text-[10px] text-archive-lead/70">{uid}</span>
+                  </div>
+                  <p className="text-sm text-archive-ivory leading-relaxed mt-0.5">
+                    <RichText text={line.text} />
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1 border-l border-archive-gold/30 pl-3">
-                <p className="text-sm text-archive-ivory leading-relaxed">
-                  <RichText text={line.text} />
-                </p>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
