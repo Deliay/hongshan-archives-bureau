@@ -360,7 +360,11 @@
     "expandDialog": "会話を表示",
     "collapseDialog": "会話を隠す",
     "audioNowPlaying": "再生中",
-    "missionNav": "任務ナビ"
+    "missionNav": "任務ナビ",
+    "transcript": "台本",
+    "radio": "無線",
+    "noTranscript": "台本なし",
+    "noRadio": "無線なし"
   },
   "update": {
     "added": "追加",

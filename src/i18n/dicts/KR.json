@@ -360,7 +360,11 @@
     "expandDialog": "대화 보기",
     "collapseDialog": "대화 숨기기",
     "audioNowPlaying": "재생 중",
-    "missionNav": "임무 내비"
+    "missionNav": "임무 내비",
+    "transcript": "대본",
+    "radio": "무전",
+    "noTranscript": "대본 없음",
+    "noRadio": "무전 없음"
   },
   "update": {
     "added": "추가",

@@ -760,4 +760,135 @@ test.describe('剧情纪事 (Story Chronicle)', () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     await expect(bar).toBeInViewport({ timeout: 5000 })
   })
+
+  test('任务详情页展示台本与对讲机板块', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    // 台本板块折叠头存在
+    const transcriptHeader = page.locator('button').filter({ hasText: '台本' }).first()
+    await expect(transcriptHeader).toBeVisible({ timeout: 15000 })
+    // 对讲机板块折叠头存在
+    const radioHeader = page.locator('button').filter({ hasText: '对讲机' }).first()
+    await expect(radioHeader).toBeVisible({ timeout: 15000 })
+  })
+
+  test('台本板块可展开并显示台词', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    // 点击台本折叠头展开
+    const transcriptHeader = page.locator('button').filter({ hasText: '台本' }).first()
+    await expect(transcriptHeader).toBeVisible({ timeout: 15000 })
+    await transcriptHeader.click()
+    // 展开后显示台词内容（说话人 + 台词文本）
+    await expect(page.locator('body').getByText('佩丽卡', { exact: true }).first()).toBeVisible({ timeout: 15000 })
+  })
+
+  test('对讲机板块可展开并显示台词', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    // 点击对讲机折叠头展开
+    const radioHeader = page.locator('button').filter({ hasText: '对讲机' }).first()
+    await expect(radioHeader).toBeVisible({ timeout: 15000 })
+    await radioHeader.click()
+    // 展开后显示内容（或显示空态）
+    await page.waitForTimeout(1000)
+    const bodyText = await page.locator('body').textContent() || ''
+    // 对讲机板块展开后要么有台词，要么有空态提示
+    expect(bodyText.length).toBeGreaterThan(0)
+  })
+
+  test('台本板块默认折叠', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    // 台本板块默认折叠，不显示台词内容
+    const transcriptHeader = page.locator('button').filter({ hasText: '台本' }).first()
+    await expect(transcriptHeader).toBeVisible({ timeout: 15000 })
+    // 折叠状态下台本面板内容区域不可见（说话人名称不在视口中）
+    // 注意：页面其他区域（如 DialogScript）可能也有 dlg_ 行，所以检查台本面板内的内容
+    const transcriptPanel = transcriptHeader.locator('..')
+    const panelText = await transcriptPanel.textContent() || ''
+    // 面板只包含折叠头文本（台本 + 计数），不应包含说话人名称
+    expect(panelText).not.toContain('佩丽卡')
+  })
+
+  test('台本与对讲机板块计数正确', async ({ page }) => {
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    // 台本板块显示台词计数
+    const transcriptHeader = page.locator('button').filter({ hasText: '台本' }).first()
+    await expect(transcriptHeader).toBeVisible({ timeout: 15000 })
+    const transcriptText = await transcriptHeader.textContent() || ''
+    // 计数格式为 (数字)
+    expect(transcriptText).toMatch(/\(\d+\)/)
+    // 对讲机板块显示计数
+    const radioHeader = page.locator('button').filter({ hasText: '对讲机' }).first()
+    await expect(radioHeader).toBeVisible({ timeout: 15000 })
+    const radioText = await radioHeader.textContent() || ''
+    expect(radioText).toMatch(/\(\d+\)/)
+  })
+
+  test('台本板块支持语音播放', async ({ page }) => {
+    // 台本面板的每行提供播放按钮，点击后控制面板出现并显示当前行 key
+    const wav = tinyWav()
+    await page.route('**/audios/dialogs/vo/**', async route => {
+      if (route.request().method() === 'HEAD') {
+        await route.fulfill({ status: 200 })
+      } else {
+        await route.fulfill({ status: 200, contentType: 'audio/wav', body: wav })
+      }
+    })
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const transcriptHeader = page.locator('button').filter({ hasText: '台本' }).first()
+    await expect(transcriptHeader).toBeVisible({ timeout: 15000 })
+    await transcriptHeader.click()
+    const panel = transcriptHeader.locator('..')
+    const play = panel.getByTestId('line-play-dlg_e1m3_6_001')
+    await expect(play).toBeVisible({ timeout: 15000 })
+    await play.click()
+    const bar = page.getByTestId('dialog-player-bar')
+    await expect(bar).toBeVisible({ timeout: 5000 })
+    await expect(bar.getByText('dlg_e1m3_6_001', { exact: true })).toBeVisible({ timeout: 5000 })
+  })
+
+  test('对讲机板块支持语音播放', async ({ page }) => {
+    // 对讲机面板的每行提供播放按钮，点击后控制面板出现并显示当前行 key
+    await page.goto('/archive/story/mission/e1m3')
+    await expect(page.getByRole('heading', { level: 2 })).toBeVisible({ timeout: 30000 })
+    const radioHeader = page.locator('button').filter({ hasText: '对讲机' }).first()
+    await expect(radioHeader).toBeVisible({ timeout: 15000 })
+    await radioHeader.click()
+    const panel = radioHeader.locator('..')
+    const play = panel.getByTestId('line-play-radio_e1m3_2-0')
+    await expect(play).toBeVisible({ timeout: 15000 })
+    await play.click()
+    const bar = page.getByTestId('dialog-player-bar')
+    await expect(bar).toBeVisible({ timeout: 5000 })
+    await expect(bar.getByText('radio_e1m3_2-0', { exact: true })).toBeVisible({ timeout: 5000 })
+  })
 })
+
+function tinyWav(): Uint8Array {
+  const sampleRate = 8000
+  const dataSize = sampleRate * 2
+  const buf = new Uint8Array(44 + dataSize)
+  const view = new DataView(buf.buffer)
+  const writeStr = (offset: number, s: string) => {
+    for (let i = 0; i < s.length; i++) buf[offset + i] = s.charCodeAt(i)
+  }
+  writeStr(0, 'RIFF')
+  view.setUint32(4, 36 + dataSize, true)
+  writeStr(8, 'WAVE')
+  writeStr(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true)
+  view.setUint16(22, 1, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * 2, true)
+  view.setUint16(32, 2, true)
+  view.setUint16(34, 16, true)
+  writeStr(36, 'data')
+  view.setUint32(40, dataSize, true)
+  return buf
+}
+

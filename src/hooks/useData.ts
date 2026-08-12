@@ -5,8 +5,8 @@ import { useLocale } from '../lib/locale'
 import { useI18n } from '../i18n'
 import { searchArchive, enrichResults } from '../lib/search'
 import type { SearchArchiveOptions, LightweightResult } from '../lib/search'
-import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime, MusicAlbum } from '../lib/types'
-import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, buildRecapChaptersFromMissions, buildMissionNameMapFromBrief, resolveLevelMapId, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds, buildDialogLines, adaptMusicAlbums } from '../lib/adapter'
+import type { Operator, OperatorDetailData, CharacterAttributeSet, BreakCostNode, TalentNode, WeaponRecommendation, SkillGroup, SkillCondition, SkillPatchData, SkillLevelUpCost, FactorySkill, PotentialLevel, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, Race, RaceMember, Faction, FactionMember, UseArchiveSearchResult, SearchResult, SearchEntity, EquipDetail, EnhanceMaterialGroup, EnhanceMaterialItem, Activity, StoryRecapScene, StoryRecapChapter, DialogLine, RadioLine, PrtsCategory, PrtsVolume, PrtsItem, PrtsItemDetail, BakerChat, BakerTopic, MissionRuntime, MusicAlbum } from '../lib/types'
+import { adaptOperator, adaptWeapon, adaptEnemy, adaptItem, adaptEquip, adaptSuit, adaptEquipFormula, adaptGem, adaptDocument, adaptArea, adaptActivity, resolveI18n, resolveRuntimeText, ASSET_BASE, adaptRecapScene, adaptRecapFallbackScene, buildRecapChaptersFromMissions, buildMissionNameMapFromBrief, resolveLevelMapId, adaptPrtsCategory, adaptPrtsVolume, adaptPrtsItem, adaptBakerChat, adaptMissionRuntime, extractMissionIds, buildDialogLines, buildDialogLinesForMission, buildRadioLinesForMission, extractMissionKey, adaptMusicAlbums } from '../lib/adapter'
 import type { ActivityStageDetail, EnemySummary, DungeonDetail, StageDetailContext } from '../lib/missionConditionNames'
 import { buildEnemySummary, buildDungeonDetail, buildStageDetail } from '../lib/missionConditionNames'
 import { formatBlackboard } from '../lib/formatText'
@@ -1569,6 +1569,24 @@ export function useDialogScript(dlgKey: string): UseDataResult<DialogLine[]> {
     ])
     return buildDialogLines(dlgKey, raw, i18nMap)
   }, [locale, dlgKey])
+}
+
+export function useStoryScriptBundle(missionId: string): UseDataResult<{ transcript: DialogLine[]; radio: RadioLine[] }> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    if (!missionId) return { transcript: [], radio: [] }
+    const [dlgRaw, dlgI18n, radioRaw, radioI18n] = await Promise.all([
+      getCachedData<Record<string, any>>('DialogTextTable', () => fetchTableAll('DialogTextTable')),
+      getTableI18nDict('DialogTextTable', locale),
+      getCachedData<Record<string, any>>('RadioTable', () => fetchTableAll('RadioTable')),
+      getTableI18nDict('RadioTable', locale),
+    ])
+    const missionKey = extractMissionKey(missionId)
+    return {
+      transcript: buildDialogLinesForMission(missionKey, dlgRaw, dlgI18n),
+      radio: buildRadioLinesForMission(missionKey, radioRaw, radioI18n),
+    }
+  }, [locale, missionId])
 }
 
 export interface LevelInfo {

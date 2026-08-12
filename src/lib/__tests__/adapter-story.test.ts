@@ -19,6 +19,10 @@ import {
   buildMissionQuestTree,
   adaptDialogLine,
   buildDialogLines,
+  extractMissionKey,
+  adaptRadioLine,
+  buildRadioLinesForMission,
+  buildDialogLinesForMission,
   type BakerSpeakerContext,
 } from '../adapter'
 import type { StoryRecapScene } from '../types'
@@ -520,5 +524,134 @@ describe('buildMissionQuestTree', () => {
     expect(tree).toHaveLength(1)
     expect(tree[0].children.map(c => c.questId)).toEqual(['q#2'])
     expect(tree[0].children[0].children).toEqual([])
+  })
+})
+
+describe('extractMissionKey', () => {
+  it('returns missionId directly', () => {
+    expect(extractMissionKey('gm02m13')).toBe('gm02m13')
+  })
+
+  it('handles l-segment missions', () => {
+    expect(extractMissionKey('gm02l4')).toBe('gm02l4')
+  })
+
+  it('handles d-segment missions', () => {
+    expect(extractMissionKey('a1m6d3')).toBe('a1m6d3')
+  })
+
+  it('handles l+d segment missions', () => {
+    expect(extractMissionKey('a1m6d3l2')).toBe('a1m6d3l2')
+  })
+})
+
+describe('adaptRadioLine', () => {
+  const i18nMap = {
+    '100': '佩丽卡',
+    '200': '收到，正在前往目标地点。',
+  }
+
+  it('maps radio line correctly', () => {
+    const raw = {
+      actorName: { id: '100', text: '' },
+      actorNameId: 'pelica',
+      radioText: { id: '200', text: '' },
+      audioOverride: 'au_radio_1',
+    }
+    const line = adaptRadioLine('radio_gm02m13_3', 0, raw, i18nMap)
+    expect(line.key).toBe('radio_gm02m13_3')
+    expect(line.order).toBe(0)
+    expect(line.actorNameId).toBe('pelica')
+    expect(line.speaker).toBe('佩丽卡')
+    expect(line.text).toBe('收到，正在前往目标地点。')
+    expect(line.audioOverride).toBe('au_radio_1')
+  })
+
+  it('falls back to actorNameId when no i18n', () => {
+    const raw = { actorName: { id: '0', text: '' }, actorNameId: 'andrew', radioText: { text: 'hi' } }
+    const line = adaptRadioLine('radio_x', 1, raw, i18nMap)
+    expect(line.speaker).toBe('andrew')
+    expect(line.text).toBe('hi')
+  })
+
+  it('defaults missing fields', () => {
+    const line = adaptRadioLine('radio_x', 0, {}, i18nMap)
+    expect(line.actorNameId).toBe('')
+    expect(line.speaker).toBe('radio_x')
+    expect(line.text).toBe('')
+    expect(line.audioOverride).toBe('')
+  })
+})
+
+describe('buildRadioLinesForMission', () => {
+  const i18nMap: Record<string, string> = {}
+
+  it('aggregates and sorts radio lines by key then order', () => {
+    const raw = {
+      radio_gm02m13_3: {
+        radioSingleDataList: [
+          { actorNameId: 'a', radioText: { text: 'line1' } },
+          { actorNameId: 'b', radioText: { text: 'line2' } },
+        ],
+      },
+      radio_gm02m13_1: {
+        radioSingleDataList: [
+          { actorNameId: 'c', radioText: { text: 'line0' } },
+        ],
+      },
+      radio_other_1: {
+        radioSingleDataList: [{ actorNameId: 'x', radioText: { text: 'skip' } }],
+      },
+    }
+    const lines = buildRadioLinesForMission('gm02m13', raw, i18nMap)
+    expect(lines).toHaveLength(3)
+    expect(lines[0].key).toBe('radio_gm02m13_1')
+    expect(lines[0].order).toBe(0)
+    expect(lines[1].key).toBe('radio_gm02m13_3')
+    expect(lines[1].order).toBe(0)
+    expect(lines[2].key).toBe('radio_gm02m13_3')
+    expect(lines[2].order).toBe(1)
+  })
+
+  it('filters out lines with empty text', () => {
+    const raw = {
+      radio_gm02m13_1: {
+        radioSingleDataList: [
+          { actorNameId: 'a', radioText: { text: '' } },
+          { actorNameId: 'b', radioText: { text: 'valid' } },
+        ],
+      },
+    }
+    const lines = buildRadioLinesForMission('gm02m13', raw, i18nMap)
+    expect(lines).toHaveLength(1)
+    expect(lines[0].text).toBe('valid')
+  })
+
+  it('returns empty array for unknown mission', () => {
+    expect(buildRadioLinesForMission('unknown', {}, i18nMap)).toEqual([])
+  })
+})
+
+describe('buildDialogLinesForMission', () => {
+  const i18nMap: Record<string, string> = {}
+
+  it('aggregates dialog lines across scenes for a mission', () => {
+    const raw = {
+      dlg_gm02m13_1_001: { actorNameId: 'a', dialogText: { text: 'line1' } },
+      dlg_gm02m13_1_002: { actorNameId: 'b', dialogText: { text: 'line2' } },
+      dlg_gm02m13_2_001: { actorNameId: 'c', dialogText: { text: 'line3' } },
+      dlg_other_1_001: { actorNameId: 'x', dialogText: { text: 'skip' } },
+    }
+    const lines = buildDialogLinesForMission('gm02m13', raw, i18nMap)
+    expect(lines).toHaveLength(3)
+    expect(lines.map(l => l.key)).toEqual([
+      'dlg_gm02m13_1_001',
+      'dlg_gm02m13_1_002',
+      'dlg_gm02m13_2_001',
+    ])
+  })
+
+  it('returns empty array for unknown mission', () => {
+    expect(buildDialogLinesForMission('unknown', {}, i18nMap)).toEqual([])
   })
 })
