@@ -5,6 +5,10 @@ import { onCdnChange } from './cdn'
 
 export let ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
 
+export function getAssetBase(): string {
+  return ASSET_BASE
+}
+
 export function setAssetBase(base: string): void {
   ASSET_BASE = `${base}/vfs/Bundle/file`
 }

@@ -1,6 +1,6 @@
 import type { CacheEntry } from './types'
 import { getApiBase } from './api'
-import { onCdnChange, resolveCdnBase } from './cdn'
+import { onCdnChange, resolveCdnBase, invalidateCdn } from './cdn'
 
 const DB_NAME = 'HongshanArchives'
 const STORE_NAME = 'cache'
@@ -104,16 +104,22 @@ const inflight = new Map<string, Promise<unknown>>()
 export function initCache(): Promise<string> {
   if (!versionPromise) {
     versionPromise = (async () => {
-      await resolveCdnBase()
-      const version = await (await fetch(`${getApiBase()}/version`)).text()
-      const old = await idbGet<string>('_version')
-      if (old != null && old !== version) {
-        await idbClear()
-        memoryCache.clear()
+      try {
+        await resolveCdnBase()
+        const version = await (await fetch(`${getApiBase()}/version`)).text()
+        const old = await idbGet<string>('_version')
+        if (old != null && old !== version) {
+          await idbClear()
+          memoryCache.clear()
+        }
+        await idbSet('_version', version)
+        currentVersion = version
+        return version
+      } catch (err) {
+        versionPromise = null
+        invalidateCdn(getApiBase())
+        throw err
       }
-      await idbSet('_version', version)
-      currentVersion = version
-      return version
     })()
   }
   return versionPromise

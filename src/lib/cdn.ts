@@ -76,23 +76,33 @@ async function probe(base: string): Promise<number> {
   }
 }
 
-async function probeFastest(excludeBase?: string): Promise<string> {
+interface ProbeResult {
+  base: string
+  hasAvailableNode: boolean
+}
+
+async function probeFastest(excludeBase?: string): Promise<ProbeResult> {
   const results = await Promise.allSettled(CDN_LIST.map(async (base) => ({ base, ms: await probe(base) })))
   const ok = results
     .filter((r): r is PromiseFulfilledResult<{ base: string; ms: number }> => r.status === 'fulfilled')
     .map((r) => r.value)
     .sort((a, b) => a.ms - b.ms)
   const preferred = ok.find((r) => r.base !== excludeBase)
-  return (preferred ?? ok[0])?.base ?? DEFAULT_BASE
+  const base = (preferred ?? ok[0])?.base ?? DEFAULT_BASE
+  return { base, hasAvailableNode: ok.length > 0 }
 }
 
 export function resolveCdnBase(): Promise<string> {
   if (!resolvePromise) {
     resolvePromise = (async () => {
       const remembered = readSelection()
-      const base = remembered ?? (await probeFastest())
+      if (remembered) {
+        applyCdnBase(remembered)
+        return remembered
+      }
+      const { base, hasAvailableNode } = await probeFastest()
       applyCdnBase(base)
-      if (!remembered) writeSelection(base)
+      if (hasAvailableNode) writeSelection(base)
       return base
     })()
   }
@@ -102,9 +112,9 @@ export function resolveCdnBase(): Promise<string> {
 export function invalidateCdn(excludeBase: string): void {
   clearSelection()
   resolvePromise = (async () => {
-    const base = await probeFastest(excludeBase)
+    const { base, hasAvailableNode } = await probeFastest(excludeBase)
     applyCdnBase(base)
-    writeSelection(base)
+    if (hasAvailableNode) writeSelection(base)
     return base
   })()
 }
