@@ -1,6 +1,7 @@
 export const CDN_LIST: readonly string[] = [
   'https://cn.endfield.fffdan.com',
   'https://cn2.endfield.fffdan.com',
+  'https://cn3.endfield.fffdan.com',
   'https://endfield-assets.fffdan.com',
 ]
 
