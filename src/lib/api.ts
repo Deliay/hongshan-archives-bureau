@@ -1,7 +1,31 @@
 import { startLoading, completeLoading, failLoading } from '../components/Loading/tracker'
 import { getCachedData } from './cache'
+import { invalidateCdn, onCdnChange } from './cdn'
 
-const API_BASE = 'https://endfield-assets.fffdan.com'
+let currentApiBase = 'https://endfield-assets.fffdan.com'
+let consecutiveFailures = 0
+const FAIL_THRESHOLD = 3
+
+export function getApiBase(): string {
+  return currentApiBase
+}
+
+onCdnChange((base) => {
+  currentApiBase = base
+  consecutiveFailures = 0
+})
+
+function reportFetchResult(ok: boolean): void {
+  if (ok) {
+    consecutiveFailures = 0
+    return
+  }
+  consecutiveFailures += 1
+  if (consecutiveFailures >= FAIL_THRESHOLD) {
+    consecutiveFailures = 0
+    invalidateCdn(currentApiBase)
+  }
+}
 
 function safeParse(json: string): any {
   const prepared = json.replace(/(?<=: ?)(-?\d{17,})(?=[,\s\]\}])/g, '"$1"')
@@ -39,9 +63,11 @@ async function trackFetch<T>(
       const result = await fn()
       completeLoading(key)
       retryHandlers.delete(key)
+      reportFetchResult(true)
       return result
     } catch (error) {
       failLoading(key, error instanceof Error ? error.message : String(error))
+      reportFetchResult(false)
       throw error
     }
   }
@@ -51,76 +77,74 @@ async function trackFetch<T>(
 }
 
 export async function fetchTableKeys(table: string): Promise<string[]> {
-  return trackFetch(`正在调阅 ${table} 索引`, () => fetchJson(`${API_BASE}/table/${table}`),
+  return trackFetch(`正在调阅 ${table} 索引`, () => fetchJson(`${getApiBase()}/table/${table}`),
     'api.fetchingTableIndex', { table })
 }
 
 export async function fetchTableAll(table: string): Promise<Record<string, any>> {
-  return trackFetch(`正在调阅 ${table}`, () => fetchJson(`${API_BASE}/table/${table}/all`),
+  return trackFetch(`正在调阅 ${table}`, () => fetchJson(`${getApiBase()}/table/${table}/all`),
     'api.fetchingTable', { table })
 }
 
 export async function fetchTableEntry(table: string, key: string): Promise<any> {
-  return trackFetch(`正在调阅 ${table}/${key}`, () => fetchJson(`${API_BASE}/table/${table}/${key}`),
+  return trackFetch(`正在调阅 ${table}/${key}`, () => fetchJson(`${getApiBase()}/table/${table}/${key}`),
     'api.fetchingTableEntry', { table, key })
 }
 
 export async function fetchVersion(): Promise<string> {
   return trackFetch('正在检查版本', async () => {
-    const res = await fetch(`${API_BASE}/version`)
+    const res = await fetch(`${getApiBase()}/version`)
     if (!res.ok) throw new Error('Failed to fetch version')
     return res.text()
   }, 'api.fetchingVersion')
 }
 
 export async function fetchI18nLocales(): Promise<string[]> {
-  return trackFetch('正在加载语言列表', () => fetchJson(`${API_BASE}/i18n`),
+  return trackFetch('正在加载语言列表', () => fetchJson(`${getApiBase()}/i18n`),
     'api.fetchingLocales')
 }
 
 export async function fetchTableDictAll(table: string, locale: string = 'CN'): Promise<Record<string, string>> {
   return trackFetch(`正在加载 ${table} 多语言 (${locale})`, () =>
-    fetchJson(`${API_BASE}/i18n/dict/${locale}/table/${table}/all`),
+    fetchJson(`${getApiBase()}/i18n/dict/${locale}/table/${table}/all`),
     'api.fetchingTableDict', { table, locale })
 }
 
 export async function fetchTableDictEntry(table: string, key: string, locale: string = 'CN'): Promise<Record<string, string>> {
   return trackFetch(`正在加载 ${table}/${key} 多语言 (${locale})`, () =>
-    fetchJson(`${API_BASE}/i18n/dict/${locale}/table/${table}/${key}`),
+    fetchJson(`${getApiBase()}/i18n/dict/${locale}/table/${table}/${key}`),
     'api.fetchingTableDictEntry', { table, key, locale })
 }
 
 export async function fetchI18nSearch(regex: string): Promise<{ Table: string; Path: string; Id: string }[]> {
-  return trackFetch('正在搜索档案', () => fetchJson(`${API_BASE}/i18n/search/all/${encodeURIComponent(regex)}`),
+  return trackFetch('正在搜索档案', () => fetchJson(`${getApiBase()}/i18n/search/all/${encodeURIComponent(regex)}`),
     'api.fetchingSearch')
 }
 
 export async function fetchI18nText(locale: string, id: string): Promise<string> {
   return getCachedData<string>(`__i18n_text_${locale}`, async () => {
     return trackFetch(`正在解析文本 (${locale})`, async () => {
-      const res = await fetch(`${API_BASE}/i18n/${locale}/${id}`)
+      const res = await fetch(`${getApiBase()}/i18n/${locale}/${id}`)
       if (!res.ok) return ''
       return res.text()
     }, 'api.fetchingText', { locale })
   }, id)
 }
 
-const MISSION_ASSET_BASE = `${API_BASE}/vfs/JsonData`
-
 export async function fetchMissionList(): Promise<string[]> {
   return trackFetch('正在调阅 任务清单', () =>
-    fetchJson(`${MISSION_ASSET_BASE}/files/Data/Json/MissionRuntimeAsset`),
+    fetchJson(`${getApiBase()}/vfs/JsonData/files/Data/Json/MissionRuntimeAsset`),
     'api.fetchingMissionList')
 }
 
 export async function fetchMissionDetail(missionId: string): Promise<any> {
   return trackFetch(`正在调阅 任务 ${missionId}`, () =>
-    fetchJson(`${MISSION_ASSET_BASE}/raw/Data/Json/MissionRuntimeAsset/${missionId}.json`),
+    fetchJson(`${getApiBase()}/vfs/JsonData/raw/Data/Json/MissionRuntimeAsset/${missionId}.json`),
     'api.fetchingMissionDetail', { missionId })
 }
 
 export async function fetchMissionBrief(): Promise<any[]> {
   return trackFetch('正在调阅 任务摘要', () =>
-    fetchJson(`${MISSION_ASSET_BASE}/AllBrief/MissionRuntimeAsset`),
+    fetchJson(`${getApiBase()}/vfs/JsonData/AllBrief/MissionRuntimeAsset`),
     'api.fetchingMissionBrief')
 }

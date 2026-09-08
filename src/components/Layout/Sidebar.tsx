@@ -5,9 +5,7 @@ import { useI18n } from '../../i18n'
 import { useI18nLocales } from '../../hooks/useData'
 import { ArchiveSeal } from '../ui/ArchiveSeal'
 import MusicControlPanel from '../Music/MusicControlPanel'
-import { ASSET_BASE } from '../../lib/adapter'
-
-const LANGUAGE_ICON_URL = `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/settings/icon_settings_language.png`
+import { getAssetBase } from '../../lib/adapter'
 
 type NavLink = {
   label: string
@@ -89,6 +87,7 @@ export default function Sidebar() {
   const [localeOpen, setLocaleOpen] = useState(false)
   const { t } = useI18n()
   const navGroups = useNavGroups()
+  const languageIconUrl = `${getAssetBase()}/assets/beyond/dynamicassets/gameplay/ui/sprites/settings/icon_settings_language.png`
 
   return (
     <>
@@ -157,7 +156,7 @@ export default function Sidebar() {
             className="w-full px-3 py-1.5 rounded text-sm text-archive-dust hover:text-archive-ivory border border-archive-border hover:border-archive-lead transition-colors text-left flex items-center gap-2"
           >
             <img
-              src={LANGUAGE_ICON_URL}
+              src={languageIconUrl}
               alt=""
               className="w-4 h-4 object-contain opacity-70"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
