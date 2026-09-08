@@ -1,8 +1,15 @@
 import type { Operator, Weapon, Enemy, Item, Equip, Suit, Gem, StoryDocument, Area, EquipAttr, RecipeEntry, Activity, ActivityGroup, ActivityStatus, ActivityTimeRange, StoryRecapScene, StoryRecapChapter, StoryRecapMission, DialogLine, PrtsCategory, PrtsVolume, PrtsItem, BakerChat, BakerMessage, MissionRuntime, MissionQuest, MissionQuestObjective, MissionQuestTreeNode, MusicAlbum, MusicTrack } from './types'
 import { renderMissionCondition } from './missionCondition'
 import { ACTIVITY_TYPE_GROUPS, SNS_DIALOG_CONTENT_TYPE } from '../data/constants'
+import { onCdnChange } from './cdn'
 
-export const ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
+export let ASSET_BASE = 'https://endfield-assets.fffdan.com/vfs/Bundle/file'
+
+export function setAssetBase(base: string): void {
+  ASSET_BASE = `${base}/vfs/Bundle/file`
+}
+
+onCdnChange(setAssetBase)
 
 export function getSpriteUrl(path: string): string {
   return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/${path}.png`

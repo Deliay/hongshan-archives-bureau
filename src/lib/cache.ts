@@ -1,4 +1,6 @@
 import type { CacheEntry } from './types'
+import { getApiBase } from './api'
+import { onCdnChange, resolveCdnBase } from './cdn'
 
 const DB_NAME = 'HongshanArchives'
 const STORE_NAME = 'cache'
@@ -102,7 +104,8 @@ const inflight = new Map<string, Promise<unknown>>()
 export function initCache(): Promise<string> {
   if (!versionPromise) {
     versionPromise = (async () => {
-      const version = await (await fetch('https://endfield-assets.fffdan.com/version')).text()
+      await resolveCdnBase()
+      const version = await (await fetch(`${getApiBase()}/version`)).text()
       const old = await idbGet<string>('_version')
       if (old != null && old !== version) {
         await idbClear()
@@ -115,6 +118,11 @@ export function initCache(): Promise<string> {
   }
   return versionPromise
 }
+
+onCdnChange(() => {
+  currentVersion = null
+  versionPromise = null
+})
 
 export async function getCachedData<T>(
   table: string,

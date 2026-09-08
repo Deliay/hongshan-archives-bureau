@@ -49,14 +49,31 @@ function mockIndexedDB() {
   } as unknown as IDBFactory)
 }
 
+function mockCdn() {
+  vi.doMock('../cdn', () => ({
+    resolveCdnBase: vi.fn(() => Promise.resolve('https://endfield-assets.fffdan.com')),
+    onCdnChange: vi.fn(),
+    getCdnBase: vi.fn(() => 'https://endfield-assets.fffdan.com'),
+  }))
+}
+
+function mockApi() {
+  vi.doMock('../api', () => ({
+    getApiBase: vi.fn(() => 'https://endfield-assets.fffdan.com'),
+  }))
+}
+
 beforeEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  vi.resetModules()
   store = new Map()
 })
 
 describe('cache module', () => {
   it('initCache returns a promise', async () => {
+    mockCdn()
+    mockApi()
     mockIndexedDB()
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, text: () => Promise.resolve('v1.0') } as Response)))
     const mod = await import('../cache')
@@ -67,7 +84,8 @@ describe('cache module', () => {
   })
 
   it('initCache is singleton - only calls fetch once from the same import', async () => {
-    vi.resetModules()
+    mockCdn()
+    mockApi()
     mockIndexedDB()
     const fetchMock = vi.fn(() => Promise.resolve({ ok: true, text: () => Promise.resolve('v2.0') } as Response))
     vi.stubGlobal('fetch', fetchMock)
@@ -82,6 +100,8 @@ describe('cache module', () => {
   })
 
   it('getCachedData fetches data after initCache', async () => {
+    mockCdn()
+    mockApi()
     mockIndexedDB()
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, text: () => Promise.resolve('v3.0') } as Response)))
     const mod = await import('../cache')
@@ -93,6 +113,8 @@ describe('cache module', () => {
   })
 
   it('getCachedData returns cached data on second call', async () => {
+    mockCdn()
+    mockApi()
     mockIndexedDB()
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, text: () => Promise.resolve('v3.5') } as Response)))
     const mod = await import('../cache')
