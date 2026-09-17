@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText, fetchTableEntry, fetchTableDictEntry, fetchMissionList, fetchMissionDetail, fetchMissionBrief } from '../lib/api'
+import { fetchTableAll, fetchTableDictAll, fetchI18nLocales, fetchI18nSearch, fetchI18nText, fetchTableEntry, fetchTableDictEntry, fetchMissionList, fetchMissionDetail, fetchMissionBrief, fetchJsonDataRaw } from '../lib/api'
 import { getCachedData, initCache } from '../lib/cache'
 import { useLocale } from '../lib/locale'
 import { useI18n } from '../i18n'
@@ -17,6 +17,8 @@ import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '..
 import { buildChainGraph } from '../lib/factory/chain'
 import { getFactoryRegion } from '../lib/factory/regions'
 import type { ResolveContext } from '../lib/baker'
+import { parseLevelMapConfig, adaptStaticElements, adaptPoiMarkers } from '../lib/map/mapConfig'
+import type { LevelMapConfig, MapMarker } from '../lib/map/mapConfig'
 
 // AttributeType enum name → blackboard key (from TianShiTools Attributes.cs)
 const ATTRIBUTE_TYPE_MAP: Record<number, string> = {
@@ -1781,4 +1783,121 @@ export function useMusicAlbums(): UseDataResult<MusicAlbum[]> {
     })
     return adaptMusicAlbums(albumRaw, albumMusicRaw, musicRaw, albumI18n, itemMap, itemI18n)
   }, [locale])
+}
+
+// ---------- Map ----------
+
+export interface MapRegion {
+  levelId: string
+  name: string
+}
+
+export interface MapRegionGroup {
+  mapId: string | null
+  name: string
+  regions: MapRegion[]
+}
+
+export function useMapRegionList(): UseDataResult<MapRegionGroup[]> {
+  const { locale } = useLocale()
+  return useData(async () => {
+    const [listRaw, levelRaw, levelI18n, mapRaw, mapI18n, specialRaw] = await Promise.all([
+      getCachedData<Record<string, any>>('UILevelMapLoadConfig_LoadList', () => fetchJsonDataRaw('Data/Json/UILevelMapLoadConfig/LoadListConfig.json')),
+      getCachedData<Record<string, any>>('LevelDescTable', () => fetchTableAll('LevelDescTable').catch(() => ({}))),
+      getTableI18nDict('LevelDescTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('MapIdTable', () => fetchTableAll('MapIdTable').catch(() => ({}))),
+      getTableI18nDict('MapIdTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('SpecialLevelToMapTable', () => fetchTableAll('SpecialLevelToMapTable').catch(() => ({}))),
+    ])
+    const levelIds: string[] = Array.isArray(listRaw?.loadLevelList) ? listRaw.loadLevelList : []
+    const mapOrder = Object.keys(mapRaw ?? {})
+    const groups = new Map<string, MapRegionGroup>()
+    for (const levelId of levelIds) {
+      const mapId = specialRaw?.[levelId]?.mapId ?? resolveLevelMapId(levelId, mapRaw) ?? null
+      const groupKey = mapId ?? '__other__'
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          mapId,
+          name: mapId ? resolveI18n(mapRaw?.[mapId]?.showName, mapI18n) || mapId : '',
+          regions: [],
+        })
+      }
+      groups.get(groupKey)!.regions.push({
+        levelId,
+        name: resolveI18n(levelRaw?.[levelId]?.showName, levelI18n) || levelId,
+      })
+    }
+    return [...groups.values()].sort((a, b) => {
+      const ai = a.mapId ? mapOrder.indexOf(a.mapId) : Number.MAX_SAFE_INTEGER
+      const bi = b.mapId ? mapOrder.indexOf(b.mapId) : Number.MAX_SAFE_INTEGER
+      return ai - bi
+    })
+  }, [locale])
+}
+
+export interface MapTierView {
+  tierId: number
+  name: string
+}
+
+export function useMapConfig(levelId: string | null): UseDataResult<{
+  config: LevelMapConfig
+  markers: MapMarker[]
+  tiers: MapTierView[]
+} | null> {
+  const { locale } = useLocale()
+  const { t } = useI18n()
+  return useData(async () => {
+    if (!levelId) return null
+    const [
+      raw, textRaw, textI18n, settlementRaw, settlementI18n, levelRaw, levelI18n,
+      markInsRaw, markTempRaw, markTypeRaw, markCatRaw, markTempI18n, markTypeI18n, markCatI18n,
+    ] = await Promise.all([
+      getCachedData<Record<string, any>>(`UILevelMapLoadConfig_${levelId}`, () => fetchJsonDataRaw(`Data/Json/UILevelMapLoadConfig/${levelId}.json`)),
+      getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable').catch(() => ({}))),
+      getTableI18nDict('TextTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('SettlementBasicDataTable', () => fetchTableAll('SettlementBasicDataTable').catch(() => ({}))),
+      getTableI18nDict('SettlementBasicDataTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('LevelDescTable', () => fetchTableAll('LevelDescTable').catch(() => ({}))),
+      getTableI18nDict('LevelDescTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('MapMarkInsTable', () => fetchTableAll('MapMarkInsTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('MapMarkTempTable', () => fetchTableAll('MapMarkTempTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('MapMarkTypeTable', () => fetchTableAll('MapMarkTypeTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('MapMarkCategoryTable', () => fetchTableAll('MapMarkCategoryTable').catch(() => ({}))),
+      getTableI18nDict('MapMarkTempTable', locale).catch(() => ({}) as Record<string, string>),
+      getTableI18nDict('MapMarkTypeTable', locale).catch(() => ({}) as Record<string, string>),
+      getTableI18nDict('MapMarkCategoryTable', locale).catch(() => ({}) as Record<string, string>),
+    ])
+    if (!raw) return null
+    const config = parseLevelMapConfig(levelId, raw)
+    const resolveText = (textId?: string): string => {
+      if (!textId) return ''
+      const entry = textRaw?.[textId]
+      if (!entry || entry.id === undefined || entry.id === null) return ''
+      return textI18n?.[String(entry.id)] ?? ''
+    }
+    const markers = [
+      ...adaptStaticElements(config, {
+        textTable: textRaw,
+        textDict: textI18n,
+        settlementTable: settlementRaw,
+        settlementDict: settlementI18n,
+        regionName: (id) => resolveI18n(levelRaw?.[id]?.showName, levelI18n) || id,
+      }),
+      ...adaptPoiMarkers(config, levelId, {
+        insRaw: markInsRaw,
+        tempRaw: markTempRaw,
+        typeRaw: markTypeRaw,
+        categoryRaw: markCatRaw,
+        tempDict: markTempI18n,
+        typeDict: markTypeI18n,
+        categoryDict: markCatI18n,
+      }),
+    ]
+    const tiers: MapTierView[] = config.tiers.map((tier) => ({
+      tierId: tier.tierId,
+      name: resolveText(tier.textId) || t('map.layerDefault', { id: tier.tierId }),
+    }))
+    return { config, markers, tiers }
+  }, [locale, levelId])
 }

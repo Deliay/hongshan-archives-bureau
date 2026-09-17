@@ -15,11 +15,11 @@ const MODULE_GROUPS = [
   },
   {
     label: '地理档案',
-    modules: ['地区地理'],
+    modules: ['地区地理', '地图'],
   },
   {
     label: '大事记',
-    modules: ['档案搜索', '教学记录', '活动档案', '更新日志'],
+    modules: ['档案搜索', 'Baker', '活动档案', '更新日志'],
   },
 ]
 

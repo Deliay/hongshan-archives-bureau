@@ -192,6 +192,8 @@
     "factoryDesc": "Gestionar operaciones de fábrica",
     "geography": "Archivos de geografía",
     "geographyDesc": "Regiones y exploración de Talos-II",
+    "map": "Mapa",
+    "mapDesc": "Explora mapas regionales y marcadores de lugares",
     "items": "Archivos de objetos",
     "itemsDesc": "Consultar base de datos de objetos",
     "material": "Materiales",
@@ -407,6 +409,7 @@
     "fetchingTableEntry": "Cargando entrada…",
     "fetchingMissionList": "Cargando lista de misiones…",
     "fetchingMissionDetail": "Cargando detalle de la misión…",
+    "fetchingMapData": "Cargando datos del mapa…",
     "fetchingMissionBrief": "Cargando resumen de misiones…",
     "fetchingTableIndex": "Cargando índice…",
     "fetchingText": "Obteniendo texto…",
@@ -499,5 +502,29 @@
     "voice": "Voz de la historia",
     "clear": "Vaciar",
     "empty": "Nada en reproducción"
+  },
+  "map": {
+    "groupOther": "Otras regiones",
+    "unavailable": "El mapa de esta región no está disponible por ahora",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "zoomFit": "Ajustar vista",
+    "gotoRegion": "Ir a {{name}}",
+    "layerPanelTitle": "Capas",
+    "layerAll": "Todas las capas",
+    "layerDefault": "Capa {{id}}",
+    "markerPanelTitle": "Marcadores",
+    "markerGroupElements": "Elementos del mapa",
+    "markerGroupOther": "Otros marcadores",
+    "markerSelectAll": "Seleccionar todo",
+    "markerClear": "Limpiar",
+    "markerKind": {
+      "levelEntrance": "Entrada de nivel",
+      "placeName": "Nombre del lugar",
+      "region": "Región",
+      "settlement": "Asentamiento",
+      "tierSwitch": "Pasaje entre niveles",
+      "staticImage": "Imagen de estado"
+    }
   }
 }

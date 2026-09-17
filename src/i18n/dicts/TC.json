@@ -192,6 +192,8 @@
     "factoryDesc": "自動化生產線",
     "geography": "地理檔案",
     "geographyDesc": "塔衛二區域與探索",
+    "map": "地圖",
+    "mapDesc": "瀏覽各區域地圖與地名標註",
     "items": "道具材料",
     "itemsDesc": "物資與收集品",
     "material": "物資檔案",
@@ -407,6 +409,7 @@
     "fetchingTableEntry": "正在載入條目…",
     "fetchingMissionList": "正在調閱任務清單…",
     "fetchingMissionDetail": "正在調閱任務詳情…",
+    "fetchingMapData": "正在載入地圖資料…",
     "fetchingMissionBrief": "正在調閱任務摘要…",
     "fetchingTableIndex": "正在載入索引…",
     "fetchingText": "正在獲取文本…",
@@ -499,5 +502,29 @@
     "voice": "劇情語音",
     "clear": "清空",
     "empty": "暫無播放內容"
+  },
+  "map": {
+    "groupOther": "其他區域",
+    "unavailable": "該區域地圖暫不可用",
+    "zoomIn": "放大",
+    "zoomOut": "縮小",
+    "zoomFit": "適配視圖",
+    "gotoRegion": "前往{{name}}",
+    "layerPanelTitle": "圖層",
+    "layerAll": "全部圖層",
+    "layerDefault": "圖層{{id}}",
+    "markerPanelTitle": "標記",
+    "markerGroupElements": "地圖元素",
+    "markerGroupOther": "其他標記",
+    "markerSelectAll": "全選",
+    "markerClear": "清空",
+    "markerKind": {
+      "levelEntrance": "關卡入口",
+      "placeName": "地名",
+      "region": "區域",
+      "settlement": "定居點",
+      "tierSwitch": "層間通道",
+      "staticImage": "狀態圖"
+    }
   }
 }

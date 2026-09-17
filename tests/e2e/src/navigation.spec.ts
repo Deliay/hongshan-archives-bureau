@@ -32,7 +32,7 @@ test.describe('导航与全局布局 (Navigation & Layout)', () => {
       { path: '/archive/professions', heading: '职业与属性' },
       { path: '/archive/enemies', heading: '敌人图鉴' },
       { path: '/archive/items', heading: '道具材料' },
-      { path: '/archive/story', heading: '剧情记录' },
+      { path: '/archive/story', heading: '剧情纪事' },
     ]
     for (const { path, heading } of pages) {
       await page.goto(path, { waitUntil: 'domcontentloaded' })

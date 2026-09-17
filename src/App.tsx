@@ -17,6 +17,7 @@ import RaceDetail from './pages/races/RaceDetail'
 import FactionList from './pages/factions/FactionList'
 import FactionDetail from './pages/factions/FactionDetail'
 import GeographyList from './pages/geography/GeographyList'
+const MapViewer = lazy(() => import('./pages/map/MapViewerPage'))
 import EnemyList from './pages/enemies/EnemyList'
 import EnemyDetail from './pages/enemies/EnemyDetail'
 import EquipmentList from './pages/equipment/EquipmentList'
@@ -61,6 +62,7 @@ function AppRoutes() {
             <Route path="factions" element={<FactionList />} />
             <Route path="factions/:factionId" element={<FactionDetail />} />
             <Route path="geography" element={<GeographyList />} />
+            <Route path="map" element={<Suspense fallback={<ListSkeleton />}><MapViewer /></Suspense>} />
             <Route path="enemies" element={<EnemyList />} />
             <Route path="enemies/:id" element={<EnemyDetail />} />
             <Route path="equipment" element={<EquipmentList />} />
