@@ -7,6 +7,7 @@ export const MODULE_CODES: Record<string, string> = {
   enemies: 'HSA-ENE',
   items: 'HSA-ITM',
   geography: 'HSA-GEO',
+  map: 'HSA-MAP',
   equipment: 'HSA-EQP',
   factory: 'HSA-FAC',
   search: 'HSA-SRC',

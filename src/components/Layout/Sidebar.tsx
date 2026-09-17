@@ -47,6 +47,7 @@ function useNavGroups(): NavGroup[] {
       label: t('nav.geography'),
       items: [
         { label: t('nav.areas'), path: '/archive/geography' },
+        { label: t('nav.map'), path: '/archive/map' },
       ],
     },
     {

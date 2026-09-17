@@ -15,7 +15,7 @@ const MODULE_GROUPS = [
   },
   {
     label: '地理档案',
-    modules: ['地区地理'],
+    modules: ['地区地理', '地图'],
   },
   {
     label: '大事记',

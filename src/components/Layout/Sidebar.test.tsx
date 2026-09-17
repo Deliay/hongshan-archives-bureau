@@ -13,15 +13,15 @@ const NAV_GROUPS_CN = [
   { label: '人事档案', items: ['干员', '干员种族', '干员阵营'] },
   { label: '威胁档案', items: ['威胁图鉴'] },
   { label: '物资档案', items: ['道具材料', '武器图鉴', '装备图鉴', '工厂系统'] },
-  { label: '地理档案', items: ['地区地理'] },
-  { label: '大事记', items: ['档案搜索', '教学记录', '更新日志'] },
+  { label: '地理档案', items: ['地区地理', '地图'] },
+  { label: '大事记', items: ['档案搜索', 'Baker', '更新日志'] },
 ]
 
 const NAV_GROUPS_EN = [
   { label: 'Personnel Files', items: ['Operators', 'Operator Races', 'Operator Factions'] },
   { label: 'Material Files', items: ['Item Files', 'Weapon Files', 'Gear Files', 'Factory System'] },
-  { label: 'Geography Files', items: ['Area Geography'] },
-  { label: 'Chronicle', items: ['Archive Search', 'Tutorials', 'Update Logs'] },
+  { label: 'Geography Files', items: ['Area Geography', 'Map'] },
+  { label: 'Chronicle', items: ['Archive Search', 'Baker', 'Update Logs'] },
 ]
 
 function renderSidebar(locale = 'CN', initialEntries: string[] = ['/archive']) {
