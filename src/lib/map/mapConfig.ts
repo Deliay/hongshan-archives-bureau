@@ -39,6 +39,7 @@ export interface MapChunk {
   y: number
   worldLeftBottom: { x: number; y: number }
   worldRightTop: { x: number; y: number }
+  tiers: Record<string, string>
 }
 
 export interface StaticMapElement {
@@ -114,6 +115,9 @@ function parseChunks(raw: any, lod: MapLod): MapChunk[] {
       y: num(c.y),
       worldLeftBottom: { x: num(c.worldLeftBottom?.x), y: num(c.worldLeftBottom?.y) },
       worldRightTop: { x: num(c.worldRightTop?.x), y: num(c.worldRightTop?.y) },
+      tiers: (c.tiers && typeof c.tiers === 'object'
+        ? Object.fromEntries(Object.entries(c.tiers).filter(([, v]) => typeof v === 'string'))
+        : {}) as Record<string, string>,
     }))
 }
 
@@ -222,6 +226,10 @@ export function chunkRect(config: LevelMapConfig, chunk: MapChunk): { left: numb
 
 export function tileUrl(levelId: string, chunkId: string): string {
   return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/textures/levelmap/levelmapchunks/${levelId.replaceAll('_', '')}/${chunkId}.png`
+}
+
+export function tierTileUrl(levelId: string, textureId: string): string {
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/levelmap/levelmaptiers/${levelId.replaceAll('_', '')}/${textureId}.png`
 }
 
 export function markIconUrl(icon: string): string {
@@ -391,19 +399,24 @@ export function adaptPoiMarkers(config: LevelMapConfig, levelId: string, sources
   return markers
 }
 
-export function tierMaskCells(config: LevelMapConfig, tierId: number): TierRect[] {
-  const tier = config.tiers.find((t) => t.tierId === tierId)
-  if (!tier) return []
-  const cell = LOD_WORLD_UNITS.h * PIXELS_PER_UNIT
-  const covered = new Set(tier.rects.map((r) => `${Math.round(r.left / cell)}_${Math.round(r.top / cell)}`))
-  const size = canvasSize(config)
-  const cells: TierRect[] = []
-  for (let x = 0; x < size.width; x += cell) {
-    for (let y = 0; y < size.height; y += cell) {
-      if (!covered.has(`${Math.round(x / cell)}_${Math.round(y / cell)}`)) {
-        cells.push({ left: x, top: y, width: cell, height: cell })
-      }
-    }
+export interface TierTile extends TierRect {
+  chunkId: string
+  textureId: string
+}
+
+export function tierTiles(
+  config: LevelMapConfig,
+  lod: MapLod,
+  tierId: number,
+  view: MapView,
+  viewport: { width: number; height: number },
+): TierTile[] {
+  const tiles: TierTile[] = []
+  for (const chunk of visibleChunks(config.chunks[lod], config, lod, view, viewport)) {
+    const textureId = chunk.tiers[String(tierId)]
+    if (!textureId) continue
+    const rect = chunkRect(config, chunk)
+    tiles.push({ chunkId: chunk.chunkId, textureId, ...rect })
   }
-  return cells
+  return tiles
 }

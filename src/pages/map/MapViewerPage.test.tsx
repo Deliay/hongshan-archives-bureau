@@ -35,7 +35,7 @@ function fakeConfig(levelId: string): LevelMapConfig {
     chunks: {
       l: [],
       m: [],
-      h: [{ chunkId: `h_${levelId}`, x: 1, y: 1, worldLeftBottom: { x: 0, y: 0 }, worldRightTop: { x: 128, y: 128 } }],
+      h: [{ chunkId: `h_${levelId}`, x: 1, y: 1, worldLeftBottom: { x: 0, y: 0 }, worldRightTop: { x: 128, y: 128 }, tiers: {} }],
     },
     staticElements: [],
     tiers: [],

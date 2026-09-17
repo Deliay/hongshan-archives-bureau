@@ -89,6 +89,14 @@ test.describe('地图浏览器 (Map Viewer)', () => {
 
     await page.getByTestId('layer-item').nth(1).click()
     await expect(page.getByTestId('active-layer-badge')).toBeVisible()
+    // 选中图层后渲染该层的分层贴图（levelmaptiers 目录）
+    const tierTile = page.locator('[data-testid="map-tier-tile"]').first()
+    await expect(tierTile).toBeVisible({ timeout: 30000 })
+    await expect(tierTile).toHaveAttribute('src', /levelmaptiers/)
+
+    // 切回「全部图层」后隐藏分层贴图
+    await page.locator('[data-testid="layer-item"][data-tier-id="all"]').click()
+    await expect(page.getByTestId('map-tier-tile')).toHaveCount(0)
   })
 
   test('标记面板可切换静态标记与 POI 显隐', async ({ page }) => {

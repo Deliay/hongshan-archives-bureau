@@ -16,7 +16,8 @@ import {
   zoomAt,
   adaptStaticElements,
   adaptPoiMarkers,
-  tierMaskCells,
+  tierTiles,
+  tierTileUrl,
   markIconUrl,
   staticElementImageUrl,
   MARKER_MIN_LOD,
@@ -119,6 +120,7 @@ function hChunkAt(id: string, canvasLeft: number, canvasTop: number, worldWidth 
     y: 1,
     worldLeftBottom: { x: lbx, y: rty - worldHeight },
     worldRightTop: { x: lbx + worldWidth, y: rty },
+    tiers: {},
   }
 }
 
@@ -223,6 +225,7 @@ describe('canvasSize / lodTileSize / chunkRect', () => {
       y: 1,
       worldLeftBottom: { x: -1792, y: -512 },
       worldRightTop: { x: -1406.3, y: -126.3 },
+      tiers: {},
     }
     const rect = chunkRect(config, fractional)
     expect(rect.width).toBeCloseTo(385.7 * PIXELS_PER_UNIT)
@@ -457,17 +460,77 @@ describe('parseLevelMapConfig tiers', () => {
     expect(single.tiers).toEqual([])
   })
 
-  it('computes dark-mask cells outside the active tier', () => {
+})
+
+describe('chunk.tiers parsing and tier tiles', () => {
+  const raw = {
+    basic: {
+      worldRectLeftBottom: { x: 0, y: 0 },
+      worldRectRightTop: { x: 1024, y: 512 },
+      needInverseXZ: false,
+    },
+    lowChunks: {
+      l_a_1_1: {
+        chunkId: 'l_a_1_1',
+        lodType: 0,
+        x: 1,
+        y: 1,
+        worldLeftBottom: { x: 0, y: 0 },
+        worldRightTop: { x: 512, y: 512 },
+        tiers: { '173': 'l_tier_173', '174': 'l_tier_174' },
+      },
+      l_a_2_1: {
+        chunkId: 'l_a_2_1',
+        lodType: 0,
+        x: 2,
+        y: 1,
+        worldLeftBottom: { x: 512, y: 0 },
+        worldRightTop: { x: 1024, y: 512 },
+        tiers: {},
+      },
+    },
+    mediumChunks: {},
+    highChunks: {
+      h_a_1_1: {
+        chunkId: 'h_a_1_1',
+        lodType: 2,
+        x: 1,
+        y: 1,
+        worldLeftBottom: { x: 0, y: 0 },
+        worldRightTop: { x: 128, y: 128 },
+        tiers: { '173': 'h_a_1_1_tier_173' },
+      },
+    },
+    staticElements: {},
+    tierNames: { '173': 't173', '174': 't174' },
+    tierInfos: {
+      'l_a_1_1_tier_173': { tierId: 173, worldLeftBottom: { x: 0, y: 0 }, worldRightTop: { x: 512, y: 512 } },
+    },
+  }
+
+  it('reads per-chunk tier texture ids and drops non-string values', () => {
     const config = parseLevelMapConfig('a', raw)
-    const cells = tierMaskCells(config, 171)
-    expect(cells.length).toBeGreaterThan(0)
-    expect(cells.some((cell) => cell.left === 0 && cell.top === 3 * 128 * PIXELS_PER_UNIT)).toBe(false)
-    expect(cells.some((cell) => cell.left === 0 && cell.top === 0)).toBe(true)
+    expect(config.chunks.l[0].tiers).toEqual({ '173': 'l_tier_173', '174': 'l_tier_174' })
+    expect(config.chunks.l[1].tiers).toEqual({})
+    expect(config.chunks.h[0].tiers).toEqual({ '173': 'h_a_1_1_tier_173' })
   })
 
-  it('returns an empty mask for an unknown tier', () => {
+  it('builds tier texture urls under sprites/levelmap/levelmaptiers', () => {
+    expect(tierTileUrl('map01_lv001', 'l_tier_173')).toBe(
+      'https://endfield-assets.fffdan.com/vfs/Bundle/file/assets/beyond/dynamicassets/gameplay/ui/sprites/levelmap/levelmaptiers/map01lv001/l_tier_173.png',
+    )
+  })
+
+  it('selects visible tier tiles for the active layer and lod', () => {
     const config = parseLevelMapConfig('a', raw)
-    expect(tierMaskCells(config, 999)).toEqual([])
+    const view = { scale: 1, offsetX: 0, offsetY: 0 }
+    const viewport = { width: 600, height: 600 }
+    const tiles = tierTiles(config, 'l', 173, view, viewport)
+    expect(tiles).toHaveLength(1)
+    expect(tiles[0].textureId).toBe('l_tier_173')
+    expect(tiles[0].width).toBeCloseTo(512 * PIXELS_PER_UNIT)
+    expect(tierTiles(config, 'l', 174, view, viewport)).toHaveLength(1)
+    expect(tierTiles(config, 'l', 999, view, viewport)).toHaveLength(0)
   })
 })
 

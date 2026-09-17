@@ -55,21 +55,25 @@
    - `basic.isSingleLevel`：是否单层；21 关中 15 关有图层（2~8 个，如 map02_lv005 有 8 层、map01_lv001 有 7 层），base01/indie_dg005 等单层。
    - `tierNames`：`{ tierId → TextTable textId }`，已验证解析为「裂地者营哨/集成工业研究所二楼/顶楼/底部联通区/实验室通道/地下实验室/基地区二层」等（`TextTable[textId].id` → `/i18n/{locale}/{id}`）。
    - `tierInfos`：key = `{h块id}_tier_{tierId}`，value = `{ tierId, worldCenter, worldLeftBottom, worldRightTop }`，与 h 块网格对齐（128 世界单位）。同一世界区域可叠多层（如 map01_lv001 的 tier 114/115 同为 x:0~128、y:-512~-256，即同一建筑的二楼/顶楼）。
-2. **关键约束：无分层专用贴图**。已验证 map01_lv001 的 levelmapchunks 资源恰为 2×(80h+20m+6l)=212 个、无任何 tier 命名文件 —— 图层是叠加在同一底图上的逻辑层，靠「层高亮 + 按层过滤标记」表达。
+2. **更正（R3 返工）：分层专用贴图存在**。此前只统计了 `levelmapchunks` 目录，遗漏了独立的 `levelmaptiers` 目录，得出「无分层贴图」的错误结论。实测：
+   - `UILevelMapLoadConfig` 的 `lowChunks/mediumChunks/highChunks` 每个 chunk 都有 `tiers` 字段：`{ [tierId]: 贴图ID }`，例如 `h_map01_lv001_2_3.tiers = { "173": "h_map01_lv001_2_3_tier_173" }`；`tierInfos.tierLoadId` 即该贴图 ID。
+   - 贴图路径：`sprites/levelmap/levelmaptiers/{levelId 去下划线}/{贴图ID}.png`（`levelmaptiers`，非 `textures/levelmapchunks`）。已实测 `.../levelmaptiers/map01lv001/l_tier_173.png` 返回 200，600×600 含 alpha 的区域楼层贴图。
+   - 低/中档贴图 ID 为通用名（`l_tier_173` / `m_tier_173`，不含坐标），高档为 `h_{level}_{x}_{y}_tier_{tierId}`，均与 `chunk.tiers` 中的值一致。
+   - 资源搜索实测：全服共 16 个关卡、432 张分层贴图（map01lv001×29、map02lv008×61、dung01wrdg001×44 等），凡 `tiers.length>0` 的关卡基本都有对应贴图。
 3. **标记的层归属**：staticElements.`displayTierId`（0=全层显示，实测 288 个为 0、少数为具体 tierId）；`MapMarkTempTable.visibleLayer` ∈ {1,2,3}（疑为位掩码 1=主层/2=副层/3=全部，实现时先用 displayTierId 做静态元素过滤，visibleLayer 语义验证后再用于 POI 过滤）。
 4. `mistInfos`（迷雾）仍不在本期范围（PRD 明确不含迷雾）。
 
 ### 实现方案
 
-- **数据层**：`parseLevelMapConfig` 增加解析 tierNames/tierInfos → `LevelMapConfig.tiers: [{ tierId, name, rects: [{left,top,width,height}]（世界坐标换算 canvas 像素）}]`；单层关卡 tiers 为空。
+- **数据层**：`parseLevelMapConfig` 增加解析 tierNames/tierInfos → `LevelMapConfig.tiers: [{ tierId, name, rects: [{left,top,width,height}]（世界坐标换算 canvas 像素）}]`，并解析 `chunk.tiers`（tierId → 贴图 ID）；单层关卡 tiers 为空。
 - **UI**：新增 LayerPanel 图层切换器（画布右侧竖排列表，与标记面板可同侧上下排布），仅 `tiers.length > 0` 时显示；列表项 = 图层名（多语言），首项「全部图层」（默认选中，保持现状行为）。
 - **选中某图层时**：
-  1. MarkerLayer 过滤 —— 静态元素仅显示 `displayTierId===0 || ===activeTier` 者，POI 按 visibleLayer 语义过滤；
-  2. 底图高亮 —— 对该层 tierInfos 覆盖的 h 块矩形区域外的底图加半透明暗色蒙层（absolute div 阵列，rect 由 tierInfos bbox 直接换算，与瓦片渲染同一坐标系）；
+  1. 底图切层 —— 在 `chunk.tiers[activeTier]` 命中的 chunk 位置渲染 `levelmaptiers` 分层贴图（`tierTileUrl`，与瓦片同坐标系、同缩放，绝对定位，叠加在底图之上、标记之下，l/m/h 档各取该 chunk 对应档的贴图 ID）；不再使用「非本层暗色蒙层」；
+  2. MarkerLayer 过滤 —— 静态元素仅显示 `displayTierId===0 || ===activeTier` 者，POI 按 visibleLayer 语义过滤；
   3. 画布角标显示当前图层名。
 - type7 层间跳转标记保持现有跳关行为；可选增强：switchmask 图作为跳转区高亮。
 
-**验收**：map01_lv001 图层列表含 7 层且名称本土化；切层后标记数量变化、非本层区域变暗；单层关卡不出现图层面板；单元测试覆盖 tiers 解析（多层/单层/缺 tierInfos）；E2E 新增切层用例。
+**验收**：map01_lv001 图层列表含 7 层且名称本土化；切层后渲染该层分层贴图（`levelmaptiers`）且标记数量变化；单层关卡不出现图层面板；单元测试覆盖 tiers 解析（多层/单层/缺 tierInfos）与 chunk.tiers 贴图映射；E2E 新增切层用例（断言出现 tier 贴图 img）。
 
 ## 共性约束
 

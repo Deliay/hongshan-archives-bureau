@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { canvasSize, clampView, fitView, pickLod, tierMaskCells, zoomAt } from '../../lib/map/mapConfig'
+import { canvasSize, clampView, fitView, pickLod, zoomAt } from '../../lib/map/mapConfig'
 import type { LevelMapConfig, MapLod, MapMarker, MapView } from '../../lib/map/mapConfig'
 import TileLayer from './TileLayer'
+import TierLayer from './TierLayer'
 import MarkerLayer from './MarkerLayer'
 import ZoomControls from './ZoomControls'
 
@@ -164,13 +165,17 @@ export default function MapCanvas({ config, markers, regionIds, onSelectRegion, 
           <TileLayer key={prevLod} levelId={config.levelId} config={config} lod={prevLod} view={view} viewport={viewport} />
         )}
         <TileLayer key={lod} levelId={config.levelId} config={config} lod={lod} view={view} viewport={viewport} />
-        {activeTier !== null && tierMaskCells(config, activeTier).map((cell, index) => (
-          <div
-            key={index}
-            className="absolute bg-archive-ink/70 pointer-events-none"
-            style={{ left: cell.left, top: cell.top, width: cell.width, height: cell.height }}
+        {activeTier !== null && (
+          <TierLayer
+            key={`tier-${activeTier}`}
+            levelId={config.levelId}
+            config={config}
+            lod={lod}
+            tierId={activeTier}
+            view={view}
+            viewport={viewport}
           />
-        ))}
+        )}
         <MarkerLayer
           markers={markers}
           scale={view.scale}
