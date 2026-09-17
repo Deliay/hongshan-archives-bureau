@@ -36,6 +36,7 @@ function useModuleGroups() {
       desc: t('nav.geographyDesc'),
       modules: [
         { label: t('nav.areas'), path: '/archive/geography', desc: t('nav.areasDesc') },
+        { label: t('nav.map'), path: '/archive/map', desc: t('nav.mapDesc') },
       ],
     },
     {

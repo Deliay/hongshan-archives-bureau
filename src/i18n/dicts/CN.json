@@ -192,6 +192,8 @@
     "factoryDesc": "自动化生产线",
     "geography": "地理档案",
     "geographyDesc": "塔卫二区域与探索",
+    "map": "地图",
+    "mapDesc": "浏览各区域地图与地名标注",
     "items": "道具材料",
     "itemsDesc": "物资与收集品",
     "material": "物资档案",
@@ -407,6 +409,7 @@
     "fetchingTableEntry": "正在加载条目…",
     "fetchingMissionList": "正在调阅任务清单…",
     "fetchingMissionDetail": "正在调阅任务详情…",
+    "fetchingMapData": "正在加载地图数据…",
     "fetchingMissionBrief": "正在调阅任务摘要…",
     "fetchingTableIndex": "正在加载索引…",
     "fetchingText": "正在获取文本…",
@@ -499,5 +502,29 @@
     "voice": "剧情语音",
     "clear": "清空",
     "empty": "暂无播放内容"
+  },
+  "map": {
+    "groupOther": "其他区域",
+    "unavailable": "该区域地图暂不可用",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "zoomFit": "适配视图",
+    "gotoRegion": "前往{{name}}",
+    "layerPanelTitle": "图层",
+    "layerAll": "全部图层",
+    "layerDefault": "图层{{id}}",
+    "markerPanelTitle": "标记",
+    "markerGroupElements": "地图元素",
+    "markerGroupOther": "其他标记",
+    "markerSelectAll": "全选",
+    "markerClear": "清空",
+    "markerKind": {
+      "levelEntrance": "关卡入口",
+      "placeName": "地名",
+      "region": "区域",
+      "settlement": "定居点",
+      "tierSwitch": "层间通道",
+      "staticImage": "状态图"
+    }
   }
 }

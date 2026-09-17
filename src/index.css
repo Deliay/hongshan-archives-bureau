@@ -61,3 +61,42 @@ a {
 .animate-fade-in-up {
   animation: fade-in-up 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+
+.stroked-text {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.stroked-text__stroke,
+.stroked-text__fill {
+  display: inline-block;
+}
+
+.stroked-text__stroke {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  -webkit-text-stroke: 3px var(--color-archive-ink);
+}
+
+.stroked-text__fill {
+  position: relative;
+}
+
+@supports not (-webkit-text-stroke: 1px black) {
+  .stroked-text__stroke {
+    display: none;
+  }
+  .stroked-text__fill {
+    text-shadow:
+      1px 0 0 var(--color-archive-ink),
+      -1px 0 0 var(--color-archive-ink),
+      0 1px 0 var(--color-archive-ink),
+      0 -1px 0 var(--color-archive-ink),
+      1px 1px 0 var(--color-archive-ink),
+      -1px 1px 0 var(--color-archive-ink),
+      1px -1px 0 var(--color-archive-ink),
+      -1px -1px 0 var(--color-archive-ink);
+  }
+}

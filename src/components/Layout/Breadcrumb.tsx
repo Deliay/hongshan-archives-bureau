@@ -11,6 +11,7 @@ function useListLabel(): Record<string, string> {
     races: t('nav.races'),
     factions: t('nav.factions'),
     geography: t('nav.areas'),
+    map: t('nav.map'),
     enemies: t('nav.enemies'),
     equipment: t('nav.equipment'),
     items: t('nav.items'),

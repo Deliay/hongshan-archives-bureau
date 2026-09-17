@@ -192,6 +192,8 @@
     "factoryDesc": "Автоматизированные производственные линии",
     "geography": "Географические дела",
     "geographyDesc": "Регионы и исследования Талос-II",
+    "map": "Карта",
+    "mapDesc": "Просмотр карт регионов и меток с названиями мест",
     "items": "Дела о предметах",
     "itemsDesc": "Материалы и коллекционные предметы",
     "material": "Материальные дела",
@@ -407,6 +409,7 @@
     "fetchingTableEntry": "Загрузка записи…",
     "fetchingMissionList": "Загрузка списка заданий…",
     "fetchingMissionDetail": "Загрузка деталей задания…",
+    "fetchingMapData": "Загрузка данных карты…",
     "fetchingMissionBrief": "Загрузка краткого описания заданий…",
     "fetchingTableIndex": "Загрузка индекса…",
     "fetchingText": "Получение текста…",
@@ -499,5 +502,29 @@
     "voice": "Голос сюжета",
     "clear": "Очистить",
     "empty": "Ничего не воспроизводится"
+  },
+  "map": {
+    "groupOther": "Прочие регионы",
+    "unavailable": "Карта этого региона сейчас недоступна",
+    "zoomIn": "Увеличить",
+    "zoomOut": "Уменьшить",
+    "zoomFit": "По размеру",
+    "gotoRegion": "Перейти к {{name}}",
+    "layerPanelTitle": "Слои",
+    "layerAll": "Все слои",
+    "layerDefault": "Слой {{id}}",
+    "markerPanelTitle": "Маркеры",
+    "markerGroupElements": "Элементы карты",
+    "markerGroupOther": "Прочие маркеры",
+    "markerSelectAll": "Выбрать все",
+    "markerClear": "Очистить",
+    "markerKind": {
+      "levelEntrance": "Вход на уровень",
+      "placeName": "Название места",
+      "region": "Регион",
+      "settlement": "Поселение",
+      "tierSwitch": "Межслойный проход",
+      "staticImage": "Изображение состояния"
+    }
   }
 }
