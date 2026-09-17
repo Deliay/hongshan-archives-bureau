@@ -25,6 +25,24 @@ test.describe('地图浏览器 (Map Viewer)', () => {
     await expect(page.locator('[data-testid="map-plane"] img').first()).not.toHaveAttribute('src', before ?? '', { timeout: 30000 })
   })
 
+  test('边缘非整块瓦片按真实世界范围渲染而非拉伸为正方形', async ({ page }) => {
+    await page.goto('/archive/map', { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('[data-testid="map-plane"] img').first()).toBeVisible({ timeout: 30000 })
+    await page.locator('[data-testid="map-region-item"][data-level-id="map01_lv001"]').click()
+    await expect.poll(async () => {
+      const dims = await page.locator('[data-testid="map-plane"] img').evaluateAll((els) =>
+        els.map((el) => {
+          const img = el as HTMLImageElement
+          return `${img.style.width}x${img.style.height}`
+        }),
+      )
+      return dims.some((dim) => {
+        const [w, h] = dim.split('x')
+        return w !== h
+      })
+    }, { timeout: 30000 }).toBe(true)
+  })
+
   test('滚轮缩放与拖拽改变视图变换', async ({ page }) => {
     await page.goto('/archive/map', { waitUntil: 'domcontentloaded' })
     const plane = page.getByTestId('map-plane')

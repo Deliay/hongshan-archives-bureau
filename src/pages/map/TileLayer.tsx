@@ -21,7 +21,7 @@ export default function TileLayer({ levelId, config, lod, view, viewport }: Tile
     <>
       {chunks.map((chunk) => {
         if (failed.has(chunk.chunkId)) return null
-        const rect = chunkRect(config, chunk, lod)
+        const rect = chunkRect(config, chunk)
         return (
           <img
             key={chunk.chunkId}
@@ -29,7 +29,7 @@ export default function TileLayer({ levelId, config, lod, view, viewport }: Tile
             alt=""
             draggable={false}
             className="absolute select-none pointer-events-none max-w-none"
-            style={{ left: rect.left, top: rect.top, width: rect.size, height: rect.size }}
+            style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
             onError={() =>
               setFailed((prev) => {
                 const next = new Set(prev)

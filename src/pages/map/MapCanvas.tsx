@@ -100,7 +100,7 @@ export default function MapCanvas({ config, markers, regionIds, onSelectRegion }
   }
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return
+    if (event.button !== 0 || dragRef.current) return
     if ((event.target as HTMLElement).closest('button')) return
     event.currentTarget.setPointerCapture(event.pointerId)
     dragRef.current = { x: event.clientX, y: event.clientY, offsetX: view.offsetX, offsetY: view.offsetY }
@@ -137,7 +137,7 @@ export default function MapCanvas({ config, markers, regionIds, onSelectRegion }
     <div
       ref={containerRef}
       data-testid="map-canvas"
-      className={`relative flex-1 min-w-0 min-h-0 overflow-hidden bg-archive-ink select-none ${
+      className={`relative flex-1 min-w-0 min-h-0 overflow-hidden bg-archive-ink select-none touch-none ${
         dragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
       onPointerDown={handlePointerDown}
@@ -158,7 +158,7 @@ export default function MapCanvas({ config, markers, regionIds, onSelectRegion }
           transformOrigin: '0 0',
         }}
       >
-        {prevLod && (
+        {prevLod && prevLod !== lod && (
           <TileLayer key={prevLod} levelId={config.levelId} config={config} lod={prevLod} view={view} viewport={viewport} />
         )}
         <TileLayer key={lod} levelId={config.levelId} config={config} lod={lod} view={view} viewport={viewport} />

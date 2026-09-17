@@ -106,14 +106,15 @@ function worldXForCanvas(canvasX: number): number {
   return -896 + canvasX / PIXELS_PER_UNIT
 }
 
-function hChunkAt(id: string, canvasLeft: number, canvasTop: number): MapChunk {
+function hChunkAt(id: string, canvasLeft: number, canvasTop: number, worldWidth = 128, worldHeight = 128): MapChunk {
   const rty = 256 - canvasTop / PIXELS_PER_UNIT
+  const lbx = worldXForCanvas(canvasLeft)
   return {
     chunkId: id,
     x: 1,
     y: 1,
-    worldLeftBottom: { x: worldXForCanvas(canvasLeft), y: rty - 128 },
-    worldRightTop: { x: worldXForCanvas(canvasLeft + 600), y: rty },
+    worldLeftBottom: { x: lbx, y: rty - worldHeight },
+    worldRightTop: { x: lbx + worldWidth, y: rty },
   }
 }
 
@@ -194,7 +195,33 @@ describe('canvasSize / lodTileSize / chunkRect', () => {
 
   it('anchors the first low chunk at the top-left of the covered area', () => {
     const first = config.chunks.l[0]
-    expect(chunkRect(config, first, 'l')).toEqual({ left: 0, top: 2400, size: 2400 })
+    expect(chunkRect(config, first)).toEqual({ left: 0, top: 2400, width: 2400, height: 2400 })
+  })
+
+  it('sizes partial edge chunks by their real world extent (no square stretch)', () => {
+    const config = emptyConfig({})
+    const partial = hChunkAt('partial', 0, 4200, 256, 512)
+    const rect = chunkRect(config, partial)
+    expect(rect.left).toBeCloseTo(0)
+    expect(rect.width).toBeCloseTo(1200)
+    expect(rect.height).toBeCloseTo(2400)
+  })
+
+  it('keeps fractional chunk extents proportional', () => {
+    const config = emptyConfig({
+      worldRect: { left: -1792, bottom: -512, right: -1408, top: -128 },
+      chunks: { l: [], m: [], h: [] },
+    })
+    const fractional: MapChunk = {
+      chunkId: 'l_indie_dg005_1_1',
+      x: 1,
+      y: 1,
+      worldLeftBottom: { x: -1792, y: -512 },
+      worldRightTop: { x: -1406.3, y: -126.3 },
+    }
+    const rect = chunkRect(config, fractional)
+    expect(rect.width).toBeCloseTo(385.7 * PIXELS_PER_UNIT)
+    expect(rect.height).toBeCloseTo(385.7 * PIXELS_PER_UNIT)
   })
 })
 

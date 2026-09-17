@@ -142,11 +142,12 @@ export function lodTileSize(lod: MapLod): number {
   return LOD_WORLD_UNITS[lod] * PIXELS_PER_UNIT
 }
 
-export function chunkRect(config: LevelMapConfig, chunk: MapChunk, lod: MapLod): { left: number; top: number; size: number } {
+export function chunkRect(config: LevelMapConfig, chunk: MapChunk): { left: number; top: number; width: number; height: number } {
   return {
     left: (chunk.worldLeftBottom.x - config.worldRect.left) * PIXELS_PER_UNIT,
     top: (config.worldRect.top - chunk.worldRightTop.y) * PIXELS_PER_UNIT,
-    size: lodTileSize(lod),
+    width: (chunk.worldRightTop.x - chunk.worldLeftBottom.x) * PIXELS_PER_UNIT,
+    height: (chunk.worldRightTop.y - chunk.worldLeftBottom.y) * PIXELS_PER_UNIT,
   }
 }
 
@@ -174,12 +175,12 @@ export function visibleChunks(
   const right = left + viewport.width / view.scale
   const bottom = top + viewport.height / view.scale
   return chunks.filter((chunk) => {
-    const rect = chunkRect(config, chunk, lod)
+    const rect = chunkRect(config, chunk)
     return (
       rect.left < right + size &&
-      rect.left + size > left - size &&
+      rect.left + rect.width > left - size &&
       rect.top < bottom + size &&
-      rect.top + size > top - size
+      rect.top + rect.height > top - size
     )
   })
 }
