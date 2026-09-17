@@ -70,12 +70,14 @@
 - **数据层**：`parseLevelMapConfig` 增加解析 tierNames/tierInfos → `LevelMapConfig.tiers: [{ tierId, name, rects: [{left,top,width,height}]（世界坐标换算 canvas 像素）}]`，并解析 `chunk.tiers`（tierId → 贴图 ID）；单层关卡 tiers 为空。
 - **UI**：新增 LayerPanel 图层切换器（画布右侧竖排列表，与标记面板可同侧上下排布），仅 `tiers.length > 0` 时显示；列表项 = 图层名（多语言），首项「全部图层」（默认选中，保持现状行为）。
 - **选中某图层时**：
-  1. 底图切层 —— l/m/h 档按 `chunk.tiers[activeTier]` 收集当前档该层的贴图 ID，**按 textureId 去重**后渲染 `levelmaptiers` 分层贴图（`tierTileUrl`，与瓦片同坐标系、同缩放，绝对定位，叠加在底图之上、标记之下）。贴图矩形取自 `tierInfos[tierLoadId]`（l/m 档为「一张 tier 一图」，rect 远小于 chunk 且可跨 chunk；h 档贴图按 chunk 命名、其 tierInfos rect 恰等于 128 单位 chunk 矩形），缺失条目回退 `chunkRect`；不再使用「非本层暗色蒙层」；
-  2. MarkerLayer 过滤 —— 静态元素仅显示 `displayTierId===0 || ===activeTier` 者，POI 按 visibleLayer 语义过滤；
-  3. 画布角标显示当前图层名。
+  1. 底图切层 —— l/m/h 档按 `chunk.tiers[activeTier]` 收集当前档该层的贴图 ID，**按 textureId 去重**后渲染 `levelmaptiers` 分层贴图（`tierTileUrl`，与瓦片同坐标系、同缩放，绝对定位，叠加在底图之上、标记之下）。贴图矩形取自 `tierInfos[tierLoadId]`（l/m 档为「一张 tier 一图」，rect 远小于 chunk 且可跨 chunk；h 档贴图按 chunk 命名、其 tierInfos rect 恰等于 128 单位 chunk 矩形），缺失条目回退 `chunkRect`；
+  2. 非本层暗色蒙层 —— **分层贴图与非本层暗色蒙层并存**：在底图之上、分层贴图/标记之下，对当前 tier 的 `tiers[].rects`（canvas 像素）覆盖区域之外的底图叠加半透明暗色遮罩（`complementRects` 精确矩形补集，`rgba(0,0,0,.55)`）；切回「全部图层」时移除；
+  3. 选层缩放居中 —— 选中某图层时取该层 rects 的包围盒，`tierFitView` 以 5% padding 计算 `scale = min(vw·0.9/bboxW, vh·0.9/bboxH)` 并 clamp 到 `[minScale, maxScale]`，offset 使包围盒中心对准视口中心，最后过 `clampView`；切回「全部图层」恢复全图 `fitView`；
+   4. MarkerLayer 过滤 —— 静态元素仅显示 `displayTierId===0 || ===activeTier` 者，POI 按 visibleLayer 语义过滤；
+   5. 画布角标显示当前图层名。
 - type7 层间跳转标记保持现有跳关行为；可选增强：switchmask 图作为跳转区高亮。
 
-**验收**：map01_lv001 图层列表含 7 层且名称本土化；切层后渲染该层分层贴图（`levelmaptiers`）且标记数量变化；单层关卡不出现图层面板；单元测试覆盖 tiers 解析（多层/单层/缺 tierInfos）与 chunk.tiers 贴图映射；E2E 新增切层用例（断言出现 tier 贴图 img）。
+**验收**：map01_lv001 图层列表含 7 层且名称本土化；切层后渲染该层分层贴图（`levelmaptiers`）、非本层出现暗色蒙层、视图缩放居中适配该层包围盒且标记数量变化；切回「全部图层」恢复全图并移除贴图与蒙层；单层关卡不出现图层面板；单元测试覆盖 tiers 解析（多层/单层/缺 tierInfos）、chunk.tiers 贴图映射、`complementRects` 与 `tierFitView`；E2E 新增切层用例（断言 tier 贴图 img、蒙层与 transform 变化）。
 
 ## 共性约束
 

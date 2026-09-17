@@ -409,6 +409,67 @@ export function adaptPoiMarkers(config: LevelMapConfig, levelId: string, sources
   return markers
 }
 
+export function complementRects(width: number, height: number, holes: TierRect[]): TierRect[] {
+  let rects: TierRect[] = [{ left: 0, top: 0, width, height }]
+  for (const hole of holes) {
+    const next: TierRect[] = []
+    for (const rect of rects) {
+      const rl = rect.left
+      const rt = rect.top
+      const rr = rect.left + rect.width
+      const rb = rect.top + rect.height
+      const hl = hole.left
+      const ht = hole.top
+      const hr = hole.left + hole.width
+      const hb = hole.top + hole.height
+      if (hr <= rl || hl >= rr || hb <= rt || ht >= rb) {
+        next.push(rect)
+        continue
+      }
+      if (ht > rt) next.push({ left: rl, top: rt, width: rect.width, height: ht - rt })
+      if (hb < rb) next.push({ left: rl, top: hb, width: rect.width, height: rb - hb })
+      const midTop = Math.max(rt, ht)
+      const midBottom = Math.min(rb, hb)
+      if (hl > rl) next.push({ left: rl, top: midTop, width: hl - rl, height: midBottom - midTop })
+      if (hr < rr) next.push({ left: hr, top: midTop, width: rr - hr, height: midBottom - midTop })
+    }
+    rects = next
+  }
+  return rects.filter((rect) => rect.width > 0 && rect.height > 0)
+}
+
+export function tierFitView(
+  rects: TierRect[],
+  viewport: { width: number; height: number },
+  options: { minScale: number; maxScale: number; padding?: number },
+): MapView | null {
+  if (rects.length === 0 || viewport.width <= 0 || viewport.height <= 0) return null
+  let left = Infinity
+  let top = Infinity
+  let right = -Infinity
+  let bottom = -Infinity
+  for (const rect of rects) {
+    left = Math.min(left, rect.left)
+    top = Math.min(top, rect.top)
+    right = Math.max(right, rect.left + rect.width)
+    bottom = Math.max(bottom, rect.top + rect.height)
+  }
+  const bboxW = right - left
+  const bboxH = bottom - top
+  if (bboxW <= 0 || bboxH <= 0) return null
+  const padding = options.padding ?? 0.05
+  const raw = Math.min(
+    (viewport.width * (1 - 2 * padding)) / bboxW,
+    (viewport.height * (1 - 2 * padding)) / bboxH,
+  )
+  const scale = Math.min(options.maxScale, Math.max(options.minScale, raw))
+  return {
+    scale,
+    offsetX: viewport.width / 2 - (left + bboxW / 2) * scale,
+    offsetY: viewport.height / 2 - (top + bboxH / 2) * scale,
+  }
+}
+
 export interface TierTile extends TierRect {
   chunkId: string
   textureId: string

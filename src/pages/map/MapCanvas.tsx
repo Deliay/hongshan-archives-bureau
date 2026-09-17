@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { canvasSize, clampView, fitView, pickLod, zoomAt } from '../../lib/map/mapConfig'
+import { canvasSize, clampView, fitView, pickLod, tierFitView, zoomAt } from '../../lib/map/mapConfig'
 import type { LevelMapConfig, MapLod, MapMarker, MapView } from '../../lib/map/mapConfig'
 import TileLayer from './TileLayer'
 import TierLayer from './TierLayer'
+import TierMask from './TierMask'
 import MarkerLayer from './MarkerLayer'
 import ZoomControls from './ZoomControls'
 
@@ -67,6 +68,23 @@ export default function MapCanvas({ config, markers, regionIds, onSelectRegion, 
   }, [config.levelId, canvas.width, canvas.height, viewport.width, viewport.height])
 
   const lod = pickLod(view.scale)
+
+  const prevTierRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!viewport.width || !viewport.height) return
+    if (prevTierRef.current === activeTier) return
+    prevTierRef.current = activeTier
+    if (activeTier !== null) {
+      const tier = config.tiers.find((t) => t.tierId === activeTier)
+      const fitted = tier ? tierFitView(tier.rects, viewport, { minScale, maxScale }) : null
+      if (fitted) {
+        setView(clampView(fitted, canvas.width, canvas.height, viewport.width, viewport.height))
+        return
+      }
+    }
+    setView(fitView(canvas.width, canvas.height, viewport.width, viewport.height))
+  }, [activeTier, config, canvas.width, canvas.height, viewport, minScale, maxScale])
 
   useEffect(() => {
     const previous = prevLodRef.current
@@ -165,6 +183,7 @@ export default function MapCanvas({ config, markers, regionIds, onSelectRegion, 
           <TileLayer key={prevLod} levelId={config.levelId} config={config} lod={prevLod} view={view} viewport={viewport} />
         )}
         <TileLayer key={lod} levelId={config.levelId} config={config} lod={lod} view={view} viewport={viewport} />
+        {activeTier !== null && <TierMask config={config} tierId={activeTier} />}
         {activeTier !== null && (
           <TierLayer
             key={`tier-${activeTier}`}

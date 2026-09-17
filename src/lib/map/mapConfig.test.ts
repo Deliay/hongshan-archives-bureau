@@ -18,6 +18,8 @@ import {
   adaptPoiMarkers,
   tierTiles,
   tierTileUrl,
+  complementRects,
+  tierFitView,
   markIconUrl,
   staticElementImageUrl,
   MARKER_MIN_LOD,
@@ -575,6 +577,57 @@ describe('chunk.tiers parsing and tier tiles', () => {
     const hTiles = tierTiles(config, 'h', 173, { scale: 1, offsetX: 0, offsetY: -1800 }, viewport)
     expect(hTiles).toHaveLength(1)
     expect(hTiles[0].width).toBeCloseTo(128 * PIXELS_PER_UNIT)
+  })
+})
+
+describe('complementRects', () => {
+  it('splits a canvas around a single rectangular hole', () => {
+    const rects = complementRects(100, 100, [{ left: 20, top: 30, width: 40, height: 50 }])
+    const area = rects.reduce((sum, rect) => sum + rect.width * rect.height, 0)
+    expect(area).toBeCloseTo(100 * 100 - 40 * 50)
+    const coversHole = rects.some((rect) => rect.left <= 20 && rect.top <= 30 && rect.left + rect.width >= 60 && rect.top + rect.height >= 80)
+    expect(coversHole).toBe(false)
+  })
+
+  it('handles multiple and overlapping holes without covering them', () => {
+    const holes = [
+      { left: 10, top: 10, width: 30, height: 30 },
+      { left: 25, top: 25, width: 30, height: 30 },
+    ]
+    const rects = complementRects(100, 100, holes)
+    for (const rect of rects) {
+      const overlaps = holes.some((hole) => rect.left < hole.left + hole.width && rect.left + rect.width > hole.left && rect.top < hole.top + hole.height && rect.top + rect.height > hole.top)
+      expect(overlaps).toBe(false)
+    }
+  })
+
+  it('returns the whole canvas when there are no holes', () => {
+    expect(complementRects(100, 50, [])).toEqual([{ left: 0, top: 0, width: 100, height: 50 }])
+  })
+})
+
+describe('tierFitView', () => {
+  const rects = [{ left: 1000, top: 400, width: 200, height: 400 }]
+
+  it('centers the tier bounding box and applies padding', () => {
+    const view = tierFitView(rects, { width: 1000, height: 800 }, { minScale: 0.1, maxScale: 2 })
+    expect(view).not.toBeNull()
+    // scale = min(1000*0.9/200, 800*0.9/400) = min(4.5, 1.8) = 1.8
+    expect(view!.scale).toBeCloseTo(1.8)
+    expect(view!.offsetX).toBeCloseTo(500 - 1100 * 1.8)
+    expect(view!.offsetY).toBeCloseTo(400 - 600 * 1.8)
+  })
+
+  it('clamps the scale into the allowed range', () => {
+    const small = tierFitView([{ left: 0, top: 0, width: 10, height: 10 }], { width: 1000, height: 800 }, { minScale: 0.2, maxScale: 1 })
+    expect(small!.scale).toBe(1)
+    const large = tierFitView([{ left: 0, top: 0, width: 10000, height: 10000 }], { width: 1000, height: 800 }, { minScale: 0.3, maxScale: 1 })
+    expect(large!.scale).toBe(0.3)
+  })
+
+  it('returns null for empty rects or viewport', () => {
+    expect(tierFitView([], { width: 100, height: 100 }, { minScale: 0.1, maxScale: 1 })).toBeNull()
+    expect(tierFitView(rects, { width: 0, height: 100 }, { minScale: 0.1, maxScale: 1 })).toBeNull()
   })
 })
 
