@@ -87,16 +87,23 @@ test.describe('地图浏览器 (Map Viewer)', () => {
     // 无角标（全部图层）
     await expect(page.getByTestId('active-layer-badge')).toHaveCount(0)
 
+    const plane = page.getByTestId('map-plane')
+    const beforeStyle = await plane.getAttribute('style')
     await page.getByTestId('layer-item').nth(1).click()
     await expect(page.getByTestId('active-layer-badge')).toBeVisible()
     // 选中图层后渲染该层的分层贴图（levelmaptiers 目录）
     const tierTile = page.locator('[data-testid="map-tier-tile"]').first()
     await expect(tierTile).toBeVisible({ timeout: 30000 })
     await expect(tierTile).toHaveAttribute('src', /levelmaptiers/)
+    // 非本层暗色蒙层存在
+    await expect(page.getByTestId('tier-mask').first()).toBeVisible()
+    // 视图缩放并居中（transform 变化）
+    await expect.poll(async () => plane.getAttribute('style'), { timeout: 10000 }).not.toBe(beforeStyle)
 
-    // 切回「全部图层」后隐藏分层贴图
+    // 切回「全部图层」后隐藏分层贴图与蒙层
     await page.locator('[data-testid="layer-item"][data-tier-id="all"]').click()
     await expect(page.getByTestId('map-tier-tile')).toHaveCount(0)
+    await expect(page.getByTestId('tier-mask')).toHaveCount(0)
   })
 
   test('标记面板可切换静态标记与 POI 显隐', async ({ page }) => {
