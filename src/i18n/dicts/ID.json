@@ -509,6 +509,22 @@
     "zoomIn": "Perbesar",
     "zoomOut": "Perkecil",
     "zoomFit": "Sesuaikan tampilan",
-    "gotoRegion": "Buka {{name}}"
+    "gotoRegion": "Buka {{name}}",
+    "layerPanelTitle": "Lapisan",
+    "layerAll": "Semua lapisan",
+    "layerDefault": "Lapisan {{id}}",
+    "markerPanelTitle": "Penanda",
+    "markerGroupElements": "Elemen peta",
+    "markerGroupOther": "Penanda lain",
+    "markerSelectAll": "Pilih semua",
+    "markerClear": "Hapus",
+    "markerKind": {
+      "levelEntrance": "Pintu level",
+      "placeName": "Nama tempat",
+      "region": "Wilayah",
+      "settlement": "Permukiman",
+      "tierSwitch": "Jalur antar lapisan",
+      "staticImage": "Gambar status"
+    }
   }
 }

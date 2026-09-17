@@ -509,6 +509,22 @@
     "zoomIn": "放大",
     "zoomOut": "縮小",
     "zoomFit": "適配視圖",
-    "gotoRegion": "前往{{name}}"
+    "gotoRegion": "前往{{name}}",
+    "layerPanelTitle": "圖層",
+    "layerAll": "全部圖層",
+    "layerDefault": "圖層{{id}}",
+    "markerPanelTitle": "標記",
+    "markerGroupElements": "地圖元素",
+    "markerGroupOther": "其他標記",
+    "markerSelectAll": "全選",
+    "markerClear": "清空",
+    "markerKind": {
+      "levelEntrance": "關卡入口",
+      "placeName": "地名",
+      "region": "區域",
+      "settlement": "定居點",
+      "tierSwitch": "層間通道",
+      "staticImage": "狀態圖"
+    }
   }
 }

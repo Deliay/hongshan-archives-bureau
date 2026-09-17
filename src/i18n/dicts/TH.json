@@ -509,6 +509,22 @@
     "zoomIn": "ขยาย",
     "zoomOut": "ย่อ",
     "zoomFit": "พอดีหน้าจอ",
-    "gotoRegion": "ไปที่ {{name}}"
+    "gotoRegion": "ไปที่ {{name}}",
+    "layerPanelTitle": "เลเยอร์",
+    "layerAll": "เลเยอร์ทั้งหมด",
+    "layerDefault": "เลเยอร์ {{id}}",
+    "markerPanelTitle": "หมุด",
+    "markerGroupElements": "องค์ประกอบแผนที่",
+    "markerGroupOther": "หมุดอื่น ๆ",
+    "markerSelectAll": "เลือกทั้งหมด",
+    "markerClear": "ล้าง",
+    "markerKind": {
+      "levelEntrance": "ทางเข้าด่าน",
+      "placeName": "ชื่อสถานที่",
+      "region": "ภูมิภาค",
+      "settlement": "ถิ่นฐาน",
+      "tierSwitch": "ทางเชื่อมชั้น",
+      "staticImage": "ภาพสถานะ"
+    }
   }
 }

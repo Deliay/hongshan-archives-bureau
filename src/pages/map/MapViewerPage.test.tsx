@@ -38,6 +38,7 @@ function fakeConfig(levelId: string): LevelMapConfig {
       h: [{ chunkId: `h_${levelId}`, x: 1, y: 1, worldLeftBottom: { x: 0, y: 0 }, worldRightTop: { x: 128, y: 128 } }],
     },
     staticElements: [],
+    tiers: [],
   }
 }
 
@@ -61,7 +62,7 @@ beforeEach(() => {
   } as unknown as typeof ResizeObserver
   mockRegionList.mockReturnValue({ data: GROUPS, loading: false, error: null, refetch: vi.fn() })
   mockMapConfig.mockImplementation((levelId) => ({
-    data: levelId ? { config: fakeConfig(levelId), markers: [] } : null,
+    data: levelId ? { config: fakeConfig(levelId), markers: [], tiers: [] } : null,
     loading: false,
     error: null,
     refetch: vi.fn(),
@@ -97,7 +98,7 @@ describe('MapViewerPage', () => {
   it('shows an unavailable placeholder when no high-resolution chunks exist', async () => {
     mockMapConfig.mockImplementation((levelId) => ({
       data: levelId
-        ? { config: { ...fakeConfig(levelId), chunks: { l: [], m: [], h: [] } }, markers: [] }
+        ? { config: { ...fakeConfig(levelId), chunks: { l: [], m: [], h: [] } }, markers: [], tiers: [] }
         : null,
       loading: false,
       error: null,

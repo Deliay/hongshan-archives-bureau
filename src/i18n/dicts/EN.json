@@ -509,6 +509,22 @@
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "zoomFit": "Fit view",
-    "gotoRegion": "Go to {{name}}"
+    "gotoRegion": "Go to {{name}}",
+    "layerPanelTitle": "Layers",
+    "layerAll": "All layers",
+    "layerDefault": "Layer {{id}}",
+    "markerPanelTitle": "Markers",
+    "markerGroupElements": "Map elements",
+    "markerGroupOther": "Other markers",
+    "markerSelectAll": "Select all",
+    "markerClear": "Clear",
+    "markerKind": {
+      "levelEntrance": "Level entrance",
+      "placeName": "Place name",
+      "region": "Region",
+      "settlement": "Settlement",
+      "tierSwitch": "Tier passage",
+      "staticImage": "Status image"
+    }
   }
 }

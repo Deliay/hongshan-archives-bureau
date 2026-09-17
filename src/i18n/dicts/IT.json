@@ -509,6 +509,22 @@
     "zoomIn": "Zoom avanti",
     "zoomOut": "Zoom indietro",
     "zoomFit": "Adatta vista",
-    "gotoRegion": "Vai a {{name}}"
+    "gotoRegion": "Vai a {{name}}",
+    "layerPanelTitle": "Livelli",
+    "layerAll": "Tutti i livelli",
+    "layerDefault": "Livello {{id}}",
+    "markerPanelTitle": "Indicatori",
+    "markerGroupElements": "Elementi mappa",
+    "markerGroupOther": "Altri indicatori",
+    "markerSelectAll": "Seleziona tutto",
+    "markerClear": "Cancella",
+    "markerKind": {
+      "levelEntrance": "Ingresso livello",
+      "placeName": "Nome luogo",
+      "region": "Regione",
+      "settlement": "Insediamento",
+      "tierSwitch": "Passaggio tra livelli",
+      "staticImage": "Immagine di stato"
+    }
   }
 }

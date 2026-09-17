@@ -17,7 +17,7 @@ import { adaptFactoryRecipe, adaptFactoryMachine, adaptFactorySources } from '..
 import { buildChainGraph } from '../lib/factory/chain'
 import { getFactoryRegion } from '../lib/factory/regions'
 import type { ResolveContext } from '../lib/baker'
-import { parseLevelMapConfig, adaptStaticElements } from '../lib/map/mapConfig'
+import { parseLevelMapConfig, adaptStaticElements, adaptPoiMarkers } from '../lib/map/mapConfig'
 import type { LevelMapConfig, MapMarker } from '../lib/map/mapConfig'
 
 // AttributeType enum name → blackboard key (from TianShiTools Attributes.cs)
@@ -1835,11 +1835,24 @@ export function useMapRegionList(): UseDataResult<MapRegionGroup[]> {
   }, [locale])
 }
 
-export function useMapConfig(levelId: string | null): UseDataResult<{ config: LevelMapConfig; markers: MapMarker[] } | null> {
+export interface MapTierView {
+  tierId: number
+  name: string
+}
+
+export function useMapConfig(levelId: string | null): UseDataResult<{
+  config: LevelMapConfig
+  markers: MapMarker[]
+  tiers: MapTierView[]
+} | null> {
   const { locale } = useLocale()
+  const { t } = useI18n()
   return useData(async () => {
     if (!levelId) return null
-    const [raw, textRaw, textI18n, settlementRaw, settlementI18n, levelRaw, levelI18n] = await Promise.all([
+    const [
+      raw, textRaw, textI18n, settlementRaw, settlementI18n, levelRaw, levelI18n,
+      markInsRaw, markTempRaw, markTypeRaw, markCatRaw, markTempI18n, markTypeI18n, markCatI18n,
+    ] = await Promise.all([
       getCachedData<Record<string, any>>(`UILevelMapLoadConfig_${levelId}`, () => fetchJsonDataRaw(`Data/Json/UILevelMapLoadConfig/${levelId}.json`)),
       getCachedData<Record<string, any>>('TextTable', () => fetchTableAll('TextTable').catch(() => ({}))),
       getTableI18nDict('TextTable', locale).catch(() => ({}) as Record<string, string>),
@@ -1847,16 +1860,44 @@ export function useMapConfig(levelId: string | null): UseDataResult<{ config: Le
       getTableI18nDict('SettlementBasicDataTable', locale).catch(() => ({}) as Record<string, string>),
       getCachedData<Record<string, any>>('LevelDescTable', () => fetchTableAll('LevelDescTable').catch(() => ({}))),
       getTableI18nDict('LevelDescTable', locale).catch(() => ({}) as Record<string, string>),
+      getCachedData<Record<string, any>>('MapMarkInsTable', () => fetchTableAll('MapMarkInsTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('MapMarkTempTable', () => fetchTableAll('MapMarkTempTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('MapMarkTypeTable', () => fetchTableAll('MapMarkTypeTable').catch(() => ({}))),
+      getCachedData<Record<string, any>>('MapMarkCategoryTable', () => fetchTableAll('MapMarkCategoryTable').catch(() => ({}))),
+      getTableI18nDict('MapMarkTempTable', locale).catch(() => ({}) as Record<string, string>),
+      getTableI18nDict('MapMarkTypeTable', locale).catch(() => ({}) as Record<string, string>),
+      getTableI18nDict('MapMarkCategoryTable', locale).catch(() => ({}) as Record<string, string>),
     ])
     if (!raw) return null
     const config = parseLevelMapConfig(levelId, raw)
-    const markers = adaptStaticElements(config, {
-      textTable: textRaw,
-      textDict: textI18n,
-      settlementTable: settlementRaw,
-      settlementDict: settlementI18n,
-      regionName: (id) => resolveI18n(levelRaw?.[id]?.showName, levelI18n) || id,
-    })
-    return { config, markers }
+    const resolveText = (textId?: string): string => {
+      if (!textId) return ''
+      const entry = textRaw?.[textId]
+      if (!entry || entry.id === undefined || entry.id === null) return ''
+      return textI18n?.[String(entry.id)] ?? ''
+    }
+    const markers = [
+      ...adaptStaticElements(config, {
+        textTable: textRaw,
+        textDict: textI18n,
+        settlementTable: settlementRaw,
+        settlementDict: settlementI18n,
+        regionName: (id) => resolveI18n(levelRaw?.[id]?.showName, levelI18n) || id,
+      }),
+      ...adaptPoiMarkers(config, levelId, {
+        insRaw: markInsRaw,
+        tempRaw: markTempRaw,
+        typeRaw: markTypeRaw,
+        categoryRaw: markCatRaw,
+        tempDict: markTempI18n,
+        typeDict: markTypeI18n,
+        categoryDict: markCatI18n,
+      }),
+    ]
+    const tiers: MapTierView[] = config.tiers.map((tier) => ({
+      tierId: tier.tierId,
+      name: resolveText(tier.textId) || t('map.layerDefault', { id: tier.tierId }),
+    }))
+    return { config, markers, tiers }
   }, [locale, levelId])
 }

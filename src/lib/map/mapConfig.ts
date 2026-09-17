@@ -9,7 +9,7 @@ export const PIXELS_PER_UNIT = TILE_PIXELS / LOD_WORLD_UNITS.h
 export const LOD_ORDER: Record<MapLod, number> = { l: 0, m: 1, h: 2 }
 
 const LOD_TYPE: Record<MapLod, number> = { l: 0, m: 1, h: 2 }
-const VALID_TYPES = new Set([1, 2, 3, 4, 6, 7])
+const VALID_TYPES = new Set([1, 2, 3, 4, 5, 6, 7, 8])
 
 export interface LevelMapConfig {
   levelId: string
@@ -17,6 +17,20 @@ export interface LevelMapConfig {
   inverseXZ: boolean
   chunks: Record<MapLod, MapChunk[]>
   staticElements: StaticMapElement[]
+  tiers: MapTier[]
+}
+
+export interface TierRect {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+export interface MapTier {
+  tierId: number
+  textId?: string
+  rects: TierRect[]
 }
 
 export interface MapChunk {
@@ -29,13 +43,16 @@ export interface MapChunk {
 
 export interface StaticMapElement {
   id: string
-  type: 1 | 2 | 3 | 4 | 6 | 7
+  type: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
   position: { x: number; z: number }
   textId?: string
   targetLevelId?: string
   directionAngle?: number
   settlementId?: string
   isPermanent?: boolean
+  displayTierId: number
+  defaultVisible: boolean
+  defaultImgPath?: string
 }
 
 export interface MapView {
@@ -44,7 +61,7 @@ export interface MapView {
   offsetY: number
 }
 
-export type MapMarkerKind = 'level-entrance' | 'place-name' | 'region' | 'settlement' | 'tier-switch'
+export type MapMarkerKind = 'level-entrance' | 'place-name' | 'region' | 'settlement' | 'tier-switch' | 'poi' | 'static-image'
 
 export interface MapMarker {
   id: string
@@ -53,6 +70,15 @@ export interface MapMarker {
   label: string
   targetLevelId?: string
   directionAngle?: number
+  tierId: number
+  typeKey: string
+  typeLabel?: string
+  defaultVisible: boolean
+  icon?: string
+  imagePath?: string
+  categoryId?: number | null
+  categoryName?: string
+  categorySortId?: number
 }
 
 export const MARKER_MIN_LOD: Record<MapMarkerKind, MapLod> = {
@@ -61,6 +87,17 @@ export const MARKER_MIN_LOD: Record<MapMarkerKind, MapLod> = {
   'tier-switch': 'm',
   region: 'm',
   'place-name': 'h',
+  poi: 'l',
+  'static-image': 'm',
+}
+
+export const STATIC_KIND_KEYS: Record<Exclude<MapMarkerKind, 'poi'>, string> = {
+  'level-entrance': 'map.markerKind.levelEntrance',
+  'place-name': 'map.markerKind.placeName',
+  region: 'map.markerKind.region',
+  settlement: 'map.markerKind.settlement',
+  'tier-switch': 'map.markerKind.tierSwitch',
+  'static-image': 'map.markerKind.staticImage',
 }
 
 function num(value: unknown, fallback = 0): number {
@@ -85,8 +122,35 @@ const KIND_BY_TYPE: Record<number, MapMarkerKind> = {
   2: 'place-name',
   3: 'region',
   4: 'settlement',
+  5: 'region',
   6: 'region',
   7: 'tier-switch',
+  8: 'static-image',
+}
+
+function parseTiers(raw: any, worldRect: LevelMapConfig['worldRect']): MapTier[] {
+  const tiers = new Map<number, MapTier>()
+  for (const [tierIdStr, textId] of Object.entries(raw?.tierNames ?? {})) {
+    const tierId = Number(tierIdStr)
+    if (!Number.isFinite(tierId)) continue
+    tiers.set(tierId, { tierId, textId: typeof textId === 'string' ? textId : undefined, rects: [] })
+  }
+  for (const info of Object.values(raw?.tierInfos ?? {})) {
+    const entry = info as any
+    const tierId = entry?.tierId
+    if (typeof tierId !== 'number') continue
+    if (!tiers.has(tierId)) tiers.set(tierId, { tierId, rects: [] })
+    const lb = entry.worldLeftBottom
+    const rt = entry.worldRightTop
+    if (!lb || !rt) continue
+    tiers.get(tierId)!.rects.push({
+      left: (num(lb.x) - worldRect.left) * PIXELS_PER_UNIT,
+      top: (worldRect.top - num(rt.y)) * PIXELS_PER_UNIT,
+      width: (num(rt.x) - num(lb.x)) * PIXELS_PER_UNIT,
+      height: (num(rt.y) - num(lb.y)) * PIXELS_PER_UNIT,
+    })
+  }
+  return [...tiers.values()].sort((a, b) => a.tierId - b.tierId)
 }
 
 export function parseLevelMapConfig(levelId: string, raw: any): LevelMapConfig {
@@ -95,6 +159,12 @@ export function parseLevelMapConfig(levelId: string, raw: any): LevelMapConfig {
     l: parseChunks(raw?.lowChunks, 'l'),
     m: parseChunks(raw?.mediumChunks, 'm'),
     h: parseChunks(raw?.highChunks, 'h'),
+  }
+  const worldRect = {
+    left: num(basic.worldRectLeftBottom?.x),
+    bottom: num(basic.worldRectLeftBottom?.y),
+    right: num(basic.worldRectRightTop?.x),
+    top: num(basic.worldRectRightTop?.y),
   }
   const staticElements: StaticMapElement[] = Object.values(raw?.staticElements ?? {})
     .filter((e: any) => e && VALID_TYPES.has(e.type))
@@ -107,18 +177,17 @@ export function parseLevelMapConfig(levelId: string, raw: any): LevelMapConfig {
       directionAngle: typeof e.directionAngle === 'number' ? e.directionAngle : undefined,
       settlementId: typeof e.settlementId === 'string' ? e.settlementId : undefined,
       isPermanent: e.isPermanent,
+      displayTierId: typeof e.displayTierId === 'number' ? e.displayTierId : 0,
+      defaultVisible: e.defaultVisible !== false,
+      defaultImgPath: typeof e.defaultImgPath === 'string' ? e.defaultImgPath : undefined,
     }))
   return {
     levelId,
-    worldRect: {
-      left: num(basic.worldRectLeftBottom?.x),
-      bottom: num(basic.worldRectLeftBottom?.y),
-      right: num(basic.worldRectRightTop?.x),
-      top: num(basic.worldRectRightTop?.y),
-    },
+    worldRect,
     inverseXZ: !!basic.needInverseXZ,
     chunks,
     staticElements,
+    tiers: parseTiers(raw, worldRect),
   }
 }
 
@@ -153,6 +222,14 @@ export function chunkRect(config: LevelMapConfig, chunk: MapChunk): { left: numb
 
 export function tileUrl(levelId: string, chunkId: string): string {
   return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/textures/levelmap/levelmapchunks/${levelId.replaceAll('_', '')}/${chunkId}.png`
+}
+
+export function markIconUrl(icon: string): string {
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/map/markiconsmall/${icon}.png`
+}
+
+export function staticElementImageUrl(path: string): string {
+  return `${ASSET_BASE}/assets/beyond/dynamicassets/gameplay/ui/sprites/map/commonstaticelement/${path}.png`
 }
 
 export function pickLod(scale: number): MapLod {
@@ -265,6 +342,68 @@ export function adaptStaticElements(config: LevelMapConfig, sources: MarkerSourc
       label,
       targetLevelId: el.targetLevelId,
       directionAngle: el.directionAngle,
+      tierId: el.displayTierId,
+      typeKey: kind,
+      defaultVisible: el.type === 8 ? el.defaultVisible : true,
+      imagePath: el.defaultImgPath,
+      categoryId: null,
     }
   })
+}
+
+export interface PoiSources {
+  insRaw?: Record<string, any>
+  tempRaw?: Record<string, any>
+  typeRaw?: Record<string, any>
+  categoryRaw?: Record<string, any>
+  tempDict?: Record<string, string>
+  typeDict?: Record<string, string>
+  categoryDict?: Record<string, string>
+}
+
+export function adaptPoiMarkers(config: LevelMapConfig, levelId: string, sources: PoiSources = {}): MapMarker[] {
+  const markers: MapMarker[] = []
+  for (const value of Object.values(sources.insRaw ?? {})) {
+    const ins = value as any
+    if (!ins || ins.levelId !== levelId) continue
+    const temp = sources.tempRaw?.[ins.markInfoId]
+    const tempName = temp ? resolveI18n(temp.name, sources.tempDict) : ''
+    const markInfoType = typeof temp?.markInfoType === 'number' ? temp.markInfoType : null
+    const typeDef = markInfoType !== null ? sources.typeRaw?.[String(markInfoType)] : undefined
+    const categoryId = typeof typeDef?.category === 'number' ? typeDef.category : null
+    const category = categoryId !== null ? sources.categoryRaw?.[String(categoryId)] : undefined
+    const typeLabel = typeDef ? resolveI18n(typeDef.name, sources.typeDict) : tempName
+    markers.push({
+      id: String(ins.markInsId ?? `${levelId}_${ins.markInfoId}`),
+      kind: 'poi',
+      canvas: worldToCanvas(config, num(ins.pos?.x), num(ins.pos?.z)),
+      label: tempName,
+      tierId: 0,
+      typeKey: `poi:${markInfoType ?? ins.markInfoId}`,
+      typeLabel: typeLabel || tempName || String(ins.markInfoId ?? ''),
+      defaultVisible: temp?.defaultVisible !== false,
+      icon: temp?.activeIcon ? markIconUrl(temp.activeIcon) : undefined,
+      categoryId,
+      categoryName: categoryId !== null ? resolveI18n(category?.name, sources.categoryDict) : '',
+      categorySortId: typeof category?.sortId === 'number' ? category.sortId : 999,
+    })
+  }
+  return markers
+}
+
+export function tierMaskCells(config: LevelMapConfig, tierId: number): TierRect[] {
+  const tier = config.tiers.find((t) => t.tierId === tierId)
+  if (!tier) return []
+  const cell = LOD_WORLD_UNITS.h * PIXELS_PER_UNIT
+  const covered = new Set(tier.rects.map((r) => `${Math.round(r.left / cell)}_${Math.round(r.top / cell)}`))
+  const size = canvasSize(config)
+  const cells: TierRect[] = []
+  for (let x = 0; x < size.width; x += cell) {
+    for (let y = 0; y < size.height; y += cell) {
+      if (!covered.has(`${Math.round(x / cell)}_${Math.round(y / cell)}`)) {
+        cells.push({ left: x, top: y, width: cell, height: cell })
+      }
+    }
+  }
+  return cells
 }

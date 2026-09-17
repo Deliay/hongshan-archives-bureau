@@ -1,27 +1,23 @@
 import type { ReactNode } from 'react'
-import { LOD_ORDER, MARKER_MIN_LOD, pickLod } from '../../lib/map/mapConfig'
+import { LOD_ORDER, MARKER_MIN_LOD, pickLod, staticElementImageUrl } from '../../lib/map/mapConfig'
 import type { MapMarker, MapMarkerKind } from '../../lib/map/mapConfig'
 import { useI18n } from '../../i18n'
+import StrokedText from './StrokedText'
 
 interface MarkerLayerProps {
   markers: MapMarker[]
   scale: number
   regionIds: Set<string>
   onSelectRegion: (levelId: string) => void
+  hiddenKeys: Set<string>
+  activeTier: number | null
 }
 
 function PlaceName({ marker }: { marker: MapMarker }) {
   if (!marker.label) {
     return <span className="block w-1.5 h-1.5 rounded-full bg-archive-ivory/60" />
   }
-  return (
-    <span
-      className="whitespace-nowrap text-xs font-medium text-archive-ivory"
-      style={{ textShadow: '0 0 3px #0A0A0D, 0 0 3px #0A0A0D, 0 1px 2px #0A0A0D' }}
-    >
-      {marker.label}
-    </span>
-  )
+  return <StrokedText text={marker.label} className="text-sm font-semibold text-archive-ivory" />
 }
 
 function Dot({ className }: { className: string }) {
@@ -41,10 +37,30 @@ function ArrowIcon({ kind }: { kind: MapMarkerKind }) {
   )
 }
 
-export default function MarkerLayer({ markers, scale, regionIds, onSelectRegion }: MarkerLayerProps) {
+function MarkerIcon({ marker }: { marker: MapMarker }) {
+  if (marker.icon) {
+    return (
+      <img
+        src={marker.icon}
+        alt=""
+        draggable={false}
+        className="w-6 h-6 object-contain select-none pointer-events-none max-w-none"
+        onError={(event) => { (event.target as HTMLImageElement).style.visibility = 'hidden' }}
+      />
+    )
+  }
+  return <Dot className="border-archive-gold bg-archive-gold/40" />
+}
+
+export default function MarkerLayer({ markers, scale, regionIds, onSelectRegion, hiddenKeys, activeTier }: MarkerLayerProps) {
   const { t } = useI18n()
   const lod = pickLod(scale)
-  const visible = markers.filter((m) => LOD_ORDER[lod] >= LOD_ORDER[MARKER_MIN_LOD[m.kind]])
+  const visible = markers.filter((marker) => {
+    if (hiddenKeys.has(marker.typeKey)) return false
+    if (LOD_ORDER[lod] < LOD_ORDER[MARKER_MIN_LOD[marker.kind]]) return false
+    if (activeTier !== null && marker.tierId !== 0 && marker.tierId !== activeTier) return false
+    return true
+  })
 
   return (
     <>
@@ -56,16 +72,23 @@ export default function MarkerLayer({ markers, scale, regionIds, onSelectRegion 
         } else if (marker.kind === 'settlement') {
           visual = (
             <span className="flex flex-col items-center gap-0.5">
-              {marker.label && (
-                <span
-                  className="whitespace-nowrap text-[11px] text-archive-bronze"
-                  style={{ textShadow: '0 0 3px #0A0A0D, 0 1px 2px #0A0A0D' }}
-                >
-                  {marker.label}
-                </span>
-              )}
+              {marker.label && <StrokedText text={marker.label} className="text-xs font-medium text-archive-bronze" />}
               <span className="block w-2.5 h-2.5 rounded-sm rotate-45 bg-archive-bronze border border-archive-ivory/70" />
             </span>
+          )
+        } else if (marker.kind === 'poi') {
+          visual = <MarkerIcon marker={marker} />
+        } else if (marker.kind === 'static-image') {
+          visual = marker.imagePath ? (
+            <img
+              src={staticElementImageUrl(marker.imagePath)}
+              alt=""
+              draggable={false}
+              className="w-16 h-16 object-contain select-none pointer-events-none max-w-none opacity-80"
+              onError={(event) => { (event.target as HTMLImageElement).style.visibility = 'hidden' }}
+            />
+          ) : (
+            <Dot className="border-archive-bronze bg-archive-bronze/30" />
           )
         } else if (marker.kind === 'region') {
           visual = <Dot className="border-archive-lead bg-archive-lead/30" />
@@ -82,10 +105,11 @@ export default function MarkerLayer({ markers, scale, regionIds, onSelectRegion 
 
         const tooltip = marker.kind === 'level-entrance' && marker.label
           ? t('map.gotoRegion', { name: marker.label })
-          : marker.kind === 'tier-switch' && marker.label
-            ? marker.label
+          : (marker.kind === 'poi' || marker.kind === 'tier-switch' || marker.kind === 'static-image') && (marker.label || marker.typeLabel)
+            ? marker.label || marker.typeLabel
             : undefined
 
+        const centered = marker.kind === 'poi' || marker.kind === 'static-image'
         const content = (
           <span className="relative flex flex-col items-center group">
             {visual}
@@ -103,10 +127,12 @@ export default function MarkerLayer({ markers, scale, regionIds, onSelectRegion 
             data-testid="map-marker"
             data-kind={marker.kind}
             data-level-id={marker.targetLevelId ?? ''}
+            data-type-key={marker.typeKey}
+            data-tier-id={marker.tierId}
             style={{ position: 'absolute', left: marker.canvas.x, top: marker.canvas.y, width: 0, height: 0 }}
           >
             <div style={{ transform: `scale(${1 / scale})`, transformOrigin: '0 0' }}>
-              <div style={{ transform: 'translate(-50%, -100%)' }}>
+              <div style={{ transform: centered ? 'translate(-50%, -50%)' : 'translate(-50%, -100%)' }}>
                 {clickable ? (
                   <button
                     type="button"

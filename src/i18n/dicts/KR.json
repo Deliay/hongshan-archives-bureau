@@ -509,6 +509,22 @@
     "zoomIn": "확대",
     "zoomOut": "축소",
     "zoomFit": "화면 맞춤",
-    "gotoRegion": "{{name}}(으)로 이동"
+    "gotoRegion": "{{name}}(으)로 이동",
+    "layerPanelTitle": "레이어",
+    "layerAll": "전체 레이어",
+    "layerDefault": "레이어 {{id}}",
+    "markerPanelTitle": "마커",
+    "markerGroupElements": "지도 요소",
+    "markerGroupOther": "기타 마커",
+    "markerSelectAll": "전체 선택",
+    "markerClear": "지우기",
+    "markerKind": {
+      "levelEntrance": "스테이지 입구",
+      "placeName": "지명",
+      "region": "지역",
+      "settlement": "정착지",
+      "tierSwitch": "층간 통로",
+      "staticImage": "상태 이미지"
+    }
   }
 }

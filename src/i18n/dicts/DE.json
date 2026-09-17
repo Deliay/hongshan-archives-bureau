@@ -509,6 +509,22 @@
     "zoomIn": "Vergrößern",
     "zoomOut": "Verkleinern",
     "zoomFit": "Ansicht anpassen",
-    "gotoRegion": "Zu {{name}} gehen"
+    "gotoRegion": "Zu {{name}} gehen",
+    "layerPanelTitle": "Ebenen",
+    "layerAll": "Alle Ebenen",
+    "layerDefault": "Ebene {{id}}",
+    "markerPanelTitle": "Markierungen",
+    "markerGroupElements": "Kartenelemente",
+    "markerGroupOther": "Weitere Markierungen",
+    "markerSelectAll": "Alle auswählen",
+    "markerClear": "Leeren",
+    "markerKind": {
+      "levelEntrance": "Level-Eingang",
+      "placeName": "Ortsname",
+      "region": "Gebiet",
+      "settlement": "Siedlung",
+      "tierSwitch": "Ebenenübergang",
+      "staticImage": "Zustandsbild"
+    }
   }
 }

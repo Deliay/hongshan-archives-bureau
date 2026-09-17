@@ -509,6 +509,22 @@
     "zoomIn": "Acercar",
     "zoomOut": "Alejar",
     "zoomFit": "Ajustar vista",
-    "gotoRegion": "Ir a {{name}}"
+    "gotoRegion": "Ir a {{name}}",
+    "layerPanelTitle": "Capas",
+    "layerAll": "Todas las capas",
+    "layerDefault": "Capa {{id}}",
+    "markerPanelTitle": "Marcadores",
+    "markerGroupElements": "Elementos del mapa",
+    "markerGroupOther": "Otros marcadores",
+    "markerSelectAll": "Seleccionar todo",
+    "markerClear": "Limpiar",
+    "markerKind": {
+      "levelEntrance": "Entrada de nivel",
+      "placeName": "Nombre del lugar",
+      "region": "Región",
+      "settlement": "Asentamiento",
+      "tierSwitch": "Pasaje entre niveles",
+      "staticImage": "Imagen de estado"
+    }
   }
 }

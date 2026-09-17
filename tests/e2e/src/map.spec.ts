@@ -70,6 +70,46 @@ test.describe('地图浏览器 (Map Viewer)', () => {
     for (let i = 0; i < 5; i++) {
       await zoomIn.click()
     }
-    await expect(page.getByText('舰桥')).toBeVisible({ timeout: 30000 })
+    await expect(page.getByText('舰桥').first()).toBeVisible({ timeout: 30000 })
+  })
+
+  test('多层关卡显示图层面板，单层关卡不显示', async ({ page }) => {
+    await page.goto('/archive/map', { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('[data-testid="map-plane"] img').first()).toBeVisible({ timeout: 30000 })
+    // 默认首个区域 base01_lv001 为单层
+    await expect(page.getByTestId('layer-panel')).toHaveCount(0)
+
+    await page.locator('[data-testid="map-region-item"][data-level-id="map01_lv001"]').click()
+    await expect(page.getByTestId('layer-panel')).toBeVisible({ timeout: 30000 })
+    // 「全部图层」+ 7 个图层
+    await expect(page.getByTestId('layer-item')).toHaveCount(8)
+    await expect(page.locator('[data-testid="layer-item"][data-tier-id="all"]')).toHaveClass(/archive-gold/)
+    // 无角标（全部图层）
+    await expect(page.getByTestId('active-layer-badge')).toHaveCount(0)
+
+    await page.getByTestId('layer-item').nth(1).click()
+    await expect(page.getByTestId('active-layer-badge')).toBeVisible()
+  })
+
+  test('标记面板可切换静态标记与 POI 显隐', async ({ page }) => {
+    await page.goto('/archive/map', { waitUntil: 'domcontentloaded' })
+    await page.locator('[data-testid="map-region-item"][data-level-id="map01_lv001"]').click()
+    await expect(page.getByTestId('marker-panel')).toBeVisible({ timeout: 30000 })
+
+    await expect(page.locator('[data-kind="poi"]')).toHaveCount(7, { timeout: 30000 })
+    const poiToggle = page.locator('[data-testid="marker-toggle"][data-type-key="poi:10"]')
+    await expect(poiToggle).toBeChecked()
+    await poiToggle.uncheck()
+    await expect(page.locator('[data-kind="poi"]')).toHaveCount(0)
+
+    const placeToggle = page.locator('[data-testid="marker-toggle"][data-type-key="place-name"]')
+    await expect(placeToggle).toBeChecked()
+    const zoomIn = page.getByRole('button', { name: '放大' })
+    for (let i = 0; i < 8; i++) {
+      await zoomIn.click()
+    }
+    await expect(page.getByText('山地顶端').first()).toBeVisible({ timeout: 30000 })
+    await placeToggle.uncheck()
+    await expect(page.getByText('山地顶端')).toHaveCount(0)
   })
 })

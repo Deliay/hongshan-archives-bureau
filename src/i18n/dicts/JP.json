@@ -509,6 +509,22 @@
     "zoomIn": "拡大",
     "zoomOut": "縮小",
     "zoomFit": "全体表示",
-    "gotoRegion": "{{name}}へ移動"
+    "gotoRegion": "{{name}}へ移動",
+    "layerPanelTitle": "レイヤー",
+    "layerAll": "すべてのレイヤー",
+    "layerDefault": "レイヤー{{id}}",
+    "markerPanelTitle": "マーカー",
+    "markerGroupElements": "マップ要素",
+    "markerGroupOther": "その他のマーカー",
+    "markerSelectAll": "全選択",
+    "markerClear": "クリア",
+    "markerKind": {
+      "levelEntrance": "ステージ入口",
+      "placeName": "地名",
+      "region": "エリア",
+      "settlement": "入植地",
+      "tierSwitch": "階層通路",
+      "staticImage": "状態画像"
+    }
   }
 }

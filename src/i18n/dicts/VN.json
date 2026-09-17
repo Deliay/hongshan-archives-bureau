@@ -509,6 +509,22 @@
     "zoomIn": "Phóng to",
     "zoomOut": "Thu nhỏ",
     "zoomFit": "Vừa khung",
-    "gotoRegion": "Đi đến {{name}}"
+    "gotoRegion": "Đi đến {{name}}",
+    "layerPanelTitle": "Lớp",
+    "layerAll": "Tất cả lớp",
+    "layerDefault": "Lớp {{id}}",
+    "markerPanelTitle": "Nhãn",
+    "markerGroupElements": "Yếu tố bản đồ",
+    "markerGroupOther": "Nhãn khác",
+    "markerSelectAll": "Chọn tất cả",
+    "markerClear": "Xóa",
+    "markerKind": {
+      "levelEntrance": "Lối vào màn chơi",
+      "placeName": "Địa danh",
+      "region": "Khu vực",
+      "settlement": "Khu định cư",
+      "tierSwitch": "Lối giữa các lớp",
+      "staticImage": "Ảnh trạng thái"
+    }
   }
 }

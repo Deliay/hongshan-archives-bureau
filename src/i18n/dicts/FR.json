@@ -509,6 +509,22 @@
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
     "zoomFit": "Ajuster la vue",
-    "gotoRegion": "Aller à {{name}}"
+    "gotoRegion": "Aller à {{name}}",
+    "layerPanelTitle": "Calques",
+    "layerAll": "Tous les calques",
+    "layerDefault": "Calque {{id}}",
+    "markerPanelTitle": "Repères",
+    "markerGroupElements": "Éléments de carte",
+    "markerGroupOther": "Autres repères",
+    "markerSelectAll": "Tout sélectionner",
+    "markerClear": "Effacer",
+    "markerKind": {
+      "levelEntrance": "Entrée de niveau",
+      "placeName": "Nom de lieu",
+      "region": "Région",
+      "settlement": "Colonie",
+      "tierSwitch": "Passage entre calques",
+      "staticImage": "Image d'état"
+    }
   }
 }

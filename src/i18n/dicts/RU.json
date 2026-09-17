@@ -509,6 +509,22 @@
     "zoomIn": "Увеличить",
     "zoomOut": "Уменьшить",
     "zoomFit": "По размеру",
-    "gotoRegion": "Перейти к {{name}}"
+    "gotoRegion": "Перейти к {{name}}",
+    "layerPanelTitle": "Слои",
+    "layerAll": "Все слои",
+    "layerDefault": "Слой {{id}}",
+    "markerPanelTitle": "Маркеры",
+    "markerGroupElements": "Элементы карты",
+    "markerGroupOther": "Прочие маркеры",
+    "markerSelectAll": "Выбрать все",
+    "markerClear": "Очистить",
+    "markerKind": {
+      "levelEntrance": "Вход на уровень",
+      "placeName": "Название места",
+      "region": "Регион",
+      "settlement": "Поселение",
+      "tierSwitch": "Межслойный проход",
+      "staticImage": "Изображение состояния"
+    }
   }
 }

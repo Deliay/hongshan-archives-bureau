@@ -15,9 +15,13 @@ import {
   clampView,
   zoomAt,
   adaptStaticElements,
+  adaptPoiMarkers,
+  tierMaskCells,
+  markIconUrl,
+  staticElementImageUrl,
   MARKER_MIN_LOD,
 } from './mapConfig'
-import type { LevelMapConfig, MapChunk } from './mapConfig'
+import type { LevelMapConfig, MapChunk, PoiSources } from './mapConfig'
 
 const MAP01_RAW = {
   basic: {
@@ -78,7 +82,7 @@ const MAP01_RAW = {
       position: { x: -178.773315, y: 0, z: -605.44 },
       textId: 'scene_map01_lv001_sub01_location_tips_10',
     },
-    'map01_lv001_se_unknown': { id: 'map01_lv001_se_unknown', type: 8, position: { x: 0, y: 0, z: 0 } },
+    'map01_lv001_se_unknown': { id: 'map01_lv001_se_unknown', type: 99, position: { x: 0, y: 0, z: 0 } },
     'map01_lv001_se_bad': { id: 'map01_lv001_se_bad', type: 3, position: { x: 0, y: 0, z: 0 } },
   },
 }
@@ -125,6 +129,7 @@ function emptyConfig(overrides: Partial<LevelMapConfig>): LevelMapConfig {
     inverseXZ: false,
     chunks: { l: [], m: [], h: [] },
     staticElements: [],
+    tiers: [],
     ...overrides,
   }
 }
@@ -342,6 +347,8 @@ describe('adaptStaticElements', () => {
           type: 4,
           position: { x: -690, z: -552 },
           settlementId: 'stm_tundra_1',
+          displayTierId: 0,
+          defaultVisible: true,
         },
       ],
     })
@@ -356,5 +363,173 @@ describe('adaptStaticElements', () => {
   it('exposes lod display thresholds per marker kind', () => {
     expect(MARKER_MIN_LOD['place-name']).toBe('h')
     expect(MARKER_MIN_LOD['level-entrance']).toBe('l')
+  })
+})
+
+describe('static element types 5 / 8', () => {
+  const raw = {
+    basic: { worldRectLeftBottom: { x: 0, y: 0 }, worldRectRightTop: { x: 256, y: 256 } },
+    lowChunks: {},
+    mediumChunks: {},
+    highChunks: {},
+    staticElements: {
+      five: { id: 'se5', type: 5, position: { x: 0, y: 0, z: 0 }, displayTierId: 0, defaultVisible: true },
+      two: { id: 'se2', type: 2, position: { x: 0, y: 0, z: 0 }, displayTierId: 0, defaultVisible: false },
+      eight: {
+        id: 'se8',
+        type: 8,
+        position: { x: 128, y: 0, z: 64 },
+        displayTierId: 171,
+        defaultVisible: false,
+        defaultImgPath: 'map02_lv008_bridge_1',
+      },
+    },
+  }
+
+  it('keeps type 5 as a generic region dot', () => {
+    const config = parseLevelMapConfig('lv', raw)
+    const marker = adaptStaticElements(config).find((m) => m.id === 'se5')
+    expect(marker?.kind).toBe('region')
+    expect(marker?.typeKey).toBe('region')
+    expect(marker?.defaultVisible).toBe(true)
+  })
+
+  it('keeps non-image static elements visible by default regardless of raw defaultVisible', () => {
+    const config = parseLevelMapConfig('lv', raw)
+    const marker = adaptStaticElements(config).find((m) => m.id === 'se2')
+    expect(marker?.defaultVisible).toBe(true)
+  })
+
+  it('keeps type 8 as a state image with tier and default visibility', () => {
+    const config = parseLevelMapConfig('lv', raw)
+    const marker = adaptStaticElements(config).find((m) => m.id === 'se8')
+    expect(marker?.kind).toBe('static-image')
+    expect(marker?.imagePath).toBe('map02_lv008_bridge_1')
+    expect(marker?.tierId).toBe(171)
+    expect(marker?.defaultVisible).toBe(false)
+  })
+})
+
+describe('parseLevelMapConfig tiers', () => {
+  const raw = {
+    basic: {
+      worldRectLeftBottom: { x: -256, y: -256 },
+      worldRectRightTop: { x: 256, y: 256 },
+      isSingleLevel: false,
+    },
+    lowChunks: {},
+    mediumChunks: {},
+    highChunks: {},
+    staticElements: {},
+    tierNames: { '171': 'scene_a_layer_tips_1', '172': 'scene_a_layer_tips_2' },
+    tierInfos: {
+      'h_a_1_1_tier_171': {
+        tierId: 171,
+        worldLeftBottom: { x: -256, y: -256 },
+        worldRightTop: { x: -128, y: -128 },
+      },
+      'h_a_2_1_tier_171': {
+        tierId: 171,
+        worldLeftBottom: { x: -128, y: -256 },
+        worldRightTop: { x: 0, y: -128 },
+      },
+      'h_a_1_1_tier_179': {
+        tierId: 179,
+        worldLeftBottom: { x: -256, y: -256 },
+        worldRightTop: { x: -128, y: -128 },
+      },
+    },
+  }
+
+  it('parses tier names, rects and keeps info-only tiers', () => {
+    const config = parseLevelMapConfig('a', raw)
+    expect(config.tiers.map((tier) => tier.tierId)).toEqual([171, 172, 179])
+    const t171 = config.tiers[0]
+    expect(t171.textId).toBe('scene_a_layer_tips_1')
+    expect(t171.rects).toHaveLength(2)
+    expect(t171.rects[0].left).toBe(0)
+    expect(t171.rects[0].width).toBeCloseTo(128 * PIXELS_PER_UNIT)
+    expect(config.tiers[1].rects).toHaveLength(0)
+  })
+
+  it('returns no tiers for single-layer maps', () => {
+    const single = parseLevelMapConfig('b', { ...raw, tierNames: {}, tierInfos: {}, basic: { ...raw.basic, isSingleLevel: true } })
+    expect(single.tiers).toEqual([])
+  })
+
+  it('computes dark-mask cells outside the active tier', () => {
+    const config = parseLevelMapConfig('a', raw)
+    const cells = tierMaskCells(config, 171)
+    expect(cells.length).toBeGreaterThan(0)
+    expect(cells.some((cell) => cell.left === 0 && cell.top === 3 * 128 * PIXELS_PER_UNIT)).toBe(false)
+    expect(cells.some((cell) => cell.left === 0 && cell.top === 0)).toBe(true)
+  })
+
+  it('returns an empty mask for an unknown tier', () => {
+    const config = parseLevelMapConfig('a', raw)
+    expect(tierMaskCells(config, 999)).toEqual([])
+  })
+})
+
+describe('adaptPoiMarkers', () => {
+  const config = emptyConfig({})
+  const sources: PoiSources = {
+    insRaw: {
+      camp1: { markInsId: 'camp1', levelId: 'map01_lv001', markInfoId: 'mark_sp_campfire', pos: { x: -435.3924, y: 92.75, z: -497.6 } },
+      other: { markInsId: 'other', levelId: 'map01_lv002', markInfoId: 'mark_sp_campfire', pos: { x: 0, y: 0, z: 0 } },
+      arrow: { markInsId: 'arrow1', levelId: 'map01_lv001', markInfoId: 'mark_arrow', pos: { x: 24.3, y: 1.72, z: -19.73 } },
+    },
+    tempRaw: {
+      mark_sp_campfire: { markInfoId: 'mark_sp_campfire', activeIcon: 'icon_map_campfire', name: { id: '-2121041299115105838', text: '' }, markInfoType: 10, markType: 8, defaultVisible: true },
+    },
+    typeRaw: { '17': { category: 3, name: { id: '7895377814877820927', text: '' } } },
+    categoryRaw: { '3': { category: 3, name: { id: '3469853632634058657', text: '' }, sortId: 2 } },
+    tempDict: { '-2121041299115105838': '协议传送点' },
+    typeDict: { '7895377814877820927': '集中矿点' },
+    categoryDict: { '3469853632634058657': '资源' },
+  }
+
+  it('only returns instances of the requested level', () => {
+    const markers = adaptPoiMarkers(config, 'map01_lv001', sources)
+    expect(markers.map((m) => m.id)).toEqual(['camp1', 'arrow1'])
+  })
+
+  it('resolves the campfire name, icon and defaults', () => {
+    const marker = adaptPoiMarkers(config, 'map01_lv001', sources)[0]
+    expect(marker.kind).toBe('poi')
+    expect(marker.label).toBe('协议传送点')
+    expect(marker.icon).toBe('https://endfield-assets.fffdan.com/vfs/Bundle/file/assets/beyond/dynamicassets/gameplay/ui/sprites/map/markiconsmall/icon_map_campfire.png')
+    expect(marker.defaultVisible).toBe(true)
+    expect(marker.typeKey).toBe('poi:10')
+  })
+
+  it('falls back gracefully when the mark template is unknown', () => {
+    const marker = adaptPoiMarkers(config, 'map01_lv001', sources).find((m) => m.id === 'arrow1')
+    expect(marker?.icon).toBeUndefined()
+    expect(marker?.typeKey).toBe('poi:mark_arrow')
+    expect(marker?.categoryId).toBeNull()
+  })
+
+  it('resolves category metadata for typed marks', () => {
+    const typedSources: PoiSources = {
+      insRaw: { mine1: { markInsId: 'mine1', levelId: 'lv', markInfoId: 'mark_mine', pos: { x: 0, y: 0, z: 0 } } },
+      tempRaw: { mark_mine: { activeIcon: 'icon_map_mine', name: { id: '1', text: '' }, markInfoType: 17, defaultVisible: false } },
+      typeRaw: sources.typeRaw,
+      categoryRaw: sources.categoryRaw,
+      typeDict: sources.typeDict,
+      categoryDict: sources.categoryDict,
+    }
+    const marker = adaptPoiMarkers(config, 'lv', typedSources)[0]
+    expect(marker.categoryId).toBe(3)
+    expect(marker.categoryName).toBe('资源')
+    expect(marker.typeLabel).toBe('集中矿点')
+    expect(marker.defaultVisible).toBe(false)
+  })
+})
+
+describe('mark icon / static image urls', () => {
+  it('builds mark icon and static element urls', () => {
+    expect(markIconUrl('icon_map_campfire')).toContain('/sprites/map/markiconsmall/icon_map_campfire.png')
+    expect(staticElementImageUrl('map02_lv008_bridge_1')).toContain('/sprites/map/commonstaticelement/map02_lv008_bridge_1.png')
   })
 })
