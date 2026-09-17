@@ -192,6 +192,8 @@
     "factoryDesc": "Gérer les opérations d'usine",
     "geography": "Dossiers géographiques",
     "geographyDesc": "Régions et exploration de Talos-II",
+    "map": "Carte",
+    "mapDesc": "Parcourir les cartes régionales et les repères de lieux",
     "items": "Dossiers des objets",
     "itemsDesc": "Consulter la base de données d'objets",
     "material": "Matériaux",
@@ -407,6 +409,7 @@
     "fetchingTableEntry": "Chargement de l'entrée…",
     "fetchingMissionList": "Chargement de la liste des missions…",
     "fetchingMissionDetail": "Chargement des détails de la mission…",
+    "fetchingMapData": "Chargement des données de la carte…",
     "fetchingMissionBrief": "Chargement du résumé des missions…",
     "fetchingTableIndex": "Chargement de l'index…",
     "fetchingText": "Récupération du texte…",
@@ -499,5 +502,13 @@
     "voice": "Voix de l'histoire",
     "clear": "Vider",
     "empty": "Aucune lecture en cours"
+  },
+  "map": {
+    "groupOther": "Autres régions",
+    "unavailable": "La carte de cette région est actuellement indisponible",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "zoomFit": "Ajuster la vue",
+    "gotoRegion": "Aller à {{name}}"
   }
 }

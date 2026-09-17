@@ -192,6 +192,8 @@
     "factoryDesc": "자동화 생산 라인",
     "geography": "지리 기록",
     "geographyDesc": "탈로스 II 지역 및 탐사",
+    "map": "지도",
+    "mapDesc": "각 지역 지도와 지명 표시를 열람",
     "items": "아이템 기록",
     "itemsDesc": "물자 및 수집품",
     "material": "물자 기록",
@@ -407,6 +409,7 @@
     "fetchingTableEntry": "항목 불러오는 중…",
     "fetchingMissionList": "임무 목록 불러오는 중…",
     "fetchingMissionDetail": "임무 상세 불러오는 중…",
+    "fetchingMapData": "지도 데이터 불러오는 중…",
     "fetchingMissionBrief": "임무 요약 불러오는 중…",
     "fetchingTableIndex": "인덱스 불러오는 중…",
     "fetchingText": "텍스트를 불러오는 중…",
@@ -499,5 +502,13 @@
     "voice": "스토리 보이스",
     "clear": "비우기",
     "empty": "재생 중인 항목 없음"
+  },
+  "map": {
+    "groupOther": "기타 지역",
+    "unavailable": "이 지역의 지도는 현재 사용할 수 없습니다",
+    "zoomIn": "확대",
+    "zoomOut": "축소",
+    "zoomFit": "화면 맞춤",
+    "gotoRegion": "{{name}}(으)로 이동"
   }
 }

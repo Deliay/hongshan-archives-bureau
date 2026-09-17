@@ -192,6 +192,8 @@
     "factoryDesc": "จัดการการดำเนินงานโรงงาน",
     "geography": "แฟ้มภูมิศาสตร์",
     "geographyDesc": "ภูมิภาคและการสำรวจ Talos-II",
+    "map": "แผนที่",
+    "mapDesc": "เรียกดูแผนที่แต่ละภูมิภาคและเครื่องหมายชื่อสถานที่",
     "items": "แฟ้มไอเทม",
     "itemsDesc": "ค้นหาฐานข้อมูลไอเทม",
     "material": "วัสดุ",
@@ -407,6 +409,7 @@
     "fetchingTableEntry": "กำลังโหลดรายการ…",
     "fetchingMissionList": "กำลังโหลดรายการภารกิจ…",
     "fetchingMissionDetail": "กำลังโหลดรายละเอียดภารกิจ…",
+    "fetchingMapData": "กำลังโหลดข้อมูลแผนที่…",
     "fetchingMissionBrief": "กำลังโหลดสรุปภารกิจ…",
     "fetchingTableIndex": "กำลังโหลดดัชนี…",
     "fetchingText": "กำลังโหลดข้อความ…",
@@ -499,5 +502,13 @@
     "voice": "เสียงเนื้อเรื่อง",
     "clear": "ล้าง",
     "empty": "ไม่มีเพลงที่กำลังเล่น"
+  },
+  "map": {
+    "groupOther": "ภูมิภาคอื่น",
+    "unavailable": "แผนที่ของภูมิภาคนี้ยังไม่พร้อมใช้งาน",
+    "zoomIn": "ขยาย",
+    "zoomOut": "ย่อ",
+    "zoomFit": "พอดีหน้าจอ",
+    "gotoRegion": "ไปที่ {{name}}"
   }
 }

@@ -192,6 +192,8 @@
     "factoryDesc": "Automated production lines",
     "geography": "Geography Files",
     "geographyDesc": "Talos-II regions and exploration",
+    "map": "Map",
+    "mapDesc": "Browse regional maps and place-name markers",
     "items": "Item Files",
     "itemsDesc": "Materials and collectibles",
     "material": "Material Files",
@@ -407,6 +409,7 @@
     "fetchingTableEntry": "Loading entry…",
     "fetchingMissionList": "Loading mission list…",
     "fetchingMissionDetail": "Loading mission detail…",
+    "fetchingMapData": "Loading map data…",
     "fetchingMissionBrief": "Loading mission brief…",
     "fetchingTableIndex": "Loading index…",
     "fetchingText": "Fetching text…",
@@ -499,5 +502,13 @@
     "voice": "Story Voice",
     "clear": "Clear",
     "empty": "Nothing playing"
+  },
+  "map": {
+    "groupOther": "Other Regions",
+    "unavailable": "This region's map is currently unavailable",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomFit": "Fit view",
+    "gotoRegion": "Go to {{name}}"
   }
 }

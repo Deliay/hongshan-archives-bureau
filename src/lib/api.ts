@@ -137,10 +137,13 @@ export async function fetchMissionList(): Promise<string[]> {
     'api.fetchingMissionList')
 }
 
+export async function fetchJsonDataRaw(path: string): Promise<any> {
+  return trackFetch('正在加载地图数据', () =>
+    fetchJson(`${getApiBase()}/vfs/JsonData/raw/${path}`), 'api.fetchingMapData')
+}
+
 export async function fetchMissionDetail(missionId: string): Promise<any> {
-  return trackFetch(`正在调阅 任务 ${missionId}`, () =>
-    fetchJson(`${getApiBase()}/vfs/JsonData/raw/Data/Json/MissionRuntimeAsset/${missionId}.json`),
-    'api.fetchingMissionDetail', { missionId })
+  return fetchJsonDataRaw(`Data/Json/MissionRuntimeAsset/${missionId}.json`)
 }
 
 export async function fetchMissionBrief(): Promise<any[]> {
