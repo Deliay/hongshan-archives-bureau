@@ -39,6 +39,7 @@ function fakeConfig(levelId: string): LevelMapConfig {
     },
     staticElements: [],
     tiers: [],
+    tierTextureRects: {},
   }
 }
 

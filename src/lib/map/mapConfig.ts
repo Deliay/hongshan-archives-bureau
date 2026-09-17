@@ -18,6 +18,7 @@ export interface LevelMapConfig {
   chunks: Record<MapLod, MapChunk[]>
   staticElements: StaticMapElement[]
   tiers: MapTier[]
+  tierTextureRects: Record<string, TierRect>
 }
 
 export interface TierRect {
@@ -132,8 +133,18 @@ const KIND_BY_TYPE: Record<number, MapMarkerKind> = {
   8: 'static-image',
 }
 
-function parseTiers(raw: any, worldRect: LevelMapConfig['worldRect']): MapTier[] {
+function toCanvasRect(lb: any, rt: any, worldRect: LevelMapConfig['worldRect']): TierRect {
+  return {
+    left: (num(lb.x) - worldRect.left) * PIXELS_PER_UNIT,
+    top: (worldRect.top - num(rt.y)) * PIXELS_PER_UNIT,
+    width: (num(rt.x) - num(lb.x)) * PIXELS_PER_UNIT,
+    height: (num(rt.y) - num(lb.y)) * PIXELS_PER_UNIT,
+  }
+}
+
+function parseTiers(raw: any, worldRect: LevelMapConfig['worldRect']): { tiers: MapTier[]; textureRects: Record<string, TierRect> } {
   const tiers = new Map<number, MapTier>()
+  const textureRects: Record<string, TierRect> = {}
   for (const [tierIdStr, textId] of Object.entries(raw?.tierNames ?? {})) {
     const tierId = Number(tierIdStr)
     if (!Number.isFinite(tierId)) continue
@@ -147,14 +158,11 @@ function parseTiers(raw: any, worldRect: LevelMapConfig['worldRect']): MapTier[]
     const lb = entry.worldLeftBottom
     const rt = entry.worldRightTop
     if (!lb || !rt) continue
-    tiers.get(tierId)!.rects.push({
-      left: (num(lb.x) - worldRect.left) * PIXELS_PER_UNIT,
-      top: (worldRect.top - num(rt.y)) * PIXELS_PER_UNIT,
-      width: (num(rt.x) - num(lb.x)) * PIXELS_PER_UNIT,
-      height: (num(rt.y) - num(lb.y)) * PIXELS_PER_UNIT,
-    })
+    const rect = toCanvasRect(lb, rt, worldRect)
+    tiers.get(tierId)!.rects.push(rect)
+    if (typeof entry.tierLoadId === 'string') textureRects[entry.tierLoadId] = rect
   }
-  return [...tiers.values()].sort((a, b) => a.tierId - b.tierId)
+  return { tiers: [...tiers.values()].sort((a, b) => a.tierId - b.tierId), textureRects }
 }
 
 export function parseLevelMapConfig(levelId: string, raw: any): LevelMapConfig {
@@ -170,6 +178,7 @@ export function parseLevelMapConfig(levelId: string, raw: any): LevelMapConfig {
     right: num(basic.worldRectRightTop?.x),
     top: num(basic.worldRectRightTop?.y),
   }
+  const { tiers, textureRects } = parseTiers(raw, worldRect)
   const staticElements: StaticMapElement[] = Object.values(raw?.staticElements ?? {})
     .filter((e: any) => e && VALID_TYPES.has(e.type))
     .map((e: any) => ({
@@ -191,7 +200,8 @@ export function parseLevelMapConfig(levelId: string, raw: any): LevelMapConfig {
     inverseXZ: !!basic.needInverseXZ,
     chunks,
     staticElements,
-    tiers: parseTiers(raw, worldRect),
+    tiers,
+    tierTextureRects: textureRects,
   }
 }
 
@@ -411,11 +421,21 @@ export function tierTiles(
   view: MapView,
   viewport: { width: number; height: number },
 ): TierTile[] {
+  if (view.scale <= 0) return []
+  const viewLeft = -view.offsetX / view.scale
+  const viewTop = -view.offsetY / view.scale
+  const viewRight = viewLeft + viewport.width / view.scale
+  const viewBottom = viewTop + viewport.height / view.scale
+  const seen = new Set<string>()
   const tiles: TierTile[] = []
   for (const chunk of visibleChunks(config.chunks[lod], config, lod, view, viewport)) {
     const textureId = chunk.tiers[String(tierId)]
-    if (!textureId) continue
-    const rect = chunkRect(config, chunk)
+    if (!textureId || seen.has(textureId)) continue
+    seen.add(textureId)
+    const rect = config.tierTextureRects[textureId] ?? chunkRect(config, chunk)
+    const intersects = rect.left < viewRight && rect.left + rect.width > viewLeft
+      && rect.top < viewBottom && rect.top + rect.height > viewTop
+    if (!intersects) continue
     tiles.push({ chunkId: chunk.chunkId, textureId, ...rect })
   }
   return tiles

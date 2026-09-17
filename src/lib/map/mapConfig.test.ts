@@ -132,6 +132,7 @@ function emptyConfig(overrides: Partial<LevelMapConfig>): LevelMapConfig {
     chunks: { l: [], m: [], h: [] },
     staticElements: [],
     tiers: [],
+    tierTextureRects: {},
     ...overrides,
   }
 }
@@ -477,7 +478,7 @@ describe('chunk.tiers parsing and tier tiles', () => {
         y: 1,
         worldLeftBottom: { x: 0, y: 0 },
         worldRightTop: { x: 512, y: 512 },
-        tiers: { '173': 'l_tier_173', '174': 'l_tier_174' },
+        tiers: { '171': 'l_tier_171', '174': 'l_tier_174' },
       },
       l_a_2_1: {
         chunkId: 'l_a_2_1',
@@ -486,7 +487,7 @@ describe('chunk.tiers parsing and tier tiles', () => {
         y: 1,
         worldLeftBottom: { x: 512, y: 0 },
         worldRightTop: { x: 1024, y: 512 },
-        tiers: {},
+        tiers: { '171': 'l_tier_171' },
       },
     },
     mediumChunks: {},
@@ -502,17 +503,41 @@ describe('chunk.tiers parsing and tier tiles', () => {
       },
     },
     staticElements: {},
-    tierNames: { '173': 't173', '174': 't174' },
+    tierNames: { '171': 't171', '173': 't173', '174': 't174' },
     tierInfos: {
-      'l_a_1_1_tier_173': { tierId: 173, worldLeftBottom: { x: 0, y: 0 }, worldRightTop: { x: 512, y: 512 } },
+      l_tier_171: {
+        tierLoadId: 'l_tier_171',
+        tierId: 171,
+        worldLeftBottom: { x: 0, y: 427.52 },
+        worldRightTop: { x: 46.9333528, y: 512 },
+      },
+      l_tier_174: {
+        tierLoadId: 'l_tier_174',
+        tierId: 174,
+        worldLeftBottom: { x: 0, y: 0 },
+        worldRightTop: { x: 512, y: 512 },
+      },
+      h_a_1_1_tier_173: {
+        tierLoadId: 'h_a_1_1_tier_173',
+        tierId: 173,
+        worldLeftBottom: { x: 0, y: 0 },
+        worldRightTop: { x: 128, y: 128 },
+      },
     },
   }
 
   it('reads per-chunk tier texture ids and drops non-string values', () => {
     const config = parseLevelMapConfig('a', raw)
-    expect(config.chunks.l[0].tiers).toEqual({ '173': 'l_tier_173', '174': 'l_tier_174' })
-    expect(config.chunks.l[1].tiers).toEqual({})
+    expect(config.chunks.l[0].tiers).toEqual({ '171': 'l_tier_171', '174': 'l_tier_174' })
+    expect(config.chunks.l[1].tiers).toEqual({ '171': 'l_tier_171' })
     expect(config.chunks.h[0].tiers).toEqual({ '173': 'h_a_1_1_tier_173' })
+  })
+
+  it('maps tier texture ids to their tierInfos rect', () => {
+    const config = parseLevelMapConfig('a', raw)
+    const rect = config.tierTextureRects.l_tier_171
+    expect(rect.width).toBeCloseTo(46.9333528 * PIXELS_PER_UNIT)
+    expect(rect.height).toBeCloseTo(84.480011 * PIXELS_PER_UNIT)
   })
 
   it('builds tier texture urls under sprites/levelmap/levelmaptiers', () => {
@@ -521,16 +546,35 @@ describe('chunk.tiers parsing and tier tiles', () => {
     )
   })
 
-  it('selects visible tier tiles for the active layer and lod', () => {
+  it('dedupes a texture shared by multiple chunks and uses the tierInfos rect', () => {
     const config = parseLevelMapConfig('a', raw)
     const view = { scale: 1, offsetX: 0, offsetY: 0 }
     const viewport = { width: 600, height: 600 }
-    const tiles = tierTiles(config, 'l', 173, view, viewport)
+    const tiles = tierTiles(config, 'l', 171, view, viewport)
     expect(tiles).toHaveLength(1)
-    expect(tiles[0].textureId).toBe('l_tier_173')
+    expect(tiles[0].textureId).toBe('l_tier_171')
+    expect(tiles[0].width).toBeCloseTo(46.9333528 * PIXELS_PER_UNIT)
+    expect(tiles[0].width).not.toBeCloseTo(512 * PIXELS_PER_UNIT)
+  })
+
+  it('falls back to the chunk rect when a texture is absent from tierInfos', () => {
+    const config = parseLevelMapConfig('a', { ...raw, tierInfos: {} })
+    const view = { scale: 1, offsetX: 0, offsetY: 0 }
+    const viewport = { width: 600, height: 600 }
+    const tiles = tierTiles(config, 'l', 171, view, viewport)
+    expect(tiles).toHaveLength(1)
     expect(tiles[0].width).toBeCloseTo(512 * PIXELS_PER_UNIT)
+  })
+
+  it('selects tiles per tier and lod', () => {
+    const config = parseLevelMapConfig('a', raw)
+    const view = { scale: 1, offsetX: 0, offsetY: 0 }
+    const viewport = { width: 600, height: 600 }
     expect(tierTiles(config, 'l', 174, view, viewport)).toHaveLength(1)
     expect(tierTiles(config, 'l', 999, view, viewport)).toHaveLength(0)
+    const hTiles = tierTiles(config, 'h', 173, { scale: 1, offsetX: 0, offsetY: -1800 }, viewport)
+    expect(hTiles).toHaveLength(1)
+    expect(hTiles[0].width).toBeCloseTo(128 * PIXELS_PER_UNIT)
   })
 })
 

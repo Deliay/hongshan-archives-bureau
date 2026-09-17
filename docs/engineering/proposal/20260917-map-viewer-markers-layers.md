@@ -59,6 +59,8 @@
    - `UILevelMapLoadConfig` 的 `lowChunks/mediumChunks/highChunks` 每个 chunk 都有 `tiers` 字段：`{ [tierId]: 贴图ID }`，例如 `h_map01_lv001_2_3.tiers = { "173": "h_map01_lv001_2_3_tier_173" }`；`tierInfos.tierLoadId` 即该贴图 ID。
    - 贴图路径：`sprites/levelmap/levelmaptiers/{levelId 去下划线}/{贴图ID}.png`（`levelmaptiers`，非 `textures/levelmapchunks`）。已实测 `.../levelmaptiers/map01lv001/l_tier_173.png` 返回 200，600×600 含 alpha 的区域楼层贴图。
    - 低/中档贴图 ID 为通用名（`l_tier_173` / `m_tier_173`，不含坐标），高档为 `h_{level}_{x}_{y}_tier_{tierId}`，均与 `chunk.tiers` 中的值一致。
+   - **同一 l/m textureId 会被多个 chunk 引用**（跨 chunk 边界），其真实矩形在 `tierInfos[tierLoadId]`，远小于 chunk（如 map01_lv001 `l_tier_171` 约 46.93×84.48 世界单位，而 l chunk 为 512×512）；渲染必须按 textureId 去重并取 tierInfos rect。h 档贴图按 chunk 命名，`tierInfos` rect 恰等于 128 单位 chunk 矩形。
+   - 贴图为 WebP 内容 + `.png` 后缀，浏览器按内容嗅探可正常显示。
    - 资源搜索实测：全服共 16 个关卡、432 张分层贴图（map01lv001×29、map02lv008×61、dung01wrdg001×44 等），凡 `tiers.length>0` 的关卡基本都有对应贴图。
 3. **标记的层归属**：staticElements.`displayTierId`（0=全层显示，实测 288 个为 0、少数为具体 tierId）；`MapMarkTempTable.visibleLayer` ∈ {1,2,3}（疑为位掩码 1=主层/2=副层/3=全部，实现时先用 displayTierId 做静态元素过滤，visibleLayer 语义验证后再用于 POI 过滤）。
 4. `mistInfos`（迷雾）仍不在本期范围（PRD 明确不含迷雾）。
@@ -68,7 +70,7 @@
 - **数据层**：`parseLevelMapConfig` 增加解析 tierNames/tierInfos → `LevelMapConfig.tiers: [{ tierId, name, rects: [{left,top,width,height}]（世界坐标换算 canvas 像素）}]`，并解析 `chunk.tiers`（tierId → 贴图 ID）；单层关卡 tiers 为空。
 - **UI**：新增 LayerPanel 图层切换器（画布右侧竖排列表，与标记面板可同侧上下排布），仅 `tiers.length > 0` 时显示；列表项 = 图层名（多语言），首项「全部图层」（默认选中，保持现状行为）。
 - **选中某图层时**：
-  1. 底图切层 —— 在 `chunk.tiers[activeTier]` 命中的 chunk 位置渲染 `levelmaptiers` 分层贴图（`tierTileUrl`，与瓦片同坐标系、同缩放，绝对定位，叠加在底图之上、标记之下，l/m/h 档各取该 chunk 对应档的贴图 ID）；不再使用「非本层暗色蒙层」；
+  1. 底图切层 —— l/m/h 档按 `chunk.tiers[activeTier]` 收集当前档该层的贴图 ID，**按 textureId 去重**后渲染 `levelmaptiers` 分层贴图（`tierTileUrl`，与瓦片同坐标系、同缩放，绝对定位，叠加在底图之上、标记之下）。贴图矩形取自 `tierInfos[tierLoadId]`（l/m 档为「一张 tier 一图」，rect 远小于 chunk 且可跨 chunk；h 档贴图按 chunk 命名、其 tierInfos rect 恰等于 128 单位 chunk 矩形），缺失条目回退 `chunkRect`；不再使用「非本层暗色蒙层」；
   2. MarkerLayer 过滤 —— 静态元素仅显示 `displayTierId===0 || ===activeTier` 者，POI 按 visibleLayer 语义过滤；
   3. 画布角标显示当前图层名。
 - type7 层间跳转标记保持现有跳关行为；可选增强：switchmask 图作为跳转区高亮。
